@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { formatPriceCNY } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -35,6 +36,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const [orders, setOrders] = useState<Order[]>([])
   const [activeTab, setActiveTab] = useState<TabFilter>('all')
   const [loading, setLoading] = useState(true)
@@ -117,9 +119,14 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <h1 className="text-xl font-bold">Order Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Store: Demo Store</p>
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Order Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Store: Demo Store</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/tables')}>
+            QR Codes
+          </Button>
         </div>
       </header>
 
