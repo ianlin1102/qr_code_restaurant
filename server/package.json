@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "start": "tsx src/app.ts",
-    "seed": "tsx src/seed.ts"
+    "seed": "tsx src/seed.ts",
+    "print-urls": "tsx src/scripts/print-table-urls.ts"
   },
   "dependencies": {
     "@qr-order/shared": "workspace:*",
