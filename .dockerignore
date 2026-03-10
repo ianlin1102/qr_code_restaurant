@@ -1,0 +1,8 @@
+node_modules/
+.git/
+client/
+server/data/
+docs/
+bee/
+*.md
+.env

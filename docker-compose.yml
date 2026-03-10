@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: qr-order-pg
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: qrorder
+      POSTGRES_PASSWORD: qrorder123
+      POSTGRES_DB: qr_order
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:latest
+    container_name: qr-order-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: qr-order-server
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://qrorder:qrorder123@postgres:5432/qr_order
+      JWT_SECRET: dev-secret-change-in-production
+      LOG_LEVEL: debug
+    command: pnpm --filter @qr-order/server exec tsx watch src/server.ts
+    depends_on:
+      - postgres
+    volumes:
+      - ./server/src:/app/server/src
+      - ./server/prisma:/app/server/prisma
+      - ./shared:/app/shared
+      - ./server/data:/app/server/data
+
+volumes:
+  pg_data:

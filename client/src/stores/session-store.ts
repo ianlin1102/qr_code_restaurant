@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 interface SessionState {
   storeId: string | null
@@ -8,10 +9,15 @@ interface SessionState {
   clearSession: () => void
 }
 
-export const useSessionStore = create<SessionState>((set) => ({
-  storeId: null,
-  tableId: null,
-  tableName: null,
-  setSession: (storeId, tableId, tableName) => set({ storeId, tableId, tableName }),
-  clearSession: () => set({ storeId: null, tableId: null, tableName: null }),
-}))
+export const useSessionStore = create<SessionState>()(
+  persist(
+    (set) => ({
+      storeId: null,
+      tableId: null,
+      tableName: null,
+      setSession: (storeId, tableId, tableName) => set({ storeId, tableId, tableName }),
+      clearSession: () => set({ storeId: null, tableId: null, tableName: null }),
+    }),
+    { name: 'qr-order-session' }
+  )
+)

@@ -3,3 +3,4 @@ dist/
 server/data/*.json
 !server/data/seed.json
 .env
+*.pem
