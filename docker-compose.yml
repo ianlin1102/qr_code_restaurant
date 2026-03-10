@@ -42,5 +42,16 @@ services:
       - ./shared:/app/shared
       - ./server/data:/app/server/data
 
+  nginx:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: qr-order-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
 volumes:
   pg_data:
