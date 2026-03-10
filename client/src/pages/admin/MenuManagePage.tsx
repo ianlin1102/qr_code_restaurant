@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import {
   Dialog,
@@ -146,9 +146,6 @@ export default function MenuManagePage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
-
-  const getCategoryName = (catId: string) =>
-    categories.find(c => c.id === catId)?.name ?? '未分类'
 
   // ===== CRUD handlers =====
 

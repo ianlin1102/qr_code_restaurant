@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
-import { useCartStore, cartItemKey, unitPrice } from '@/stores/cart-store'
-import { useSessionStore } from '@/stores/session-store'
+import { useCartStore } from '@/stores/cart-store'
 import { formatPriceCNY } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,7 +25,6 @@ import type { MenuResponse, MenuItem, SelectedOption } from '@qr-order/shared'
 export default function MenuPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const navigate = useNavigate()
-  const tableId = useSessionStore(s => s.tableId)
   const [menu, setMenu] = useState<MenuResponse | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('')
   const [loading, setLoading] = useState(true)
