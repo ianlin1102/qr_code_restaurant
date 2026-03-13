@@ -176,7 +176,9 @@ export default function MenuPage() {
           items: cat.items.filter(
             item =>
               item.name.toLowerCase().includes(searchLower) ||
-              (item.description?.toLowerCase().includes(searchLower))
+              (item.nameEn?.toLowerCase().includes(searchLower)) ||
+              (item.description?.toLowerCase().includes(searchLower)) ||
+              (item.descriptionEn?.toLowerCase().includes(searchLower))
           ),
         }))
         .filter(cat => cat.items.length > 0)
