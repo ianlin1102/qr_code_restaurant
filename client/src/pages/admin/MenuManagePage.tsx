@@ -34,6 +34,7 @@ import {
 import type { MenuItem, Category, MenuItemOption, MenuItemOptionChoice } from '@qr-order/shared'
 import { v4 as uuid } from 'uuid'
 import { useAuthStore } from '@/stores/auth-store'
+import ImageUpload from '@/components/ImageUpload'
 
 type ViewMode = 'table' | 'preview'
 
@@ -360,15 +361,22 @@ export default function MenuManagePage() {
                           cat.items.map(item => (
                             <TableRow key={item.id} className={!item.available ? 'opacity-50' : ''}>
                               <TableCell>
-                                <div>
-                                  <InlineEdit
-                                    value={item.name}
-                                    onSave={val => handleInlineUpdate(item.id, { name: val })}
-                                    className="font-medium"
-                                  />
-                                  {item.description && (
-                                    <span className="text-xs text-muted-foreground ml-2">{item.description}</span>
+                                <div className="flex items-center gap-2">
+                                  {item.image ? (
+                                    <img src={item.image} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded bg-gray-100 shrink-0" />
                                   )}
+                                  <div>
+                                    <InlineEdit
+                                      value={item.name}
+                                      onSave={val => handleInlineUpdate(item.id, { name: val })}
+                                      className="font-medium"
+                                    />
+                                    {item.description && (
+                                      <span className="text-xs text-muted-foreground ml-2">{item.description}</span>
+                                    )}
+                                  </div>
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -430,9 +438,16 @@ export default function MenuManagePage() {
                       cat.items.map(item => (
                         <div key={item.id} className={cn('p-3 rounded-lg border bg-card', !item.available && 'opacity-50')}>
                           <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-sm truncate">{item.name}</p>
-                              {item.nameEn && <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>}
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              {item.image ? (
+                                <img src={item.image} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
+                              ) : (
+                                <div className="w-12 h-12 rounded bg-gray-100 shrink-0" />
+                              )}
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm truncate">{item.name}</p>
+                                {item.nameEn && <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>}
+                              </div>
                             </div>
                             <span className="font-mono text-sm font-semibold shrink-0">{formatPriceCNY(item.price)}</span>
                           </div>
@@ -466,7 +481,12 @@ export default function MenuManagePage() {
                 <h2 className="text-lg font-bold mb-3">{cat.name}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {cat.items.map(item => (
-                    <Card key={item.id} className={!item.available ? 'opacity-40' : ''}>
+                    <Card key={item.id} className={!item.available ? 'opacity-40' : 'overflow-hidden'}>
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="w-full aspect-video object-cover" />
+                      ) : (
+                        <div className="w-full aspect-video bg-gray-100" />
+                      )}
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start">
                           <div>
@@ -579,6 +599,14 @@ export default function MenuManagePage() {
                     placeholder={t('menuManage.descriptionEnPlaceholder')}
                     rows={2}
                     className="text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">{t('common:image.label')}</label>
+                  <ImageUpload
+                    value={editingItem.image}
+                    onChange={url => updateEditingField('image', url)}
                   />
                 </div>
 

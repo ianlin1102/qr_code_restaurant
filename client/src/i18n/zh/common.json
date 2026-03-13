@@ -16,5 +16,14 @@
   },
   "soldOut": "已售罄",
   "items": "件",
-  "langSwitch": "EN"
+  "langSwitch": "EN",
+  "image": {
+    "label": "图片",
+    "clickToUpload": "点击上传",
+    "hint": "JPEG / PNG，最大 5MB",
+    "uploading": "上传中...",
+    "change": "更换",
+    "remove": "移除",
+    "uploadFailed": "上传失败"
+  }
 }

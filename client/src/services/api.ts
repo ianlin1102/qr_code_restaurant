@@ -143,4 +143,22 @@ export const api = {
   // Customer: get orders for a specific table
   getTableOrders: (storeId: string, tableId: string) =>
     fetchJSON<Order[]>(`/stores/${storeId}/orders?tableId=${tableId}`),
+
+  // Upload
+  uploadImage: async (file: File): Promise<string> => {
+    const token = useAuthStore.getState().token
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`${BASE}/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Upload failed' }))
+      throw new Error(err.error || `HTTP ${res.status}`)
+    }
+    const data = await res.json()
+    return data.url
+  },
 }

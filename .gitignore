@@ -5,3 +5,6 @@ server/data/*.json
 .env
 *.pem
 *.csv
+.DS_Store
+bee/
+pic/
