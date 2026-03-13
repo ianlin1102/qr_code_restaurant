@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CheckCircle2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -11,49 +12,50 @@ export default function OrderConfirmPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { storeId } = useSessionStore()
+  const { t } = useTranslation('customer')
 
   const order = (location.state as { order?: Order } | null)?.order
 
   if (!order) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h2 className="text-lg font-semibold mb-2">未找到订单</h2>
+        <h2 className="text-lg font-semibold mb-2">{t('orderConfirm.notFound')}</h2>
         <p className="text-muted-foreground text-center mb-4">
-          请返回菜单重新点餐
+          {t('orderConfirm.notFoundPrompt')}
         </p>
         <Button onClick={() => navigate(storeId ? `/menu/${storeId}` : '/')}>
-          返回菜单
+          {t('cart.backToMenu')}
         </Button>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 pt-12">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4 pt-8 md:pt-12 pb-safe">
       <div className="max-w-lg w-full space-y-6">
         {/* Success */}
         <div className="flex flex-col items-center text-center space-y-3">
           <CheckCircle2 className="h-16 w-16 text-green-500" />
-          <h1 className="text-2xl font-bold">下单成功！</h1>
+          <h1 className="text-2xl font-bold">{t('orderConfirm.success')}</h1>
           <p className="text-muted-foreground">
-            您的订单已提交，请耐心等待
+            {t('orderConfirm.successPrompt')}
           </p>
         </div>
 
         {/* Order number */}
         <Card className="p-6 text-center space-y-1">
-          <p className="text-sm text-muted-foreground">订单号</p>
+          <p className="text-sm text-muted-foreground">{t('orderConfirm.orderNumber')}</p>
           <p className="text-3xl font-bold tracking-wider">{order.orderNumber}</p>
           {order.tableName && (
             <p className="text-sm text-muted-foreground">
-              桌号: {order.tableName}
+              {t('orderConfirm.tableLabel')}: {order.tableName}
             </p>
           )}
         </Card>
 
         {/* Order items */}
         <Card className="p-4 space-y-3">
-          <h2 className="font-semibold">订单明细</h2>
+          <h2 className="font-semibold">{t('orderConfirm.orderDetail')}</h2>
           <Separator />
           <ul className="space-y-2">
             {order.items.map((item, idx) => (
@@ -80,7 +82,7 @@ export default function OrderConfirmPage() {
           </ul>
           <Separator />
           <div className="flex items-center justify-between font-semibold">
-            <span>合计</span>
+            <span>{t('common:total')}</span>
             <span className="text-lg">{formatPriceCNY(order.totalPrice)}</span>
           </div>
         </Card>
@@ -92,7 +94,7 @@ export default function OrderConfirmPage() {
             size="lg"
             onClick={() => navigate(storeId ? `/menu/${storeId}` : '/')}
           >
-            继续点菜
+            {t('orderConfirm.continueOrder')}
           </Button>
           <Button
             variant="outline"
@@ -100,7 +102,7 @@ export default function OrderConfirmPage() {
             size="lg"
             onClick={() => navigate('/cart')}
           >
-            查看全部订单
+            {t('orderConfirm.viewAllOrders')}
           </Button>
         </div>
       </div>
