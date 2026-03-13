@@ -97,7 +97,7 @@ export default function AdminLayout() {
           <button
             onClick={toggleLang}
             className={cn(
-              'flex items-center w-full text-sm text-gray-600 hover:bg-gray-100 transition-colors',
+              'flex items-center w-full text-sm font-semibold text-primary hover:bg-primary/10 transition-colors',
               collapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-4 py-2.5'
             )}
             title={collapsed ? t('common:langSwitch') : undefined}
@@ -168,7 +168,7 @@ export default function AdminLayout() {
           <div className="border-t">
             <button
               onClick={toggleLang}
-              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-600 hover:bg-gray-100"
+              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-primary hover:bg-primary/10"
             >
               <Globe className="h-4 w-4" />
               {t('common:langSwitch')}

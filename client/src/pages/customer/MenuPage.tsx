@@ -185,9 +185,9 @@ export default function MenuPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold">{menu.store.name}</h1>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="text-xs"
+            className="text-xs font-semibold border-primary text-primary px-3"
             onClick={() => {
               const next = lang === 'zh' ? 'en' : 'zh'
               i18n.changeLanguage(next)
