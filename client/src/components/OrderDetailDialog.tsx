@@ -94,6 +94,11 @@ export default function OrderDetailDialog({
           <DialogTitle className="flex items-center gap-3">
             <span className="text-xl">#{order.orderNumber}</span>
             <Badge variant="outline" className={config.color}>{config.label}</Badge>
+            {order.isPaid && (
+              <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                {t('common:status.paid')}
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 

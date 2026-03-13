@@ -93,17 +93,17 @@ export async function handleWebhookEvent(
       return event.type
     }
 
-    // Override status to 'paid' and attach paymentIntentId
+    // Mark as paid, keep status 'pending' so admin sees it in queue
     const { orderStore } = await import('./order.service.js')
     orderStore.update(result.id, {
-      status: 'paid',
+      isPaid: true,
       paymentIntentId: paymentIntent.id,
       updatedAt: new Date().toISOString(),
     })
 
     logger.info(
       { orderId: result.id, orderNumber: result.orderNumber, storeId, paymentIntentId: paymentIntent.id },
-      'order created as paid via webhook',
+      'order created (paid) via webhook',
     )
   }
 

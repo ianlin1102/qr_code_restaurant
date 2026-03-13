@@ -71,6 +71,7 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
     items: orderItems,
     totalPrice,
     status: 'pending',
+    isPaid: false,
     customerName: req.customerName,
     createdAt: now,
     updatedAt: now,

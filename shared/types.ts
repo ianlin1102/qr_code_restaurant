@@ -118,6 +118,7 @@ export interface Order {
   items: OrderItem[]
   totalPrice: number
   status: OrderStatus
+  isPaid: boolean
   paymentIntentId?: string
   customerName?: string
   createdAt: string

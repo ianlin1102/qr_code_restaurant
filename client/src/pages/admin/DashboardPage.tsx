@@ -64,7 +64,6 @@ export default function DashboardPage() {
   const TABS: { key: TabFilter; label: string }[] = [
     { key: 'all', label: t('dashboard.all') },
     { key: 'pending', label: t('common:status.pending') },
-    { key: 'paid', label: t('common:status.paid') || 'Paid' },
     { key: 'preparing', label: t('common:status.preparing') },
     { key: 'completed', label: t('common:status.completed') },
   ]
@@ -363,6 +362,11 @@ export default function DashboardPage() {
                       <Badge variant="outline" className={config.color}>
                         {config.label}
                       </Badge>
+                      {order.isPaid && (
+                        <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                          {t('common:status.paid')}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {order.status !== 'completed' && order.status !== 'closed' && (
