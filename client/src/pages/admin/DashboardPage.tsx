@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
 import { formatPriceCNY } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -27,18 +28,11 @@ const POLL_INTERVAL = 5000
 
 type TabFilter = 'all' | OrderStatus
 
-const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string }> = {
-  pending: { label: '待处理', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  preparing: { label: '制作中', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  completed: { label: '已完成', color: 'bg-green-100 text-green-800 border-green-200' },
+const STATUS_COLORS: Record<OrderStatus, string> = {
+  pending: 'bg-orange-100 text-orange-800 border-orange-200',
+  preparing: 'bg-blue-100 text-blue-800 border-blue-200',
+  completed: 'bg-green-100 text-green-800 border-green-200',
 }
-
-const TABS: { key: TabFilter; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'pending', label: '待处理' },
-  { key: 'preparing', label: '制作中' },
-  { key: 'completed', label: '已完成' },
-]
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -54,7 +48,22 @@ function itemUnitPrice(item: OrderItem): number {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation('admin')
   const STORE_ID = useAuthStore(s => s.user!.storeId)
+
+  const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string }> = {
+    pending: { label: t('common:status.pending'), color: STATUS_COLORS.pending },
+    preparing: { label: t('common:status.preparing'), color: STATUS_COLORS.preparing },
+    completed: { label: t('common:status.completed'), color: STATUS_COLORS.completed },
+  }
+
+  const TABS: { key: TabFilter; label: string }[] = [
+    { key: 'all', label: t('dashboard.all') },
+    { key: 'pending', label: t('common:status.pending') },
+    { key: 'preparing', label: t('common:status.preparing') },
+    { key: 'completed', label: t('common:status.completed') },
+  ]
+
   const [orders, setOrders] = useState<Order[]>([])
   const [activeTab, setActiveTab] = useState<TabFilter>('all')
   const [loading, setLoading] = useState(true)
@@ -271,11 +280,11 @@ export default function DashboardPage() {
       return (
         <Button
           size="sm"
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-blue-600 hover:bg-blue-700 text-white min-h-[44px]"
           disabled={updatingOrderId === order.id}
           onClick={e => { e.stopPropagation(); handleStatusUpdate(order.id, 'preparing') }}
         >
-          {updatingOrderId === order.id ? '...' : '开始制作'}
+          {updatingOrderId === order.id ? '...' : t('dashboard.startPreparing')}
         </Button>
       )
     }
@@ -283,11 +292,11 @@ export default function DashboardPage() {
       return (
         <Button
           size="sm"
-          className="bg-green-600 hover:bg-green-700 text-white"
+          className="bg-green-600 hover:bg-green-700 text-white min-h-[44px]"
           disabled={updatingOrderId === order.id}
           onClick={e => { e.stopPropagation(); handleStatusUpdate(order.id, 'completed') }}
         >
-          {updatingOrderId === order.id ? '...' : '完成'}
+          {updatingOrderId === order.id ? '...' : t('dashboard.markComplete')}
         </Button>
       )
     }
@@ -298,9 +307,9 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-3 md:px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">订单管理</h1>
+            <h1 className="text-lg md:text-xl font-bold">{t('dashboard.title')}</h1>
           </div>
         </div>
       </header>
@@ -322,14 +331,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Order list */}
-      <main className="max-w-4xl mx-auto px-4 py-4 space-y-4">
+      <main className="max-w-4xl mx-auto px-3 md:px-4 py-3 md:py-4 space-y-3 md:space-y-4">
         {loading && orders.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            加载中...
+            {t('common:loading')}
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            暂无订单
+            {t('dashboard.noOrders')}
           </div>
         ) : (
           orders.map((order) => {
@@ -358,7 +367,7 @@ export default function DashboardPage() {
                           className="text-blue-600 hover:text-blue-700"
                           onClick={e => { e.stopPropagation(); openEditDialog(order) }}
                         >
-                          修改
+                          {t('dashboard.editOrder')}
                         </Button>
                       )}
                       <span className="text-sm text-muted-foreground">
@@ -379,7 +388,7 @@ export default function DashboardPage() {
 
                 <Separator />
 
-                <CardContent className="pt-3">
+                <CardContent className="p-3 md:p-4 pt-3">
                   {/* Item list */}
                   <ul className="space-y-1 mb-3">
                     {order.items.map((item, idx) => (
@@ -410,7 +419,7 @@ export default function DashboardPage() {
                   {/* Total and action */}
                   <div className="flex items-center justify-between pt-2 border-t">
                     <span className="font-semibold">
-                      合计: {formatPriceCNY(order.totalPrice)}
+                      {t('common:total')}: {formatPriceCNY(order.totalPrice)}
                     </span>
                     {getActionButton(order)}
                   </div>
@@ -433,10 +442,10 @@ export default function DashboardPage() {
 
       {/* ===== Edit Order Dialog ===== */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              修改订单 #{editingOrder?.orderNumber}
+              {t('dashboard.editOrderTitle', { number: editingOrder?.orderNumber })}
               <span className="text-sm font-normal text-muted-foreground ml-2">
                 {editingOrder?.tableName}
               </span>
@@ -483,7 +492,7 @@ export default function DashboardPage() {
                             className="h-7 px-2 text-red-500 hover:text-red-700"
                             onClick={() => handleRemoveItem(idx)}
                           >
-                            删除
+                            {t('common:delete')}
                           </Button>
                         </div>
                       </div>
@@ -528,7 +537,7 @@ export default function DashboardPage() {
                       <Input
                         value={item.remark ?? ''}
                         onChange={e => handleEditItemRemark(idx, e.target.value)}
-                        placeholder="备注..."
+                        placeholder={t('dashboard.remark')}
                         className="text-xs h-8"
                       />
                     </div>
@@ -540,7 +549,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2 pt-2 border-t">
                 <Select value={addItemId} onValueChange={setAddItemId}>
                   <SelectTrigger className="flex-1 h-9 text-sm">
-                    <SelectValue placeholder="添加菜品..." />
+                    <SelectValue placeholder={t('dashboard.addDishPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {allMenuItems.map(m => (
@@ -551,7 +560,7 @@ export default function DashboardPage() {
                   </SelectContent>
                 </Select>
                 <Button size="sm" variant="outline" onClick={handleAddItem} disabled={!addItemId}>
-                  添加
+                  {t('dashboard.addDish')}
                 </Button>
               </div>
 
@@ -560,7 +569,7 @@ export default function DashboardPage() {
               {/* Missing required warning */}
               {missingRequired.length > 0 && (
                 <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
-                  以下菜品缺少必选规格：
+                  {t('dashboard.missingOptions')}
                   {missingRequired.map((m, i) => (
                     <span key={i} className="font-medium ml-1">
                       {editItems[m.idx]?.name}({m.optionName}){i < missingRequired.length - 1 ? '、' : ''}
@@ -572,14 +581,14 @@ export default function DashboardPage() {
               {/* Total + save */}
               <div className="flex items-center justify-between">
                 <span className="font-semibold">
-                  合计: {formatPriceCNY(editTotal)}
+                  {t('common:total')}: {formatPriceCNY(editTotal)}
                 </span>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                    取消
+                    {t('common:cancel')}
                   </Button>
                   <Button onClick={handleSaveEdit} disabled={savingEdit || !canSaveEdit}>
-                    {savingEdit ? '保存中...' : '保存修改'}
+                    {savingEdit ? t('common:saving') : t('dashboard.saveChanges')}
                   </Button>
                 </div>
               </div>
