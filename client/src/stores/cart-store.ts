@@ -25,11 +25,32 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
   addItem: (item) => set(state => {
+    const optsKey = JSON.stringify(
+      (item.selectedOptions ?? [])
+        .map(o => ({ optionId: o.optionId, choiceId: o.choiceId }))
+        .sort((a, b) => a.optionId.localeCompare(b.optionId)),
+    )
+    const existing = state.items.find(
+      i => i.menuItemId === item.menuItemId && JSON.stringify(
+        (i.selectedOptions ?? [])
+          .map(o => ({ optionId: o.optionId, choiceId: o.choiceId }))
+          .sort((a, b) => a.optionId.localeCompare(b.optionId)),
+      ) === optsKey,
+    )
+    if (existing) {
+      return {
+        items: state.items.map(i =>
+          i.cartKey === existing.cartKey
+            ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
+            : i,
+        ),
+      }
+    }
     const key = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
     return {
-      items: [...state.items, { ...item, quantity: item.quantity ?? 1, cartKey: key }]
+      items: [...state.items, { ...item, quantity: item.quantity ?? 1, cartKey: key }],
     }
   }),
 
