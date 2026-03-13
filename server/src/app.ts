@@ -7,6 +7,7 @@ import storeRoutes from './routes/store.routes.js'
 import menuRoutes from './routes/menu.routes.js'
 import orderRoutes from './routes/order.routes.js'
 import tableRoutes from './routes/table.routes.js'
+import uploadRoutes from './routes/upload.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
@@ -29,6 +30,7 @@ app.use('/api/stores/:storeId', storeRoutes)
 app.use('/api/stores/:storeId/menu', menuRoutes)
 app.use('/api/stores/:storeId/orders', orderRoutes)
 app.use('/api/stores/:storeId/tables', tableRoutes)
+app.use('/api', uploadRoutes)
 
 // Global error handler — must be after all routes
 app.use(errorHandler)
