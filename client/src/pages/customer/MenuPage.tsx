@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceCNY } from '@/lib/format'
+import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -36,6 +38,9 @@ export default function MenuPage() {
   const updateQuantity = useCartStore(s => s.updateQuantity)
   const totalItems = useCartStore(s => s.totalItems)
   const totalPrice = useCartStore(s => s.totalPrice)
+
+  const { t, i18n } = useTranslation('customer')
+  const lang = i18n.language
 
   // Announcement modal
   const [announcementOpen, setAnnouncementOpen] = useState(false)
@@ -147,7 +152,7 @@ export default function MenuPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Loading menu...</p>
+        <p className="text-muted-foreground">{t('common:loading')}</p>
       </div>
     )
   }
@@ -184,15 +189,29 @@ export default function MenuPage() {
     <div className="flex flex-col h-screen max-w-lg mx-auto">
       {/* Header */}
       <div className="p-4 border-b bg-background space-y-2">
-        <h1 className="text-lg font-bold">{menu.store.name}</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-bold">{menu.store.name}</h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={() => {
+              const next = lang === 'zh' ? 'en' : 'zh'
+              i18n.changeLanguage(next)
+              localStorage.setItem('i18n-lang', next)
+            }}
+          >
+            {t('common:langSwitch')}
+          </Button>
+        </div>
         {menu.store.description && (
           <p className="text-xs text-muted-foreground">{menu.store.description}</p>
         )}
         <Input
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          placeholder="搜索菜品..."
-          className="h-8 text-sm"
+          placeholder={t('menu.searchPlaceholder')}
+          className="h-10 text-base"
         />
       </div>
 
@@ -212,7 +231,7 @@ export default function MenuPage() {
                       : 'text-muted-foreground hover:bg-background/50'
                   }`}
                 >
-                  {cat.name}
+                  {localized(cat, lang)}
                 </button>
               ))}
             </div>
@@ -224,7 +243,7 @@ export default function MenuPage() {
           <div className="p-3 pb-24">
             {isSearching && filteredCategories.length === 0 && (
               <p className="text-center text-muted-foreground py-8">
-                未找到相关菜品
+                {t('menu.noResults')}
               </p>
             )}
             {filteredCategories.map((cat, catIndex) => (
@@ -233,7 +252,7 @@ export default function MenuPage() {
                 ref={el => { sectionRefs.current[cat.id] = el }}
               >
                 <h2 className={`text-sm font-semibold text-muted-foreground mb-2 ${catIndex === 0 ? 'mt-0' : 'mt-4'}`}>
-                  {cat.name}
+                  {localized(cat, lang)}
                 </h2>
                 <div className="space-y-2">
                   {cat.items.map(item => {
@@ -251,39 +270,39 @@ export default function MenuPage() {
                           {item.image ? (
                             <img
                               src={item.image}
-                              alt={item.name}
+                              alt={localized(item, lang)}
                               className="w-full h-full object-cover"
                             />
                           ) : (
                             <span className="text-2xl text-muted-foreground">
-                              {cat.name.charAt(0)}
+                              {localized(cat, lang).charAt(0)}
                             </span>
                           )}
                         </div>
                         {/* Item info */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{item.name}</p>
+                          <p className="font-medium text-sm truncate">{localized(item, lang)}</p>
                           {item.description && (
                             <p className="text-xs text-muted-foreground truncate">
-                              {item.description}
+                              {localizedDesc(item, lang)}
                             </p>
                           )}
                           {hasOptions && (
                             <p className="text-xs text-orange-600">
-                              {item.options!.map(o => o.name).join(' / ')}
+                              {item.options!.map(o => localized(o, lang)).join(' / ')}
                             </p>
                           )}
                           <p className="text-sm font-semibold text-primary mt-1">
                             {formatPriceCNY(item.price)}
-                            {hasOptions && <span className="text-xs font-normal text-muted-foreground"> 起</span>}
+                            {hasOptions && <span className="text-xs font-normal text-muted-foreground"> {t('menu.from')}</span>}
                           </p>
                         </div>
                         {/* Add to cart controls */}
                         <div className="shrink-0">
                           {!item.available ? (
-                            <span className="text-xs text-muted-foreground">Sold out</span>
+                            <span className="text-xs text-muted-foreground">{t('common:soldOut')}</span>
                           ) : hasOptions ? (
-                            // Items with options always show "选规格" button
+                            // Items with options always show select spec button
                             <div className="flex flex-col items-center gap-1">
                               {qty > 0 && (
                                 <Badge variant="secondary" className="text-xs">{qty}</Badge>
@@ -294,14 +313,14 @@ export default function MenuPage() {
                                 className="h-8 px-2 text-xs"
                                 onClick={() => handleAdd(item)}
                               >
-                                选规格
+                                {t('menu.selectSpec')}
                               </Button>
                             </div>
                           ) : qty === 0 ? (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 w-8 p-0 rounded-full"
+                              className="h-10 w-10 p-0 rounded-full"
                               onClick={() => handleAdd(item)}
                             >
                               +
@@ -311,7 +330,7 @@ export default function MenuPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-7 w-7 p-0 rounded-full text-xs"
+                                className="h-9 w-9 p-0 rounded-full text-xs"
                                 onClick={() => handleQuantityChange(item.id, -1)}
                               >
                                 -
@@ -322,7 +341,7 @@ export default function MenuPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-7 w-7 p-0 rounded-full text-xs"
+                                className="h-9 w-9 p-0 rounded-full text-xs"
                                 onClick={() => handleQuantityChange(item.id, 1)}
                               >
                                 +
@@ -341,7 +360,7 @@ export default function MenuPage() {
       </div>
 
       {/* Floating bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-background border-t shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 p-3 pb-safe bg-background border-t shadow-lg">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           {itemCount > 0 ? (
             <>
@@ -350,16 +369,16 @@ export default function MenuPage() {
                   <span className="text-lg font-bold text-primary">
                     {formatPriceCNY(priceTotal)}
                   </span>
-                  <Badge variant="secondary">{itemCount} 件</Badge>
+                  <Badge variant="secondary">{itemCount} {t('common:items')}</Badge>
                 </div>
               </div>
               <Button onClick={() => navigate('/cart')} className="px-6">
-                去下单
+                {t('menu.goOrder')}
               </Button>
             </>
           ) : (
             <Button variant="outline" className="w-full" onClick={() => navigate('/cart')}>
-              查看订单
+              {t('menu.viewOrders')}
             </Button>
           )}
         </div>
@@ -367,13 +386,13 @@ export default function MenuPage() {
 
       {/* Option Selection Sheet */}
       <Sheet open={optionSheetOpen} onOpenChange={setOptionSheetOpen}>
-        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto pb-safe">
           {selectedMenuItem && (
             <div className="space-y-4 pb-4">
               <SheetHeader>
-                <SheetTitle className="text-left">{selectedMenuItem.name}</SheetTitle>
+                <SheetTitle className="text-left">{localized(selectedMenuItem, lang)}</SheetTitle>
                 {selectedMenuItem.description && (
-                  <p className="text-sm text-muted-foreground text-left">{selectedMenuItem.description}</p>
+                  <p className="text-sm text-muted-foreground text-left">{localizedDesc(selectedMenuItem, lang)}</p>
                 )}
               </SheetHeader>
 
@@ -381,9 +400,9 @@ export default function MenuPage() {
               {selectedMenuItem.options?.map(option => (
                 <div key={option.id}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-semibold">{option.name}</span>
+                    <span className="text-sm font-semibold">{localized(option, lang)}</span>
                     {option.required && (
-                      <Badge variant="destructive" className="text-xs px-1 py-0">必选</Badge>
+                      <Badge variant="destructive" className="text-xs px-1 py-0">{t('menu.required')}</Badge>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -399,7 +418,7 @@ export default function MenuPage() {
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
-                          {choice.name}
+                          {localized(choice, lang)}
                           {choice.priceAdjust > 0 && (
                             <span className="text-xs text-muted-foreground ml-1">
                               +{formatPriceCNY(choice.priceAdjust)}
@@ -423,7 +442,7 @@ export default function MenuPage() {
                   disabled={!allRequiredSelected()}
                   className="px-8"
                 >
-                  加入购物车
+                  {t('menu.addToCart')}
                 </Button>
               </div>
             </div>
