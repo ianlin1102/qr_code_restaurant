@@ -4,7 +4,7 @@ import { getMenuItemById } from './menu.service.js'
 import type { Order, OrderItem, Table, CreateOrderRequest, OrderStatus } from '@qr-order/shared'
 import logger from '../lib/logger.js'
 
-const orderStore = new JsonStore<Order>('orders.json')
+export const orderStore = new JsonStore<Order>('orders.json')
 const tableStore = new JsonStore<Table>('tables.json')
 
 const storeCounters = new Map<string, number>()

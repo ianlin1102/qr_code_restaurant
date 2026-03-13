@@ -15,6 +15,7 @@ import type { Order } from '@qr-order/shared'
 
 const STATUS_KEYS: Record<string, { key: string; color: string }> = {
   pending: { key: 'status.pending', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  paid: { key: 'status.paid', color: 'bg-purple-100 text-purple-800 border-purple-200' },
   preparing: { key: 'status.preparing', color: 'bg-blue-100 text-blue-800 border-blue-200' },
   completed: { key: 'status.completed', color: 'bg-green-100 text-green-800 border-green-200' },
 }
@@ -78,7 +79,7 @@ export default function CartPage() {
         })),
       })
       clearCart()
-      navigate('/order/confirm', { state: { order } })
+      navigate(`/store/${storeId}/checkout/${order.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to place order')
     } finally {

@@ -4,6 +4,7 @@ import LangSelectPage from './pages/customer/LangSelectPage'
 import MenuPage from './pages/customer/MenuPage'
 import CartPage from './pages/customer/CartPage'
 import OrderConfirmPage from './pages/customer/OrderConfirmPage'
+import CheckoutPage from './pages/customer/CheckoutPage'
 import AdminLayout from './components/AdminLayout'
 import LoginPage from './pages/admin/LoginPage'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/scan/:storeId/:tableId" element={<ScanPage />} />
         <Route path="/menu/:storeId" element={<MenuPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/store/:storeId/checkout/:orderId" element={<CheckoutPage />} />
         <Route path="/order/confirm" element={<OrderConfirmPage />} />
 
         {/* Login (no auth required) */}

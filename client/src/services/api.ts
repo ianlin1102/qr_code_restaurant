@@ -144,6 +144,13 @@ export const api = {
   getTableOrders: (storeId: string, tableId: string) =>
     fetchJSON<Order[]>(`/stores/${storeId}/orders?tableId=${tableId}`),
 
+  // Checkout
+  createCheckout: (storeId: string, orderId: string) =>
+    fetchJSON<{ clientSecret: string; amount: number }>(
+      `/stores/${storeId}/orders/${orderId}/checkout`,
+      { method: 'POST' },
+    ),
+
   // Upload
   uploadImage: async (file: File): Promise<string> => {
     const token = useAuthStore.getState().token
