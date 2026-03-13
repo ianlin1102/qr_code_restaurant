@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,7 @@ import type { Store } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
 export default function StoreSettingsPage() {
+  const { t } = useTranslation('admin')
   const STORE_ID = useAuthStore(s => s.user!.storeId)
   const [store, setStore] = useState<Store | null>(null)
   const [loading, setLoading] = useState(true)
@@ -33,7 +35,7 @@ export default function StoreSettingsPage() {
       setOpeningHours(data.openingHours ?? '')
       setAnnouncement(data.announcement ?? '')
     } catch (err) {
-      setMessage({ type: 'error', text: '加载门店信息失败' })
+      setMessage({ type: 'error', text: t('storeSettings.loadFailed') })
     } finally {
       setLoading(false)
     }
@@ -41,7 +43,7 @@ export default function StoreSettingsPage() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      setMessage({ type: 'error', text: '店名不能为空' })
+      setMessage({ type: 'error', text: t('storeSettings.nameRequired') })
       return
     }
     setSaving(true)
@@ -54,10 +56,10 @@ export default function StoreSettingsPage() {
         announcement: announcement.trim() || undefined,
       })
       setStore(updated)
-      setMessage({ type: 'success', text: '保存成功' })
+      setMessage({ type: 'success', text: t('storeSettings.saveSuccess') })
       setTimeout(() => setMessage(null), 3000)
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : '保存失败' })
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : t('storeSettings.saveFailed') })
     } finally {
       setSaving(false)
     }
@@ -66,7 +68,7 @@ export default function StoreSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">加载中...</p>
+        <p className="text-muted-foreground">{t('common:loading')}</p>
       </div>
     )
   }
@@ -74,54 +76,58 @@ export default function StoreSettingsPage() {
   if (!store) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-destructive">门店不存在</p>
+        <p className="text-destructive">{t('storeSettings.storeNotFound')}</p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">门店设置</h1>
+    <div className="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-6">
+      <h1 className="text-2xl font-bold mb-6">{t('storeSettings.title')}</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">基本信息</CardTitle>
+          <CardTitle className="text-lg">{t('storeSettings.basicInfo')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm font-medium">店名 *</label>
+            <label className="text-sm font-medium">{t('storeSettings.storeName')}</label>
             <Input
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="输入店名"
+              placeholder={t('storeSettings.storeNamePlaceholder')}
+              className="text-base"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">门店描述</label>
+            <label className="text-sm font-medium">{t('storeSettings.description')}</label>
             <Textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="简短介绍你的餐厅"
+              placeholder={t('storeSettings.descriptionPlaceholder')}
+              className="text-base"
               rows={3}
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">营业时间</label>
+            <label className="text-sm font-medium">{t('storeSettings.hours')}</label>
             <Input
               value={openingHours}
               onChange={e => setOpeningHours(e.target.value)}
-              placeholder="例：周一至周五 10:00-22:00"
+              placeholder={t('storeSettings.hoursPlaceholder')}
+              className="text-base"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">门店公告</label>
+            <label className="text-sm font-medium">{t('storeSettings.announcement')}</label>
             <Textarea
               value={announcement}
               onChange={e => setAnnouncement(e.target.value)}
-              placeholder="顾客扫码后会看到此公告"
+              placeholder={t('storeSettings.announcementPlaceholder')}
+              className="text-base"
               rows={3}
             />
           </div>
@@ -133,8 +139,8 @@ export default function StoreSettingsPage() {
           )}
 
           <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saving || !name.trim()}>
-              {saving ? '保存中...' : '保存'}
+            <Button onClick={handleSave} disabled={saving || !name.trim()} className="min-h-[44px] w-full md:w-auto">
+              {saving ? t('common:saving') : t('common:save')}
             </Button>
           </div>
         </CardContent>

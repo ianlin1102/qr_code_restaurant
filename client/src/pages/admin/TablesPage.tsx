@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { QRCodeSVG } from 'qrcode.react'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ function isLocalhost(url: string): boolean {
 }
 
 export default function TablesPage() {
+  const { t } = useTranslation('admin')
   const STORE_ID = useAuthStore(s => s.user!.storeId)
   const [tables, setTables] = useState<Table[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,6 +42,7 @@ export default function TablesPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const [editNameEn, setEditNameEn] = useState('')
   const [saving, setSaving] = useState(false)
   const [dialogError, setDialogError] = useState<string | null>(null)
 
@@ -68,6 +71,7 @@ export default function TablesPage() {
   const handleAdd = () => {
     setEditingId(null)
     setEditName('')
+    setEditNameEn('')
     setDialogError(null)
     setDialogOpen(true)
   }
@@ -75,6 +79,7 @@ export default function TablesPage() {
   const handleEdit = (table: Table) => {
     setEditingId(table.id)
     setEditName(table.name)
+    setEditNameEn(table.nameEn ?? '')
     setDialogError(null)
     setDialogOpen(true)
   }
@@ -85,15 +90,16 @@ export default function TablesPage() {
     setSaving(true)
     setDialogError(null)
     try {
+      const nameEn = editNameEn.trim() || undefined
       if (editingId) {
-        await api.updateTable(STORE_ID, editingId, { name })
+        await api.updateTable(STORE_ID, editingId, { name, nameEn })
       } else {
-        await api.createTable(STORE_ID, name)
+        await api.createTable(STORE_ID, name, nameEn)
       }
       setDialogOpen(false)
       await fetchTables()
     } catch (err) {
-      setDialogError(err instanceof Error ? err.message : '保存失败')
+      setDialogError(err instanceof Error ? err.message : t('tables.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -101,23 +107,23 @@ export default function TablesPage() {
 
   const handleDelete = async (table: Table) => {
     if (table.status === 'occupied') {
-      alert(`桌台"${table.name}"正在使用中，无法删除。请先结算。`)
+      alert(t('tables.deleteOccupied', { name: table.name }))
       return
     }
-    if (!confirm(`确定删除桌台"${table.name}"？`)) return
+    if (!confirm(t('tables.confirmDelete', { name: table.name }))) return
     try {
       await api.deleteTable(STORE_ID, table.id)
       await fetchTables()
     } catch (err) {
-      alert(err instanceof Error ? err.message : '删除失败')
+      alert(err instanceof Error ? err.message : t('tables.saveFailed'))
     }
   }
 
   const handleSettle = async (table: Table) => {
-    if (!confirm(`确定结算桌台"${table.name}"？\n所有未完成订单将标记为已完成。`)) return
+    if (!confirm(t('tables.confirmSettle', { name: table.name }))) return
     try {
       const result = await api.settleTable(STORE_ID, table.id)
-      alert(`已结算 ${result.settled} 个订单`)
+      alert(t('tables.settled', { count: result.settled }))
       await fetchTables()
     } catch (err) {
       console.error('Failed to settle:', err)
@@ -143,7 +149,7 @@ export default function TablesPage() {
         await api.updateTable(STORE_ID, renameId, { name })
         await fetchTables()
       } catch (err) {
-        alert(err instanceof Error ? err.message : '重命名失败')
+        alert(err instanceof Error ? err.message : t('tables.renameFailed'))
       }
     }
   }
@@ -178,31 +184,30 @@ export default function TablesPage() {
       <div className="mb-6 print:hidden space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">桌台管理</h1>
+            <h1 className="text-2xl font-bold">{t('tables.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              共 {tables.length} 张桌台 · 空闲 {idleCount} · 使用中 {occupiedCount}
+              {t('tables.summary', { total: tables.length, idle: idleCount, occupied: occupiedCount })}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleAdd}>+ 添加桌台</Button>
-            <Button variant="outline" size="sm" onClick={handlePrintAll}>全部打印</Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button size="sm" onClick={handleAdd}>{t('tables.addTable')}</Button>
+            <Button variant="outline" size="sm" onClick={handlePrintAll}>{t('tables.printAll')}</Button>
           </div>
         </div>
 
         {/* Base URL config */}
         <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground shrink-0">Base URL:</label>
+          <label className="text-sm text-muted-foreground shrink-0">{t('tables.baseUrl')}</label>
           <Input
             value={baseUrl}
             onChange={e => setBaseUrl(e.target.value)}
             placeholder="http://192.168.1.39:5173"
-            className="font-mono text-sm"
+            className="font-mono text-sm text-base"
           />
         </div>
         {isLocalhost(baseUrl) && (
           <div className="rounded-md bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800">
-            Base URL 使用了 localhost，手机扫码将无法访问。请改为局域网 IP 地址，例如：
-            <code className="ml-1 font-mono bg-yellow-100 px-1 rounded">http://192.168.x.x:5173</code>
+            {t('tables.baseUrlWarning')}
           </div>
         )}
       </div>
@@ -236,7 +241,7 @@ export default function TablesPage() {
                     <span
                       onClick={() => startRename(table)}
                       className="cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-2 rounded transition-colors print:cursor-default print:hover:bg-transparent"
-                      title="点击重命名"
+                      title={t('tables.nameLabel')}
                     >
                       {table.name}
                     </span>
@@ -246,7 +251,7 @@ export default function TablesPage() {
                   variant={table.status === 'idle' ? 'secondary' : 'default'}
                   className="print:hidden w-fit mx-auto"
                 >
-                  {table.status === 'idle' ? '空闲' : '使用中'}
+                  {table.status === 'idle' ? t('tables.idle') : t('tables.occupied')}
                 </Badge>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-3">
@@ -262,29 +267,29 @@ export default function TablesPage() {
                   {scanUrl}
                 </p>
                 <p className="hidden print:block text-sm font-medium text-center">
-                  扫码点餐
+                  {t('tables.scanToOrder')}
                 </p>
 
                 {/* Action buttons */}
                 <div className="flex gap-1 print:hidden">
-                  <Button variant="outline" size="sm" onClick={() => handlePrintSingle(table.name)}>
-                    打印
+                  <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handlePrintSingle(table.name)}>
+                    {t('tables.print')}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(table)}>
-                    编辑
+                  <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleEdit(table)}>
+                    {t('common:edit')}
                   </Button>
                   {table.status === 'occupied' && (
-                    <Button variant="outline" size="sm" onClick={() => handleSettle(table)}>
-                      结算
+                    <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleSettle(table)}>
+                      {t('tables.settle')}
                     </Button>
                   )}
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-red-600 hover:text-red-700"
+                    className="min-h-[44px] text-red-600 hover:text-red-700"
                     onClick={() => handleDelete(table)}
                   >
-                    删除
+                    {t('common:delete')}
                   </Button>
                 </div>
               </CardContent>
@@ -295,29 +300,40 @@ export default function TablesPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm w-[calc(100vw-2rem)]">
           <DialogHeader>
-            <DialogTitle>{editingId ? '编辑桌台' : '添加桌台'}</DialogTitle>
+            <DialogTitle>{editingId ? t('tables.editTitle') : t('tables.addTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">桌台名称 *</label>
+              <label className="text-sm font-medium">{t('tables.nameLabel')}</label>
               <Input
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
-                placeholder="例：A1、B2、包间1"
+                placeholder={t('tables.namePlaceholder')}
+                className="text-base"
                 autoFocus
                 onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
               />
-              <p className="text-xs text-muted-foreground mt-1">名称不能与现有桌台重复</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('tables.nameDuplicate')}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">English Name</label>
+              <Input
+                value={editNameEn}
+                onChange={e => setEditNameEn(e.target.value)}
+                placeholder="e.g. Table 1, Room 1"
+                className="text-base"
+                onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
+              />
             </div>
             {dialogError && (
               <p className="text-sm text-destructive">{dialogError}</p>
             )}
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common:cancel')}</Button>
               <Button onClick={handleSave} disabled={saving || !editName.trim()}>
-                {saving ? '保存中...' : '保存'}
+                {saving ? t('common:saving') : t('common:save')}
               </Button>
             </div>
           </div>
