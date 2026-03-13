@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,10 +13,10 @@ import { formatPriceCNY } from '@/lib/format'
 import { api } from '@/services/api'
 import type { Order } from '@qr-order/shared'
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  pending: { label: '待处理', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  preparing: { label: '制作中', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  completed: { label: '已完成', color: 'bg-green-100 text-green-800 border-green-200' },
+const STATUS_KEYS: Record<string, { key: string; color: string }> = {
+  pending: { key: 'status.pending', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  preparing: { key: 'status.preparing', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  completed: { key: 'status.completed', color: 'bg-green-100 text-green-800 border-green-200' },
 }
 
 const POLL_INTERVAL = 10000
@@ -24,6 +25,7 @@ export default function CartPage() {
   const navigate = useNavigate()
   const { storeId, tableId, tableName } = useSessionStore()
   const { items, updateQuantity, updateRemark, clearCart, totalPrice, totalItems } = useCartStore()
+  const { t } = useTranslation('customer')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,9 +54,9 @@ export default function CartPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-lg font-semibold mb-2">未找到桌台信息</h2>
+        <h2 className="text-lg font-semibold mb-2">{t('cart.noTable')}</h2>
         <p className="text-muted-foreground text-center mb-4">
-          请扫描桌上的二维码开始点餐
+          {t('cart.scanPrompt')}
         </p>
       </div>
     )
@@ -93,12 +95,12 @@ export default function CartPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-lg font-semibold mb-2">购物车为空</h2>
+        <h2 className="text-lg font-semibold mb-2">{t('cart.emptyCart')}</h2>
         <p className="text-muted-foreground text-center mb-4">
-          去菜单选点好吃的吧
+          {t('cart.emptyPrompt')}
         </p>
         <Button onClick={() => navigate(`/menu/${storeId}`)}>
-          返回菜单
+          {t('cart.backToMenu')}
         </Button>
       </div>
     )
@@ -116,14 +118,14 @@ export default function CartPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg font-semibold">我的订单</h1>
+          <h1 className="text-lg font-semibold">{t('cart.title')}</h1>
           {tableName && (
-            <p className="text-xs text-muted-foreground">桌号: {tableName}</p>
+            <p className="text-xs text-muted-foreground">{t('cart.tableLabel')}: {tableName}</p>
           )}
         </div>
         {hasCart && (
           <span className="text-sm text-muted-foreground">
-            {totalItems()} 件商品
+            {t('cart.itemCount', { count: totalItems() })}
           </span>
         )}
       </div>
@@ -133,7 +135,7 @@ export default function CartPage() {
         {hasPrevOrders && (
           <div>
             <h2 className="text-sm font-semibold text-muted-foreground mb-3">
-              已点菜品（共 {previousOrders.length} 单）
+              {t('cart.previousOrders', { count: previousOrders.length })}
             </h2>
             <div className="space-y-3">
               {previousOrders.map(order => (
@@ -141,8 +143,8 @@ export default function CartPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold">#{order.orderNumber}</span>
-                      <Badge variant="outline" className={`text-xs ${STATUS_CONFIG[order.status]?.color ?? ''}`}>
-                        {STATUS_CONFIG[order.status]?.label ?? order.status}
+                      <Badge variant="outline" className={`text-xs ${STATUS_KEYS[order.status]?.color ?? ''}`}>
+                        {t(`common:${STATUS_KEYS[order.status]?.key}`) ?? order.status}
                       </Badge>
                     </div>
                     <span className="text-sm font-semibold">{formatPriceCNY(order.totalPrice)}</span>
@@ -172,7 +174,7 @@ export default function CartPage() {
 
               {/* Previous orders total */}
               <div className="text-right text-sm text-muted-foreground">
-                已点合计: <span className="font-semibold">{formatPriceCNY(prevOrderTotal)}</span>
+                {t('cart.previousTotal')}: <span className="font-semibold">{formatPriceCNY(prevOrderTotal)}</span>
               </div>
             </div>
 
@@ -184,7 +186,7 @@ export default function CartPage() {
         {hasCart && (
           <div>
             <h2 className="text-sm font-semibold text-muted-foreground mb-3">
-              {hasPrevOrders ? '本次加菜' : '当前购物车'}
+              {hasPrevOrders ? t('cart.addMore') : t('cart.currentCart')}
             </h2>
             <div className="space-y-3">
               {items.map((item) => {
@@ -205,7 +207,7 @@ export default function CartPage() {
                           </div>
                         )}
                         <p className="text-sm text-muted-foreground mt-1">
-                          {formatPriceCNY(price)} / 份
+                          {formatPriceCNY(price)} {t('cart.perServing')}
                         </p>
                       </div>
                       <p className="font-semibold whitespace-nowrap">
@@ -218,7 +220,7 @@ export default function CartPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-10 w-10"
                           onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
                         >
                           {item.quantity === 1 ? (
@@ -231,7 +233,7 @@ export default function CartPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-10 w-10"
                           onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
                         >
                           <Plus className="h-4 w-4" />
@@ -240,10 +242,10 @@ export default function CartPage() {
                     </div>
 
                     <Input
-                      placeholder="添加备注（可选）"
+                      placeholder={t('cart.remarkPlaceholder')}
                       value={item.remark ?? ''}
                       onChange={(e) => updateRemark(item.cartKey, e.target.value)}
-                      className="text-sm"
+                      className="text-base"
                     />
                   </Card>
                 )
@@ -255,7 +257,7 @@ export default function CartPage() {
 
       {/* Bottom bar */}
       {hasCart && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg pb-safe">
           <div className="max-w-lg mx-auto p-4 space-y-3">
             {error && (
               <p className="text-sm text-destructive text-center">{error}</p>
@@ -264,7 +266,7 @@ export default function CartPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">
-                  {hasPrevOrders ? '本次加菜' : ''} {totalItems()} 件
+                  {hasPrevOrders ? t('cart.addMore') : ''} {t('cart.itemCount', { count: totalItems() })}
                 </p>
                 <p className="text-xl font-bold">{formatPriceCNY(totalPrice())}</p>
               </div>
@@ -274,7 +276,7 @@ export default function CartPage() {
                 disabled={submitting}
                 className="min-w-[140px]"
               >
-                {submitting ? '提交中...' : hasPrevOrders ? '提交加菜' : '提交订单'}
+                {submitting ? t('cart.submitting') : hasPrevOrders ? t('cart.submitAddMore') : t('cart.submitOrder')}
               </Button>
             </div>
           </div>
@@ -283,14 +285,14 @@ export default function CartPage() {
 
       {/* If only previous orders, no cart — show add more button */}
       {!hasCart && hasPrevOrders && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg pb-safe">
           <div className="max-w-lg mx-auto p-4">
             <Button
               size="lg"
               className="w-full"
               onClick={() => navigate(`/menu/${storeId}`)}
             >
-              继续点菜
+              {t('cart.continueOrder')}
             </Button>
           </div>
         </div>
