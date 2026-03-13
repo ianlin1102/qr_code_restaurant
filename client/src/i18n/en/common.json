@@ -1,0 +1,20 @@
+{
+  "loading": "Loading...",
+  "save": "Save",
+  "saving": "Saving...",
+  "cancel": "Cancel",
+  "edit": "Edit",
+  "delete": "Delete",
+  "confirm": "Confirm",
+  "add": "Add",
+  "back": "Back",
+  "total": "Total",
+  "status": {
+    "pending": "Pending",
+    "preparing": "Preparing",
+    "completed": "Completed"
+  },
+  "soldOut": "Sold out",
+  "items": "items",
+  "langSwitch": "中"
+}

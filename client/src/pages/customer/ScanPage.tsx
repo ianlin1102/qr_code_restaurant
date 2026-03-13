@@ -25,6 +25,13 @@ export default function ScanPage() {
           clearCart()
         }
 
+        // If no language preference set, redirect to language selection
+        const hasLang = localStorage.getItem('i18n-lang')
+        if (!hasLang) {
+          navigate(`/lang-select/${storeId}/${tableId}`, { replace: true })
+          return
+        }
+
         session.setSession(storeId!, tableId!, table.name)
         navigate(`/menu/${storeId}`, { replace: true })
       } catch {

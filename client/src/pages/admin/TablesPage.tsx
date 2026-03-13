@@ -184,7 +184,7 @@ export default function TablesPage() {
       <div className="mb-6 print:hidden space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{t('tables.title')}</h1>
+            <h1 className="text-xl md:text-2xl font-bold">{t('tables.title')}</h1>
             <p className="text-sm text-muted-foreground">
               {t('tables.summary', { total: tables.length, idle: idleCount, occupied: occupiedCount })}
             </p>
@@ -202,7 +202,7 @@ export default function TablesPage() {
             value={baseUrl}
             onChange={e => setBaseUrl(e.target.value)}
             placeholder="http://192.168.1.39:5173"
-            className="font-mono text-sm text-base"
+            className="font-mono text-base"
           />
         </div>
         {isLocalhost(baseUrl) && (
@@ -271,7 +271,7 @@ export default function TablesPage() {
                 </p>
 
                 {/* Action buttons */}
-                <div className="flex gap-1 print:hidden">
+                <div className="flex gap-2 print:hidden">
                   <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handlePrintSingle(table.name)}>
                     {t('tables.print')}
                   </Button>

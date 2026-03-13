@@ -13,13 +13,13 @@ export function getTableById(tableId: string): Table | undefined {
   return tableStore.getById(tableId)
 }
 
-export function createTable(storeId: string, name: string): Table | { error: string } {
+export function createTable(storeId: string, name: string, nameEn?: string): Table | { error: string } {
   // Check for duplicate name
   const existing = tableStore.getByField('storeId', storeId)
   if (existing.some(t => t.name === name)) {
     return { error: `桌台"${name}"已存在` }
   }
-  const table: Table = { id: uuid(), storeId, name, status: 'idle' }
+  const table: Table = { id: uuid(), storeId, name, ...(nameEn ? { nameEn } : {}), status: 'idle' }
   return tableStore.create(table)
 }
 

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ScanPage from './pages/customer/ScanPage'
+import LangSelectPage from './pages/customer/LangSelectPage'
 import MenuPage from './pages/customer/MenuPage'
 import CartPage from './pages/customer/CartPage'
 import OrderConfirmPage from './pages/customer/OrderConfirmPage'
@@ -17,6 +18,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Customer routes */}
+        <Route path="/lang-select/:storeId/:tableId" element={<LangSelectPage />} />
         <Route path="/scan/:storeId/:tableId" element={<ScanPage />} />
         <Route path="/menu/:storeId" element={<MenuPage />} />
         <Route path="/cart" element={<CartPage />} />

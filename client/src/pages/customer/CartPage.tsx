@@ -192,7 +192,7 @@ export default function CartPage() {
               {items.map((item) => {
                 const price = unitPrice(item)
                 return (
-                  <Card key={item.cartKey} className="p-4 space-y-3">
+                  <Card key={item.cartKey} className="p-3 md:p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.name}</p>

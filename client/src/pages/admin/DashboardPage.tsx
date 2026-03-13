@@ -472,7 +472,7 @@ export default function DashboardPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 w-7 p-0"
+                            className="h-9 w-9 p-0"
                             onClick={() => handleEditItemQuantity(idx, -1)}
                           >
                             -
@@ -481,7 +481,7 @@ export default function DashboardPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 w-7 p-0"
+                            className="h-9 w-9 p-0"
                             onClick={() => handleEditItemQuantity(idx, 1)}
                           >
                             +
@@ -514,7 +514,7 @@ export default function DashboardPage() {
                                     <button
                                       key={choice.id}
                                       onClick={() => handleEditItemOption(idx, option.id, choice.id)}
-                                      className={`px-2 py-0.5 rounded text-xs border transition-colors ${
+                                      className={`px-3 py-1.5 min-h-[36px] rounded text-xs border transition-colors ${
                                         currentChoice?.choiceId === choice.id
                                           ? 'border-blue-500 bg-blue-50 text-blue-700'
                                           : 'border-gray-200 hover:border-gray-300'
@@ -538,7 +538,7 @@ export default function DashboardPage() {
                         value={item.remark ?? ''}
                         onChange={e => handleEditItemRemark(idx, e.target.value)}
                         placeholder={t('dashboard.remark')}
-                        className="text-xs h-8"
+                        className="text-base h-9"
                       />
                     </div>
                   )

@@ -1,0 +1,50 @@
+{
+  "langSelect": {
+    "title": "请选择语言",
+    "subtitle": "Please select your language"
+  },
+  "menu": {
+    "searchPlaceholder": "搜索菜品...",
+    "noResults": "未找到相关菜品",
+    "selectSpec": "选规格",
+    "from": "起",
+    "required": "必选",
+    "addToCart": "加入购物车",
+    "goOrder": "去下单",
+    "viewOrders": "查看订单"
+  },
+  "cart": {
+    "title": "我的订单",
+    "tableLabel": "桌号",
+    "noTable": "未找到桌台信息",
+    "scanPrompt": "请扫描桌上的二维码开始点餐",
+    "emptyCart": "购物车为空",
+    "emptyPrompt": "去菜单选点好吃的吧",
+    "backToMenu": "返回菜单",
+    "previousOrders": "已点菜品（共 {{count}} 单）",
+    "previousTotal": "已点合计",
+    "addMore": "本次加菜",
+    "currentCart": "当前购物车",
+    "perServing": "/ 份",
+    "remarkPlaceholder": "添加备注（可选）",
+    "itemCount": "{{count}} 件商品",
+    "submitOrder": "提交订单",
+    "submitAddMore": "提交加菜",
+    "submitting": "提交中...",
+    "continueOrder": "继续点菜"
+  },
+  "orderConfirm": {
+    "notFound": "未找到订单",
+    "notFoundPrompt": "请返回菜单重新点餐",
+    "success": "下单成功！",
+    "successPrompt": "您的订单已提交，请耐心等待",
+    "orderNumber": "订单号",
+    "tableLabel": "桌号",
+    "orderDetail": "订单明细",
+    "continueOrder": "继续点菜",
+    "viewAllOrders": "查看全部订单"
+  },
+  "scan": {
+    "error": "无法连接到服务器，请检查网络连接"
+  }
+}

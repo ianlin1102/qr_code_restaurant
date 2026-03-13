@@ -94,7 +94,7 @@ export const api = {
   getCategories: (storeId: string) =>
     fetchJSON<Category[]>(`/stores/${storeId}/menu/categories`),
 
-  createCategory: (storeId: string, data: { name: string; sortOrder: number }) =>
+  createCategory: (storeId: string, data: { name: string; nameEn?: string; sortOrder: number }) =>
     fetchJSON<Category>(`/stores/${storeId}/menu/categories`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -118,13 +118,13 @@ export const api = {
   getTable: (storeId: string, tableId: string) =>
     fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}`),
 
-  createTable: (storeId: string, name: string) =>
+  createTable: (storeId: string, name: string, nameEn?: string) =>
     fetchJSON<Table>(`/stores/${storeId}/tables`, {
       method: 'POST',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, ...(nameEn ? { nameEn } : {}) }),
     }),
 
-  updateTable: (storeId: string, tableId: string, data: { name?: string }) =>
+  updateTable: (storeId: string, tableId: string, data: { name?: string; nameEn?: string }) =>
     fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}`, {
       method: 'PUT',
       body: JSON.stringify(data),

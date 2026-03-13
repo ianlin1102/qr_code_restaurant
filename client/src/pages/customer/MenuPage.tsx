@@ -310,7 +310,7 @@ export default function MenuPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-8 px-2 text-xs"
+                                className="min-h-[44px] px-3 text-xs"
                                 onClick={() => handleAdd(item)}
                               >
                                 {t('menu.selectSpec')}
@@ -326,7 +326,7 @@ export default function MenuPage() {
                               +
                             </Button>
                           ) : (
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -405,14 +405,14 @@ export default function MenuPage() {
                       <Badge variant="destructive" className="text-xs px-1 py-0">{t('menu.required')}</Badge>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {option.choices.map(choice => {
                       const isSelected = selectedOptions[option.id]?.choiceId === choice.id
                       return (
                         <button
                           key={choice.id}
                           onClick={() => handleSelectChoice(option.id, option.name, choice.id, choice.name, choice.priceAdjust)}
-                          className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                          className={`px-4 py-3 min-h-[44px] rounded-lg border text-sm transition-colors ${
                             isSelected
                               ? 'border-primary bg-primary/10 text-primary font-medium'
                               : 'border-gray-200 hover:border-gray-300'
@@ -440,7 +440,7 @@ export default function MenuPage() {
                 <Button
                   onClick={handleConfirmOptions}
                   disabled={!allRequiredSelected()}
-                  className="px-8"
+                  className="px-8 min-h-[44px]"
                 >
                   {t('menu.addToCart')}
                 </Button>
@@ -452,7 +452,7 @@ export default function MenuPage() {
 
       {/* Announcement Modal */}
       <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm w-[calc(100vw-2rem)]">
           <DialogHeader>
             <DialogTitle>{menu.store.name}</DialogTitle>
           </DialogHeader>

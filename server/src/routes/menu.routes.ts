@@ -35,7 +35,7 @@ router.get('/items', requireAuth, (req, res) => {
 // POST /api/stores/:storeId/menu/items
 router.post('/items', requireAuth, (req, res) => {
   const { storeId } = req.params
-  const { categoryId, name, description, price, image, available, sortOrder, options } = req.body
+  const { categoryId, name, nameEn, description, descriptionEn, price, image, available, sortOrder, options } = req.body
   if (!categoryId || !name || price == null) {
     res.status(400).json({ error: 'categoryId, name, and price are required' })
     return
@@ -43,7 +43,9 @@ router.post('/items', requireAuth, (req, res) => {
   const item = createMenuItem(storeId, {
     categoryId,
     name,
+    nameEn,
     description,
+    descriptionEn,
     price,
     image,
     available: available ?? true,
@@ -83,12 +85,12 @@ router.get('/categories', requireAuth, (req, res) => {
 
 // POST /api/stores/:storeId/menu/categories
 router.post('/categories', requireAuth, (req, res) => {
-  const { name, sortOrder } = req.body
+  const { name, nameEn, sortOrder } = req.body
   if (!name) {
     res.status(400).json({ error: 'name is required' })
     return
   }
-  const cat = createCategory(req.params.storeId, name, sortOrder ?? 0)
+  const cat = createCategory(req.params.storeId, name, sortOrder ?? 0, nameEn)
   res.status(201).json(cat)
 })
 

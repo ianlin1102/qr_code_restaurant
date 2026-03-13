@@ -22,7 +22,7 @@ router.get('/:tableId', (req, res) => {
 
 // POST create table (admin)
 router.post('/', requireAuth, (req, res) => {
-  const result = createTable(req.params.storeId, req.body.name)
+  const result = createTable(req.params.storeId, req.body.name, req.body.nameEn)
   if ('error' in result) {
     res.status(400).json(result)
     return

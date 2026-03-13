@@ -2,8 +2,10 @@
 export interface Store {
   id: string
   name: string
+  nameEn?: string
   logo?: string
   description?: string
+  descriptionEn?: string
   openingHours?: string
   announcement?: string
   createdAt: string
@@ -29,18 +31,21 @@ export interface Category {
   id: string
   storeId: string
   name: string
+  nameEn?: string
   sortOrder: number
 }
 
 export interface MenuItemOptionChoice {
   id: string
   name: string
+  nameEn?: string
   priceAdjust: number // cents, 0 = no extra charge
 }
 
 export interface MenuItemOption {
   id: string
   name: string // e.g. "辣度", "口味", "份量"
+  nameEn?: string
   required: boolean
   choices: MenuItemOptionChoice[]
 }
@@ -50,7 +55,9 @@ export interface MenuItem {
   storeId: string
   categoryId: string
   name: string
+  nameEn?: string
   description?: string
+  descriptionEn?: string
   price: number
   image?: string
   available: boolean
@@ -63,6 +70,7 @@ export interface Table {
   id: string
   storeId: string
   name: string
+  nameEn?: string
   qrCode?: string
   status: 'idle' | 'occupied'
   currentOrderId?: string
@@ -72,8 +80,10 @@ export interface Table {
 export interface SelectedOption {
   optionId: string
   optionName: string
+  optionNameEn?: string
   choiceId: string
   choiceName: string
+  choiceNameEn?: string
   priceAdjust: number
 }
 
@@ -92,6 +102,7 @@ export type OrderStatus = 'pending' | 'preparing' | 'completed'
 export interface OrderItem {
   menuItemId: string
   name: string
+  nameEn?: string
   price: number // base price
   quantity: number
   remark?: string

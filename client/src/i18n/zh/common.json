@@ -1,0 +1,20 @@
+{
+  "loading": "加载中...",
+  "save": "保存",
+  "saving": "保存中...",
+  "cancel": "取消",
+  "edit": "编辑",
+  "delete": "删除",
+  "confirm": "确认",
+  "add": "添加",
+  "back": "返回",
+  "total": "合计",
+  "status": {
+    "pending": "待处理",
+    "preparing": "制作中",
+    "completed": "已完成"
+  },
+  "soldOut": "已售罄",
+  "items": "件",
+  "langSwitch": "EN"
+}

@@ -83,7 +83,7 @@ export default function StoreSettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-6">
-      <h1 className="text-2xl font-bold mb-6">{t('storeSettings.title')}</h1>
+      <h1 className="text-xl md:text-2xl font-bold mb-6">{t('storeSettings.title')}</h1>
 
       <Card>
         <CardHeader>

@@ -73,8 +73,8 @@ export function getCategories(storeId: string): Category[] {
     .sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
-export function createCategory(storeId: string, name: string, sortOrder: number): Category {
-  const cat: Category = { id: uuid(), storeId, name, sortOrder }
+export function createCategory(storeId: string, name: string, sortOrder: number, nameEn?: string): Category {
+  const cat: Category = { id: uuid(), storeId, name, nameEn, sortOrder }
   return categoryStore.create(cat)
 }
 

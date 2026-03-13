@@ -1,0 +1,50 @@
+{
+  "langSelect": {
+    "title": "请选择语言",
+    "subtitle": "Please select your language"
+  },
+  "menu": {
+    "searchPlaceholder": "Search dishes...",
+    "noResults": "No dishes found",
+    "selectSpec": "Options",
+    "from": "+",
+    "required": "Required",
+    "addToCart": "Add to cart",
+    "goOrder": "Place order",
+    "viewOrders": "View orders"
+  },
+  "cart": {
+    "title": "My Orders",
+    "tableLabel": "Table",
+    "noTable": "No table found",
+    "scanPrompt": "Please scan the QR code on your table to start ordering",
+    "emptyCart": "Cart is empty",
+    "emptyPrompt": "Go check out the menu!",
+    "backToMenu": "Back to menu",
+    "previousOrders": "Previous orders ({{count}} total)",
+    "previousTotal": "Previous total",
+    "addMore": "Add more",
+    "currentCart": "Current cart",
+    "perServing": "/ each",
+    "remarkPlaceholder": "Add a note (optional)",
+    "itemCount": "{{count}} items",
+    "submitOrder": "Place order",
+    "submitAddMore": "Add to order",
+    "submitting": "Submitting...",
+    "continueOrder": "Order more"
+  },
+  "orderConfirm": {
+    "notFound": "Order not found",
+    "notFoundPrompt": "Please go back to the menu and try again",
+    "success": "Order placed!",
+    "successPrompt": "Your order has been submitted. Please wait.",
+    "orderNumber": "Order #",
+    "tableLabel": "Table",
+    "orderDetail": "Order details",
+    "continueOrder": "Order more",
+    "viewAllOrders": "View all orders"
+  },
+  "scan": {
+    "error": "Cannot connect to server. Please check your connection."
+  }
+}
