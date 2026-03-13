@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import {
   Elements,
@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
-import { api } from '@/services/api'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
@@ -35,7 +34,6 @@ function CheckoutForm({ amount }: { amount: number }) {
       },
     })
 
-    // If we reach here, there was an error (success redirects automatically)
     if (result.error) {
       setError(result.error.message || 'Payment failed')
     }
@@ -70,39 +68,25 @@ function CheckoutForm({ amount }: { amount: number }) {
 }
 
 export default function CheckoutPage() {
-  const { orderId } = useParams<{ orderId: string }>()
+  const location = useLocation()
+  const navigate = useNavigate()
   const { storeId } = useSessionStore()
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [amount, setAmount] = useState(0)
-  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!storeId || !orderId) return
-
-    api
-      .createCheckout(storeId, orderId)
-      .then(({ clientSecret, amount }) => {
-        setClientSecret(clientSecret)
-        setAmount(amount)
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to create checkout')
-      })
-  }, [storeId, orderId])
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h2 className="text-lg font-semibold mb-2">Checkout Error</h2>
-        <p className="text-muted-foreground text-center">{error}</p>
-      </div>
-    )
-  }
+  // clientSecret and amount passed via route state from CartPage
+  const state = location.state as { clientSecret?: string; amount?: number } | null
+  const clientSecret = state?.clientSecret
+  const amount = state?.amount ?? 0
 
   if (!clientSecret) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <p className="text-muted-foreground">Loading checkout...</p>
+        <h2 className="text-lg font-semibold mb-2">No checkout session</h2>
+        <p className="text-muted-foreground text-center mb-4">
+          Please go back to your cart to start checkout.
+        </p>
+        <Button onClick={() => navigate(storeId ? `/menu/${storeId}` : '/')}>
+          Back to menu
+        </Button>
       </div>
     )
   }

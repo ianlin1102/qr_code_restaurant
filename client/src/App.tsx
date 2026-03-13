@@ -23,7 +23,7 @@ export default function App() {
         <Route path="/scan/:storeId/:tableId" element={<ScanPage />} />
         <Route path="/menu/:storeId" element={<MenuPage />} />
         <Route path="/cart" element={<CartPage />} />
-        <Route path="/store/:storeId/checkout/:orderId" element={<CheckoutPage />} />
+        <Route path="/store/:storeId/checkout" element={<CheckoutPage />} />
         <Route path="/order/confirm" element={<OrderConfirmPage />} />
 
         {/* Login (no auth required) */}

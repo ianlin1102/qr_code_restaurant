@@ -1,13 +1,21 @@
 import { Router } from 'express'
-import { createCheckoutSession } from '../controllers/payment.service.js'
+import { createPaymentIntent } from '../controllers/payment.service.js'
 
 const router = Router({ mergeParams: true })
 
-// POST /api/stores/:storeId/orders/:orderId/checkout
-router.post('/:orderId/checkout', async (req, res) => {
+// POST /api/stores/:storeId/checkout
+// Receives cart items, creates Stripe PaymentIntent only (no order)
+router.post('/', async (req, res) => {
   try {
     const { storeId } = req.params as { storeId: string }
-    const result = await createCheckoutSession(storeId, req.params.orderId)
+    const { tableId, items, customerName } = req.body
+
+    if (!tableId || !items || !Array.isArray(items) || items.length === 0) {
+      res.status(400).json({ error: 'tableId and items are required' })
+      return
+    }
+
+    const result = await createPaymentIntent({ storeId, tableId, items, customerName })
     if ('error' in result) {
       res.status(result.status ?? 400).json({ error: result.error })
       return

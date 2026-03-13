@@ -36,7 +36,7 @@ app.use('/api/stores/:storeId/auth', authRoutes)
 app.use('/api/stores/:storeId', storeRoutes)
 app.use('/api/stores/:storeId/menu', menuRoutes)
 app.use('/api/stores/:storeId/orders', orderRoutes)
-app.use('/api/stores/:storeId/orders', paymentRoutes)
+app.use('/api/stores/:storeId/checkout', paymentRoutes)
 app.use('/api/stores/:storeId/tables', tableRoutes)
 app.use('/api', uploadRoutes)
 

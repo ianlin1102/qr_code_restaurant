@@ -149,11 +149,11 @@ export const api = {
   getTableOrders: (storeId: string, tableId: string) =>
     fetchJSON<Order[]>(`/stores/${storeId}/orders?tableId=${tableId}`),
 
-  // Checkout
-  createCheckout: (storeId: string, orderId: string) =>
+  // Checkout — creates Stripe PaymentIntent only, no order
+  createCheckout: (storeId: string, data: { tableId: string; items: { menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]; customerName?: string }) =>
     fetchJSON<{ clientSecret: string; amount: number }>(
-      `/stores/${storeId}/orders/${orderId}/checkout`,
-      { method: 'POST' },
+      `/stores/${storeId}/checkout`,
+      { method: 'POST', body: JSON.stringify(data) },
     ),
 
   // Upload

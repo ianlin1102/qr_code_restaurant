@@ -55,8 +55,8 @@ export default function CartPage() {
     setSubmitting(true)
 
     try {
-      // Step 1: create order from cart
-      const order = await api.createOrder(storeId, {
+      // Only create Stripe PaymentIntent — no order created yet
+      const { clientSecret, amount } = await api.createCheckout(storeId, {
         tableId,
         items: items.map(({ menuItemId, quantity, remark, selectedOptions }) => ({
           menuItemId,
@@ -65,10 +65,10 @@ export default function CartPage() {
           ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
         })),
       })
-      // Step 2: navigate to Stripe checkout (cart cleared after payment succeeds)
-      navigate(`/store/${storeId}/checkout/${order.id}`)
+      // Navigate to payment page with clientSecret (order created after payment succeeds)
+      navigate(`/store/${storeId}/checkout`, { state: { clientSecret, amount } })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to place order')
+      setError(err instanceof Error ? err.message : 'Failed to start checkout')
     } finally {
       setSubmitting(false)
     }
