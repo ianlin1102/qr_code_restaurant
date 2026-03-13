@@ -42,7 +42,9 @@
     "tableLabel": "桌号",
     "orderDetail": "订单明细",
     "continueOrder": "继续点菜",
-    "viewAllOrders": "查看全部订单"
+    "viewAllOrders": "查看全部订单",
+    "paymentFailed": "付款失败",
+    "paymentFailedPrompt": "您的付款未完成，请重试。"
   },
   "scan": {
     "error": "无法连接到服务器，请检查网络连接"

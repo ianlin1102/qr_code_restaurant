@@ -42,7 +42,9 @@
     "tableLabel": "Table",
     "orderDetail": "Order details",
     "continueOrder": "Order more",
-    "viewAllOrders": "View all orders"
+    "viewAllOrders": "View all orders",
+    "paymentFailed": "Payment Failed",
+    "paymentFailedPrompt": "Your payment was not completed. Please try again."
   },
   "scan": {
     "error": "Cannot connect to server. Please check your connection."

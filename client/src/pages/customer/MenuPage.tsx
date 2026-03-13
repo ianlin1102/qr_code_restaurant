@@ -361,30 +361,24 @@ export default function MenuPage() {
         </ScrollArea>
       </div>
 
-      {/* Floating bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 pb-safe bg-background border-t shadow-lg">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
-          {itemCount > 0 ? (
-            <>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-primary">
-                    {formatPriceUSD(priceTotal)}
-                  </span>
-                  <Badge variant="secondary">{itemCount} {t('common:items')}</Badge>
-                </div>
+      {/* Floating bottom bar — only when cart has items */}
+      {itemCount > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-3 pb-safe bg-background border-t shadow-lg">
+          <div className="max-w-lg mx-auto flex items-center gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold text-primary">
+                  {formatPriceUSD(priceTotal)}
+                </span>
+                <Badge variant="secondary">{itemCount} {t('common:items')}</Badge>
               </div>
-              <Button onClick={() => navigate('/cart')} className="px-6">
-                {t('menu.goOrder')}
-              </Button>
-            </>
-          ) : (
-            <Button variant="outline" className="w-full" onClick={() => navigate('/cart')}>
-              {t('menu.viewOrders')}
+            </div>
+            <Button onClick={() => navigate('/cart')} className="px-6">
+              {t('menu.goOrder')}
             </Button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Option Selection Sheet */}
       <Sheet open={optionSheetOpen} onOpenChange={setOptionSheetOpen}>
