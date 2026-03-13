@@ -1,0 +1,499 @@
+[
+  {
+    "id": "4b55558b-9d12-4c4c-aa5f-396f34c9348b",
+    "storeId": "store-demo-001",
+    "categoryId": "879cda7f-85c1-40e8-ac00-fa523d0702da",
+    "name": "宫保鸡丁",
+    "nameEn": "Kung Pao Chicken",
+    "description": "经典川菜",
+    "descriptionEn": "Classic Sichuan dish",
+    "price": 1599,
+    "available": true,
+    "sortOrder": 1,
+    "options": [
+      {
+        "id": "fa7d2d85-dc18-4bc6-90f9-026ba4cb8fc9",
+        "name": "辣度",
+        "nameEn": "Spice Level",
+        "required": true,
+        "choices": [
+          {
+            "id": "41c6018b-51b3-4a5d-b074-1edce55cc392",
+            "name": "微辣",
+            "nameEn": "Mild",
+            "priceAdjust": 0
+          },
+          {
+            "id": "776aae84-71b0-40e0-b798-2568bf89399e",
+            "name": "中辣",
+            "nameEn": "Medium",
+            "priceAdjust": 0
+          },
+          {
+            "id": "49c4b8fa-53d6-4004-8313-dfeaf61e1a59",
+            "name": "特辣",
+            "nameEn": "Extra Spicy",
+            "priceAdjust": 0
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/kung-pao-chicken.jpg"
+  },
+  {
+    "id": "8cbeab35-fedb-46d0-b4fd-d0415d8ccddc",
+    "storeId": "store-demo-001",
+    "categoryId": "879cda7f-85c1-40e8-ac00-fa523d0702da",
+    "name": "麻婆豆腐",
+    "nameEn": "Mapo Tofu",
+    "description": "麻辣鲜香",
+    "descriptionEn": "Spicy and numbing",
+    "price": 1299,
+    "available": true,
+    "sortOrder": 2,
+    "options": [
+      {
+        "id": "f5f42694-0035-49f4-87f5-f9019e586f41",
+        "name": "份量",
+        "nameEn": "Size",
+        "required": true,
+        "choices": [
+          {
+            "id": "82d13821-1720-4063-8389-95f476b65e1d",
+            "name": "小份",
+            "nameEn": "Small",
+            "priceAdjust": 0
+          },
+          {
+            "id": "a01a5bd5-4bea-4874-967e-a3a15e7691b6",
+            "name": "大份",
+            "nameEn": "Large",
+            "priceAdjust": 300
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/mapo-tofu.jpg"
+  },
+  {
+    "id": "2c8d360c-122a-4615-aad3-120c7f7ccd7f",
+    "storeId": "store-demo-001",
+    "categoryId": "879cda7f-85c1-40e8-ac00-fa523d0702da",
+    "name": "红烧肉",
+    "nameEn": "Braised Pork Belly",
+    "description": "肥而不腻",
+    "descriptionEn": "Rich and tender",
+    "price": 1899,
+    "available": true,
+    "sortOrder": 3,
+    "options": [
+      {
+        "id": "c0f329b6-a57c-496d-b101-48790dfd3fa0",
+        "name": "配菜",
+        "nameEn": "Side",
+        "required": false,
+        "choices": [
+          {
+            "id": "da54d8cf-bc92-40c5-af22-847ae0c2ee3d",
+            "name": "加蛋",
+            "nameEn": "Add Egg",
+            "priceAdjust": 150
+          },
+          {
+            "id": "5de16488-932f-4310-bb32-d86abb150d44",
+            "name": "加豆腐",
+            "nameEn": "Add Tofu",
+            "priceAdjust": 100
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/braised-pork.jpg"
+  },
+  {
+    "id": "7414aff6-e384-4b11-a6c2-a1d9fa7c3e9a",
+    "storeId": "store-demo-001",
+    "categoryId": "8c04b927-0f95-49cc-99ed-0bf3d3c6cbe4",
+    "name": "拍黄瓜",
+    "nameEn": "Smashed Cucumber",
+    "description": "清爽开胃",
+    "descriptionEn": "Refreshing appetizer",
+    "price": 699,
+    "available": true,
+    "sortOrder": 1,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/smashed-cucumber.jpg"
+  },
+  {
+    "id": "7dbd132c-9d1f-4286-9fd1-26d634676870",
+    "storeId": "store-demo-001",
+    "categoryId": "8c04b927-0f95-49cc-99ed-0bf3d3c6cbe4",
+    "name": "凉拌木耳",
+    "nameEn": "Wood Ear Mushroom Salad",
+    "description": "营养健康",
+    "descriptionEn": "Healthy and nutritious",
+    "price": 799,
+    "available": true,
+    "sortOrder": 2,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/wood-ear-salad.jpg"
+  },
+  {
+    "id": "b4c2b664-8912-4dc1-8a48-7f8669cddf03",
+    "storeId": "store-demo-001",
+    "categoryId": "20ed3b68-258c-442c-bee5-897999787abe",
+    "name": "柠檬水",
+    "nameEn": "Lemonade",
+    "price": 399,
+    "available": true,
+    "sortOrder": 1,
+    "options": [
+      {
+        "id": "07ca11df-48d4-4108-90b7-bf4c694d562c",
+        "name": "甜度",
+        "nameEn": "Sweetness",
+        "required": false,
+        "choices": [
+          {
+            "id": "cd98ed16-0b1b-41da-bf40-44582f15f289",
+            "name": "正常",
+            "nameEn": "Normal",
+            "priceAdjust": 0
+          },
+          {
+            "id": "efaa2f72-8abc-40b4-98b9-87d341b5ea26",
+            "name": "少糖",
+            "nameEn": "Less Sugar",
+            "priceAdjust": 0
+          },
+          {
+            "id": "34ae3d60-45d6-468a-9031-d345708f62b4",
+            "name": "无糖",
+            "nameEn": "No Sugar",
+            "priceAdjust": 0
+          }
+        ]
+      },
+      {
+        "id": "b32855e8-3abc-4bb0-a989-754a95128ef5",
+        "name": "温度",
+        "nameEn": "Temperature",
+        "required": true,
+        "choices": [
+          {
+            "id": "ba6ce063-2613-4ec2-b4ba-b9baf0cf9a8f",
+            "name": "冰",
+            "nameEn": "Iced",
+            "priceAdjust": 0
+          },
+          {
+            "id": "2b21f1a7-b97c-4d78-9794-f62625e0ad68",
+            "name": "常温",
+            "nameEn": "Room Temp",
+            "priceAdjust": 0
+          },
+          {
+            "id": "8913a1a2-09f8-4bf3-9f22-cec14513f0a0",
+            "name": "热",
+            "nameEn": "Hot",
+            "priceAdjust": 0
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/lemonade.jpg"
+  },
+  {
+    "id": "0f656628-0cc0-4b55-9f3b-c5567b2918c6",
+    "storeId": "store-demo-001",
+    "categoryId": "20ed3b68-258c-442c-bee5-897999787abe",
+    "name": "可乐",
+    "nameEn": "Cola",
+    "price": 299,
+    "available": true,
+    "sortOrder": 2,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/cola.jpg"
+  },
+  {
+    "id": "eb0cf94e-bd43-4671-9762-2185e136c3dc",
+    "storeId": "store-demo-001",
+    "categoryId": "20ed3b68-258c-442c-bee5-897999787abe",
+    "name": "酸梅汤",
+    "nameEn": "Plum Juice",
+    "price": 499,
+    "available": true,
+    "sortOrder": 3,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/plum-juice.jpg"
+  },
+  {
+    "id": "764da50d-d063-48be-a4f8-00627dfba125",
+    "storeId": "store-demo-001",
+    "categoryId": "53f41930-b982-4c64-8fc8-99a5a81f843d",
+    "name": "米饭",
+    "nameEn": "Rice",
+    "price": 199,
+    "available": true,
+    "sortOrder": 1,
+    "options": [
+      {
+        "id": "86024259-f4ca-49c3-a6b4-30500ae40706",
+        "name": "份量",
+        "nameEn": "Size",
+        "required": true,
+        "choices": [
+          {
+            "id": "0404e0fa-c657-4a0e-8a70-8d15ddc19eed",
+            "name": "小碗",
+            "nameEn": "Small",
+            "priceAdjust": 0
+          },
+          {
+            "id": "81f929cc-afb0-4a1f-a4a4-d03d7fb32770",
+            "name": "大碗",
+            "nameEn": "Large",
+            "priceAdjust": 50
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/rice.jpg"
+  },
+  {
+    "id": "0b0947be-a322-46e5-ab97-da8efdc6c9ce",
+    "storeId": "store-demo-001",
+    "categoryId": "53f41930-b982-4c64-8fc8-99a5a81f843d",
+    "name": "炒面",
+    "nameEn": "Fried Noodles",
+    "description": "酱香炒面",
+    "descriptionEn": "Stir-fried noodles with sauce",
+    "price": 999,
+    "available": true,
+    "sortOrder": 2,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/fried-noodles.jpg"
+  },
+  {
+    "id": "b065a6df-491f-44a1-bf07-e7ecdba4a377",
+    "storeId": "store-demo-002",
+    "categoryId": "72ef63bd-2f89-4490-86d5-a5fba7c83202",
+    "name": "麻辣锅底",
+    "nameEn": "Spicy Soup Base",
+    "description": "正宗重庆麻辣",
+    "descriptionEn": "Authentic Chongqing spicy",
+    "price": 2499,
+    "available": true,
+    "sortOrder": 1,
+    "options": [
+      {
+        "id": "2c91aca1-ed73-4ce4-9cd1-3e9210711d18",
+        "name": "辣度",
+        "nameEn": "Spice Level",
+        "required": true,
+        "choices": [
+          {
+            "id": "cae40a92-bb3c-42ba-9eb3-f984a4c61b92",
+            "name": "微辣",
+            "nameEn": "Mild",
+            "priceAdjust": 0
+          },
+          {
+            "id": "f15eda3d-414e-4536-9898-ffb147781dfb",
+            "name": "中辣",
+            "nameEn": "Medium",
+            "priceAdjust": 0
+          },
+          {
+            "id": "83051420-3d96-452f-b46d-52a9ca464543",
+            "name": "特辣",
+            "nameEn": "Extra Spicy",
+            "priceAdjust": 0
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/spicy-soup-base.jpg"
+  },
+  {
+    "id": "4ea09106-fa0e-422e-8766-6c8df5140c04",
+    "storeId": "store-demo-002",
+    "categoryId": "72ef63bd-2f89-4490-86d5-a5fba7c83202",
+    "name": "番茄锅底",
+    "nameEn": "Tomato Soup Base",
+    "description": "酸甜可口",
+    "descriptionEn": "Sweet and sour",
+    "price": 1999,
+    "available": true,
+    "sortOrder": 2,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/tomato-soup-base.jpg"
+  },
+  {
+    "id": "d525a904-e6c2-4d06-a40b-0795398d8a69",
+    "storeId": "store-demo-002",
+    "categoryId": "72ef63bd-2f89-4490-86d5-a5fba7c83202",
+    "name": "鸳鸯锅底",
+    "nameEn": "Half & Half Soup Base",
+    "description": "一锅两味",
+    "descriptionEn": "Two flavors in one pot",
+    "price": 2899,
+    "available": true,
+    "sortOrder": 3,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/half-half-soup-base.jpg"
+  },
+  {
+    "id": "e4428c20-e44b-470a-9d2e-6811fe46adb9",
+    "storeId": "store-demo-002",
+    "categoryId": "4b5f6890-f2c8-4dd9-b554-9144d80fab92",
+    "name": "肥牛卷",
+    "nameEn": "Sliced Beef",
+    "description": "新鲜肥牛",
+    "descriptionEn": "Fresh beef rolls",
+    "price": 1699,
+    "available": true,
+    "sortOrder": 1,
+    "options": [
+      {
+        "id": "ac49fa70-1271-4c31-8905-72c273ec333b",
+        "name": "份量",
+        "nameEn": "Size",
+        "required": true,
+        "choices": [
+          {
+            "id": "2549efc8-fbc4-4336-9ded-e7a693f942b4",
+            "name": "半份",
+            "nameEn": "Half",
+            "priceAdjust": 0
+          },
+          {
+            "id": "e02117cd-92c5-4f85-8bc1-571e3f98ac79",
+            "name": "整份",
+            "nameEn": "Full",
+            "priceAdjust": 800
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/sliced-beef.jpg"
+  },
+  {
+    "id": "fe3a2a1f-45cf-4e45-9915-288a94f3b66e",
+    "storeId": "store-demo-002",
+    "categoryId": "4b5f6890-f2c8-4dd9-b554-9144d80fab92",
+    "name": "羊肉卷",
+    "nameEn": "Sliced Lamb",
+    "description": "内蒙羊肉",
+    "descriptionEn": "Inner Mongolia lamb",
+    "price": 1899,
+    "available": true,
+    "sortOrder": 2,
+    "options": [
+      {
+        "id": "830ec8ac-2b79-417d-acde-d4a551326133",
+        "name": "份量",
+        "nameEn": "Size",
+        "required": true,
+        "choices": [
+          {
+            "id": "241ddddc-880a-4b54-b75e-2dc0b75c0a48",
+            "name": "半份",
+            "nameEn": "Half",
+            "priceAdjust": 0
+          },
+          {
+            "id": "c89cf48b-315e-4dd0-b5d3-eb2e3f73aa76",
+            "name": "整份",
+            "nameEn": "Full",
+            "priceAdjust": 900
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/sliced-lamb.jpg"
+  },
+  {
+    "id": "a2fa8640-362f-47d8-abdc-f47d4c1d9313",
+    "storeId": "store-demo-002",
+    "categoryId": "4b5f6890-f2c8-4dd9-b554-9144d80fab92",
+    "name": "虾滑",
+    "nameEn": "Shrimp Paste",
+    "description": "手工虾滑",
+    "descriptionEn": "Handmade shrimp paste",
+    "price": 1499,
+    "available": true,
+    "sortOrder": 3,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/shrimp-paste.jpg"
+  },
+  {
+    "id": "8d70368a-478d-44dc-9015-2e72f45c1be5",
+    "storeId": "store-demo-002",
+    "categoryId": "48949f02-4af9-4be3-ae08-04b43780afe5",
+    "name": "土豆片",
+    "nameEn": "Potato Slices",
+    "price": 399,
+    "available": true,
+    "sortOrder": 1,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/potato-slices.jpg"
+  },
+  {
+    "id": "00b597aa-a2ba-41a2-b441-dc424cc3567b",
+    "storeId": "store-demo-002",
+    "categoryId": "48949f02-4af9-4be3-ae08-04b43780afe5",
+    "name": "莲藕",
+    "nameEn": "Lotus Root",
+    "price": 499,
+    "available": true,
+    "sortOrder": 2,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/lotus-root.jpg"
+  },
+  {
+    "id": "f06f77c5-e1df-4459-8383-0bce8757f030",
+    "storeId": "store-demo-002",
+    "categoryId": "48949f02-4af9-4be3-ae08-04b43780afe5",
+    "name": "豆腐",
+    "nameEn": "Tofu",
+    "price": 299,
+    "available": true,
+    "sortOrder": 3,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/tofu.jpg"
+  },
+  {
+    "id": "0b8bbc80-00b9-45c0-b89f-e6c1ccaf9426",
+    "storeId": "store-demo-002",
+    "categoryId": "4e454b79-3a3c-4a94-bc1a-97ac5cbb0b9e",
+    "name": "酸梅汤",
+    "nameEn": "Plum Juice",
+    "price": 599,
+    "available": true,
+    "sortOrder": 1,
+    "options": [
+      {
+        "id": "eeb9a020-d0b9-48ab-b7dc-c989260a78c1",
+        "name": "温度",
+        "nameEn": "Temperature",
+        "required": true,
+        "choices": [
+          {
+            "id": "032506eb-ce7c-413e-b617-3f5aa40dcdaa",
+            "name": "冰",
+            "nameEn": "Iced",
+            "priceAdjust": 0
+          },
+          {
+            "id": "962de888-feb6-4cd0-b6af-cb94d3b6195e",
+            "name": "常温",
+            "nameEn": "Room Temp",
+            "priceAdjust": 0
+          }
+        ]
+      }
+    ],
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/plum-juice-2.jpg"
+  },
+  {
+    "id": "f2044178-8ffb-4085-88c3-1bd290e02fea",
+    "storeId": "store-demo-002",
+    "categoryId": "4e454b79-3a3c-4a94-bc1a-97ac5cbb0b9e",
+    "name": "王老吉",
+    "nameEn": "Herbal Tea",
+    "price": 399,
+    "available": true,
+    "sortOrder": 2,
+    "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/herbal-tea.jpg"
+  }
+]

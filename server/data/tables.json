@@ -1,0 +1,60 @@
+[
+  {
+    "id": "ad9fa7e7-8e31-4a0a-8745-045cec88fd9b",
+    "storeId": "store-demo-001",
+    "name": "A1",
+    "status": "idle"
+  },
+  {
+    "id": "c7e09433-618f-4f36-af39-b606381b1182",
+    "storeId": "store-demo-001",
+    "name": "A2",
+    "status": "idle"
+  },
+  {
+    "id": "1c1bbc66-c6d7-4004-abfb-dcf092411791",
+    "storeId": "store-demo-001",
+    "name": "A3",
+    "status": "idle"
+  },
+  {
+    "id": "1621f96b-e5d2-499c-a11d-999e658c6c65",
+    "storeId": "store-demo-001",
+    "name": "B1",
+    "status": "idle"
+  },
+  {
+    "id": "36341879-21c6-452e-a968-bce258a444fa",
+    "storeId": "store-demo-001",
+    "name": "B2",
+    "status": "idle"
+  },
+  {
+    "id": "db7f75ae-64a4-4fca-a547-8556ceb6fc25",
+    "storeId": "store-demo-002",
+    "name": "1号桌",
+    "nameEn": "Table 1",
+    "status": "idle"
+  },
+  {
+    "id": "4f35d927-6182-4be9-a2ea-4263e3918188",
+    "storeId": "store-demo-002",
+    "name": "2号桌",
+    "nameEn": "Table 2",
+    "status": "idle"
+  },
+  {
+    "id": "ae57e572-1ba4-48db-b2fe-f4f949306be6",
+    "storeId": "store-demo-002",
+    "name": "3号桌",
+    "nameEn": "Table 3",
+    "status": "idle"
+  },
+  {
+    "id": "d9833253-1c86-4866-9f46-e2921a8372c7",
+    "storeId": "store-demo-002",
+    "name": "包间1",
+    "nameEn": "Room 1",
+    "status": "idle"
+  }
+]

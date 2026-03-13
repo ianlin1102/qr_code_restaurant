@@ -1,0 +1,58 @@
+[
+  {
+    "id": "879cda7f-85c1-40e8-ac00-fa523d0702da",
+    "storeId": "store-demo-001",
+    "name": "热菜",
+    "nameEn": "Hot Dishes",
+    "sortOrder": 1
+  },
+  {
+    "id": "8c04b927-0f95-49cc-99ed-0bf3d3c6cbe4",
+    "storeId": "store-demo-001",
+    "name": "凉菜",
+    "nameEn": "Cold Dishes",
+    "sortOrder": 2
+  },
+  {
+    "id": "20ed3b68-258c-442c-bee5-897999787abe",
+    "storeId": "store-demo-001",
+    "name": "饮品",
+    "nameEn": "Beverages",
+    "sortOrder": 3
+  },
+  {
+    "id": "53f41930-b982-4c64-8fc8-99a5a81f843d",
+    "storeId": "store-demo-001",
+    "name": "主食",
+    "nameEn": "Staples",
+    "sortOrder": 4
+  },
+  {
+    "id": "72ef63bd-2f89-4490-86d5-a5fba7c83202",
+    "storeId": "store-demo-002",
+    "name": "锅底",
+    "nameEn": "Soup Base",
+    "sortOrder": 1
+  },
+  {
+    "id": "4b5f6890-f2c8-4dd9-b554-9144d80fab92",
+    "storeId": "store-demo-002",
+    "name": "肉类",
+    "nameEn": "Meats",
+    "sortOrder": 2
+  },
+  {
+    "id": "48949f02-4af9-4be3-ae08-04b43780afe5",
+    "storeId": "store-demo-002",
+    "name": "蔬菜",
+    "nameEn": "Vegetables",
+    "sortOrder": 3
+  },
+  {
+    "id": "4e454b79-3a3c-4a94-bc1a-97ac5cbb0b9e",
+    "storeId": "store-demo-002",
+    "name": "饮品",
+    "nameEn": "Beverages",
+    "sortOrder": 4
+  }
+]
