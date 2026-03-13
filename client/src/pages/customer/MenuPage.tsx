@@ -388,7 +388,7 @@ export default function MenuPage() {
       <Sheet open={optionSheetOpen} onOpenChange={setOptionSheetOpen}>
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto pb-safe">
           {selectedMenuItem && (
-            <div className="space-y-4 pb-4">
+            <div className="space-y-4 px-4 pb-4">
               <SheetHeader>
                 <SheetTitle className="text-left">{localized(selectedMenuItem, lang)}</SheetTitle>
                 {selectedMenuItem.description && (
