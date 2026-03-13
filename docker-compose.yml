@@ -33,6 +33,10 @@ services:
       DATABASE_URL: postgresql://qrorder:qrorder123@postgres:5432/qr_order
       JWT_SECRET: dev-secret-change-in-production
       LOG_LEVEL: debug
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     command: pnpm --filter @qr-order/server exec tsx watch src/server.ts
     depends_on:
       - postgres
@@ -46,6 +50,8 @@ services:
     build:
       context: .
       dockerfile: client/Dockerfile
+      args:
+        VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY}
     container_name: qr-order-nginx
     restart: unless-stopped
     ports:

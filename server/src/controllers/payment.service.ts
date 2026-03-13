@@ -1,4 +1,4 @@
-import { stripe } from '../lib/stripe.js'
+import { getStripe } from '../lib/stripe.js'
 import { orderStore } from './order.service.js'
 import logger from '../lib/logger.js'
 
@@ -14,7 +14,7 @@ export async function createCheckoutSession(storeId: string, orderId: string) {
     return { error: 'Order is not in pending status', status: 400 }
   }
 
-  const paymentIntent = await stripe.paymentIntents.create({
+  const paymentIntent = await getStripe().paymentIntents.create({
     amount: order.totalPrice,
     currency: 'usd',
     metadata: { orderId, storeId },
@@ -39,7 +39,7 @@ export async function handleWebhookEvent(
     throw new Error('STRIPE_WEBHOOK_SECRET is not configured')
   }
 
-  const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret)
+  const event = getStripe().webhooks.constructEvent(payload, signature, webhookSecret)
 
   if (event.type === 'payment_intent.succeeded') {
     const paymentIntent = event.data.object

@@ -16,6 +16,9 @@ RUN pnpm install --frozen-lockfile
 COPY shared/ shared/
 COPY client/ client/
 
+ARG VITE_STRIPE_PUBLISHABLE_KEY
+ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
+
 RUN pnpm --filter client build
 
 # Production: serve with nginx
