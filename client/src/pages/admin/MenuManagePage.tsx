@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
 import { formatPriceCNY } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -72,7 +74,7 @@ function InlineEdit({
       <span
         onClick={startEdit}
         className={`cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 -mx-1 rounded transition-colors ${className}`}
-        title="点击编辑"
+        title="click to edit"
       >
         {value}
       </span>
@@ -116,6 +118,7 @@ function blankChoice(): MenuItemOptionChoice {
 }
 
 export default function MenuManagePage() {
+  const { t } = useTranslation('admin')
   const STORE_ID = useAuthStore(s => s.user!.storeId)
   const [items, setItems] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -170,7 +173,9 @@ export default function MenuManagePage() {
         await api.createMenuItem(STORE_ID, {
           categoryId: editingItem.categoryId!,
           name: editingItem.name,
+          nameEn: editingItem.nameEn,
           description: editingItem.description,
+          descriptionEn: editingItem.descriptionEn,
           price: editingItem.price,
           image: editingItem.image,
           available: editingItem.available ?? true,
@@ -191,7 +196,7 @@ export default function MenuManagePage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定删除这道菜？')) return
+    if (!confirm('Delete this dish?')) return
     try {
       await api.deleteMenuItem(STORE_ID, id)
       await fetchData()
@@ -307,19 +312,19 @@ export default function MenuManagePage() {
       <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">菜品管理</h1>
-            <p className="text-sm text-muted-foreground">{items.length} 道菜品 · {categories.length} 个分类</p>
+            <h1 className="text-lg md:text-xl font-bold">{t('menuManage.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('menuManage.itemCount', { count: items.length })} · {t('menuManage.catCount', { count: categories.length })}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setViewMode(viewMode === 'table' ? 'preview' : 'table')}
             >
-              {viewMode === 'table' ? '顾客预览' : '表格视图'}
+              {viewMode === 'table' ? t('menuManage.previewMode') : t('menuManage.tableMode')}
             </Button>
             <Button size="sm" onClick={handleAdd}>
-              + 添加菜品
+              {t('menuManage.addItem')}
             </Button>
           </div>
         </div>
@@ -328,89 +333,131 @@ export default function MenuManagePage() {
       <main className="max-w-5xl mx-auto px-4 py-4">
         {viewMode === 'table' ? (
           /* ===== Table View ===== */
-          <div className="space-y-6">
-            {grouped.map(cat => (
-              <div key={cat.id}>
-                <h2 className="text-sm font-semibold text-muted-foreground mb-2">{cat.name}</h2>
-                <div className="bg-white rounded-lg border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[200px]">菜名</TableHead>
-                        <TableHead className="w-[100px]">价格</TableHead>
-                        <TableHead className="w-[120px]">规格</TableHead>
-                        <TableHead className="w-[80px]">状态</TableHead>
-                        <TableHead className="w-[140px] text-right">操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {cat.items.length === 0 ? (
+          <>
+            <div className="hidden md:block space-y-6">
+              {grouped.map(cat => (
+                <div key={cat.id}>
+                  <h2 className="text-sm font-semibold text-muted-foreground mb-2">{cat.name}</h2>
+                  <div className="bg-white rounded-lg border">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-4">
-                            暂无菜品
-                          </TableCell>
+                          <TableHead className="w-[200px]">{t('menuManage.dishName')}</TableHead>
+                          <TableHead className="w-[100px]">{t('menuManage.price')}</TableHead>
+                          <TableHead className="w-[120px]">{t('menuManage.specs')}</TableHead>
+                          <TableHead className="w-[80px]">{t('menuManage.statusCol')}</TableHead>
+                          <TableHead className="w-[140px] text-right">{t('menuManage.actions')}</TableHead>
                         </TableRow>
-                      ) : (
-                        cat.items.map(item => (
-                          <TableRow key={item.id} className={!item.available ? 'opacity-50' : ''}>
-                            <TableCell>
-                              <div>
-                                <InlineEdit
-                                  value={item.name}
-                                  onSave={val => handleInlineUpdate(item.id, { name: val })}
-                                  className="font-medium"
-                                />
-                                {item.description && (
-                                  <span className="text-xs text-muted-foreground ml-2">{item.description}</span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <InlineEdit
-                                value={(item.price / 100).toFixed(2)}
-                                type="price"
-                                onSave={val => handleInlineUpdate(item.id, { price: Math.round(parseFloat(val || '0') * 100) })}
-                                className="font-mono"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              {item.options && item.options.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {item.options.map(opt => (
-                                    <Badge key={opt.id} variant="secondary" className="text-xs">
-                                      {opt.name}({opt.choices.length})
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Switch
-                                checked={item.available}
-                                onCheckedChange={() => handleToggleAvailable(item)}
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex gap-1 justify-end">
-                                <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
-                                  编辑
-                                </Button>
-                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDelete(item.id)}>
-                                  删除
-                                </Button>
-                              </div>
+                      </TableHeader>
+                      <TableBody>
+                        {cat.items.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-4">
+                              {t('menuManage.noItems')}
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          cat.items.map(item => (
+                            <TableRow key={item.id} className={!item.available ? 'opacity-50' : ''}>
+                              <TableCell>
+                                <div>
+                                  <InlineEdit
+                                    value={item.name}
+                                    onSave={val => handleInlineUpdate(item.id, { name: val })}
+                                    className="font-medium"
+                                  />
+                                  {item.description && (
+                                    <span className="text-xs text-muted-foreground ml-2">{item.description}</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <InlineEdit
+                                  value={(item.price / 100).toFixed(2)}
+                                  type="price"
+                                  onSave={val => handleInlineUpdate(item.id, { price: Math.round(parseFloat(val || '0') * 100) })}
+                                  className="font-mono"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {item.options && item.options.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {item.options.map(opt => (
+                                      <Badge key={opt.id} variant="secondary" className="text-xs">
+                                        {opt.name}({opt.choices.length})
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Switch
+                                  checked={item.available}
+                                  onCheckedChange={() => handleToggleAvailable(item)}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex gap-1 justify-end">
+                                  <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
+                                    {t('common:edit')}
+                                  </Button>
+                                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDelete(item.id)}>
+                                    {t('common:delete')}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Mobile card list */}
+            <div className="md:hidden space-y-4">
+              {grouped.map(cat => (
+                <div key={cat.id}>
+                  <h2 className="text-sm font-semibold text-muted-foreground mb-2">{cat.name}</h2>
+                  <div className="space-y-2">
+                    {cat.items.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">{t('menuManage.noItems')}</p>
+                    ) : (
+                      cat.items.map(item => (
+                        <div key={item.id} className={cn('p-3 rounded-lg border bg-card', !item.available && 'opacity-50')}>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm truncate">{item.name}</p>
+                              {item.nameEn && <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>}
+                            </div>
+                            <span className="font-mono text-sm font-semibold shrink-0">{formatPriceCNY(item.price)}</span>
+                          </div>
+                          {item.options && item.options.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {item.options.map(opt => (
+                                <Badge key={opt.id} variant="secondary" className="text-xs">{opt.name}({opt.choices.length})</Badge>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between mt-2">
+                            <Switch checked={item.available} onCheckedChange={() => handleToggleAvailable(item)} />
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleEdit(item)}>{t('common:edit')}</Button>
+                              <Button variant="outline" size="sm" className="min-h-[44px] text-red-600" onClick={() => handleDelete(item.id)}>{t('common:delete')}</Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           /* ===== Preview View (customer style) ===== */
           <div className="space-y-6">
@@ -442,7 +489,7 @@ export default function MenuManagePage() {
                           </span>
                         </div>
                         {!item.available && (
-                          <Badge variant="secondary" className="mt-2">已下架</Badge>
+                          <Badge variant="secondary" className="mt-2">{t('menuManage.delisted')}</Badge>
                         )}
                       </CardContent>
                     </Card>
@@ -456,9 +503,9 @@ export default function MenuManagePage() {
 
       {/* ===== Edit/Add Dialog ===== */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isNew ? '添加菜品' : '编辑菜品'}</DialogTitle>
+            <DialogTitle>{isNew ? t('menuManage.addItemTitle') : t('menuManage.editItemTitle')}</DialogTitle>
           </DialogHeader>
 
           {editingItem && (
@@ -466,33 +513,44 @@ export default function MenuManagePage() {
               {/* Basic info */}
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium">菜名 *</label>
+                  <label className="text-sm font-medium">{t('menuManage.dishName')} *</label>
                   <Input
                     value={editingItem.name ?? ''}
                     onChange={e => updateEditingField('name', e.target.value)}
-                    placeholder="宫保鸡丁"
+                    placeholder={t('menuManage.dishNamePlaceholder')}
+                    className="text-base"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">{t('menuManage.dishNameEn')}</label>
+                  <Input
+                    value={editingItem.nameEn ?? ''}
+                    onChange={e => updateEditingField('nameEn', e.target.value)}
+                    placeholder={t('menuManage.dishNameEnPlaceholder')}
+                    className="text-base"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">价格（元）*</label>
+                    <label className="text-sm font-medium">{t('menuManage.priceYuan')} *</label>
                     <Input
                       type="number"
                       step="0.01"
                       value={((editingItem.price ?? 0) / 100).toFixed(2)}
                       onChange={e => updateEditingField('price', Math.round(parseFloat(e.target.value || '0') * 100))}
                       placeholder="38.00"
+                      className="text-base"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">分类</label>
+                    <label className="text-sm font-medium">{t('menuManage.category')}</label>
                     <Select
                       value={editingItem.categoryId ?? ''}
                       onValueChange={v => updateEditingField('categoryId', v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择分类" />
+                        <SelectValue placeholder={t('menuManage.selectCategory')} />
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map(cat => (
@@ -504,22 +562,34 @@ export default function MenuManagePage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">描述</label>
+                  <label className="text-sm font-medium">{t('menuManage.description')}</label>
                   <Textarea
                     value={editingItem.description ?? ''}
                     onChange={e => updateEditingField('description', e.target.value)}
-                    placeholder="经典川菜，麻辣鲜香"
+                    placeholder={t('menuManage.descriptionPlaceholder')}
                     rows={2}
+                    className="text-base"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">{t('menuManage.descriptionEn')}</label>
+                  <Textarea
+                    value={editingItem.descriptionEn ?? ''}
+                    onChange={e => updateEditingField('descriptionEn', e.target.value)}
+                    placeholder={t('menuManage.descriptionEnPlaceholder')}
+                    rows={2}
+                    className="text-base"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">排序</label>
+                    <label className="text-sm font-medium">{t('menuManage.sortOrder')}</label>
                     <Input
                       type="number"
                       value={editingItem.sortOrder ?? 0}
                       onChange={e => updateEditingField('sortOrder', parseInt(e.target.value || '0'))}
+                      className="text-base"
                     />
                   </div>
                   <div className="flex items-end gap-2 pb-1">
@@ -527,7 +597,7 @@ export default function MenuManagePage() {
                       checked={editingItem.available ?? true}
                       onCheckedChange={v => updateEditingField('available', v)}
                     />
-                    <label className="text-sm">{editingItem.available ? '上架中' : '已下架'}</label>
+                    <label className="text-sm">{editingItem.available ? t('menuManage.listed') : t('menuManage.delisted')}</label>
                   </div>
                 </div>
               </div>
@@ -537,14 +607,14 @@ export default function MenuManagePage() {
               {/* Options / 规格 */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium">规格选项</label>
+                  <label className="text-sm font-medium">{t('menuManage.options')}</label>
                   <Button variant="outline" size="sm" onClick={addOption}>
-                    + 添加规格
+                    {t('menuManage.addOption')}
                   </Button>
                 </div>
 
                 {(editingItem.options ?? []).length === 0 && (
-                  <p className="text-sm text-muted-foreground">暂无规格，点击"添加规格"来设置辣度、口味等选项</p>
+                  <p className="text-sm text-muted-foreground">{t('menuManage.noOptions')}</p>
                 )}
 
                 <div className="space-y-4">
@@ -554,15 +624,21 @@ export default function MenuManagePage() {
                         <Input
                           value={opt.name}
                           onChange={e => updateOption(optIdx, 'name', e.target.value)}
-                          placeholder="规格名称（如：辣度）"
-                          className="flex-1"
+                          placeholder={t('menuManage.optionName')}
+                          className="flex-1 text-base"
+                        />
+                        <Input
+                          value={opt.nameEn ?? ''}
+                          onChange={e => updateOption(optIdx, 'nameEn', e.target.value)}
+                          placeholder={t('menuManage.optionNameEn')}
+                          className="flex-1 text-base"
                         />
                         <div className="flex items-center gap-1">
                           <Switch
                             checked={opt.required}
                             onCheckedChange={v => updateOption(optIdx, 'required', v)}
                           />
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">必选</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{t('menuManage.required')}</span>
                         </div>
                         <Button
                           variant="outline"
@@ -570,7 +646,7 @@ export default function MenuManagePage() {
                           className="text-red-600"
                           onClick={() => removeOption(optIdx)}
                         >
-                          删除
+                          {t('common:delete')}
                         </Button>
                       </div>
 
@@ -581,8 +657,14 @@ export default function MenuManagePage() {
                             <Input
                               value={choice.name}
                               onChange={e => updateChoice(optIdx, choiceIdx, 'name', e.target.value)}
-                              placeholder="选项名（如：微辣）"
-                              className="flex-1"
+                              placeholder={t('menuManage.choiceName')}
+                              className="flex-1 text-base"
+                            />
+                            <Input
+                              value={choice.nameEn ?? ''}
+                              onChange={e => updateChoice(optIdx, choiceIdx, 'nameEn', e.target.value)}
+                              placeholder={t('menuManage.choiceNameEn')}
+                              className="flex-1 text-base"
                             />
                             <div className="flex items-center gap-1 w-[100px]">
                               <span className="text-xs text-muted-foreground">+¥</span>
@@ -591,7 +673,7 @@ export default function MenuManagePage() {
                                 step="0.01"
                                 value={(choice.priceAdjust / 100).toFixed(2)}
                                 onChange={e => updateChoice(optIdx, choiceIdx, 'priceAdjust', Math.round(parseFloat(e.target.value || '0') * 100))}
-                                className="w-20"
+                                className="w-20 text-base"
                               />
                             </div>
                             <Button
@@ -605,7 +687,7 @@ export default function MenuManagePage() {
                           </div>
                         ))}
                         <Button variant="ghost" size="sm" onClick={() => addChoice(optIdx)} className="text-xs">
-                          + 添加选项
+                          {t('menuManage.addChoice')}
                         </Button>
                       </div>
                     </div>
@@ -618,10 +700,10 @@ export default function MenuManagePage() {
               {/* Actions */}
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  取消
+                  {t('common:cancel')}
                 </Button>
                 <Button onClick={handleSave} disabled={saving || !editingItem.name}>
-                  {saving ? '保存中...' : '保存'}
+                  {saving ? t('common:saving') : t('common:save')}
                 </Button>
               </div>
             </div>
