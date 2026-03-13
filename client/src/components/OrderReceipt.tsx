@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatPriceCNY } from '@/lib/format'
 import type { Order, OrderItem } from '@qr-order/shared'
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 const OrderReceipt = forwardRef<HTMLDivElement, Props>(({ order, storeName }, ref) => {
+  const { t } = useTranslation('admin')
   return (
     <div ref={ref} className="receipt-print">
       <style>{`
@@ -30,7 +32,17 @@ const OrderReceipt = forwardRef<HTMLDivElement, Props>(({ order, storeName }, re
           font-family: 'Courier New', monospace;
           font-size: 12px;
           line-height: 1.5;
-          padding: 8px;
+          padding: 12px;
+        }
+        @media (max-width: 640px) {
+          .receipt-print {
+            padding: 12px;
+          }
+        }
+        @media (min-width: 641px) {
+          .receipt-print {
+            padding: 16px;
+          }
         }
         .receipt-print .receipt-center { text-align: center; }
         .receipt-print .receipt-bold { font-weight: bold; }
@@ -55,28 +67,28 @@ const OrderReceipt = forwardRef<HTMLDivElement, Props>(({ order, storeName }, re
 
       {/* Store name */}
       <div className="receipt-center receipt-bold" style={{ fontSize: 16, marginBottom: 4 }}>
-        {storeName ?? '扫码点餐'}
+        {storeName ?? t('receipt.title')}
       </div>
 
       <div className="receipt-divider" />
 
       {/* Order info */}
       <div className="receipt-row">
-        <span>订单号</span>
+        <span>{t('receipt.orderNumber')}</span>
         <span className="receipt-bold">#{order.orderNumber}</span>
       </div>
       <div className="receipt-row">
-        <span>桌台</span>
+        <span>{t('receipt.table')}</span>
         <span>{order.tableName}</span>
       </div>
       {order.customerName && (
         <div className="receipt-row">
-          <span>顾客</span>
+          <span>{t('receipt.customer')}</span>
           <span>{order.customerName}</span>
         </div>
       )}
       <div className="receipt-row">
-        <span>时间</span>
+        <span>{t('receipt.time')}</span>
         <span>{formatTime(order.createdAt)}</span>
       </div>
 
@@ -104,14 +116,14 @@ const OrderReceipt = forwardRef<HTMLDivElement, Props>(({ order, storeName }, re
 
       {/* Total */}
       <div className="receipt-row receipt-total">
-        <span>合计</span>
+        <span>{t('common:total')}</span>
         <span>{formatPriceCNY(order.totalPrice)}</span>
       </div>
 
       <div className="receipt-divider" />
 
       <div className="receipt-center" style={{ fontSize: 11, color: '#666', marginTop: 8 }}>
-        谢谢惠顾
+        {t('receipt.thanks')}
       </div>
     </div>
   )

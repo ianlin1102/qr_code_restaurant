@@ -1,4 +1,5 @@
 import { useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatPriceCNY } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,10 +13,10 @@ import {
 import OrderReceipt from '@/components/OrderReceipt'
 import type { Order, OrderItem, OrderStatus } from '@qr-order/shared'
 
-const STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
-  pending: { label: '待处理', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  preparing: { label: '制作中', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  completed: { label: '已完成', color: 'bg-green-100 text-green-800 border-green-200' },
+const STATUS_COLORS: Record<OrderStatus, string> = {
+  pending: 'bg-orange-100 text-orange-800 border-orange-200',
+  preparing: 'bg-blue-100 text-blue-800 border-blue-200',
+  completed: 'bg-green-100 text-green-800 border-green-200',
 }
 
 function itemUnitPrice(item: OrderItem): number {
@@ -51,14 +52,21 @@ export default function OrderDetailDialog({
   updating,
   storeName,
 }: Props) {
+  const { t } = useTranslation('admin')
   const receiptRef = useRef<HTMLDivElement>(null)
+
+  const STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
+    pending: { label: t('common:status.pending'), color: STATUS_COLORS.pending },
+    preparing: { label: t('common:status.preparing'), color: STATUS_COLORS.preparing },
+    completed: { label: t('common:status.completed'), color: STATUS_COLORS.completed },
+  }
 
   const handlePrint = useCallback(() => {
     if (!receiptRef.current) return
     const printWindow = window.open('', '_blank', 'width=320,height=600')
     if (!printWindow) return
     printWindow.document.write(`
-      <html><head><title>小票</title>
+      <html><head><title>${t('orderDetail.receipt')}</title>
       <style>
         body { margin: 0; padding: 0; }
         @media print { body { margin: 0; } }
@@ -69,7 +77,7 @@ export default function OrderDetailDialog({
       </body></html>
     `)
     printWindow.document.close()
-  }, [])
+  }, [t])
 
   if (!order) return null
 
@@ -77,7 +85,7 @@ export default function OrderDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <span className="text-xl">#{order.orderNumber}</span>
@@ -88,22 +96,22 @@ export default function OrderDetailDialog({
         {/* Order meta */}
         <div className="text-sm space-y-1 text-muted-foreground">
           <div className="flex justify-between">
-            <span>桌台</span>
+            <span>{t('orderDetail.table')}</span>
             <span className="text-foreground font-medium">{order.tableName}</span>
           </div>
           {order.customerName && (
             <div className="flex justify-between">
-              <span>顾客</span>
+              <span>{t('orderDetail.customer')}</span>
               <span className="text-foreground">{order.customerName}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span>下单时间</span>
+            <span>{t('orderDetail.orderTime')}</span>
             <span className="text-foreground">{formatTime(order.createdAt)}</span>
           </div>
           {order.updatedAt !== order.createdAt && (
             <div className="flex justify-between">
-              <span>更新时间</span>
+              <span>{t('orderDetail.updateTime')}</span>
               <span className="text-foreground">{formatTime(order.updatedAt)}</span>
             </div>
           )}
@@ -113,7 +121,7 @@ export default function OrderDetailDialog({
 
         {/* Items */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold">菜品明细</h3>
+          <h3 className="text-sm font-semibold">{t('orderDetail.itemDetail')}</h3>
           {order.items.map((item, idx) => (
             <div key={idx} className="flex justify-between text-sm">
               <div className="flex-1 min-w-0">
@@ -127,7 +135,7 @@ export default function OrderDetailDialog({
                   </p>
                 )}
                 {item.remark && (
-                  <p className="text-xs text-muted-foreground">备注: {item.remark}</p>
+                  <p className="text-xs text-muted-foreground">{t('orderDetail.remarkPrefix')}: {item.remark}</p>
                 )}
               </div>
               <span className="shrink-0 ml-2">
@@ -141,7 +149,7 @@ export default function OrderDetailDialog({
 
         {/* Total */}
         <div className="flex justify-between items-center">
-          <span className="font-semibold">合计</span>
+          <span className="font-semibold">{t('common:total')}</span>
           <span className="text-lg font-bold text-primary">
             {formatPriceCNY(order.totalPrice)}
           </span>
@@ -154,32 +162,32 @@ export default function OrderDetailDialog({
 
         {/* Actions */}
         <div className="flex gap-2 justify-end pt-2">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            打印小票
+          <Button variant="outline" size="sm" className="min-h-[44px]" onClick={handlePrint}>
+            {t('orderDetail.printReceipt')}
           </Button>
           {order.status !== 'completed' && onEdit && (
-            <Button variant="outline" size="sm" onClick={() => onEdit(order)}>
-              修改订单
+            <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => onEdit(order)}>
+              {t('orderDetail.editOrder')}
             </Button>
           )}
           {order.status === 'pending' && onStatusUpdate && (
             <Button
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
               disabled={updating}
               onClick={() => onStatusUpdate(order.id, 'preparing')}
             >
-              {updating ? '...' : '开始制作'}
+              {updating ? '...' : t('orderDetail.startPreparing')}
             </Button>
           )}
           {order.status === 'preparing' && onStatusUpdate && (
             <Button
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="min-h-[44px] bg-green-600 hover:bg-green-700 text-white"
               disabled={updating}
               onClick={() => onStatusUpdate(order.id, 'completed')}
             >
-              {updating ? '...' : '完成'}
+              {updating ? '...' : t('orderDetail.markComplete')}
             </Button>
           )}
         </div>
