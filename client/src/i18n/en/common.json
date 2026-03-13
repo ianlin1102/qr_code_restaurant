@@ -11,6 +11,7 @@
   "total": "Total",
   "status": {
     "pending": "Pending",
+    "paid": "Paid",
     "preparing": "Preparing",
     "completed": "Completed"
   },

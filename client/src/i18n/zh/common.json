@@ -11,6 +11,7 @@
   "total": "合计",
   "status": {
     "pending": "待处理",
+    "paid": "已付款",
     "preparing": "制作中",
     "completed": "已完成"
   },

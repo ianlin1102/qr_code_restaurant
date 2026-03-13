@@ -15,6 +15,7 @@ import type { Order, OrderItem, OrderStatus } from '@qr-order/shared'
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   pending: 'bg-orange-100 text-orange-800 border-orange-200',
+  paid: 'bg-purple-100 text-purple-800 border-purple-200',
   preparing: 'bg-blue-100 text-blue-800 border-blue-200',
   completed: 'bg-green-100 text-green-800 border-green-200',
 }
@@ -57,6 +58,7 @@ export default function OrderDetailDialog({
 
   const STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
     pending: { label: t('common:status.pending'), color: STATUS_COLORS.pending },
+    paid: { label: t('common:status.paid'), color: STATUS_COLORS.paid },
     preparing: { label: t('common:status.preparing'), color: STATUS_COLORS.preparing },
     completed: { label: t('common:status.completed'), color: STATUS_COLORS.completed },
   }
