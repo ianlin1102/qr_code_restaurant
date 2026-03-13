@@ -1,15 +1,5 @@
 import { create } from 'zustand'
-import type { CartItem, SelectedOption } from '@qr-order/shared'
-
-/** Generate a unique key for a cart item based on menuItemId + selected options */
-export function cartItemKey(menuItemId: string, selectedOptions?: SelectedOption[]): string {
-  if (!selectedOptions || selectedOptions.length === 0) return menuItemId
-  const optKey = selectedOptions
-    .map(o => `${o.optionId}:${o.choiceId}`)
-    .sort()
-    .join('|')
-  return `${menuItemId}__${optKey}`
-}
+import type { CartItem } from '@qr-order/shared'
 
 /** Calculate unit price (base + all option adjustments) */
 export function unitPrice(item: CartItem): number {
@@ -35,17 +25,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
   addItem: (item) => set(state => {
-    const key = cartItemKey(item.menuItemId, item.selectedOptions)
-    const existing = state.items.find(i => i.cartKey === key)
-    if (existing) {
-      return {
-        items: state.items.map(i =>
-          i.cartKey === key
-            ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
-            : i
-        )
-      }
-    }
+    const key = crypto.randomUUID()
     return {
       items: [...state.items, { ...item, quantity: item.quantity ?? 1, cartKey: key }]
     }

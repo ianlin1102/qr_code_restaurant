@@ -12,8 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import CloseTableDialog from '@/components/CloseTableDialog'
 import type { Table } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
+
+const POLL_INTERVAL = 10_000
 
 function getDefaultBaseUrl(): string {
   const { protocol, hostname, port } = window.location
@@ -37,6 +40,7 @@ export default function TablesPage() {
   const [tables, setTables] = useState<Table[]>([])
   const [loading, setLoading] = useState(true)
   const [baseUrl, setBaseUrl] = useState(getDefaultBaseUrl)
+  const [activeTableIds, setActiveTableIds] = useState<Set<string>>(new Set())
 
   // Add/Edit dialog
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -46,25 +50,41 @@ export default function TablesPage() {
   const [saving, setSaving] = useState(false)
   const [dialogError, setDialogError] = useState<string | null>(null)
 
+  // Close table dialog
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false)
+  const [closingTable, setClosingTable] = useState<Table | null>(null)
+
   // Inline rename
   const [renameId, setRenameId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const renameRef = useRef<HTMLInputElement>(null)
 
-  const fetchTables = useCallback(async () => {
+  const fetchTablesAndOrders = useCallback(async () => {
     try {
-      const data = await api.getTables(STORE_ID)
-      setTables(data)
+      const [tablesData, ordersData] = await Promise.all([
+        api.getTables(STORE_ID),
+        api.getOrders(STORE_ID),
+      ])
+      setTables(tablesData)
+      const active = new Set<string>()
+      for (const order of ordersData) {
+        if (order.status === 'pending' || order.status === 'preparing') {
+          active.add(order.tableId)
+        }
+      }
+      setActiveTableIds(active)
     } catch (err) {
       console.error('Failed to fetch tables:', err)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [STORE_ID])
 
   useEffect(() => {
-    fetchTables()
-  }, [fetchTables])
+    fetchTablesAndOrders()
+    const interval = setInterval(fetchTablesAndOrders, POLL_INTERVAL)
+    return () => clearInterval(interval)
+  }, [fetchTablesAndOrders])
 
   // ===== CRUD =====
 
@@ -97,7 +117,7 @@ export default function TablesPage() {
         await api.createTable(STORE_ID, name, nameEn)
       }
       setDialogOpen(false)
-      await fetchTables()
+      await fetchTablesAndOrders()
     } catch (err) {
       setDialogError(err instanceof Error ? err.message : t('tables.saveFailed'))
     } finally {
@@ -113,7 +133,7 @@ export default function TablesPage() {
     if (!confirm(t('tables.confirmDelete', { name: table.name }))) return
     try {
       await api.deleteTable(STORE_ID, table.id)
-      await fetchTables()
+      await fetchTablesAndOrders()
     } catch (err) {
       alert(err instanceof Error ? err.message : t('tables.saveFailed'))
     }
@@ -124,7 +144,7 @@ export default function TablesPage() {
     try {
       const result = await api.settleTable(STORE_ID, table.id)
       alert(t('tables.settled', { count: result.settled }))
-      await fetchTables()
+      await fetchTablesAndOrders()
     } catch (err) {
       console.error('Failed to settle:', err)
     }
@@ -147,7 +167,7 @@ export default function TablesPage() {
     if (table && name !== table.name) {
       try {
         await api.updateTable(STORE_ID, renameId, { name })
-        await fetchTables()
+        await fetchTablesAndOrders()
       } catch (err) {
         alert(err instanceof Error ? err.message : t('tables.renameFailed'))
       }
@@ -175,8 +195,11 @@ export default function TablesPage() {
     )
   }
 
-  const idleCount = tables.filter(t => t.status === 'idle').length
-  const occupiedCount = tables.filter(t => t.status === 'occupied').length
+  const isTableActive = (table: Table) =>
+    table.status === 'occupied' || activeTableIds.has(table.id)
+
+  const idleCount = tables.filter(t => !isTableActive(t)).length
+  const occupiedCount = tables.filter(t => isTableActive(t)).length
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -248,10 +271,10 @@ export default function TablesPage() {
                   )}
                 </CardTitle>
                 <Badge
-                  variant={table.status === 'idle' ? 'secondary' : 'default'}
+                  variant={isTableActive(table) ? 'default' : 'secondary'}
                   className="print:hidden w-fit mx-auto"
                 >
-                  {table.status === 'idle' ? t('tables.idle') : t('tables.occupied')}
+                  {isTableActive(table) ? t('tables.occupied') : t('tables.idle')}
                 </Badge>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-3">
@@ -271,17 +294,27 @@ export default function TablesPage() {
                 </p>
 
                 {/* Action buttons */}
-                <div className="flex gap-2 print:hidden">
+                <div className="flex gap-2 flex-wrap justify-center print:hidden">
                   <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handlePrintSingle(table.name)}>
                     {t('tables.print')}
                   </Button>
                   <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleEdit(table)}>
                     {t('common:edit')}
                   </Button>
-                  {table.status === 'occupied' && (
-                    <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleSettle(table)}>
-                      {t('tables.settle')}
-                    </Button>
+                  {isTableActive(table) && (
+                    <>
+                      <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleSettle(table)}>
+                        {t('tables.settle')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="min-h-[44px] text-orange-600 hover:text-orange-700"
+                        onClick={() => { setClosingTable(table); setCloseDialogOpen(true) }}
+                      >
+                        {t('tables.closeTable')}
+                      </Button>
+                    </>
                   )}
                   <Button
                     variant="outline"
@@ -339,6 +372,15 @@ export default function TablesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Close Table Dialog */}
+      <CloseTableDialog
+        table={closingTable}
+        storeId={STORE_ID}
+        open={closeDialogOpen}
+        onOpenChange={setCloseDialogOpen}
+        onClosed={fetchTablesAndOrders}
+      />
     </div>
   )
 }

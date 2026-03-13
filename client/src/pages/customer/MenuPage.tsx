@@ -35,7 +35,6 @@ export default function MenuPage() {
 
   const cartItems = useCartStore(s => s.items)
   const addItem = useCartStore(s => s.addItem)
-  const updateQuantity = useCartStore(s => s.updateQuantity)
   const totalItems = useCartStore(s => s.totalItems)
   const totalPrice = useCartStore(s => s.totalPrice)
 
@@ -100,14 +99,6 @@ export default function MenuPage() {
         name: item.name,
         price: item.price,
       })
-    }
-  }
-
-  const handleQuantityChange = (menuItemId: string, delta: number) => {
-    // For items without options, there's only one cart entry
-    const entry = cartItems.find(i => i.menuItemId === menuItemId)
-    if (entry) {
-      updateQuantity(entry.cartKey, entry.quantity + delta)
     }
   }
 
@@ -318,33 +309,16 @@ export default function MenuPage() {
                                 {t('menu.selectSpec')}
                               </Button>
                             </div>
-                          ) : qty === 0 ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-10 w-10 p-0 rounded-full"
-                              onClick={() => handleAdd(item)}
-                            >
-                              +
-                            </Button>
                           ) : (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col items-center gap-1">
+                              {qty > 0 && (
+                                <Badge variant="secondary" className="text-xs">{qty}</Badge>
+                              )}
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-9 w-9 p-0 rounded-full text-xs"
-                                onClick={() => handleQuantityChange(item.id, -1)}
-                              >
-                                -
-                              </Button>
-                              <span className="w-6 text-center text-sm font-medium">
-                                {qty}
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-9 w-9 p-0 rounded-full text-xs"
-                                onClick={() => handleQuantityChange(item.id, 1)}
+                                className="h-10 w-10 p-0 rounded-full"
+                                onClick={() => handleAdd(item)}
                               >
                                 +
                               </Button>

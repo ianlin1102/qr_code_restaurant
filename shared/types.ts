@@ -97,7 +97,7 @@ export interface CartItem {
 }
 
 // ===== Orders =====
-export type OrderStatus = 'pending' | 'paid' | 'preparing' | 'completed'
+export type OrderStatus = 'pending' | 'paid' | 'preparing' | 'completed' | 'closed'
 
 export interface OrderItem {
   menuItemId: string

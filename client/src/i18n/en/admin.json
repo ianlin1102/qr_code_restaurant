@@ -107,7 +107,14 @@
     "confirmSettle": "Settle table \"{{name}}\"? All pending orders will be marked as completed.",
     "settled": "Settled {{count}} orders",
     "renameFailed": "Rename failed",
-    "saveFailed": "Save failed"
+    "saveFailed": "Save failed",
+    "closeTable": "Close Table",
+    "confirmCloseTitle": "Close Table \"{{name}}\"?",
+    "confirmCloseDesc": "All active orders for this table will be marked as closed.",
+    "closeConfirm": "Confirm Close",
+    "closedCount": "Closed {{count}} orders",
+    "orderTotal": "Order Total",
+    "grandTotal": "Grand Total"
   },
   "storeSettings": {
     "title": "Store Settings",

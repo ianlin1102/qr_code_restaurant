@@ -13,7 +13,8 @@
     "pending": "Pending",
     "paid": "Paid",
     "preparing": "Preparing",
-    "completed": "Completed"
+    "completed": "Completed",
+    "closed": "Closed"
   },
   "soldOut": "Sold out",
   "items": "items",

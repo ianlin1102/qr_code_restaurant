@@ -13,7 +13,8 @@
     "pending": "待处理",
     "paid": "已付款",
     "preparing": "制作中",
-    "completed": "已完成"
+    "completed": "已完成",
+    "closed": "已结束"
   },
   "soldOut": "已售罄",
   "items": "件",

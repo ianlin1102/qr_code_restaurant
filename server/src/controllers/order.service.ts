@@ -119,8 +119,8 @@ export function updateOrderItems(storeId: string, orderId: string, items: OrderI
   if (!order || order.storeId !== storeId) {
     return { error: 'Order not found' }
   }
-  if (order.status === 'completed') {
-    return { error: 'Cannot modify a completed order' }
+  if (order.status === 'completed' || order.status === 'closed') {
+    return { error: 'Cannot modify a completed or closed order' }
   }
   if (!items || items.length === 0) {
     return { error: 'Order must have at least one item' }

@@ -140,6 +140,11 @@ export const api = {
       method: 'POST',
     }),
 
+  closeTable: (storeId: string, tableId: string) =>
+    fetchJSON<{ closed: number }>(`/stores/${storeId}/tables/${tableId}/close`, {
+      method: 'POST',
+    }),
+
   // Customer: get orders for a specific table
   getTableOrders: (storeId: string, tableId: string) =>
     fetchJSON<Order[]>(`/stores/${storeId}/orders?tableId=${tableId}`),

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getTables, getTableById, createTable, updateTable, deleteTable, settleTable } from '../controllers/table.service.js'
+import { getTables, getTableById, createTable, updateTable, deleteTable, settleTable, closeTable } from '../controllers/table.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 
 const router = Router({ mergeParams: true })
@@ -50,6 +50,15 @@ router.delete('/:tableId', requireAuth, (req, res) => {
 
 router.post('/:tableId/settle', requireAuth, (req, res) => {
   const result = settleTable(req.params.storeId, req.params.tableId)
+  if ('error' in result) {
+    res.status(400).json(result)
+    return
+  }
+  res.json(result)
+})
+
+router.post('/:tableId/close', requireAuth, (req, res) => {
+  const result = closeTable(req.params.storeId, req.params.tableId)
   if ('error' in result) {
     res.status(400).json(result)
     return

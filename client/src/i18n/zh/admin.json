@@ -107,7 +107,14 @@
     "confirmSettle": "确定结算桌台\"{{name}}\"？所有未完成订单将标记为已完成。",
     "settled": "已结算 {{count}} 个订单",
     "renameFailed": "重命名失败",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "closeTable": "结束本桌",
+    "confirmCloseTitle": "结束桌台\"{{name}}\"？",
+    "confirmCloseDesc": "该桌台所有活跃订单将标记为已结束。",
+    "closeConfirm": "确认结束",
+    "closedCount": "已结束 {{count}} 个订单",
+    "orderTotal": "订单小计",
+    "grandTotal": "桌台总计"
   },
   "storeSettings": {
     "title": "门店设置",

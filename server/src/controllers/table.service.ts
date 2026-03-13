@@ -56,7 +56,7 @@ export function settleTable(storeId: string, tableId: string): { settled: number
   }
 
   const orders = orderStore.getByField('storeId', storeId)
-    .filter(o => o.tableId === tableId && o.status !== 'completed')
+    .filter(o => o.tableId === tableId && o.status !== 'completed' && o.status !== 'closed')
 
   const now = new Date().toISOString()
   for (const order of orders) {
@@ -66,4 +66,24 @@ export function settleTable(storeId: string, tableId: string): { settled: number
   tableStore.update(tableId, { status: 'idle', currentOrderId: undefined })
 
   return { settled: orders.length }
+}
+
+/** Close a table: mark pending/preparing orders as 'closed', reset table to idle */
+export function closeTable(storeId: string, tableId: string): { closed: number } | { error: string } {
+  const table = tableStore.getById(tableId)
+  if (!table || table.storeId !== storeId) {
+    return { error: 'Table not found' }
+  }
+
+  const orders = orderStore.getByField('storeId', storeId)
+    .filter(o => o.tableId === tableId && (o.status === 'pending' || o.status === 'preparing'))
+
+  const now = new Date().toISOString()
+  for (const order of orders) {
+    orderStore.update(order.id, { status: 'closed', updatedAt: now })
+  }
+
+  tableStore.update(tableId, { status: 'idle', currentOrderId: undefined })
+
+  return { closed: orders.length }
 }
