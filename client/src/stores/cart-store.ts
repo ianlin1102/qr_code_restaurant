@@ -25,7 +25,9 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
   addItem: (item) => set(state => {
-    const key = crypto.randomUUID()
+    const key = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
     return {
       items: [...state.items, { ...item, quantity: item.quantity ?? 1, cartKey: key }]
     }
