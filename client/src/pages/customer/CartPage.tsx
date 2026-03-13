@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { useCartStore, unitPrice } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
-import { formatPriceCNY } from '@/lib/format'
+import { formatPriceUSD } from '@/lib/format'
 import { api } from '@/services/api'
 import type { Order } from '@qr-order/shared'
 
@@ -147,7 +147,7 @@ export default function CartPage() {
                         {t(`common:${STATUS_KEYS[order.status]?.key}`) ?? order.status}
                       </Badge>
                     </div>
-                    <span className="text-sm font-semibold">{formatPriceCNY(order.totalPrice)}</span>
+                    <span className="text-sm font-semibold">{formatPriceUSD(order.totalPrice)}</span>
                   </div>
                   <ul className="space-y-1">
                     {order.items.map((item, idx) => (
@@ -162,7 +162,7 @@ export default function CartPage() {
                           )}
                         </div>
                         <span>
-                          {formatPriceCNY(
+                          {formatPriceUSD(
                             (item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity
                           )}
                         </span>
@@ -174,7 +174,7 @@ export default function CartPage() {
 
               {/* Previous orders total */}
               <div className="text-right text-sm text-muted-foreground">
-                {t('cart.previousTotal')}: <span className="font-semibold">{formatPriceCNY(prevOrderTotal)}</span>
+                {t('cart.previousTotal')}: <span className="font-semibold">{formatPriceUSD(prevOrderTotal)}</span>
               </div>
             </div>
 
@@ -201,17 +201,17 @@ export default function CartPage() {
                             {item.selectedOptions.map(opt => (
                               <Badge key={opt.optionId} variant="outline" className="text-xs">
                                 {opt.optionName}: {opt.choiceName}
-                                {opt.priceAdjust > 0 && ` +${formatPriceCNY(opt.priceAdjust)}`}
+                                {opt.priceAdjust > 0 && ` +${formatPriceUSD(opt.priceAdjust)}`}
                               </Badge>
                             ))}
                           </div>
                         )}
                         <p className="text-sm text-muted-foreground mt-1">
-                          {formatPriceCNY(price)} {t('cart.perServing')}
+                          {formatPriceUSD(price)} {t('cart.perServing')}
                         </p>
                       </div>
                       <p className="font-semibold whitespace-nowrap">
-                        {formatPriceCNY(price * item.quantity)}
+                        {formatPriceUSD(price * item.quantity)}
                       </p>
                     </div>
 
@@ -268,7 +268,7 @@ export default function CartPage() {
                 <p className="text-sm text-muted-foreground">
                   {hasPrevOrders ? t('cart.addMore') : ''} {t('cart.itemCount', { count: totalItems() })}
                 </p>
-                <p className="text-xl font-bold">{formatPriceCNY(totalPrice())}</p>
+                <p className="text-xl font-bold">{formatPriceUSD(totalPrice())}</p>
               </div>
               <Button
                 size="lg"

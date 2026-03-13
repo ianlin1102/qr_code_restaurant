@@ -17,9 +17,9 @@ import { useAuthStore } from '@/stores/auth-store'
 
 function getDefaultBaseUrl(): string {
   const { protocol, hostname, port } = window.location
-  // 如果从 localhost 访问，提示用户手动填写局域网 IP
-  // 如果从局域网 IP 访问（如手机），直接复用当前 hostname
-  return `${protocol}//${hostname}:${port || '5173'}`
+  // Standard ports (80/443) or empty → omit port suffix
+  const needsPort = port && port !== '80' && port !== '443'
+  return `${protocol}//${hostname}${needsPort ? ':' + port : ''}`
 }
 
 function isLocalhost(url: string): boolean {

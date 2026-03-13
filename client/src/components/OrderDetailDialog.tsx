@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatPriceCNY } from '@/lib/format'
+import { formatPriceUSD } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -139,7 +139,7 @@ export default function OrderDetailDialog({
                 )}
               </div>
               <span className="shrink-0 ml-2">
-                {formatPriceCNY(itemUnitPrice(item) * item.quantity)}
+                {formatPriceUSD(itemUnitPrice(item) * item.quantity)}
               </span>
             </div>
           ))}
@@ -151,7 +151,7 @@ export default function OrderDetailDialog({
         <div className="flex justify-between items-center">
           <span className="font-semibold">{t('common:total')}</span>
           <span className="text-lg font-bold text-primary">
-            {formatPriceCNY(order.totalPrice)}
+            {formatPriceUSD(order.totalPrice)}
           </span>
         </div>
 

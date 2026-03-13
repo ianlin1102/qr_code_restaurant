@@ -22,7 +22,7 @@ const store1MenuItems = [
   {
     id: uuid(), storeId: store1Id, categoryId: store1Categories[0].id,
     name: '宫保鸡丁', nameEn: 'Kung Pao Chicken', description: '经典川菜', descriptionEn: 'Classic Sichuan dish',
-    price: 3800, available: true, sortOrder: 1,
+    price: 1599, available: true, sortOrder: 1,
     options: [
       {
         id: uuid(), name: '辣度', nameEn: 'Spice Level', required: true,
@@ -37,13 +37,13 @@ const store1MenuItems = [
   {
     id: uuid(), storeId: store1Id, categoryId: store1Categories[0].id,
     name: '麻婆豆腐', nameEn: 'Mapo Tofu', description: '麻辣鲜香', descriptionEn: 'Spicy and numbing',
-    price: 2800, available: true, sortOrder: 2,
+    price: 1299, available: true, sortOrder: 2,
     options: [
       {
         id: uuid(), name: '份量', nameEn: 'Size', required: true,
         choices: [
           { id: uuid(), name: '小份', nameEn: 'Small', priceAdjust: 0 },
-          { id: uuid(), name: '大份', nameEn: 'Large', priceAdjust: 800 },
+          { id: uuid(), name: '大份', nameEn: 'Large', priceAdjust: 300 },
         ],
       },
     ],
@@ -51,22 +51,22 @@ const store1MenuItems = [
   {
     id: uuid(), storeId: store1Id, categoryId: store1Categories[0].id,
     name: '红烧肉', nameEn: 'Braised Pork Belly', description: '肥而不腻', descriptionEn: 'Rich and tender',
-    price: 4500, available: true, sortOrder: 3,
+    price: 1899, available: true, sortOrder: 3,
     options: [
       {
         id: uuid(), name: '配菜', nameEn: 'Side', required: false,
         choices: [
-          { id: uuid(), name: '加蛋', nameEn: 'Add Egg', priceAdjust: 300 },
-          { id: uuid(), name: '加豆腐', nameEn: 'Add Tofu', priceAdjust: 200 },
+          { id: uuid(), name: '加蛋', nameEn: 'Add Egg', priceAdjust: 150 },
+          { id: uuid(), name: '加豆腐', nameEn: 'Add Tofu', priceAdjust: 100 },
         ],
       },
     ],
   },
-  { id: uuid(), storeId: store1Id, categoryId: store1Categories[1].id, name: '拍黄瓜', nameEn: 'Smashed Cucumber', description: '清爽开胃', descriptionEn: 'Refreshing appetizer', price: 1200, available: true, sortOrder: 1 },
-  { id: uuid(), storeId: store1Id, categoryId: store1Categories[1].id, name: '凉拌木耳', nameEn: 'Wood Ear Mushroom Salad', description: '营养健康', descriptionEn: 'Healthy and nutritious', price: 1500, available: true, sortOrder: 2 },
+  { id: uuid(), storeId: store1Id, categoryId: store1Categories[1].id, name: '拍黄瓜', nameEn: 'Smashed Cucumber', description: '清爽开胃', descriptionEn: 'Refreshing appetizer', price: 699, available: true, sortOrder: 1 },
+  { id: uuid(), storeId: store1Id, categoryId: store1Categories[1].id, name: '凉拌木耳', nameEn: 'Wood Ear Mushroom Salad', description: '营养健康', descriptionEn: 'Healthy and nutritious', price: 799, available: true, sortOrder: 2 },
   {
     id: uuid(), storeId: store1Id, categoryId: store1Categories[2].id,
-    name: '柠檬水', nameEn: 'Lemonade', price: 800, available: true, sortOrder: 1,
+    name: '柠檬水', nameEn: 'Lemonade', price: 399, available: true, sortOrder: 1,
     options: [
       {
         id: uuid(), name: '甜度', nameEn: 'Sweetness', required: false,
@@ -86,22 +86,22 @@ const store1MenuItems = [
       },
     ],
   },
-  { id: uuid(), storeId: store1Id, categoryId: store1Categories[2].id, name: '可乐', nameEn: 'Cola', price: 600, available: true, sortOrder: 2 },
-  { id: uuid(), storeId: store1Id, categoryId: store1Categories[2].id, name: '酸梅汤', nameEn: 'Plum Juice', price: 1000, available: true, sortOrder: 3 },
+  { id: uuid(), storeId: store1Id, categoryId: store1Categories[2].id, name: '可乐', nameEn: 'Cola', price: 299, available: true, sortOrder: 2 },
+  { id: uuid(), storeId: store1Id, categoryId: store1Categories[2].id, name: '酸梅汤', nameEn: 'Plum Juice', price: 499, available: true, sortOrder: 3 },
   {
     id: uuid(), storeId: store1Id, categoryId: store1Categories[3].id,
-    name: '米饭', nameEn: 'Rice', price: 300, available: true, sortOrder: 1,
+    name: '米饭', nameEn: 'Rice', price: 199, available: true, sortOrder: 1,
     options: [
       {
         id: uuid(), name: '份量', nameEn: 'Size', required: true,
         choices: [
           { id: uuid(), name: '小碗', nameEn: 'Small', priceAdjust: 0 },
-          { id: uuid(), name: '大碗', nameEn: 'Large', priceAdjust: 100 },
+          { id: uuid(), name: '大碗', nameEn: 'Large', priceAdjust: 50 },
         ],
       },
     ],
   },
-  { id: uuid(), storeId: store1Id, categoryId: store1Categories[3].id, name: '炒面', nameEn: 'Fried Noodles', description: '酱香炒面', descriptionEn: 'Stir-fried noodles with sauce', price: 1800, available: true, sortOrder: 2 },
+  { id: uuid(), storeId: store1Id, categoryId: store1Categories[3].id, name: '炒面', nameEn: 'Fried Noodles', description: '酱香炒面', descriptionEn: 'Stir-fried noodles with sauce', price: 999, available: true, sortOrder: 2 },
 ]
 
 const store1Tables = [
@@ -126,7 +126,7 @@ const store2MenuItems = [
   {
     id: uuid(), storeId: store2Id, categoryId: store2Categories[0].id,
     name: '麻辣锅底', nameEn: 'Spicy Soup Base', description: '正宗重庆麻辣', descriptionEn: 'Authentic Chongqing spicy',
-    price: 5800, available: true, sortOrder: 1,
+    price: 2499, available: true, sortOrder: 1,
     options: [
       {
         id: uuid(), name: '辣度', nameEn: 'Spice Level', required: true,
@@ -138,18 +138,18 @@ const store2MenuItems = [
       },
     ],
   },
-  { id: uuid(), storeId: store2Id, categoryId: store2Categories[0].id, name: '番茄锅底', nameEn: 'Tomato Soup Base', description: '酸甜可口', descriptionEn: 'Sweet and sour', price: 4800, available: true, sortOrder: 2 },
-  { id: uuid(), storeId: store2Id, categoryId: store2Categories[0].id, name: '鸳鸯锅底', nameEn: 'Half & Half Soup Base', description: '一锅两味', descriptionEn: 'Two flavors in one pot', price: 6800, available: true, sortOrder: 3 },
+  { id: uuid(), storeId: store2Id, categoryId: store2Categories[0].id, name: '番茄锅底', nameEn: 'Tomato Soup Base', description: '酸甜可口', descriptionEn: 'Sweet and sour', price: 1999, available: true, sortOrder: 2 },
+  { id: uuid(), storeId: store2Id, categoryId: store2Categories[0].id, name: '鸳鸯锅底', nameEn: 'Half & Half Soup Base', description: '一锅两味', descriptionEn: 'Two flavors in one pot', price: 2899, available: true, sortOrder: 3 },
   {
     id: uuid(), storeId: store2Id, categoryId: store2Categories[1].id,
     name: '肥牛卷', nameEn: 'Sliced Beef', description: '新鲜肥牛', descriptionEn: 'Fresh beef rolls',
-    price: 4200, available: true, sortOrder: 1,
+    price: 1699, available: true, sortOrder: 1,
     options: [
       {
         id: uuid(), name: '份量', nameEn: 'Size', required: true,
         choices: [
           { id: uuid(), name: '半份', nameEn: 'Half', priceAdjust: 0 },
-          { id: uuid(), name: '整份', nameEn: 'Full', priceAdjust: 2000 },
+          { id: uuid(), name: '整份', nameEn: 'Full', priceAdjust: 800 },
         ],
       },
     ],
@@ -157,24 +157,24 @@ const store2MenuItems = [
   {
     id: uuid(), storeId: store2Id, categoryId: store2Categories[1].id,
     name: '羊肉卷', nameEn: 'Sliced Lamb', description: '内蒙羊肉', descriptionEn: 'Inner Mongolia lamb',
-    price: 4500, available: true, sortOrder: 2,
+    price: 1899, available: true, sortOrder: 2,
     options: [
       {
         id: uuid(), name: '份量', nameEn: 'Size', required: true,
         choices: [
           { id: uuid(), name: '半份', nameEn: 'Half', priceAdjust: 0 },
-          { id: uuid(), name: '整份', nameEn: 'Full', priceAdjust: 2200 },
+          { id: uuid(), name: '整份', nameEn: 'Full', priceAdjust: 900 },
         ],
       },
     ],
   },
-  { id: uuid(), storeId: store2Id, categoryId: store2Categories[1].id, name: '虾滑', nameEn: 'Shrimp Paste', description: '手工虾滑', descriptionEn: 'Handmade shrimp paste', price: 3800, available: true, sortOrder: 3 },
-  { id: uuid(), storeId: store2Id, categoryId: store2Categories[2].id, name: '土豆片', nameEn: 'Potato Slices', price: 800, available: true, sortOrder: 1 },
-  { id: uuid(), storeId: store2Id, categoryId: store2Categories[2].id, name: '莲藕', nameEn: 'Lotus Root', price: 1000, available: true, sortOrder: 2 },
-  { id: uuid(), storeId: store2Id, categoryId: store2Categories[2].id, name: '豆腐', nameEn: 'Tofu', price: 600, available: true, sortOrder: 3 },
+  { id: uuid(), storeId: store2Id, categoryId: store2Categories[1].id, name: '虾滑', nameEn: 'Shrimp Paste', description: '手工虾滑', descriptionEn: 'Handmade shrimp paste', price: 1499, available: true, sortOrder: 3 },
+  { id: uuid(), storeId: store2Id, categoryId: store2Categories[2].id, name: '土豆片', nameEn: 'Potato Slices', price: 399, available: true, sortOrder: 1 },
+  { id: uuid(), storeId: store2Id, categoryId: store2Categories[2].id, name: '莲藕', nameEn: 'Lotus Root', price: 499, available: true, sortOrder: 2 },
+  { id: uuid(), storeId: store2Id, categoryId: store2Categories[2].id, name: '豆腐', nameEn: 'Tofu', price: 299, available: true, sortOrder: 3 },
   {
     id: uuid(), storeId: store2Id, categoryId: store2Categories[3].id,
-    name: '酸梅汤', nameEn: 'Plum Juice', price: 1200, available: true, sortOrder: 1,
+    name: '酸梅汤', nameEn: 'Plum Juice', price: 599, available: true, sortOrder: 1,
     options: [
       {
         id: uuid(), name: '温度', nameEn: 'Temperature', required: true,
@@ -185,7 +185,7 @@ const store2MenuItems = [
       },
     ],
   },
-  { id: uuid(), storeId: store2Id, categoryId: store2Categories[3].id, name: '王老吉', nameEn: 'Herbal Tea', price: 800, available: true, sortOrder: 2 },
+  { id: uuid(), storeId: store2Id, categoryId: store2Categories[3].id, name: '王老吉', nameEn: 'Herbal Tea', price: 399, available: true, sortOrder: 2 },
 ]
 
 const store2Tables = [

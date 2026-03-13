@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatPriceCNY } from '@/lib/format'
+import { formatPriceUSD } from '@/lib/format'
 import type { Order, OrderItem } from '@qr-order/shared'
 
 function itemUnitPrice(item: OrderItem): number {
@@ -99,7 +99,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, Props>(({ order, storeName }, re
         <div key={idx}>
           <div className="receipt-row">
             <span>{item.name} x{item.quantity}</span>
-            <span>{formatPriceCNY(itemUnitPrice(item) * item.quantity)}</span>
+            <span>{formatPriceUSD(itemUnitPrice(item) * item.quantity)}</span>
           </div>
           {item.selectedOptions && item.selectedOptions.length > 0 && (
             <div className="receipt-item-detail">
@@ -117,7 +117,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, Props>(({ order, storeName }, re
       {/* Total */}
       <div className="receipt-row receipt-total">
         <span>{t('common:total')}</span>
-        <span>{formatPriceCNY(order.totalPrice)}</span>
+        <span>{formatPriceUSD(order.totalPrice)}</span>
       </div>
 
       <div className="receipt-divider" />

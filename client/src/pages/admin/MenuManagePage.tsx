@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
-import { formatPriceCNY } from '@/lib/format'
+import { formatPriceUSD } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -449,7 +449,7 @@ export default function MenuManagePage() {
                                 {item.nameEn && <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>}
                               </div>
                             </div>
-                            <span className="font-mono text-sm font-semibold shrink-0">{formatPriceCNY(item.price)}</span>
+                            <span className="font-mono text-sm font-semibold shrink-0">{formatPriceUSD(item.price)}</span>
                           </div>
                           {item.options && item.options.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
@@ -505,7 +505,7 @@ export default function MenuManagePage() {
                             )}
                           </div>
                           <span className="text-lg font-bold text-orange-600">
-                            {formatPriceCNY(item.price)}
+                            {formatPriceUSD(item.price)}
                           </span>
                         </div>
                         {!item.available && (

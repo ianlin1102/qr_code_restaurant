@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
-import { formatPriceCNY } from '@/lib/format'
+import { formatPriceUSD } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -410,7 +410,7 @@ export default function DashboardPage() {
                           )}
                         </div>
                         <span className="text-muted-foreground">
-                          {formatPriceCNY(itemUnitPrice(item) * item.quantity)}
+                          {formatPriceUSD(itemUnitPrice(item) * item.quantity)}
                         </span>
                       </li>
                     ))}
@@ -419,7 +419,7 @@ export default function DashboardPage() {
                   {/* Total and action */}
                   <div className="flex items-center justify-between pt-2 border-t">
                     <span className="font-semibold">
-                      {t('common:total')}: {formatPriceCNY(order.totalPrice)}
+                      {t('common:total')}: {formatPriceUSD(order.totalPrice)}
                     </span>
                     {getActionButton(order)}
                   </div>
@@ -465,7 +465,7 @@ export default function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <span className="font-medium text-sm">{item.name}</span>
                           <span className="text-xs text-muted-foreground ml-2">
-                            {formatPriceCNY(itemUnitPrice(item))}
+                            {formatPriceUSD(itemUnitPrice(item))}
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -522,7 +522,7 @@ export default function DashboardPage() {
                                     >
                                       {choice.name}
                                       {choice.priceAdjust > 0 && (
-                                        <span className="text-muted-foreground ml-0.5">+{formatPriceCNY(choice.priceAdjust)}</span>
+                                        <span className="text-muted-foreground ml-0.5">+{formatPriceUSD(choice.priceAdjust)}</span>
                                       )}
                                     </button>
                                   ))}
@@ -554,7 +554,7 @@ export default function DashboardPage() {
                   <SelectContent>
                     {allMenuItems.map(m => (
                       <SelectItem key={m.id} value={m.id}>
-                        {m.name} — {formatPriceCNY(m.price)}
+                        {m.name} — {formatPriceUSD(m.price)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -581,7 +581,7 @@ export default function DashboardPage() {
               {/* Total + save */}
               <div className="flex items-center justify-between">
                 <span className="font-semibold">
-                  {t('common:total')}: {formatPriceCNY(editTotal)}
+                  {t('common:total')}: {formatPriceUSD(editTotal)}
                 </span>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setEditDialogOpen(false)}>

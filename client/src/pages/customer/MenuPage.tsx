@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
 import { useCartStore } from '@/stores/cart-store'
-import { formatPriceCNY } from '@/lib/format'
+import { formatPriceUSD } from '@/lib/format'
 import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -295,7 +295,7 @@ export default function MenuPage() {
                             </p>
                           )}
                           <p className="text-sm font-semibold text-primary mt-1">
-                            {formatPriceCNY(item.price)}
+                            {formatPriceUSD(item.price)}
                             {hasOptions && <span className="text-xs font-normal text-muted-foreground"> {t('menu.from')}</span>}
                           </p>
                         </div>
@@ -369,7 +369,7 @@ export default function MenuPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-primary">
-                    {formatPriceCNY(priceTotal)}
+                    {formatPriceUSD(priceTotal)}
                   </span>
                   <Badge variant="secondary">{itemCount} {t('common:items')}</Badge>
                 </div>
@@ -423,7 +423,7 @@ export default function MenuPage() {
                           {localized(choice, lang)}
                           {choice.priceAdjust > 0 && (
                             <span className="text-xs text-muted-foreground ml-1">
-                              +{formatPriceCNY(choice.priceAdjust)}
+                              +{formatPriceUSD(choice.priceAdjust)}
                             </span>
                           )}
                         </button>
@@ -437,7 +437,7 @@ export default function MenuPage() {
               {/* Confirm button */}
               <div className="flex items-center justify-between pt-2">
                 <span className="text-lg font-bold text-primary">
-                  {formatPriceCNY(optionSheetPrice())}
+                  {formatPriceUSD(optionSheetPrice())}
                 </span>
                 <Button
                   onClick={handleConfirmOptions}

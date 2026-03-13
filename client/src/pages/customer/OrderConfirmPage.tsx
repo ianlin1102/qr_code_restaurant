@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { useSessionStore } from '@/stores/session-store'
-import { formatPriceCNY } from '@/lib/format'
+import { formatPriceUSD } from '@/lib/format'
 import type { Order } from '@qr-order/shared'
 
 export default function OrderConfirmPage() {
@@ -73,7 +73,7 @@ export default function OrderConfirmPage() {
                   )}
                 </div>
                 <span className="font-medium whitespace-nowrap ml-2">
-                  {formatPriceCNY(
+                  {formatPriceUSD(
                     (item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity
                   )}
                 </span>
@@ -83,7 +83,7 @@ export default function OrderConfirmPage() {
           <Separator />
           <div className="flex items-center justify-between font-semibold">
             <span>{t('common:total')}</span>
-            <span className="text-lg">{formatPriceCNY(order.totalPrice)}</span>
+            <span className="text-lg">{formatPriceUSD(order.totalPrice)}</span>
           </div>
         </Card>
 
