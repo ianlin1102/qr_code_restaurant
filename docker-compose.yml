@@ -33,9 +33,6 @@ services:
       DATABASE_URL: postgresql://qrorder:qrorder123@postgres:5432/qr_order
       JWT_SECRET: dev-secret-change-in-production
       LOG_LEVEL: debug
-    env_file:
-      - path: server/.env
-        required: false
     command: pnpm --filter @qr-order/server exec tsx watch src/server.ts
     depends_on:
       - postgres
