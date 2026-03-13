@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +21,7 @@ import type { Category, MenuItem } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
 export default function CategoryManagePage() {
+  const { t } = useTranslation('admin')
   const STORE_ID = useAuthStore(s => s.user!.storeId)
   const [categories, setCategories] = useState<Category[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
@@ -27,7 +29,7 @@ export default function CategoryManagePage() {
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingCat, setEditingCat] = useState<{ name: string; sortOrder: number } | null>(null)
+  const [editingCat, setEditingCat] = useState<{ name: string; nameEn?: string; sortOrder: number } | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null) // null = adding new
   const [saving, setSaving] = useState(false)
 
@@ -67,13 +69,13 @@ export default function CategoryManagePage() {
 
   const handleAdd = () => {
     const maxSort = categories.reduce((max, c) => Math.max(max, c.sortOrder), 0)
-    setEditingCat({ name: '', sortOrder: maxSort + 1 })
+    setEditingCat({ name: '', nameEn: '', sortOrder: maxSort + 1 })
     setEditingId(null)
     setDialogOpen(true)
   }
 
   const handleEdit = (cat: Category) => {
-    setEditingCat({ name: cat.name, sortOrder: cat.sortOrder })
+    setEditingCat({ name: cat.name, nameEn: cat.nameEn ?? '', sortOrder: cat.sortOrder })
     setEditingId(cat.id)
     setDialogOpen(true)
   }
@@ -83,9 +85,9 @@ export default function CategoryManagePage() {
     setSaving(true)
     try {
       if (editingId) {
-        await api.updateCategory(STORE_ID, editingId, editingCat)
+        await api.updateCategory(STORE_ID, editingId, { ...editingCat, nameEn: editingCat.nameEn?.trim() || undefined })
       } else {
-        await api.createCategory(STORE_ID, { name: editingCat.name.trim(), sortOrder: editingCat.sortOrder })
+        await api.createCategory(STORE_ID, { name: editingCat.name.trim(), nameEn: editingCat.nameEn?.trim() || undefined, sortOrder: editingCat.sortOrder })
       }
       setDialogOpen(false)
       setEditingCat(null)
@@ -101,10 +103,10 @@ export default function CategoryManagePage() {
   const handleDelete = async (cat: Category) => {
     const count = itemCountForCategory(cat.id)
     if (count > 0) {
-      alert(`无法删除"${cat.name}"：该分类下还有 ${count} 道菜品，请先移动或删除这些菜品。`)
+      alert(`Cannot delete "${cat.name}": it has ${count} dishes. Please move or delete them first.`)
       return
     }
-    if (!confirm(`确定删除分类"${cat.name}"？`)) return
+    if (!confirm(`Delete category "${cat.name}"?`)) return
     try {
       await api.deleteCategory(STORE_ID, cat.id)
       await fetchData()
@@ -210,31 +212,59 @@ export default function CategoryManagePage() {
       <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">分类管理</h1>
-            <p className="text-sm text-muted-foreground">{categories.length} 个分类</p>
+            <h1 className="text-lg md:text-xl font-bold">{t('categoryManage.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('categoryManage.catCount', { count: categories.length })}</p>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleAdd}>+ 添加分类</Button>
+            <Button size="sm" onClick={handleAdd}>{t('categoryManage.addCategory')}</Button>
           </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-4">
-        <div className="bg-white rounded-lg border">
+        {/* Mobile card list */}
+        <div className="md:hidden space-y-2">
+          {sorted.map(cat => (
+            <div key={cat.id} className="p-3 rounded-lg border bg-card flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-sm">{cat.name}</p>
+                {cat.nameEn && <p className="text-xs text-muted-foreground">{cat.nameEn}</p>}
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t('categoryManage.sortOrder')}: {cat.sortOrder}
+                  {' · '}
+                  {t('categoryManage.itemCount')}: {itemCountForCategory(cat.id)}
+                </p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleEdit(cat)}>
+                  {t('common:edit')}
+                </Button>
+                <Button variant="outline" size="sm" className="min-h-[44px] text-red-600" onClick={() => handleDelete(cat)}>
+                  {t('common:delete')}
+                </Button>
+              </div>
+            </div>
+          ))}
+          {sorted.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">{t('categoryManage.emptyPrompt')}</p>
+          )}
+        </div>
+
+        <div className="hidden md:block bg-white rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px] text-center">排序</TableHead>
-                <TableHead>分类名称</TableHead>
-                <TableHead className="w-[100px] text-center">菜品数</TableHead>
-                <TableHead className="w-[200px] text-right">操作</TableHead>
+                <TableHead className="w-[60px] text-center">{t('categoryManage.sortOrder')}</TableHead>
+                <TableHead>{t('categoryManage.categoryName')}</TableHead>
+                <TableHead className="w-[100px] text-center">{t('categoryManage.itemCount')}</TableHead>
+                <TableHead className="w-[200px] text-right">{t('categoryManage.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sorted.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                    暂无分类，点击"添加分类"创建
+                    {t('categoryManage.emptyPrompt')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -267,7 +297,7 @@ export default function CategoryManagePage() {
                           <span
                             onClick={() => startSortEdit(cat)}
                             className="text-xs text-muted-foreground cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 rounded transition-colors"
-                            title="点击输入排序号"
+                            title={t('categoryManage.clickToRename')}
                           >
                             {cat.sortOrder}
                           </span>
@@ -299,7 +329,7 @@ export default function CategoryManagePage() {
                         <span
                           onClick={() => startInlineEdit(cat)}
                           className="cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 -mx-1 rounded transition-colors font-medium"
-                          title="点击编辑"
+                          title={t('menuManage.clickToEdit')}
                         >
                           {cat.name}
                         </span>
@@ -313,7 +343,7 @@ export default function CategoryManagePage() {
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
                         <Button variant="outline" size="sm" onClick={() => handleEdit(cat)}>
-                          编辑
+                          {t('common:edit')}
                         </Button>
                         <Button
                           variant="outline"
@@ -321,7 +351,7 @@ export default function CategoryManagePage() {
                           className="text-red-600 hover:text-red-700"
                           onClick={() => handleDelete(cat)}
                         >
-                          删除
+                          {t('common:delete')}
                         </Button>
                       </div>
                     </TableCell>
@@ -335,35 +365,46 @@ export default function CategoryManagePage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm w-[calc(100vw-2rem)]">
           <DialogHeader>
-            <DialogTitle>{editingId ? '编辑分类' : '添加分类'}</DialogTitle>
+            <DialogTitle>{editingId ? t('categoryManage.editTitle') : t('categoryManage.addTitle')}</DialogTitle>
           </DialogHeader>
           {editingCat && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">分类名称 *</label>
+                <label className="text-sm font-medium">{t('categoryManage.nameLabel')}</label>
                 <Input
+                  className="text-base"
                   value={editingCat.name}
                   onChange={e => setEditingCat({ ...editingCat, name: e.target.value })}
-                  placeholder="例：热菜、凉菜、饮品"
+                  placeholder={t('categoryManage.namePlaceholder')}
                   autoFocus
                   onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">排序号</label>
+                <label className="text-sm font-medium">{t('categoryManage.nameEnLabel')}</label>
                 <Input
+                  className="text-base"
+                  value={editingCat.nameEn ?? ''}
+                  onChange={e => setEditingCat({ ...editingCat, nameEn: e.target.value })}
+                  placeholder={t('categoryManage.nameEnPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t('categoryManage.sortLabel')}</label>
+                <Input
+                  className="text-base"
                   type="number"
                   value={editingCat.sortOrder}
                   onChange={e => setEditingCat({ ...editingCat, sortOrder: parseInt(e.target.value || '0') })}
                 />
-                <p className="text-xs text-muted-foreground mt-1">数字越小越靠前</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('categoryManage.sortHint')}</p>
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common:cancel')}</Button>
                 <Button onClick={handleSave} disabled={saving || !editingCat.name.trim()}>
-                  {saving ? '保存中...' : '保存'}
+                  {saving ? t('common:saving') : t('common:save')}
                 </Button>
               </div>
             </div>
