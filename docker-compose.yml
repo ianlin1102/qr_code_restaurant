@@ -34,7 +34,8 @@ services:
       JWT_SECRET: dev-secret-change-in-production
       LOG_LEVEL: debug
     env_file:
-      - server/.env
+      - path: server/.env
+        required: false
     command: pnpm --filter @qr-order/server exec tsx watch src/server.ts
     depends_on:
       - postgres
