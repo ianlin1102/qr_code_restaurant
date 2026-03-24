@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock, Headset, Loader2, XCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useSessionStore } from '@/stores/session-store'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
@@ -13,24 +13,39 @@ import type { Order } from '@qr-order/shared'
 export default function OrderConfirmPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { storeId, tableId } = useSessionStore()
+  const { storeId, tableId, tableName } = useSessionStore()
   const clearCart = useCartStore(s => s.clearCart)
-  const { t } = useTranslation('customer')
+  const { t, i18n } = useTranslation('customer')
+  const lang = i18n.language
 
   const redirectStatus = searchParams.get('redirect_status')
   const paymentSuccess = redirectStatus === 'succeeded'
   const paymentFailed = redirectStatus !== null && !paymentSuccess
 
   const [paidOrder, setPaidOrder] = useState<Order | null>(null)
+  const [orderTimeout, setOrderTimeout] = useState(false)
 
-  // On successful payment: clear cart and fetch the paid order
+  // On successful payment: clear cart, poll for the paid order (webhook may be delayed)
   useEffect(() => {
     if (!paymentSuccess || !storeId || !tableId) return
     clearCart()
-    api.getTableOrders(storeId, tableId).then((orders) => {
-      const paid = orders.find((o) => o.status === 'paid')
-      if (paid) setPaidOrder(paid)
-    }).catch(() => {})
+    let attempts = 0
+    const maxAttempts = 5
+    const poll = () => {
+      api.getTableOrders(storeId, tableId).then((orders) => {
+        const paid = orders
+          .filter((o) => o.isPaid)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+        if (paid) {
+          setPaidOrder(paid)
+        } else if (++attempts < maxAttempts) {
+          setTimeout(poll, 2000)
+        } else {
+          setOrderTimeout(true) // Show fallback after timeout
+        }
+      }).catch(() => { if (++attempts < maxAttempts) setTimeout(poll, 2000); else setOrderTimeout(true) })
+    }
+    poll()
   }, [paymentSuccess, storeId, tableId, clearCart])
 
   // Payment failed
@@ -52,25 +67,114 @@ export default function OrderConfirmPage() {
   // Payment succeeded
   if (paymentSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4 pt-8 md:pt-12 pb-safe">
+      <div className="min-h-screen bg-background flex flex-col items-center px-4 pt-8 md:pt-12 pb-safe">
         <div className="max-w-lg w-full space-y-6">
+          {tableName && (
+            <div className="flex justify-center">
+              <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                {tableName}
+              </span>
+            </div>
+          )}
           <div className="flex flex-col items-center text-center space-y-3">
             <CheckCircle2 className="h-16 w-16 text-green-500" />
-            <h1 className="text-2xl font-bold">{t('orderConfirm.success')}</h1>
-            <p className="text-muted-foreground">{t('orderConfirm.successPrompt')}</p>
+            <h1 className="text-2xl font-bold">
+              {lang === 'zh' ? '下单成功！' : 'Order Confirmed!'}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {lang === 'zh' ? '订单已确认' : 'Your order is being prepared'}
+              <span className="text-muted-foreground/60 ml-1">
+                / {lang === 'zh' ? 'Order Confirmed' : '订单已确认'}
+              </span>
+            </p>
           </div>
 
-          {paidOrder && (
-            <Card className="p-6 text-center space-y-1">
-              <p className="text-sm text-muted-foreground">{t('orderConfirm.orderNumber')}</p>
-              <p className="text-3xl font-bold tracking-wider">{paidOrder.orderNumber}</p>
-              <p className="text-lg font-semibold mt-2">{formatPriceUSD(paidOrder.totalPrice)}</p>
-            </Card>
+          {paidOrder ? (
+            <div className="bg-card rounded-2xl p-5 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">
+                  {lang === 'zh' ? '订单详情' : 'RECEIPT SUMMARY'}
+                </p>
+                <Badge className="bg-green-100 text-green-700 border-0 text-xs">{t('common.kitchenNotified')}</Badge>
+              </div>
+              <div className="space-y-2 border-t pt-3">
+                {paidOrder.items.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-sm">
+                    <div>
+                      <span className="font-medium">{item.quantity}x</span>
+                      <span className="ml-1.5">{item.name}</span>
+                      {item.remark && (
+                        <p className="text-xs text-muted-foreground ml-5">{item.remark}</p>
+                      )}
+                    </div>
+                    <span className="text-muted-foreground">{formatPriceUSD(item.price * item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t pt-3 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {lang === 'zh' ? '总金额' : 'Total Amount'}
+                  <span className="text-muted-foreground/60 ml-1">/ {lang === 'zh' ? 'Total' : '总金额'}</span>
+                </span>
+                <span className="text-xl font-bold text-primary">{formatPriceUSD(paidOrder.totalPrice)}</span>
+              </div>
+            </div>
+          ) : orderTimeout ? (
+            <div className="bg-card rounded-2xl p-5 shadow-sm text-center space-y-2">
+              <Badge className="bg-green-100 text-green-700 border-0 text-xs">
+                {lang === 'zh' ? '支付成功' : 'Payment Successful'}
+              </Badge>
+              <p className="text-sm text-muted-foreground">
+                {lang === 'zh' ? '订单正在处理中，请稍候查看订单状态。' : 'Your order is being processed. Check order status shortly.'}
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm">{t('orderConfirm.loadingOrder')}</span>
+            </div>
           )}
 
-          <Button className="w-full" size="lg" onClick={() => navigate(storeId ? `/menu/${storeId}` : '/')}>
-            {t('orderConfirm.continueOrder')}
+          {/* Estimated wait time */}
+          {paidOrder && (
+            <div className="bg-card rounded-2xl p-4 shadow-sm flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground tracking-wider uppercase">
+                  {t('orderConfirm.estimatedTime')}
+                </p>
+                <p className="text-lg font-bold text-primary">
+                  {(() => {
+                    const itemCount = paidOrder.items.reduce((s, i) => s + i.quantity, 0)
+                    const min = Math.max(10, itemCount * 3)
+                    const max = Math.min(30, min + 5)
+                    return t('orderConfirm.minutes', { min, max })
+                  })()}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <Button className="w-full bg-primary hover:bg-primary/90" size="lg" onClick={() => navigate(storeId ? `/menu/${storeId}` : '/')}>
+            {lang === 'zh' ? '继续点菜' : 'Continue Ordering'}
+            <span className="text-white/70 text-xs ml-1.5">
+              / {lang === 'zh' ? 'Continue Ordering' : '继续点菜'}
+            </span>
           </Button>
+
+          {/* Help bar */}
+          <div className="bg-card rounded-full shadow-sm px-4 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Headset className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">{t('orderConfirm.needHelp')}</span>
+            </div>
+            <Button variant="outline" size="sm" className="rounded-full text-xs h-7 px-3 border-primary text-primary">
+              {t('orderConfirm.callStaff')}
+            </Button>
+          </div>
         </div>
       </div>
     )

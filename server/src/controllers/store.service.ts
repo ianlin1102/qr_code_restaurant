@@ -19,6 +19,7 @@ export function updateStore(storeId: string, data: UpdateStoreRequest): Store | 
     description: data.description ?? store.description,
     openingHours: data.openingHours ?? store.openingHours,
     announcement: data.announcement ?? store.announcement,
+    autoAcceptOrders: data.autoAcceptOrders ?? store.autoAcceptOrders,
   })
 
   return updated!

@@ -1,31 +1,23 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useT } from '@/i18n/useT'
+import { Loader2, GripVertical } from 'lucide-react'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { Category, MenuItem } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
+import { cn } from '@/lib/utils'
 
 export default function CategoryManagePage() {
-  const { t } = useTranslation('admin')
+  const { t } = useT()
   const STORE_ID = useAuthStore(s => s.user!.storeId)
   const [categories, setCategories] = useState<Category[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [dragId, setDragId] = useState<string | null>(null)
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -67,16 +59,15 @@ export default function CategoryManagePage() {
 
   // ===== CRUD =====
 
-  const handleAdd = () => {
-    const maxSort = categories.reduce((max, c) => Math.max(max, c.sortOrder), 0)
-    setEditingCat({ name: '', nameEn: '', sortOrder: maxSort + 1 })
-    setEditingId(null)
-    setDialogOpen(true)
-  }
-
-  const handleEdit = (cat: Category) => {
-    setEditingCat({ name: cat.name, nameEn: cat.nameEn ?? '', sortOrder: cat.sortOrder })
-    setEditingId(cat.id)
+  const openDialog = (cat?: Category) => {
+    if (cat) {
+      setEditingCat({ name: cat.name, nameEn: cat.nameEn ?? '', sortOrder: cat.sortOrder })
+      setEditingId(cat.id)
+    } else {
+      const maxSort = categories.reduce((max, c) => Math.max(max, c.sortOrder), 0)
+      setEditingCat({ name: '', nameEn: '', sortOrder: maxSort + 1 })
+      setEditingId(null)
+    }
     setDialogOpen(true)
   }
 
@@ -118,17 +109,14 @@ export default function CategoryManagePage() {
   // ===== Inline name edit =====
 
   const startInlineEdit = (cat: Category) => {
-    setInlineEditId(cat.id)
-    setInlineEditValue(cat.name)
+    setInlineEditId(cat.id); setInlineEditValue(cat.name)
     setTimeout(() => inlineRef.current?.select(), 0)
   }
 
   const commitInlineEdit = async () => {
     if (!inlineEditId) return
-    const trimmed = inlineEditValue.trim()
-    setInlineEditId(null)
-    if (!trimmed) return
-    const cat = categories.find(c => c.id === inlineEditId)
+    const trimmed = inlineEditValue.trim(); setInlineEditId(null)
+    if (!trimmed) return; const cat = categories.find(c => c.id === inlineEditId)
     if (cat && trimmed !== cat.name) {
       try {
         await api.updateCategory(STORE_ID, inlineEditId, { name: trimmed })
@@ -162,22 +150,17 @@ export default function CategoryManagePage() {
     }
   }
 
-  /** Inline sort number edit — if target number conflicts, swap with that category */
   const startSortEdit = (cat: Category) => {
-    setSortEditId(cat.id)
-    setSortEditValue(String(cat.sortOrder))
+    setSortEditId(cat.id); setSortEditValue(String(cat.sortOrder))
     setTimeout(() => sortRef.current?.select(), 0)
   }
 
   const commitSortEdit = async () => {
     if (!sortEditId) return
-    const newOrder = parseInt(sortEditValue)
-    setSortEditId(null)
+    const newOrder = parseInt(sortEditValue); setSortEditId(null)
     if (isNaN(newOrder)) return
-
     const current = categories.find(c => c.id === sortEditId)
     if (!current || current.sortOrder === newOrder) return
-
     const conflict = categories.find(c => c.id !== sortEditId && c.sortOrder === newOrder)
     try {
       if (conflict) {
@@ -195,12 +178,34 @@ export default function CategoryManagePage() {
     }
   }
 
+  // ===== Drag-and-drop reorder =====
+
+  const handleDragStart = (id: string) => setDragId(id)
+  const handleDragOver = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    if (!dragId || dragId === targetId) return
+    const sorted = [...categories].sort((a, b) => a.sortOrder - b.sortOrder)
+    const fromIdx = sorted.findIndex(c => c.id === dragId)
+    const toIdx = sorted.findIndex(c => c.id === targetId)
+    if (fromIdx === -1 || toIdx === -1) return
+    const reordered = [...sorted]
+    const [moved] = reordered.splice(fromIdx, 1)
+    reordered.splice(toIdx, 0, moved)
+    setCategories(reordered.map((c, i) => ({ ...c, sortOrder: i })))
+  }
+  const handleDragEnd = async () => {
+    setDragId(null)
+    for (const cat of categories) {
+      await api.updateCategory(STORE_ID, cat.id, { sortOrder: cat.sortOrder })
+    }
+  }
+
   // ===== Render =====
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -208,15 +213,15 @@ export default function CategoryManagePage() {
   const sorted = [...categories].sort((a, b) => a.sortOrder - b.sortOrder)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 bg-card border-b shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-lg md:text-xl font-bold">{t('categoryManage.title')}</h1>
-            <p className="text-sm text-muted-foreground">{t('categoryManage.catCount', { count: categories.length })}</p>
+            <h1 className="text-lg md:text-xl font-bold font-display">{t.categories.title}</h1>
+            <p className="text-sm text-muted-foreground">{categories.length} {t.categories.catCount}</p>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleAdd}>{t('categoryManage.addCategory')}</Button>
+            <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => openDialog()}>{t.categories.addCategory}</Button>
           </div>
         </div>
       </header>
@@ -225,134 +230,133 @@ export default function CategoryManagePage() {
         {/* Mobile card list */}
         <div className="md:hidden space-y-2">
           {sorted.map(cat => (
-            <div key={cat.id} className="p-3 rounded-lg border bg-card flex items-center justify-between gap-2">
+            <div
+              key={cat.id}
+              draggable
+              onDragStart={() => handleDragStart(cat.id)}
+              onDragOver={(e) => handleDragOver(e, cat.id)}
+              onDragEnd={handleDragEnd}
+              className={cn('p-3 rounded-lg border bg-card flex items-center justify-between gap-2', dragId === cat.id && 'opacity-30')}
+            >
+              <GripVertical className="size-4 text-gray-300 shrink-0 cursor-grab active:cursor-grabbing" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm">{cat.name}</p>
                 {cat.nameEn && <p className="text-xs text-muted-foreground">{cat.nameEn}</p>}
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {t('categoryManage.sortOrder')}: {cat.sortOrder}
+                  {t.categories.sortOrder}: {cat.sortOrder}
                   {' · '}
-                  {t('categoryManage.itemCount')}: {itemCountForCategory(cat.id)}
+                  {t.categories.itemCount}: {itemCountForCategory(cat.id)}
                 </p>
               </div>
               <div className="flex gap-2 shrink-0">
-                <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleEdit(cat)}>
-                  {t('common:edit')}
+                <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => openDialog(cat)}>
+                  {t.common.edit}
                 </Button>
                 <Button variant="outline" size="sm" className="min-h-[44px] text-red-600" onClick={() => handleDelete(cat)}>
-                  {t('common:delete')}
+                  {t.common.delete}
                 </Button>
               </div>
             </div>
           ))}
           {sorted.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">{t('categoryManage.emptyPrompt')}</p>
+            <p className="text-center text-muted-foreground py-8">{t.categories.emptyPrompt}</p>
           )}
         </div>
 
-        <div className="hidden md:block bg-white rounded-lg border">
+        <div className="hidden md:block bg-card rounded-2xl shadow-card border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px] text-center">{t('categoryManage.sortOrder')}</TableHead>
-                <TableHead>{t('categoryManage.categoryName')}</TableHead>
-                <TableHead className="w-[100px] text-center">{t('categoryManage.itemCount')}</TableHead>
-                <TableHead className="w-[200px] text-right">{t('categoryManage.actions')}</TableHead>
+                <TableHead className="w-10" />
+                <TableHead className="w-[60px] text-center">{t.categories.sortOrder}</TableHead>
+                <TableHead>{t.categories.categoryName}</TableHead>
+                <TableHead className="w-[100px] text-center">{t.categories.itemCount}</TableHead>
+                <TableHead className="w-[80px]">{t.categories.active}</TableHead>
+                <TableHead className="w-[200px] text-right">{t.common.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sorted.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                    {t('categoryManage.emptyPrompt')}
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    {t.categories.emptyPrompt}
                   </TableCell>
                 </TableRow>
               ) : (
                 sorted.map((cat, idx) => (
-                  <TableRow key={cat.id}>
+                  <TableRow
+                    key={cat.id}
+                    draggable
+                    onDragStart={() => handleDragStart(cat.id)}
+                    onDragOver={(e) => handleDragOver(e, cat.id)}
+                    onDragEnd={handleDragEnd}
+                    className={cn(
+                      cat.active === false && 'opacity-50',
+                      dragId === cat.id && 'opacity-30'
+                    )}
+                  >
+                    <TableCell className="w-10 cursor-grab active:cursor-grabbing">
+                      <GripVertical className="size-4 text-gray-300" />
+                    </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-col items-center gap-0.5">
-                        <button
-                          onClick={() => handleMove(cat.id, 'up')}
-                          disabled={idx === 0}
-                          className="text-xs px-1 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          ▲
-                        </button>
+                        <button onClick={() => handleMove(cat.id, 'up')} disabled={idx === 0}
+                          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-sm hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed">▲</button>
                         {sortEditId === cat.id ? (
-                          <input
-                            ref={sortRef}
-                            type="number"
-                            value={sortEditValue}
-                            onChange={e => setSortEditValue(e.target.value)}
-                            onBlur={commitSortEdit}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') commitSortEdit()
-                              if (e.key === 'Escape') setSortEditId(null)
-                            }}
-                            className="w-10 text-center text-xs border rounded py-0.5 outline-none focus:ring-1 focus:ring-blue-500"
-                            autoFocus
-                          />
+                          <input ref={sortRef} type="number" value={sortEditValue}
+                            onChange={e => setSortEditValue(e.target.value)} onBlur={commitSortEdit}
+                            onKeyDown={e => { if (e.key === 'Enter') commitSortEdit(); if (e.key === 'Escape') setSortEditId(null) }}
+                            className="w-10 text-center text-xs border rounded py-0.5 outline-none focus:ring-1 focus:ring-blue-500" autoFocus />
                         ) : (
-                          <span
-                            onClick={() => startSortEdit(cat)}
-                            className="text-xs text-muted-foreground cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 rounded transition-colors"
-                            title={t('categoryManage.clickToRename')}
-                          >
-                            {cat.sortOrder}
-                          </span>
+                          <span onClick={() => startSortEdit(cat)} title={t.categories.clickToRename}
+                            className="text-xs text-muted-foreground cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 rounded transition-colors">{cat.sortOrder}</span>
                         )}
-                        <button
-                          onClick={() => handleMove(cat.id, 'down')}
-                          disabled={idx === sorted.length - 1}
-                          className="text-xs px-1 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          ▼
-                        </button>
+                        <button onClick={() => handleMove(cat.id, 'down')} disabled={idx === sorted.length - 1}
+                          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-sm hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed">▼</button>
                       </div>
                     </TableCell>
                     <TableCell>
                       {inlineEditId === cat.id ? (
-                        <input
-                          ref={inlineRef}
-                          value={inlineEditValue}
-                          onChange={e => setInlineEditValue(e.target.value)}
-                          onBlur={commitInlineEdit}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') commitInlineEdit()
-                            if (e.key === 'Escape') setInlineEditId(null)
-                          }}
-                          className="border rounded px-2 py-1 text-sm w-full max-w-[200px] outline-none focus:ring-1 focus:ring-blue-500"
-                          autoFocus
-                        />
+                        <input ref={inlineRef} value={inlineEditValue} onChange={e => setInlineEditValue(e.target.value)}
+                          onBlur={commitInlineEdit} onKeyDown={e => { if (e.key === 'Enter') commitInlineEdit(); if (e.key === 'Escape') setInlineEditId(null) }}
+                          className="border rounded px-2 py-1 text-sm w-full max-w-[200px] outline-none focus:ring-1 focus:ring-blue-500" autoFocus />
                       ) : (
-                        <span
-                          onClick={() => startInlineEdit(cat)}
-                          className="cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 -mx-1 rounded transition-colors font-medium"
-                          title={t('menuManage.clickToEdit')}
-                        >
-                          {cat.name}
-                        </span>
+                        <span onClick={() => startInlineEdit(cat)} title={t.menu.clickToEdit}
+                          className="cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 -mx-1 rounded transition-colors font-medium">{cat.name}</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-sm text-muted-foreground">
-                        {itemCountForCategory(cat.id)}
-                      </span>
+                    <TableCell className="text-center w-[80px]">
+                      <span className="text-sm text-muted-foreground tabular-nums">{itemCountForCategory(cat.id)}</span>
+                    </TableCell>
+                    <TableCell onPointerDown={e => e.stopPropagation()} onDragStart={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-1.5" draggable={false}>
+                        <Switch
+                          checked={cat.active !== false}
+                          onCheckedChange={async (checked) => {
+                            try {
+                              await api.updateCategory(STORE_ID, cat.id, { active: checked })
+                              await fetchData()
+                            } catch (err) {
+                              alert(err instanceof Error ? err.message : 'Failed to update')
+                            }
+                          }}
+                        />
+                        <div className="min-w-[60px]">
+                          <span className="text-xs font-medium">
+                            {cat.active !== false ? t.categories.active : t.categories.hidden}
+                          </span>
+                          {cat.active === false && (
+                            <p className="text-[10px] text-muted-foreground leading-tight">
+                              {t.categories.hiddenDesc}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(cat)}>
-                          {t('common:edit')}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() => handleDelete(cat)}
-                        >
-                          {t('common:delete')}
-                        </Button>
+                        <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => openDialog(cat)}>{t.common.edit}</Button>
+                        <Button variant="outline" size="sm" className="min-h-[44px] text-red-600 hover:text-red-700" onClick={() => handleDelete(cat)}>{t.common.delete}</Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -361,50 +365,53 @@ export default function CategoryManagePage() {
             </TableBody>
           </Table>
         </div>
+        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+          <GripVertical className="size-3" /> {t.categories.dragHint}
+        </p>
       </main>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-sm w-[calc(100vw-2rem)]">
           <DialogHeader>
-            <DialogTitle>{editingId ? t('categoryManage.editTitle') : t('categoryManage.addTitle')}</DialogTitle>
+            <DialogTitle>{editingId ? t.categories.editTitle : t.categories.addTitle}</DialogTitle>
           </DialogHeader>
           {editingCat && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">{t('categoryManage.nameLabel')}</label>
+                <label className="text-sm font-medium">{t.categories.nameLabel}</label>
                 <Input
                   className="text-base"
                   value={editingCat.name}
                   onChange={e => setEditingCat({ ...editingCat, name: e.target.value })}
-                  placeholder={t('categoryManage.namePlaceholder')}
+                  placeholder={t.categories.namePlaceholder}
                   autoFocus
                   onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">{t('categoryManage.nameEnLabel')}</label>
+                <label className="text-sm font-medium">{t.categories.nameEnLabel}</label>
                 <Input
                   className="text-base"
                   value={editingCat.nameEn ?? ''}
                   onChange={e => setEditingCat({ ...editingCat, nameEn: e.target.value })}
-                  placeholder={t('categoryManage.nameEnPlaceholder')}
+                  placeholder={t.categories.nameEnPlaceholder}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">{t('categoryManage.sortLabel')}</label>
+                <label className="text-sm font-medium">{t.categories.sortLabel}</label>
                 <Input
                   className="text-base"
                   type="number"
                   value={editingCat.sortOrder}
                   onChange={e => setEditingCat({ ...editingCat, sortOrder: parseInt(e.target.value || '0') })}
                 />
-                <p className="text-xs text-muted-foreground mt-1">{t('categoryManage.sortHint')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t.categories.sortHint}</p>
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common:cancel')}</Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>{t.common.cancel}</Button>
                 <Button onClick={handleSave} disabled={saving || !editingCat.name.trim()}>
-                  {saving ? t('common:saving') : t('common:save')}
+                  {saving ? t.common.saving : t.common.save}
                 </Button>
               </div>
             </div>

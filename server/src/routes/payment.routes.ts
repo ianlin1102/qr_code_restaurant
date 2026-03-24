@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createPaymentIntent } from '../controllers/payment.service.js'
+import { createPaymentIntent, createPaymentIntentForOrders } from '../controllers/payment.service.js'
 
 const router = Router({ mergeParams: true })
 
@@ -8,7 +8,18 @@ const router = Router({ mergeParams: true })
 router.post('/', async (req, res) => {
   try {
     const { storeId } = req.params as { storeId: string }
-    const { tableId, items, customerName } = req.body
+    const { tableId, items, customerName, orderIds } = req.body
+
+    // Pay for existing unpaid orders
+    if (orderIds && Array.isArray(orderIds) && orderIds.length > 0) {
+      const result = await createPaymentIntentForOrders({ storeId, orderIds })
+      if ('error' in result) {
+        res.status(result.status ?? 400).json({ error: result.error })
+        return
+      }
+      res.json(result)
+      return
+    }
 
     if (!tableId || !items || !Array.isArray(items) || items.length === 0) {
       res.status(400).json({ error: 'tableId and items are required' })
@@ -22,7 +33,8 @@ router.post('/', async (req, res) => {
     }
     res.json(result)
   } catch (err) {
-    res.status(500).json({ error: 'Payment processing failed' })
+    console.error('[checkout] Error:', err)
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Payment processing failed' })
   }
 })
 

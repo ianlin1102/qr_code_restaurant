@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useT } from '@/i18n/useT'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -21,14 +21,16 @@ interface Props {
 }
 
 export default function CloseTableDialog({ table, storeId, open, onOpenChange, onClosed }: Props) {
-  const { t } = useTranslation('admin')
+  const { t } = useT()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
   const [closing, setClosing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open || !table) return
     setLoading(true)
+    setError(null)
     api.getOrders(storeId, undefined, table.id)
       .then(data => {
         const active = data.filter(o =>
@@ -44,12 +46,11 @@ export default function CloseTableDialog({ table, storeId, open, onOpenChange, o
     if (!table) return
     setClosing(true)
     try {
-      const result = await api.closeTable(storeId, table.id)
-      alert(t('tables.closedCount', { count: result.closed }))
+      await api.closeTable(storeId, table.id)
       onOpenChange(false)
       onClosed()
     } catch (err) {
-      console.error('Failed to close table:', err)
+      setError(err instanceof Error ? err.message : 'Failed to close table')
     } finally {
       setClosing(false)
     }
@@ -61,18 +62,18 @@ export default function CloseTableDialog({ table, storeId, open, onOpenChange, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-md w-[calc(100vw-2rem)] md:w-auto max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('tables.confirmCloseTitle', { name: table.name })}</DialogTitle>
+          <DialogTitle>{t.tables.confirmCloseTitle} &quot;{table.name}&quot;?</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-muted-foreground">{t('tables.confirmCloseDesc')}</p>
+        <p className="text-sm text-muted-foreground">{t.tables.confirmCloseDesc}</p>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">{t('common:loading')}</p>
+          <p className="text-sm text-muted-foreground py-4 text-center">{t.common.loading}</p>
         ) : orders.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            {t('dashboard.noOrders')}
+            {t.dashboard.noOrders}
           </p>
         ) : (
           <div className="space-y-3">
@@ -95,22 +96,23 @@ export default function CloseTableDialog({ table, storeId, open, onOpenChange, o
             <Separator />
 
             <div className="flex justify-between font-semibold">
-              <span>{t('tables.grandTotal')}</span>
+              <span>{t.tables.grandTotal}</span>
               <span>{formatPriceUSD(grandTotal)}</span>
             </div>
           </div>
         )}
 
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex gap-2 justify-end pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('common:cancel')}
+            {t.common.cancel}
           </Button>
           <Button
             variant="destructive"
             onClick={handleClose}
             disabled={closing}
           >
-            {closing ? t('common:saving') : t('tables.closeConfirm')}
+            {closing ? t.common.saving : t.tables.closeConfirm}
           </Button>
         </div>
       </DialogContent>

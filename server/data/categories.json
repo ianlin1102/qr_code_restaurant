@@ -32,27 +32,31 @@
     "storeId": "store-demo-002",
     "name": "锅底",
     "nameEn": "Soup Base",
-    "sortOrder": 1
+    "sortOrder": 2,
+    "active": true
   },
   {
     "id": "4b5f6890-f2c8-4dd9-b554-9144d80fab92",
     "storeId": "store-demo-002",
     "name": "肉类",
     "nameEn": "Meats",
-    "sortOrder": 2
+    "sortOrder": 0,
+    "active": true
   },
   {
     "id": "48949f02-4af9-4be3-ae08-04b43780afe5",
     "storeId": "store-demo-002",
     "name": "蔬菜",
     "nameEn": "Vegetables",
-    "sortOrder": 3
+    "sortOrder": 3,
+    "active": true
   },
   {
     "id": "4e454b79-3a3c-4a94-bc1a-97ac5cbb0b9e",
     "storeId": "store-demo-002",
     "name": "饮品",
     "nameEn": "Beverages",
-    "sortOrder": 4
+    "sortOrder": 1,
+    "active": true
   }
 ]

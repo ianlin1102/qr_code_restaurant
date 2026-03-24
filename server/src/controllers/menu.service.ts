@@ -14,6 +14,7 @@ export function getMenu(storeId: string): MenuResponse | null {
 
   const categories = categoryStore
     .getByField('storeId', storeId)
+    .filter(c => c.active !== false)  // hide inactive from customers
     .sort((a, b) => a.sortOrder - b.sortOrder)
 
   const allItems = menuItemStore
@@ -57,11 +58,21 @@ export function createMenuItem(storeId: string, data: Omit<MenuItem, 'id' | 'sto
   return menuItemStore.create(item)
 }
 
-export function updateMenuItem(id: string, updates: Partial<MenuItem>): MenuItem | undefined {
-  return menuItemStore.update(id, updates)
+export function updateMenuItem(storeId: string, id: string, updates: Partial<MenuItem>): MenuItem | { error: string } {
+  const existing = menuItemStore.getById(id)
+  if (!existing || existing.storeId !== storeId) {
+    return { error: 'Item not found' }
+  }
+  const updated = menuItemStore.update(id, updates)
+  if (!updated) return { error: 'Failed to update item' }
+  return updated
 }
 
-export function deleteMenuItem(id: string): boolean {
+export function deleteMenuItem(storeId: string, id: string): boolean | { error: string } {
+  const existing = menuItemStore.getById(id)
+  if (!existing || existing.storeId !== storeId) {
+    return { error: 'Item not found' }
+  }
   return menuItemStore.delete(id)
 }
 
@@ -78,10 +89,22 @@ export function createCategory(storeId: string, name: string, sortOrder: number,
   return categoryStore.create(cat)
 }
 
-export function updateCategory(id: string, updates: Partial<Category>): Category | undefined {
-  return categoryStore.update(id, updates)
+export function updateCategory(storeId: string, id: string, updates: Partial<Category>): Category | { error: string } {
+  const existing = categoryStore.getById(id)
+  if (!existing || existing.storeId !== storeId) {
+    return { error: 'Category not found' }
+  }
+  console.log('[updateCategory]', id, JSON.stringify(updates))
+  const updated = categoryStore.update(id, updates)
+  if (!updated) return { error: 'Failed to update category' }
+  console.log('[updateCategory] result:', JSON.stringify(updated))
+  return updated
 }
 
-export function deleteCategory(id: string): boolean {
+export function deleteCategory(storeId: string, id: string): boolean | { error: string } {
+  const existing = categoryStore.getById(id)
+  if (!existing || existing.storeId !== storeId) {
+    return { error: 'Category not found' }
+  }
   return categoryStore.delete(id)
 }

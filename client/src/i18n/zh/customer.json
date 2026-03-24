@@ -9,9 +9,13 @@
     "selectSpec": "选规格",
     "from": "起",
     "required": "必选",
+    "quickTags": "快捷标签",
     "addToCart": "加入购物车",
     "goOrder": "去下单",
-    "viewOrders": "查看订单"
+    "callWaiter": "呼叫服务员",
+    "waiterCalled": "已通知工作人员！",
+    "viewOrders": "查看订单",
+    "itemsSoldOut": "以下购物车中的菜品已售罄并已移除：{{names}}"
   },
   "cart": {
     "title": "我的订单",
@@ -44,9 +48,46 @@
     "continueOrder": "继续点菜",
     "viewAllOrders": "查看全部订单",
     "paymentFailed": "付款失败",
-    "paymentFailedPrompt": "您的付款未完成，请重试。"
+    "paymentFailedPrompt": "您的付款未完成，请重试。",
+    "loadingOrder": "加载订单...",
+    "callStaff": "呼叫服务员",
+    "needHelp": "需要帮助？",
+    "estimatedTime": "预计等待时间",
+    "minutes": "{{min}} - {{max}} 分钟"
   },
   "scan": {
-    "error": "无法连接到服务器，请检查网络连接"
+    "error": "无法连接到服务器，请检查网络连接",
+    "retry": "重试",
+    "retryDesc": "请检查网络连接后重试。",
+    "loading": "正在确认桌位信息...",
+    "loadingZh": "Checking table availability..."
+  },
+  "checkout": {
+    "title": "结账",
+    "amountDue": "应付金额",
+    "payment": "付款",
+    "processing": "处理中...",
+    "pay": "支付 {{amount}}",
+    "noSession": "未找到支付会话",
+    "noSessionDesc": "请返回购物车重新发起支付。",
+    "paymentFailed": "支付失败",
+    "backToMenu": "返回菜单",
+    "loadingPayment": "加载支付表单...",
+    "securePayment": "安全加密支付",
+    "tip": "添加小费",
+    "tipCustom": "自定义",
+    "orderSummary": "订单详情"
+  },
+  "orderHistory": {
+    "title": "历史订单",
+    "noOrders": "暂无订单",
+    "backToMenu": "返回菜单",
+    "orderNumber": "订单 #{{number}}",
+    "items": "{{count}} 件商品"
+  },
+  "common": {
+    "allergyNotice": "价格已包含适用的服务费。如有严重过敏情况，请在提交前通知工作人员。",
+    "kitchenNotified": "厨房已通知",
+    "tableBadge": "桌号 {{name}}"
   }
 }

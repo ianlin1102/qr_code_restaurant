@@ -57,19 +57,19 @@ router.post('/items', requireAuth, (req, res) => {
 
 // PUT /api/stores/:storeId/menu/items/:itemId
 router.put('/items/:itemId', requireAuth, (req, res) => {
-  const updated = updateMenuItem(req.params.itemId, req.body)
-  if (!updated) {
-    res.status(404).json({ error: 'Item not found' })
+  const result = updateMenuItem(req.params.storeId, req.params.itemId, req.body)
+  if ('error' in result) {
+    res.status(404).json(result)
     return
   }
-  res.json(updated)
+  res.json(result)
 })
 
 // DELETE /api/stores/:storeId/menu/items/:itemId
 router.delete('/items/:itemId', requireAuth, (req, res) => {
-  const ok = deleteMenuItem(req.params.itemId)
-  if (!ok) {
-    res.status(404).json({ error: 'Item not found' })
+  const result = deleteMenuItem(req.params.storeId, req.params.itemId)
+  if (typeof result === 'object' && 'error' in result) {
+    res.status(404).json(result)
     return
   }
   res.status(204).end()
@@ -96,19 +96,19 @@ router.post('/categories', requireAuth, (req, res) => {
 
 // PUT /api/stores/:storeId/menu/categories/:catId
 router.put('/categories/:catId', requireAuth, (req, res) => {
-  const updated = updateCategory(req.params.catId, req.body)
-  if (!updated) {
-    res.status(404).json({ error: 'Category not found' })
+  const result = updateCategory(req.params.storeId, req.params.catId, req.body)
+  if ('error' in result) {
+    res.status(404).json(result)
     return
   }
-  res.json(updated)
+  res.json(result)
 })
 
 // DELETE /api/stores/:storeId/menu/categories/:catId
 router.delete('/categories/:catId', requireAuth, (req, res) => {
-  const ok = deleteCategory(req.params.catId)
-  if (!ok) {
-    res.status(404).json({ error: 'Category not found' })
+  const result = deleteCategory(req.params.storeId, req.params.catId)
+  if (typeof result === 'object' && 'error' in result) {
+    res.status(404).json(result)
     return
   }
   res.status(204).end()

@@ -9,9 +9,11 @@ export interface Store {
   openingHours?: string
   announcement?: string
   createdAt: string
+  autoAcceptOrders?: boolean
+  updatedAt?: string
 }
 
-export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store, 'description' | 'openingHours' | 'announcement'>>
+export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store, 'description' | 'openingHours' | 'announcement' | 'autoAcceptOrders'>>
 
 // ===== User/Role =====
 export type Role = 'owner' | 'staff'
@@ -33,6 +35,7 @@ export interface Category {
   name: string
   nameEn?: string
   sortOrder: number
+  active?: boolean
 }
 
 export interface MenuItemOptionChoice {
@@ -59,6 +62,7 @@ export interface MenuItem {
   description?: string
   descriptionEn?: string
   price: number
+  originalPrice?: number
   image?: string
   available: boolean
   sortOrder: number
@@ -72,8 +76,15 @@ export interface Table {
   name: string
   nameEn?: string
   qrCode?: string
-  status: 'idle' | 'occupied'
+  status: 'idle' | 'occupied' | 'cleaning' | 'bill-requested'
   currentOrderId?: string
+  zone?: string
+  capacity?: number
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  shape?: 'square' | 'round' | 'long'
 }
 
 // ===== Cart (frontend only) =====
@@ -137,9 +148,99 @@ export interface LoginRequest {
   password: string
 }
 
+export interface AuthUser {
+  id: string
+  username: string
+  role: string
+  storeId: string
+}
+
 export interface LoginResponse {
   token: string
-  user: { id: string; username: string; role: string; storeId: string }
+  user: AuthUser
+}
+
+// ===== Coupon =====
+export type DiscountType = 'percentage' | 'fixed' | 'bogo'
+
+export interface Coupon {
+  id: string
+  storeId: string
+  code: string
+  discountType: DiscountType
+  discountValue: number
+  minOrderAmount?: number
+  maxUses?: number
+  currentUses: number
+  active: boolean
+  expiresAt?: string
+  createdAt: string
+}
+
+// ===== Analytics =====
+export interface DailyStats {
+  date: string
+  orderCount: number
+  revenue: number
+  avgOrderValue: number
+}
+
+export interface TopItem {
+  menuItemId: string
+  name: string
+  nameEn?: string
+  quantity: number
+  revenue: number
+}
+
+export interface AnalyticsResponse {
+  dailyStats: DailyStats[]
+  topItems: TopItem[]
+  totalOrders: number
+  totalRevenue: number
+  avgOrderValue: number
+}
+
+// ===== Waitlist =====
+export interface WaitlistEntry {
+  id: string
+  storeId: string
+  name: string
+  partySize: number
+  phone?: string
+  estimatedWait?: number
+  status: 'waiting' | 'seated' | 'cancelled'
+  createdAt: string
+}
+
+// ===== Split Bill =====
+export interface SplitBillShare {
+  personName: string
+  items: { menuItemId: string; name: string; quantity: number; amount: number }[]
+  amount: number
+}
+
+export interface SplitBillRequest {
+  orderId: string
+  mode: 'equal' | 'by-item'
+  numberOfPeople?: number
+  shares?: SplitBillShare[]
+}
+
+export interface SplitBillSession {
+  orderId: string
+  shares: (SplitBillShare & { clientSecret?: string; paid: boolean })[]
+  totalAmount: number
+}
+
+// ===== Printer =====
+export interface PrinterConfig {
+  id: string
+  storeId: string
+  name: string
+  type: 'usb' | 'network'
+  address?: string
+  enabled: boolean
 }
 
 // ===== API Request/Response types =====

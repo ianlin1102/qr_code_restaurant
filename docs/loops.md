@@ -1,0 +1,335 @@
+# Executable Loop Commands
+
+可直接复制 prompt 到 `/loop` 命令执行。
+
+---
+
+## Loop 1: Structure Documentation
+
+```
+/loop 2h
+
+目标：为 qr_code_restaurant 项目生成结构快照文档
+
+执行步骤：
+1. 扫描整个项目目录，排除以下路径：
+   - bee/
+   - node_modules/
+   - .git/
+   - dist/ 或 build/
+
+2. 在 docs/project-structure/ 下创建文件夹
+   格式：YYYY-MM-DD-HH-CST/（使用当前 CST 时间）
+
+3. 生成以下 JSON 文件：
+
+data-flow.json
+- 列出每条 API 路由（method + path）
+- 每条路由的 request body shape（field name + type）
+- 每条路由的 response shape（field name + type）
+- 对应的 Prisma model（如果有）
+
+entity-schema.json
+- 列出 Prisma schema 里所有 model
+- 每个 model 的所有 field、type、是否 optional、relation
+
+component-tree.json
+- 列出所有 React 组件文件路径
+- 每个组件接收的 props（name + type）
+- 每个组件内部调用了哪些子组件
+
+api-contracts.json
+- 前端每一个 fetch/axios 调用的 URL
+- 对应传入的 request shape
+- 期望拿到的 response shape
+
+4. 在文件夹根目录生成 README.md 简要说明本次快照时间和项目状态
+```
+
+---
+
+## Loop 2: Type Consistency Check
+
+```
+/loop 1h
+
+目标：检查后端 API response 和前端 fetch 调用之间的 field 命名一致性
+
+执行步骤：
+1. 扫描 server/src/routes/ 下所有路由文件
+   提取每个路由 res.json() 返回的 field 名称
+
+2. 扫描 client/src/ 下所有 .ts/.tsx 文件
+   提取每个 fetch/axios 调用后访问的 response field 名称
+   例如 data.restaurantId、res.order_id 这类
+
+3. 对比两侧 field 名称，检查以下问题：
+   - camelCase vs snake_case 不一致
+   - 拼写不同但语义相同（如 userId vs user_id）
+   - 前端访问了后端没有返回的 field
+   - 后端返回了前端从未使用的 field
+
+4. 将结果输出到 docs/audit/YYYY-MM-DD-type-check.md
+   格式：
+   ✅ 一致的路由列表
+   ❌ 有问题的路由，列出具体 mismatch
+   ⚠️  后端返回但前端未使用的 field（可能是废弃字段）
+```
+
+---
+
+## Loop 3: Import Path Audit
+
+```
+/loop 30m
+
+目标：检查所有 TypeScript/TSX 文件的 import 路径是否实际存在
+
+执行步骤：
+1. 扫描 client/src/ 和 server/src/ 下所有 .ts 和 .tsx 文件
+
+2. 提取每个文件里所有相对路径 import
+   例如 import { X } from '../../components/X'
+   排除 node_modules 的 import
+
+3. 对每个相对路径，验证该文件是否实际存在于文件系统中
+
+4. 输出到 docs/audit/YYYY-MM-DD-import-audit.md
+   格式：
+   ❌ Broken imports：文件路径 → 引用了不存在的路径
+   ✅ 通过的文件数量统计
+
+注意：如果项目使用了 tsconfig path alias（如 @/components），
+请先读取 tsconfig.json 的 paths 配置再做路径解析
+```
+
+---
+
+## Loop 4: Schema → API → Frontend Type Chain Check
+
+```
+/loop 1.5h
+
+目标：以数据 schema 为 source of truth，
+检查数据三层（DB → API → Frontend）是否对齐
+
+执行步骤：
+1. 读取 shared/types.ts 和 server/data/*.json，建立所有实体和 field 列表
+   （未来迁移到 Prisma 后改为读取 prisma/schema.prisma）
+
+2. 对每个实体，扫描后端路由和 controller 文件：
+   - 找到操作该实体的路由
+   - 检查 res.json() 返回的 field 子集
+   - 记录实际返回的 field 列表
+
+3. 对照前端代码，检查前端使用了哪些 field
+   - 确认前端用的 field 在第 2 步中确实被返回
+
+4. 特别检查：
+   - 是否有 password、secret 等敏感字段被直接返回给前端
+   - 是否有前端在用但 schema 里已经不存在的 field
+
+5. 输出到 docs/audit/YYYY-MM-DD-type-chain.md
+   每个实体一个 section，列出三层对齐状态
+```
+
+---
+
+## Loop 5: Dead Code Audit
+
+```
+/loop 1h
+
+目标：找出项目中定义了但从未被使用的 API 路由和 React 组件
+
+执行步骤：
+1. API 路由检查：
+   - 扫描 server/src/routes/ 收集所有注册的路由 (method + path)
+   - 扫描 client/src/ 收集所有 fetch/axios 调用的 URL
+   - 列出在后端定义但前端从未调用的路由
+
+2. React 组件检查：
+   - 扫描 client/src/components/ 收集所有组件文件名
+   - 扫描所有 .tsx 文件收集 import 使用记录
+   - 列出定义了但从未被 import 的组件
+
+3. 输出到 docs/audit/YYYY-MM-DD-dead-code.md
+   格式：
+   🗑️  未使用的 API 路由（可考虑删除）
+   🗑️  未使用的组件文件（可考虑删除）
+   ⚠️  注意：不要自动删除，只列出供人工判断
+```
+
+---
+
+## Loop 6: UX / Tailwind Audit
+
+```
+/loop 1h
+
+目标：检查前端组件是否符合基本 UX 标准
+
+执行步骤：
+扫描 client/src/ 所有 .tsx 文件，逐一检查以下规则：
+
+【可点击元素】
+- button、a 标签、onClick 的 div/span 是否有 cursor-pointer
+- button 是否有 disabled 状态处理（disabled:opacity-50 或类似）
+
+【移动端适配】
+- 是否有使用 sm: / md: 响应式前缀
+- 文字是否过小（小于 text-sm 的固定字号要标记）
+- 点击区域是否足够大（建议 min-h-[44px] 或 p-3 以上）
+
+【Loading / 空状态】
+- 有 API 调用的组件是否有 loading UI（spinner、skeleton 等）
+- 列表类组件是否有空状态处理（empty state）
+
+【表单】
+- input 是否有 placeholder
+- 提交按钮是否有 loading 状态防止重复提交
+
+输出到 docs/audit/YYYY-MM-DD-ux-audit.md
+每个文件单独一个 section，分 ✅ 通过 / ❌ 问题项
+```
+
+---
+
+## Loop 7: Hardcoded Value Audit
+
+```
+/loop 30m
+
+目标：找出代码里所有应该放进 .env 但被写死的值
+
+执行步骤：
+1. 扫描所有 .ts/.tsx 文件，查找以下模式：
+   - URL 字符串包含 localhost 或具体 IP（如 192.168.x.x）
+   - 字符串包含 sk_test_ / sk_live_（Stripe key）
+   - 字符串包含 http:// 或 https:// 的硬编码域名
+   - 数字端口号直接写死（如 :3000 / :5000）
+   - 任何看起来像 API key 的长字符串（20字符以上的字母数字混合）
+
+2. 输出到 docs/audit/YYYY-MM-DD-hardcode-audit.md
+   格式：
+   文件路径 → 第几行 → 具体内容 → 建议改成哪个 env variable 名
+```
+
+---
+
+## Loop 8: Update CLAUDE.md
+
+```
+/loop 1h
+
+目标：基于当前项目实际代码状态，更新根目录的 CLAUDE.md，
+确保 CC 每次启动时拿到的 context 是准确的
+
+执行步骤：
+
+1. 读取当前 CLAUDE.md 内容（如果不存在则从零创建）
+
+2. 扫描以下内容来获取项目真实状态：
+   - package.json / pnpm-workspace.yaml（monorepo 结构）
+   - shared/types.ts（当前数据模型）
+   - server/src/routes/（所有已有的 API 路由）
+   - client/src/（页面结构和主要组件）
+   - .env.example（环境变量列表）
+   - docs/project-structure/ 下最新一次的快照（如果有）
+
+3. 更新或写入以下 CLAUDE.md sections：
+
+## Project Overview
+- 项目类型和核心功能一句话描述
+- Monorepo 结构（列出各包的职责）
+
+## Tech Stack
+- 前端：框架 / UI 库 / 状态管理 / 路由
+- 后端：框架 / ORM / 数据库
+- 部署：服务器 / 容器 / 存储 / 支付
+
+## Current Data Schema
+- 列出 shared/types.ts 所有主要类型和主要 field
+- 标注类型之间的关系
+
+## API Routes
+- 列出所有已注册路由（method + path + 一句话描述）
+- 标注哪些路由需要 auth
+
+## Frontend Structure
+- 列出主要页面和对应路由
+- 列出主要共享组件
+
+## Key Conventions
+- 命名规范（camelCase/snake_case 的使用边界）
+- 文件组织约定
+- 任何项目特有的模式或决定
+
+## Known Issues / Deferred Work
+- 从 docs/audit/ 最新的 audit 文件中提取未解决的问题
+- 已知的技术债务或暂时跳过的内容
+
+## Do NOT
+- 列出 CC 在这个项目里不应该做的事情
+
+4. 在文件底部添加一行：
+   > Last updated: YYYY-MM-DD HH:mm CST (auto-generated by Loop 8)
+
+5. 不要删除 CLAUDE.md 里人工手写的内容，
+   只更新/追加 Loop 8 负责的 sections。
+   如果某个 section 已经存在，用新扫描的内容覆盖它。
+```
+
+---
+
+## Loop 9: i18n Language Audit
+
+```
+/loop 1h
+
+目标：检查项目中所有用户可见的中文内容是否都有对应的英文翻译。
+本项目有两层国际化机制，两层都要检查。
+
+### 第一层：i18next JSON 翻译文件
+
+翻译文件在 client/src/i18n/ 下：
+- zh/common.json、zh/customer.json、zh/admin.json（中文）
+- en/common.json、en/customer.json、en/admin.json（英文）
+
+检查内容：
+1. 读取每对 zh/en JSON 文件，逐 key 对比
+2. 找出 zh 文件有但 en 文件缺少的 key（缺少英文翻译）
+3. 找出 en 文件有但 zh 文件缺少的 key（可能是废弃的）
+4. 检查 en 文件中 value 仍为中文的 key（复制粘贴忘了翻译）
+
+### 第二层：代码中的硬编码字符串
+
+扫描 client/src/ 下所有 .tsx 文件：
+1. JSX 中直接写的中文字符串（未通过 t() 函数）
+   - 例如：<p>请选择菜品</p> 应改为 <p>{t('selectDish')}</p>
+   - 排除：注释中的中文、console.log 中的中文
+2. 使用了 t() 但 key 在 JSON 文件中不存在的情况
+3. placeholder、title、aria-label 等属性中的硬编码中文
+
+### 第三层：数据模型双语字段
+
+检查 shared/types.ts 中所有有 name 字段的接口：
+1. 有 name 的是否也有 nameEn
+2. 有 description 的是否也有 descriptionEn
+3. 扫描后端 controller，创建实体时是否填充了 En 字段
+
+### 输出
+
+输出到 docs/audit/YYYY-MM-DD-i18n-audit.md
+格式：
+#### i18next 翻译文件
+| 命名空间 | zh key 数 | en key 数 | 缺失 en | 多余 en | 未翻译 |
+每个缺失/多余/未翻译的 key 单独列出
+
+#### 硬编码中文字符串
+文件路径 → 第几行 → 具体内容 → 建议的 i18n key 名
+
+#### 数据模型双语字段
+✅ 已有双语的接口
+❌ 缺少 En 字段的接口
+```

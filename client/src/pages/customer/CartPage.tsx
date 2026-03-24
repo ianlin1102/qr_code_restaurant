@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
+import { ArrowLeft, Info, Loader2, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
 import { useCartStore, unitPrice } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
@@ -16,38 +14,27 @@ export default function CartPage() {
   const navigate = useNavigate()
   const { storeId, tableId, tableName } = useSessionStore()
   const { items, updateQuantity, updateRemark, totalPrice, totalItems } = useCartStore()
-  const { t } = useTranslation('customer')
+  const { t, i18n } = useTranslation('customer')
+  const lang = i18n.language
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // No session
-  if (!storeId || !tableId) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-lg font-semibold mb-2">{t('cart.noTable')}</h2>
-        <p className="text-muted-foreground text-center mb-4">
-          {t('cart.scanPrompt')}
-        </p>
-      </div>
-    )
-  }
+  if (!storeId || !tableId) return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+      <h2 className="text-lg font-semibold mb-2">{t('cart.noTable')}</h2>
+      <p className="text-muted-foreground text-center mb-4">{t('cart.scanPrompt')}</p>
+    </div>
+  )
 
-  // Empty cart
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-lg font-semibold mb-2">{t('cart.emptyCart')}</h2>
-        <p className="text-muted-foreground text-center mb-4">
-          {t('cart.emptyPrompt')}
-        </p>
-        <Button onClick={() => navigate(`/menu/${storeId}`)}>
-          {t('cart.backToMenu')}
-        </Button>
-      </div>
-    )
-  }
+  if (items.length === 0) return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+      <h2 className="text-lg font-semibold mb-2">{t('cart.emptyCart')}</h2>
+      <p className="text-muted-foreground text-center mb-4">{t('cart.emptyPrompt')}</p>
+      <Button onClick={() => navigate(`/menu/${storeId}`)}>{t('cart.backToMenu')}</Button>
+    </div>
+  )
 
   async function handleCheckout() {
     if (!storeId || !tableId) return
@@ -66,7 +53,14 @@ export default function CartPage() {
         })),
       })
       // Navigate to payment page with clientSecret (order created after payment succeeds)
-      navigate(`/store/${storeId}/checkout`, { state: { clientSecret, amount } })
+      navigate(`/store/${storeId}/checkout`, { state: {
+        clientSecret, amount, tableId,
+        items: items.map(({ menuItemId, quantity, remark, selectedOptions }) => ({
+          menuItemId, quantity,
+          ...(remark ? { remark } : {}),
+          ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
+        })),
+      } })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start checkout')
     } finally {
@@ -75,9 +69,9 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
+    <div className="min-h-screen bg-background pb-32">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center gap-3">
+      <div className="sticky top-0 z-10 bg-card/90 backdrop-blur-xl px-4 py-3 flex items-center gap-3 shadow-sm">
         <Button
           variant="ghost"
           size="icon"
@@ -86,14 +80,19 @@ export default function CartPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg font-semibold">{t('cart.title')}</h1>
-          {tableName && (
-            <p className="text-xs text-muted-foreground">{t('cart.tableLabel')}: {tableName}</p>
-          )}
+          <h1 className="text-lg font-semibold">
+            {lang === 'zh' ? '购物车' : 'Shopping Cart'}
+            <span className="text-muted-foreground font-normal text-sm ml-1.5">
+              / {lang === 'zh' ? 'Shopping Cart' : '购物车'}
+            </span>
+          </h1>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              {tableName}
+            </span>
+          </div>
         </div>
-        <span className="text-sm text-muted-foreground">
-          {t('cart.itemCount', { count: totalItems() })}
-        </span>
       </div>
 
       <div className="max-w-lg mx-auto p-4">
@@ -101,14 +100,17 @@ export default function CartPage() {
           {items.map((item) => {
             const price = unitPrice(item)
             return (
-              <Card key={item.cartKey} className="p-3 md:p-4 space-y-3">
+              <div key={item.cartKey} className="bg-card rounded-xl p-3 md:p-4 space-y-3 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
+                  <div className="w-10 h-10 rounded-full bg-muted/50 shrink-0 flex items-center justify-center text-lg">
+                    {item.name.charAt(0)}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{item.name}</p>
                     {item.selectedOptions && item.selectedOptions.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {item.selectedOptions.map(opt => (
-                          <Badge key={opt.optionId} variant="outline" className="text-xs">
+                          <Badge key={opt.optionId} variant="outline" className="text-xs rounded-full bg-blue-50 border-blue-200 text-blue-700">
                             {opt.optionName}: {opt.choiceName}
                             {opt.priceAdjust > 0 && ` +${formatPriceUSD(opt.priceAdjust)}`}
                           </Badge>
@@ -129,7 +131,7 @@ export default function CartPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10"
+                      className="h-11 w-11"
                       onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
                     >
                       {item.quantity === 1 ? (
@@ -142,7 +144,7 @@ export default function CartPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10"
+                      className="h-11 w-11"
                       onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
                     >
                       <Plus className="h-4 w-4" />
@@ -156,33 +158,43 @@ export default function CartPage() {
                   onChange={(e) => updateRemark(item.cartKey, e.target.value)}
                   className="text-base"
                 />
-              </Card>
+              </div>
             )
           })}
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-xl shadow-lg pb-safe">
         <div className="max-w-lg mx-auto p-4 space-y-3">
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
+            <Info className="size-4 text-blue-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-700">{t('common.allergyNotice')}</p>
+          </div>
           {error && (
             <p className="text-sm text-destructive text-center">{error}</p>
           )}
-          <Separator />
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">
                 {t('cart.itemCount', { count: totalItems() })}
               </p>
-              <p className="text-xl font-bold">{formatPriceUSD(totalPrice())}</p>
+              <p className="text-2xl font-bold">{formatPriceUSD(totalPrice())}</p>
             </div>
             <Button
               size="lg"
               onClick={handleCheckout}
               disabled={submitting}
-              className="min-w-[140px]"
+              className="min-w-[160px] min-h-[48px] bg-primary hover:bg-primary/90"
             >
-              {submitting ? t('cart.submitting') : t('cart.submitOrder')}
+              {submitting ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" />
+                  {t('cart.submitting')}
+                </span>
+              ) : (
+                t('cart.submitOrder')
+              )}
             </Button>
           </div>
         </div>

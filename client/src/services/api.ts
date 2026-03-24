@@ -1,4 +1,4 @@
-import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest } from '@qr-order/shared'
+import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, SplitBillRequest, SplitBillSession, AuthUser } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
 const BASE = '/api'
@@ -29,6 +29,13 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // Auth
+  login: (storeId: string, username: string, password: string) =>
+    fetchJSON<LoginResponse>(`/stores/${storeId}/auth/login`, {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    }),
+
   // Store
   getStore: (storeId: string) =>
     fetchJSON<Store>(`/stores/${storeId}`),
@@ -61,6 +68,12 @@ export const api = {
     fetchJSON<Order>(`/stores/${storeId}/orders/${orderId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    }),
+
+  transferOrder: (storeId: string, orderId: string, targetTableId: string) =>
+    fetchJSON<Order>(`/stores/${storeId}/orders/${orderId}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify({ targetTableId }),
     }),
 
   updateOrderItems: (storeId: string, orderId: string, items: OrderItem[]) =>
@@ -150,11 +163,108 @@ export const api = {
     fetchJSON<Order[]>(`/stores/${storeId}/orders?tableId=${tableId}`),
 
   // Checkout — creates Stripe PaymentIntent only, no order
-  createCheckout: (storeId: string, data: { tableId: string; items: { menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]; customerName?: string }) =>
+  createCheckout: (storeId: string, data: { tableId: string; items: { menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]; customerName?: string; tipAmount?: number }) =>
     fetchJSON<{ clientSecret: string; amount: number }>(
       `/stores/${storeId}/checkout`,
       { method: 'POST', body: JSON.stringify(data) },
     ),
+
+  // Checkout for existing unpaid orders
+  createCheckoutForOrders: (storeId: string, orderIds: string[]) =>
+    fetchJSON<{ clientSecret: string; amount: number }>(
+      `/stores/${storeId}/checkout`,
+      { method: 'POST', body: JSON.stringify({ orderIds }) },
+    ),
+
+  // Analytics
+  getAnalytics: (storeId: string, startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams()
+    if (startDate) params.set('startDate', startDate)
+    if (endDate) params.set('endDate', endDate)
+    const qs = params.toString()
+    return fetchJSON<AnalyticsResponse>(`/stores/${storeId}/analytics${qs ? `?${qs}` : ''}`)
+  },
+
+  // Coupons
+  getCoupons: (storeId: string) =>
+    fetchJSON<Coupon[]>(`/stores/${storeId}/coupons`),
+
+  createCoupon: (storeId: string, data: Omit<Coupon, 'id' | 'storeId' | 'currentUses' | 'createdAt'>) =>
+    fetchJSON<Coupon>(`/stores/${storeId}/coupons`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateCoupon: (storeId: string, couponId: string, data: Partial<Coupon>) =>
+    fetchJSON<Coupon>(`/stores/${storeId}/coupons/${couponId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteCoupon: (storeId: string, couponId: string) =>
+    fetchJSON<void>(`/stores/${storeId}/coupons/${couponId}`, {
+      method: 'DELETE',
+    }),
+
+  // Waitlist
+  getWaitlist: (storeId: string) =>
+    fetchJSON<WaitlistEntry[]>(`/stores/${storeId}/waitlist`),
+
+  addToWaitlist: (storeId: string, data: { name: string; partySize: number; phone?: string }) =>
+    fetchJSON<WaitlistEntry>(`/stores/${storeId}/waitlist`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateWaitlistEntry: (storeId: string, entryId: string, data: Partial<WaitlistEntry>) =>
+    fetchJSON<WaitlistEntry>(`/stores/${storeId}/waitlist/${entryId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  removeFromWaitlist: (storeId: string, entryId: string) =>
+    fetchJSON<void>(`/stores/${storeId}/waitlist/${entryId}`, {
+      method: 'DELETE',
+    }),
+
+  seatWaitlistEntry: (storeId: string, entryId: string) =>
+    fetchJSON<WaitlistEntry>(`/stores/${storeId}/waitlist/${entryId}/seat`, {
+      method: 'POST',
+    }),
+
+  // Split Bill
+  createSplitBill: (storeId: string, data: SplitBillRequest) =>
+    fetchJSON<SplitBillSession>(`/stores/${storeId}/split-bill`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Staff Management
+  getStaff: (storeId: string) =>
+    fetchJSON<AuthUser[]>(`/stores/${storeId}/staff`),
+
+  createStaff: (storeId: string, data: { username: string; password: string; role: string }) =>
+    fetchJSON<AuthUser>(`/stores/${storeId}/staff`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateStaff: (storeId: string, userId: string, data: { role?: string }) =>
+    fetchJSON<AuthUser>(`/stores/${storeId}/staff/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteStaff: (storeId: string, userId: string) =>
+    fetchJSON<void>(`/stores/${storeId}/staff/${userId}`, {
+      method: 'DELETE',
+    }),
+
+  // Printer
+  reprintOrder: (storeId: string, orderId: string) =>
+    fetchJSON<{ success: boolean }>(`/stores/${storeId}/printer/print/${orderId}`, {
+      method: 'POST',
+    }),
 
   // Upload
   uploadImage: async (file: File): Promise<string> => {

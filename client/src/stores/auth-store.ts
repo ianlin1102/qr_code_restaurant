@@ -1,12 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-
-interface AuthUser {
-  id: string
-  username: string
-  role: string
-  storeId: string
-}
+import type { AuthUser } from '@qr-order/shared'
 
 interface AuthState {
   token: string | null
@@ -14,6 +8,7 @@ interface AuthState {
   setAuth: (token: string, user: AuthUser) => void
   logout: () => void
   isAuthenticated: () => boolean
+  isOwner: () => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -24,6 +19,7 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (token, user) => set({ token, user }),
       logout: () => set({ token: null, user: null }),
       isAuthenticated: () => !!get().token,
+      isOwner: () => get().user?.role === 'owner',
     }),
     { name: 'auth-storage' }
   )

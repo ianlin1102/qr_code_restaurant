@@ -9,9 +9,13 @@
     "selectSpec": "Options",
     "from": "+",
     "required": "Required",
+    "quickTags": "Quick tags",
     "addToCart": "Add to cart",
     "goOrder": "Place order",
-    "viewOrders": "View orders"
+    "callWaiter": "Call Waiter",
+    "waiterCalled": "Staff has been notified!",
+    "viewOrders": "View orders",
+    "itemsSoldOut": "Some items in your cart are now sold out and have been removed: {{names}}"
   },
   "cart": {
     "title": "My Orders",
@@ -44,9 +48,46 @@
     "continueOrder": "Order more",
     "viewAllOrders": "View all orders",
     "paymentFailed": "Payment Failed",
-    "paymentFailedPrompt": "Your payment was not completed. Please try again."
+    "paymentFailedPrompt": "Your payment was not completed. Please try again.",
+    "loadingOrder": "Loading order...",
+    "callStaff": "Call Staff",
+    "needHelp": "Need help with your order?",
+    "estimatedTime": "Estimated Ready In",
+    "minutes": "{{min}} - {{max}} Minutes"
   },
   "scan": {
-    "error": "Cannot connect to server. Please check your connection."
+    "error": "Cannot connect to server. Please check your connection.",
+    "retry": "Retry",
+    "retryDesc": "Please check your internet connection and try again.",
+    "loading": "Checking table availability...",
+    "loadingZh": "正在确认桌位信息..."
+  },
+  "checkout": {
+    "title": "Checkout",
+    "amountDue": "Amount Due",
+    "payment": "Payment",
+    "processing": "Processing...",
+    "pay": "Pay {{amount}}",
+    "noSession": "No checkout session found.",
+    "noSessionDesc": "Please go back to your cart to start checkout.",
+    "paymentFailed": "Payment failed",
+    "backToMenu": "Back to menu",
+    "loadingPayment": "Loading payment form...",
+    "securePayment": "Secure encrypted payment via Stripe",
+    "tip": "Add a Tip",
+    "tipCustom": "Custom",
+    "orderSummary": "Order Summary"
+  },
+  "orderHistory": {
+    "title": "Order History",
+    "noOrders": "No orders yet",
+    "backToMenu": "Back to Menu",
+    "orderNumber": "Order #{{number}}",
+    "items": "{{count}} items"
+  },
+  "common": {
+    "allergyNotice": "Prices include service charge where applicable. Please notify staff of any severe allergies before submitting.",
+    "kitchenNotified": "Kitchen Notified",
+    "tableBadge": "TABLE {{name}}"
   }
 }

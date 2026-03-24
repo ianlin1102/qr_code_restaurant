@@ -1,743 +1,291 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
+import { useT } from '@/i18n/useT'
+import { Plus, Loader2, Minus, ArrowRight, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '@/services/api'
-import { formatPriceUSD } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import type { MenuItem, Category, MenuItemOption, MenuItemOptionChoice } from '@qr-order/shared'
-import { v4 as uuid } from 'uuid'
 import { useAuthStore } from '@/stores/auth-store'
-import ImageUpload from '@/components/ImageUpload'
+import { useCartStore, unitPrice } from '@/stores/cart-store'
+import { formatPriceUSD } from '@/lib/format'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import MenuItemForm, { blankItem } from '@/components/MenuItemForm'
+import MenuItemTable from '@/components/MenuItemTable'
+import type { MenuItem, Category } from '@qr-order/shared'
 
-type ViewMode = 'table' | 'preview'
-
-/** Inline editable text — click to edit, blur/Enter to save */
-function InlineEdit({
-  value,
-  onSave,
-  className = '',
-  type = 'text',
-}: {
-  value: string
-  onSave: (val: string) => void
-  className?: string
-  type?: 'text' | 'price'
-}) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(value)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const startEdit = () => {
-    setDraft(value)
-    setEditing(true)
-    setTimeout(() => inputRef.current?.select(), 0)
-  }
-
-  const commit = () => {
-    setEditing(false)
-    if (draft !== value) onSave(draft)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') commit()
-    if (e.key === 'Escape') { setDraft(value); setEditing(false) }
-  }
-
-  if (!editing) {
-    return (
-      <span
-        onClick={startEdit}
-        className={`cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 -mx-1 rounded transition-colors ${className}`}
-        title="click to edit"
-      >
-        {value}
-      </span>
-    )
-  }
-
-  return (
-    <input
-      ref={inputRef}
-      type={type === 'price' ? 'number' : 'text'}
-      step={type === 'price' ? '0.01' : undefined}
-      value={draft}
-      onChange={e => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={handleKeyDown}
-      className={`border rounded px-1 py-0.5 text-sm w-full outline-none focus:ring-1 focus:ring-blue-500 ${className}`}
-      autoFocus
-    />
-  )
+const CAT_ICONS: Record<string, string> = {
+  appetizer: '🥗', starter: '🥗', salad: '🥗', main: '🍽️', entree: '🍽️',
+  course: '🍽️', dessert: '🍰', sweet: '🍰', beverage: '🥤', drink: '🥤',
+  coffee: '☕', tea: '🍵', special: '⭐', chef: '⭐', soup: '🍜', hotpot: '🍲',
 }
-
-// Blank item template
-function blankItem(categoryId: string): Omit<MenuItem, 'id' | 'storeId'> {
-  return {
-    categoryId,
-    name: '',
-    description: '',
-    price: 0,
-    available: true,
-    sortOrder: 0,
-    options: [],
-  }
-}
-
-function blankOption(): MenuItemOption {
-  return { id: uuid(), name: '', required: false, choices: [] }
-}
-
-function blankChoice(): MenuItemOptionChoice {
-  return { id: uuid(), name: '', priceAdjust: 0 }
+function catIcon(name: string): string {
+  const l = name.toLowerCase()
+  for (const [k, v] of Object.entries(CAT_ICONS)) { if (l.includes(k)) return v }
+  return '📋'
 }
 
 export default function MenuManagePage() {
-  const { t } = useTranslation('admin')
-  const STORE_ID = useAuthStore(s => s.user!.storeId)
+  const { t } = useT()
+  const storeId = useAuthStore(s => s.user?.storeId) ?? ''
+  const [searchParams] = useSearchParams()
+  const orderTableId = searchParams.get('tableId')
+  const orderTableName = searchParams.get('tableName')
   const [items, setItems] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('table')
-
-  // Dialog state
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [activeCatId, setActiveCatId] = useState<string | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Partial<MenuItem> | null>(null)
   const [isNew, setIsNew] = useState(false)
-  const [saving, setSaving] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
-      const [itemsData, catsData] = await Promise.all([
-        api.getMenuItems(STORE_ID),
-        api.getCategories(STORE_ID),
-      ])
-      setItems(itemsData)
-      setCategories(catsData)
-    } catch (err) {
-      console.error('Failed to fetch menu data:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+      const [i, c] = await Promise.all([api.getMenuItems(storeId), api.getCategories(storeId)])
+      setItems(i); setCategories(c)
+    } catch { /* retry */ } finally { setLoading(false) }
+  }, [storeId])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  useEffect(() => { fetchData() }, [fetchData])
 
-  // ===== CRUD handlers =====
+  // Filter items by selected category (or show all)
+  const filteredItems = activeCatId
+    ? items.filter(i => i.categoryId === activeCatId)
+    : items
+  const activeCat = categories.find(c => c.id === activeCatId)
 
-  const handleAdd = () => {
-    const firstCat = categories[0]?.id ?? ''
-    setEditingItem(blankItem(firstCat))
-    setIsNew(true)
-    setDialogOpen(true)
-  }
-
+  const handleAdd = () => { setEditingItem(blankItem(categories[0]?.id ?? '')); setIsNew(true); setFormOpen(true) }
   const handleEdit = (item: MenuItem) => {
     setEditingItem({ ...item, options: item.options ? JSON.parse(JSON.stringify(item.options)) : [] })
-    setIsNew(false)
-    setDialogOpen(true)
+    setIsNew(false); setFormOpen(true)
   }
+  const addItem = useCartStore(s => s.addItem)
+  const handleAddToOrder = orderTableId ? (item: MenuItem) => {
+    addItem({ menuItemId: item.id, name: item.name, price: item.price })
+  } : undefined
+  const handleDelete = async (id: string) => { if (!confirm('Delete?')) return; await api.deleteMenuItem(storeId, id); fetchData() }
+  const handleToggle = async (item: MenuItem) => { await api.updateMenuItem(storeId, item.id, { available: !item.available }); fetchData() }
+  const handleInline = async (id: string, field: string, value: unknown) => { await api.updateMenuItem(storeId, id, { [field]: value }); fetchData() }
+  const closeForm = () => { setFormOpen(false); setEditingItem(null) }
+  const onSaved = () => { closeForm(); fetchData() }
 
-  const handleSave = async () => {
-    if (!editingItem || !editingItem.name || editingItem.price == null) return
-    setSaving(true)
-    try {
-      if (isNew) {
-        await api.createMenuItem(STORE_ID, {
-          categoryId: editingItem.categoryId!,
-          name: editingItem.name,
-          nameEn: editingItem.nameEn,
-          description: editingItem.description,
-          descriptionEn: editingItem.descriptionEn,
-          price: editingItem.price,
-          image: editingItem.image,
-          available: editingItem.available ?? true,
-          sortOrder: editingItem.sortOrder ?? 0,
-          options: editingItem.options,
-        })
-      } else {
-        await api.updateMenuItem(STORE_ID, editingItem.id!, editingItem)
-      }
-      setDialogOpen(false)
-      setEditingItem(null)
-      await fetchData()
-    } catch (err) {
-      console.error('Failed to save:', err)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this dish?')) return
-    try {
-      await api.deleteMenuItem(STORE_ID, id)
-      await fetchData()
-    } catch (err) {
-      console.error('Failed to delete:', err)
-    }
-  }
-
-  const handleToggleAvailable = async (item: MenuItem) => {
-    try {
-      await api.updateMenuItem(STORE_ID, item.id, { available: !item.available })
-      await fetchData()
-    } catch (err) {
-      console.error('Failed to toggle:', err)
-    }
-  }
-
-  /** Inline quick-save a single field */
-  const handleInlineUpdate = async (itemId: string, updates: Partial<MenuItem>) => {
-    try {
-      await api.updateMenuItem(STORE_ID, itemId, updates)
-      await fetchData()
-    } catch (err) {
-      console.error('Failed to update:', err)
-    }
-  }
-
-  // ===== Options editing helpers =====
-
-  const updateEditingField = (field: string, value: unknown) => {
-    setEditingItem(prev => prev ? { ...prev, [field]: value } : prev)
-  }
-
-  const addOption = () => {
-    setEditingItem(prev => {
-      if (!prev) return prev
-      const options = [...(prev.options ?? []), blankOption()]
-      return { ...prev, options }
-    })
-  }
-
-  const updateOption = (optIdx: number, field: keyof MenuItemOption, value: unknown) => {
-    setEditingItem(prev => {
-      if (!prev) return prev
-      const options = [...(prev.options ?? [])]
-      options[optIdx] = { ...options[optIdx], [field]: value }
-      return { ...prev, options }
-    })
-  }
-
-  const removeOption = (optIdx: number) => {
-    setEditingItem(prev => {
-      if (!prev) return prev
-      const options = (prev.options ?? []).filter((_, i) => i !== optIdx)
-      return { ...prev, options }
-    })
-  }
-
-  const addChoice = (optIdx: number) => {
-    setEditingItem(prev => {
-      if (!prev) return prev
-      const options = [...(prev.options ?? [])]
-      options[optIdx] = {
-        ...options[optIdx],
-        choices: [...options[optIdx].choices, blankChoice()],
-      }
-      return { ...prev, options }
-    })
-  }
-
-  const updateChoice = (optIdx: number, choiceIdx: number, field: keyof MenuItemOptionChoice, value: unknown) => {
-    setEditingItem(prev => {
-      if (!prev) return prev
-      const options = [...(prev.options ?? [])]
-      const choices = [...options[optIdx].choices]
-      choices[choiceIdx] = { ...choices[choiceIdx], [field]: value }
-      options[optIdx] = { ...options[optIdx], choices }
-      return { ...prev, options }
-    })
-  }
-
-  const removeChoice = (optIdx: number, choiceIdx: number) => {
-    setEditingItem(prev => {
-      if (!prev) return prev
-      const options = [...(prev.options ?? [])]
-      options[optIdx] = {
-        ...options[optIdx],
-        choices: options[optIdx].choices.filter((_, i) => i !== choiceIdx),
-      }
-      return { ...prev, options }
-    })
-  }
-
-  // ===== Render =====
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    )
-  }
-
-  // Group items by category for display
-  const grouped = categories.map(cat => ({
-    ...cat,
-    items: items.filter(i => i.categoryId === cat.id).sort((a, b) => a.sortOrder - b.sortOrder),
-  }))
+  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg md:text-xl font-bold">{t('menuManage.title')}</h1>
-            <p className="text-sm text-muted-foreground">{t('menuManage.itemCount', { count: items.length })} · {t('menuManage.catCount', { count: categories.length })}</p>
+    <div className="flex h-full overflow-hidden bg-background">
+      {/* ── Main content (no left sidebar — AdminLayout already provides it) ── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Category slider + header */}
+        <div className="border-b bg-card">
+          <div className="px-6 pt-4 pb-3 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">{activeCat?.name ?? t.menu.title}</h2>
+              <p className="text-sm text-gray-500">
+                {activeCatId
+                  ? `${filteredItems.length} / ${items.length} ${t.menu.itemCount}`
+                  : `${items.length} ${t.menu.itemCount} · ${categories.length} ${t.categories.title}`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button className="bg-primary hover:bg-primary/90" onClick={handleAdd}>
+                <Plus className="size-4 mr-1" />{t.menu.newItem}
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode(viewMode === 'table' ? 'preview' : 'table')}
-            >
-              {viewMode === 'table' ? t('menuManage.previewMode') : t('menuManage.tableMode')}
-            </Button>
-            <Button size="sm" onClick={handleAdd}>
-              {t('menuManage.addItem')}
-            </Button>
+          {/* Horizontal category slider */}
+          <CategorySlider categories={categories} items={items}
+            activeCatId={activeCatId} onSelect={setActiveCatId} />
+        </div>
+
+        {/* Items grid */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <MenuItemTable items={filteredItems} categories={categories} viewMode="table"
+            onEdit={handleEdit} onDelete={handleDelete}
+            onToggleAvailable={handleToggle} onInlineEdit={handleInline}
+            onAddToOrder={handleAddToOrder} />
+
+          {/* Insight stats */}
+          <div className="grid grid-cols-3 gap-3 mt-6">
+            <div className="bg-card rounded-lg border p-3">
+              <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">{t.menu.activeDiscounts}</p>
+              <p className="text-2xl font-bold mt-1">{items.filter(i => i.originalPrice && i.originalPrice > i.price).length}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-3">
+              <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">{t.menu.outOfStock}</p>
+              <p className="text-2xl font-bold mt-1">{items.filter(i => !i.available).length}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-3">
+              <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">{t.menu.topCategory}</p>
+              <p className="text-lg font-bold mt-1 truncate">
+                {(() => { const counts = categories.map(c => ({ name: c.name, count: items.filter(i => i.categoryId === c.id).length })); return counts.sort((a, b) => b.count - a.count)[0]?.name ?? '-' })()}
+              </p>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-5xl mx-auto px-4 py-4">
-        {viewMode === 'table' ? (
-          /* ===== Table View ===== */
-          <>
-            <div className="hidden md:block space-y-6">
-              {grouped.map(cat => (
-                <div key={cat.id}>
-                  <h2 className="text-sm font-semibold text-muted-foreground mb-2">{cat.name}</h2>
-                  <div className="bg-white rounded-lg border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[200px]">{t('menuManage.dishName')}</TableHead>
-                          <TableHead className="w-[100px]">{t('menuManage.price')}</TableHead>
-                          <TableHead className="w-[120px]">{t('menuManage.specs')}</TableHead>
-                          <TableHead className="w-[80px]">{t('menuManage.statusCol')}</TableHead>
-                          <TableHead className="w-[140px] text-right">{t('menuManage.actions')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {cat.items.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-4">
-                              {t('menuManage.noItems')}
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          cat.items.map(item => (
-                            <TableRow key={item.id} className={!item.available ? 'opacity-50' : ''}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  {item.image ? (
-                                    <img src={item.image} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded bg-gray-100 shrink-0" />
-                                  )}
-                                  <div>
-                                    <InlineEdit
-                                      value={item.name}
-                                      onSave={val => handleInlineUpdate(item.id, { name: val })}
-                                      className="font-medium"
-                                    />
-                                    {item.description && (
-                                      <span className="text-xs text-muted-foreground ml-2">{item.description}</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <InlineEdit
-                                  value={(item.price / 100).toFixed(2)}
-                                  type="price"
-                                  onSave={val => handleInlineUpdate(item.id, { price: Math.round(parseFloat(val || '0') * 100) })}
-                                  className="font-mono"
-                                />
-                              </TableCell>
-                              <TableCell>
-                                {item.options && item.options.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {item.options.map(opt => (
-                                      <Badge key={opt.id} variant="secondary" className="text-xs">
-                                        {opt.name}({opt.choices.length})
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Switch
-                                  checked={item.available}
-                                  onCheckedChange={() => handleToggleAvailable(item)}
-                                />
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex gap-1 justify-end">
-                                  <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
-                                    {t('common:edit')}
-                                  </Button>
-                                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDelete(item.id)}>
-                                    {t('common:delete')}
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* ── Right: Order sidebar (only in ordering mode) ── */}
+      {orderTableId && <OrderSidebar storeId={storeId} tableId={orderTableId} tableName={orderTableName} />}
 
-            {/* Mobile card list */}
-            <div className="md:hidden space-y-4">
-              {grouped.map(cat => (
-                <div key={cat.id}>
-                  <h2 className="text-sm font-semibold text-muted-foreground mb-2">{cat.name}</h2>
-                  <div className="space-y-2">
-                    {cat.items.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">{t('menuManage.noItems')}</p>
-                    ) : (
-                      cat.items.map(item => (
-                        <div key={item.id} className={cn('p-3 rounded-lg border bg-card', !item.available && 'opacity-50')}>
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              {item.image ? (
-                                <img src={item.image} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
-                              ) : (
-                                <div className="w-12 h-12 rounded bg-gray-100 shrink-0" />
-                              )}
-                              <div className="min-w-0">
-                                <p className="font-medium text-sm truncate">{item.name}</p>
-                                {item.nameEn && <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>}
-                              </div>
-                            </div>
-                            <span className="font-mono text-sm font-semibold shrink-0">{formatPriceUSD(item.price)}</span>
-                          </div>
-                          {item.options && item.options.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {item.options.map(opt => (
-                                <Badge key={opt.id} variant="secondary" className="text-xs">{opt.name}({opt.choices.length})</Badge>
-                              ))}
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between mt-2">
-                            <Switch checked={item.available} onCheckedChange={() => handleToggleAvailable(item)} />
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleEdit(item)}>{t('common:edit')}</Button>
-                              <Button variant="outline" size="sm" className="min-h-[44px] text-red-600" onClick={() => handleDelete(item.id)}>{t('common:delete')}</Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          /* ===== Preview View (customer style) ===== */
-          <div className="space-y-6">
-            {grouped.map(cat => (
-              <div key={cat.id}>
-                <h2 className="text-lg font-bold mb-3">{cat.name}</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {cat.items.map(item => (
-                    <Card key={item.id} className={!item.available ? 'opacity-40' : 'overflow-hidden'}>
-                      {item.image ? (
-                        <img src={item.image} alt={item.name} className="w-full aspect-video object-cover" />
-                      ) : (
-                        <div className="w-full aspect-video bg-gray-100" />
-                      )}
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-semibold">{item.name}</p>
-                            {item.description && (
-                              <p className="text-sm text-muted-foreground">{item.description}</p>
-                            )}
-                            {item.options && item.options.length > 0 && (
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                {item.options.map(opt => (
-                                  <Badge key={opt.id} variant="outline" className="text-xs">
-                                    {opt.name}: {opt.choices.map(c => c.name).join('/')}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-lg font-bold text-orange-600">
-                            {formatPriceUSD(item.price)}
-                          </span>
-                        </div>
-                        {!item.available && (
-                          <Badge variant="secondary" className="mt-2">{t('menuManage.delisted')}</Badge>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* ===== Edit/Add Dialog ===== */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{isNew ? t('menuManage.addItemTitle') : t('menuManage.editItemTitle')}</DialogTitle>
-          </DialogHeader>
-
-          {editingItem && (
-            <div className="space-y-4">
-              {/* Basic info */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium">{t('menuManage.dishName')} *</label>
-                  <Input
-                    value={editingItem.name ?? ''}
-                    onChange={e => updateEditingField('name', e.target.value)}
-                    placeholder={t('menuManage.dishNamePlaceholder')}
-                    className="text-base"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">{t('menuManage.dishNameEn')}</label>
-                  <Input
-                    value={editingItem.nameEn ?? ''}
-                    onChange={e => updateEditingField('nameEn', e.target.value)}
-                    placeholder={t('menuManage.dishNameEnPlaceholder')}
-                    className="text-base"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">{t('menuManage.priceYuan')} *</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={((editingItem.price ?? 0) / 100).toFixed(2)}
-                      onChange={e => updateEditingField('price', Math.round(parseFloat(e.target.value || '0') * 100))}
-                      placeholder="38.00"
-                      className="text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">{t('menuManage.category')}</label>
-                    <Select
-                      value={editingItem.categoryId ?? ''}
-                      onValueChange={v => updateEditingField('categoryId', v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('menuManage.selectCategory')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(cat => (
-                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">{t('menuManage.description')}</label>
-                  <Textarea
-                    value={editingItem.description ?? ''}
-                    onChange={e => updateEditingField('description', e.target.value)}
-                    placeholder={t('menuManage.descriptionPlaceholder')}
-                    rows={2}
-                    className="text-base"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">{t('menuManage.descriptionEn')}</label>
-                  <Textarea
-                    value={editingItem.descriptionEn ?? ''}
-                    onChange={e => updateEditingField('descriptionEn', e.target.value)}
-                    placeholder={t('menuManage.descriptionEnPlaceholder')}
-                    rows={2}
-                    className="text-base"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">{t('common:image.label')}</label>
-                  <ImageUpload
-                    value={editingItem.image}
-                    onChange={url => updateEditingField('image', url)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">{t('menuManage.sortOrder')}</label>
-                    <Input
-                      type="number"
-                      value={editingItem.sortOrder ?? 0}
-                      onChange={e => updateEditingField('sortOrder', parseInt(e.target.value || '0'))}
-                      className="text-base"
-                    />
-                  </div>
-                  <div className="flex items-end gap-2 pb-1">
-                    <Switch
-                      checked={editingItem.available ?? true}
-                      onCheckedChange={v => updateEditingField('available', v)}
-                    />
-                    <label className="text-sm">{editingItem.available ? t('menuManage.listed') : t('menuManage.delisted')}</label>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Options / 规格 */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium">{t('menuManage.options')}</label>
-                  <Button variant="outline" size="sm" onClick={addOption}>
-                    {t('menuManage.addOption')}
-                  </Button>
-                </div>
-
-                {(editingItem.options ?? []).length === 0 && (
-                  <p className="text-sm text-muted-foreground">{t('menuManage.noOptions')}</p>
-                )}
-
-                <div className="space-y-4">
-                  {(editingItem.options ?? []).map((opt, optIdx) => (
-                    <div key={opt.id} className="border rounded-lg p-3 space-y-2 bg-gray-50">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={opt.name}
-                          onChange={e => updateOption(optIdx, 'name', e.target.value)}
-                          placeholder={t('menuManage.optionName')}
-                          className="flex-1 text-base"
-                        />
-                        <Input
-                          value={opt.nameEn ?? ''}
-                          onChange={e => updateOption(optIdx, 'nameEn', e.target.value)}
-                          placeholder={t('menuManage.optionNameEn')}
-                          className="flex-1 text-base"
-                        />
-                        <div className="flex items-center gap-1">
-                          <Switch
-                            checked={opt.required}
-                            onCheckedChange={v => updateOption(optIdx, 'required', v)}
-                          />
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">{t('menuManage.required')}</span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600"
-                          onClick={() => removeOption(optIdx)}
-                        >
-                          {t('common:delete')}
-                        </Button>
-                      </div>
-
-                      {/* Choices */}
-                      <div className="space-y-1 ml-2">
-                        {opt.choices.map((choice, choiceIdx) => (
-                          <div key={choice.id} className="flex items-center gap-2">
-                            <Input
-                              value={choice.name}
-                              onChange={e => updateChoice(optIdx, choiceIdx, 'name', e.target.value)}
-                              placeholder={t('menuManage.choiceName')}
-                              className="flex-1 text-base"
-                            />
-                            <Input
-                              value={choice.nameEn ?? ''}
-                              onChange={e => updateChoice(optIdx, choiceIdx, 'nameEn', e.target.value)}
-                              placeholder={t('menuManage.choiceNameEn')}
-                              className="flex-1 text-base"
-                            />
-                            <div className="flex items-center gap-1 w-[100px]">
-                              <span className="text-xs text-muted-foreground">+¥</span>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={(choice.priceAdjust / 100).toFixed(2)}
-                                onChange={e => updateChoice(optIdx, choiceIdx, 'priceAdjust', Math.round(parseFloat(e.target.value || '0') * 100))}
-                                className="w-20 text-base"
-                              />
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500 px-2"
-                              onClick={() => removeChoice(optIdx, choiceIdx)}
-                            >
-                              ×
-                            </Button>
-                          </div>
-                        ))}
-                        <Button variant="ghost" size="sm" onClick={() => addChoice(optIdx)} className="text-xs">
-                          {t('menuManage.addChoice')}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Actions */}
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  {t('common:cancel')}
-                </Button>
-                <Button onClick={handleSave} disabled={saving || !editingItem.name}>
-                  {saving ? t('common:saving') : t('common:save')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Dialogs */}
+      <MenuItemForm item={editingItem} categories={categories} storeId={storeId}
+        open={formOpen} isNew={isNew} onClose={closeForm} onSaved={onSaved} />
     </div>
+  )
+}
+
+/* ── Horizontal Category Slider ── */
+function CategorySlider({ categories, items, activeCatId, onSelect }: {
+  categories: Category[]; items: MenuItem[]; activeCatId: string | null
+  onSelect: (id: string | null) => void
+}) {
+  const { t } = useT()
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollL, setCanScrollL] = useState(false)
+  const [canScrollR, setCanScrollR] = useState(false)
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setCanScrollL(el.scrollLeft > 0)
+    setCanScrollR(el.scrollLeft < el.scrollWidth - el.clientWidth - 1)
+  }, [])
+  useEffect(() => { checkScroll() }, [categories, checkScroll])
+  const scroll = (dir: number) => {
+    scrollRef.current?.scrollBy({ left: dir * 200, behavior: 'smooth' })
+    setTimeout(checkScroll, 300)
+  }
+  const countFor = (id: string) => items.filter(i => i.categoryId === id).length
+  return (
+    <div className="relative px-6 pb-3">
+      {canScrollL && (
+        <button onClick={() => scroll(-1)}
+          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-card/90 shadow rounded-full p-1">
+          <ChevronLeft className="size-4" />
+        </button>
+      )}
+      <div ref={scrollRef} onScroll={checkScroll}
+        className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth">
+        <SliderChip active={activeCatId === null} icon="📋" label={t.menu.allItems}
+          count={items.length} onClick={() => onSelect(null)} />
+        {categories.map(c => (
+          <SliderChip key={c.id} active={activeCatId === c.id}
+            icon={catIcon(c.name)} label={c.name}
+            count={countFor(c.id)} onClick={() => onSelect(c.id)} />
+        ))}
+      </div>
+      {canScrollR && (
+        <button onClick={() => scroll(1)}
+          className="absolute right-1 top-1/2 -translate-y-1/2 z-10 bg-card/90 shadow rounded-full p-1">
+          <ChevronRight className="size-4" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+function SliderChip({ active, icon, label, count, onClick }: {
+  active: boolean; icon: string; label: string; count: number; onClick: () => void
+}) {
+  return (
+    <button onClick={onClick}
+      className={cn(
+        'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap shrink-0 border transition-colors',
+        active ? 'bg-primary border-transparent text-white font-semibold' : 'border-gray-200 text-gray-600 hover:bg-background'
+      )}
+>
+      <span className="text-base">{icon}</span>
+      <span>{label}</span>
+      <Badge variant={active ? 'secondary' : 'outline'} className={cn('text-[10px] px-1.5',
+        active && 'bg-card/20 text-white border-0')}>
+        {count}
+      </Badge>
+    </button>
+  )
+}
+
+/* ── Order Sidebar ── */
+function OrderSidebar({ storeId, tableId, tableName }: { storeId: string; tableId?: string | null; tableName?: string | null }) {
+  const { t } = useT()
+  const cartItems = useCartStore(s => s.items)
+  const removeItem = useCartStore(s => s.removeItem)
+  const updateQuantity = useCartStore(s => s.updateQuantity)
+  const clearCart = useCartStore(s => s.clearCart)
+  const totalP = useCartStore(s => s.totalPrice)
+  const totalI = useCartStore(s => s.totalItems)
+  const [sending, setSending] = useState(false)
+
+  const sub = totalP(), tax = Math.round(sub * 0.08), total = sub + tax
+
+  const handleSend = async () => {
+    if (!cartItems.length) return
+    setSending(true)
+    try {
+      await api.createOrder(storeId, {
+        tableId: tableId || 'admin-counter',
+        items: cartItems.map(ci => ({
+          menuItemId: ci.menuItemId, quantity: ci.quantity,
+          remark: ci.remark, selectedOptions: ci.selectedOptions,
+        })),
+      })
+      clearCart()
+    } catch { /* error */ } finally { setSending(false) }
+  }
+
+  return (
+    <aside className="w-72 shrink-0 border-l bg-card flex-col hidden lg:flex">
+      <div className="px-4 py-3 border-b flex items-center justify-between">
+        <div>
+          <span className="font-semibold text-sm">
+            {tableId ? `${t.menu.orderFor}${decodeURIComponent(tableName || tableId)}` : t.menu.counterOrder}
+          </span>
+        </div>
+        <span className="bg-gray-100 text-gray-600 text-xs rounded-full px-2 py-0.5">{totalI()} {t.menu.items}</span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 py-2">
+        {cartItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-2">
+            <ShoppingBag className="size-8 opacity-40" />
+            <p className="text-sm">{t.common.noData}</p><p className="text-xs">{t.menu.browseMenu}</p>
+          </div>
+        ) : cartItems.map(ci => (
+          <div key={ci.cartKey} className="py-3 border-b last:border-0 flex items-start gap-3">
+            <div className="w-12 h-12 rounded bg-gray-100 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{ci.name}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <button onClick={() => updateQuantity(ci.cartKey, ci.quantity - 1)}
+                  className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-xs hover:bg-background">
+                  <Minus className="size-3" />
+                </button>
+                <span className="w-6 text-center text-xs font-medium">{ci.quantity}</span>
+                <button onClick={() => updateQuantity(ci.cartKey, ci.quantity + 1)}
+                  className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-xs hover:bg-background">
+                  <Plus className="size-3" />
+                </button>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-sm text-gray-700">{formatPriceUSD(unitPrice(ci) * ci.quantity)}</p>
+              <button onClick={() => removeItem(ci.cartKey)}
+                className="text-xs text-gray-400 hover:text-red-500 mt-1">✕</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="border-t p-4 space-y-2 text-sm">
+        <div className="flex justify-between"><span className="text-gray-500">{t.common.subtotal}</span><span>{formatPriceUSD(sub)}</span></div>
+        <div className="flex justify-between"><span className="text-gray-500">{t.menu.taxPercent}</span><span>{formatPriceUSD(tax)}</span></div>
+        <div className="flex justify-between text-lg font-bold"><span>{t.common.total}</span><span className="text-primary">{formatPriceUSD(total)}</span></div>
+        <Button className="w-full py-3 mt-3 bg-primary hover:bg-primary/90"
+          disabled={!cartItems.length || sending} onClick={handleSend}>
+          {sending ? <Loader2 className="size-4 animate-spin mr-2" /> : <ArrowRight className="size-4 mr-2" />}
+          {sending ? t.menu.sending : t.menu.sendToKitchen}
+        </Button>
+        {cartItems.length > 0 && (
+          <button onClick={clearCart} className="w-full text-xs text-gray-400 hover:text-red-500 text-center mt-2">
+            {t.menu.clearOrder}
+          </button>
+        )}
+      </div>
+    </aside>
   )
 }

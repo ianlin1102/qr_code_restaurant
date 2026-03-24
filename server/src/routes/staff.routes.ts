@@ -1,0 +1,54 @@
+import { Router } from 'express'
+import { requireAuth, requireRole } from '../middleware/auth.middleware.js'
+import {
+  getStaff,
+  addStaff,
+  changeRole,
+  removeStaff,
+} from '../controllers/staff.service.js'
+
+const router = Router({ mergeParams: true })
+
+router.get('/', requireAuth, requireRole('owner'), async (req, res) => {
+  const staff = await getStaff(req.params.storeId)
+  res.json(staff)
+})
+
+router.post('/', requireAuth, requireRole('owner'), async (req, res) => {
+  const { username, password, role } = req.body
+  if (!username || !password) {
+    res.status(400).json({ error: 'Username and password are required' })
+    return
+  }
+  const result = await addStaff(req.params.storeId, username, password, role || 'staff')
+  if ('error' in result) {
+    res.status(result.status).json({ error: result.error })
+    return
+  }
+  res.status(201).json(result)
+})
+
+router.patch('/:userId', requireAuth, requireRole('owner'), async (req, res) => {
+  const { role } = req.body
+  if (!role) {
+    res.status(400).json({ error: 'Role is required' })
+    return
+  }
+  const result = await changeRole(req.params.storeId, req.params.userId, role)
+  if ('error' in result) {
+    res.status(result.status).json({ error: result.error })
+    return
+  }
+  res.json(result)
+})
+
+router.delete('/:userId', requireAuth, requireRole('owner'), async (req, res) => {
+  const result = await removeStaff(req.params.storeId, req.params.userId)
+  if ('error' in result) {
+    res.status(result.status).json({ error: result.error })
+    return
+  }
+  res.status(204).end()
+})
+
+export default router

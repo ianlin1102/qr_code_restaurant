@@ -1,0 +1,354 @@
+{
+  "generatedAt": "2026-03-21T08:00:00-06:00",
+  "source": "client/src/",
+  "components": [
+    {
+      "file": "client/src/App.tsx",
+      "name": "App",
+      "props": [],
+      "childComponents": [
+        "ScanPage", "LangSelectPage", "MenuPage", "CartPage", "CheckoutPage",
+        "OrderConfirmPage", "OrderHistoryPage", "LoginPage", "ProtectedRoute",
+        "AdminLayout", "DashboardPage", "MenuManagePage", "CategoryManagePage",
+        "TablesPage", "StoreSettingsPage", "FloorPlanPage", "AnalyticsPage",
+        "CouponManagePage", "FloorPlanEditorPage", "StaffManagePage"
+      ]
+    },
+    {
+      "file": "client/src/main.tsx",
+      "name": "main (entry)",
+      "props": [],
+      "childComponents": ["App"]
+    },
+    {
+      "file": "client/src/components/AdminLayout.tsx",
+      "name": "AdminLayout",
+      "props": [],
+      "childComponents": ["Sheet", "SheetContent", "SheetHeader", "SheetTitle", "NavLink", "Outlet"]
+    },
+    {
+      "file": "client/src/components/ProtectedRoute.tsx",
+      "name": "ProtectedRoute",
+      "props": [
+        { "name": "children", "type": "React.ReactNode" }
+      ],
+      "childComponents": ["Navigate"]
+    },
+    {
+      "file": "client/src/components/OrderDetailDialog.tsx",
+      "name": "OrderDetailDialog",
+      "props": [
+        { "name": "order", "type": "Order | null" },
+        { "name": "open", "type": "boolean" },
+        { "name": "onOpenChange", "type": "(open: boolean) => void" },
+        { "name": "onStatusUpdate", "type": "((orderId: string, status: OrderStatus) => void) | undefined" },
+        { "name": "onEdit", "type": "((order: Order) => void) | undefined" },
+        { "name": "updating", "type": "boolean | undefined" },
+        { "name": "storeName", "type": "string | undefined" }
+      ],
+      "childComponents": ["Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Badge", "Separator", "Button", "OrderReceipt"]
+    },
+    {
+      "file": "client/src/components/OrderReceipt.tsx",
+      "name": "OrderReceipt",
+      "props": [
+        { "name": "order", "type": "Order" },
+        { "name": "storeName", "type": "string | undefined" }
+      ],
+      "childComponents": []
+    },
+    {
+      "file": "client/src/components/CloseTableDialog.tsx",
+      "name": "CloseTableDialog",
+      "props": [
+        { "name": "table", "type": "Table | null" },
+        { "name": "storeId", "type": "string" },
+        { "name": "open", "type": "boolean" },
+        { "name": "onOpenChange", "type": "(open: boolean) => void" },
+        { "name": "onClosed", "type": "() => void" }
+      ],
+      "childComponents": ["Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Separator", "Button"]
+    },
+    {
+      "file": "client/src/components/ImageUpload.tsx",
+      "name": "ImageUpload",
+      "props": [
+        { "name": "value", "type": "string | undefined" },
+        { "name": "onChange", "type": "(url: string | undefined) => void" }
+      ],
+      "childComponents": ["Button"]
+    },
+    {
+      "file": "client/src/components/MenuItemDetailSheet.tsx",
+      "name": "MenuItemDetailSheet",
+      "props": [
+        { "name": "item", "type": "MenuItem | null" },
+        { "name": "open", "type": "boolean" },
+        { "name": "onClose", "type": "() => void" }
+      ],
+      "childComponents": ["Sheet", "SheetContent", "SheetHeader", "SheetTitle", "Badge", "Separator", "Button", "Textarea"]
+    },
+    {
+      "file": "client/src/components/ActiveOrdersSidebar.tsx",
+      "name": "ActiveOrdersSidebar",
+      "props": [
+        { "name": "storeId", "type": "string" },
+        { "name": "onOrderClick", "type": "((order: Order) => void) | undefined" }
+      ],
+      "childComponents": ["Badge", "ScrollArea", "OrderGroup (internal)", "OrderCard (internal)"]
+    },
+    {
+      "file": "client/src/components/TableGrid.tsx",
+      "name": "TableGrid",
+      "props": [
+        { "name": "tables", "type": "Table[]" },
+        { "name": "orders", "type": "Order[]" },
+        { "name": "onTableClick", "type": "((table: Table) => void) | undefined" }
+      ],
+      "childComponents": ["Card", "CardContent", "Badge"]
+    },
+    {
+      "file": "client/src/components/TableDetailPanel.tsx",
+      "name": "TableDetailPanel",
+      "props": [
+        { "name": "table", "type": "Table | null" },
+        { "name": "storeId", "type": "string" },
+        { "name": "open", "type": "boolean" },
+        { "name": "onClose", "type": "() => void" }
+      ],
+      "childComponents": ["Sheet", "SheetContent", "SheetHeader", "SheetTitle", "ScrollArea", "Badge", "Button", "Separator", "OrderEditMode", "TransferTableDialog", "SplitBillDialog"]
+    },
+    {
+      "file": "client/src/components/TransferTableDialog.tsx",
+      "name": "TransferTableDialog",
+      "props": [
+        { "name": "open", "type": "boolean" },
+        { "name": "onClose", "type": "() => void" },
+        { "name": "order", "type": "Order" },
+        { "name": "storeId", "type": "string" },
+        { "name": "onTransferred", "type": "() => void" }
+      ],
+      "childComponents": ["Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Card", "CardContent", "Button"]
+    },
+    {
+      "file": "client/src/components/SplitBillDialog.tsx",
+      "name": "SplitBillDialog",
+      "props": [
+        { "name": "open", "type": "boolean" },
+        { "name": "onClose", "type": "() => void" },
+        { "name": "order", "type": "Order" },
+        { "name": "storeId", "type": "string" }
+      ],
+      "childComponents": ["Dialog", "DialogContent", "DialogHeader", "DialogTitle", "DialogDescription", "Button", "Input", "Badge"]
+    },
+    {
+      "file": "client/src/components/OrderEditDialog.tsx",
+      "name": "OrderEditDialog",
+      "props": [
+        { "name": "order", "type": "Order | null" },
+        { "name": "storeId", "type": "string" },
+        { "name": "open", "type": "boolean" },
+        { "name": "onClose", "type": "() => void" },
+        { "name": "onSaved", "type": "() => void" },
+        { "name": "isOwner", "type": "boolean" }
+      ],
+      "childComponents": ["Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Button", "Input", "Separator", "Select", "SelectContent", "SelectItem", "SelectTrigger", "SelectValue", "EditItemRow (internal)"]
+    },
+    {
+      "file": "client/src/components/OrderEditMode.tsx",
+      "name": "OrderEditMode",
+      "props": [
+        { "name": "order", "type": "Order" },
+        { "name": "storeId", "type": "string" },
+        { "name": "onSave", "type": "() => void" },
+        { "name": "onCancel", "type": "() => void" }
+      ],
+      "childComponents": ["Button", "Input", "Separator", "EditableItemRow (internal)", "AddItemPanel (internal)"]
+    },
+    {
+      "file": "client/src/components/OrderCard.tsx",
+      "name": "OrderCard",
+      "props": [
+        { "name": "order", "type": "Order" },
+        { "name": "storeId", "type": "string" },
+        { "name": "onClick", "type": "() => void" },
+        { "name": "onEdit", "type": "() => void" },
+        { "name": "actionButton", "type": "React.ReactNode" }
+      ],
+      "childComponents": ["Card", "CardContent", "CardHeader", "Badge", "Separator", "Button"]
+    },
+    {
+      "file": "client/src/components/MenuItemForm.tsx",
+      "name": "MenuItemForm",
+      "props": [
+        { "name": "item", "type": "Partial<MenuItem> | null" },
+        { "name": "categories", "type": "Category[]" },
+        { "name": "storeId", "type": "string" },
+        { "name": "open", "type": "boolean" },
+        { "name": "isNew", "type": "boolean" },
+        { "name": "onClose", "type": "() => void" },
+        { "name": "onSaved", "type": "() => void" }
+      ],
+      "childComponents": ["Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Button", "Input", "Textarea", "Switch", "Separator", "Select", "ImageUpload", "BasicFields (internal)", "OptionsSection (internal)", "DiscountBar (internal)"]
+    },
+    {
+      "file": "client/src/components/MenuItemTable.tsx",
+      "name": "MenuItemTable",
+      "props": [
+        { "name": "items", "type": "MenuItem[]" },
+        { "name": "categories", "type": "Category[]" },
+        { "name": "viewMode", "type": "string | undefined" },
+        { "name": "onEdit", "type": "(item: MenuItem) => void" },
+        { "name": "onDelete", "type": "(id: string) => void" },
+        { "name": "onToggleAvailable", "type": "(item: MenuItem) => void" },
+        { "name": "onInlineEdit", "type": "(id: string, field: string, value: unknown) => void" }
+      ],
+      "childComponents": ["DesktopTable (internal)", "MobileCards (internal)", "InlineEdit (internal)", "Table", "TableBody", "TableCell", "TableHead", "TableHeader", "TableRow", "Badge", "Switch", "Button"]
+    },
+    {
+      "file": "client/src/components/WaitlistPanel.tsx",
+      "name": "WaitlistPanel",
+      "props": [
+        { "name": "storeId", "type": "string" }
+      ],
+      "childComponents": ["Button", "Input", "Badge", "WaitlistItem (internal)"]
+    },
+    {
+      "file": "client/src/components/MenuItemEditSheet.tsx",
+      "name": "MenuItemEditSheet",
+      "props": [
+        { "name": "item", "type": "MenuItem | null" },
+        { "name": "storeId", "type": "string" },
+        { "name": "open", "type": "boolean" },
+        { "name": "onClose", "type": "() => void" },
+        { "name": "onSaved", "type": "() => void" }
+      ],
+      "childComponents": ["Sheet", "SheetContent", "SheetHeader", "SheetTitle", "Button", "Input", "Textarea", "Switch", "Badge", "Separator", "ImageUpload"]
+    },
+    {
+      "file": "client/src/components/TableCrudDialog.tsx",
+      "name": "TableCrudDialog",
+      "props": [
+        { "name": "table", "type": "Table | null" },
+        { "name": "storeId", "type": "string" },
+        { "name": "open", "type": "boolean" },
+        { "name": "onClose", "type": "() => void" },
+        { "name": "onSaved", "type": "() => void" }
+      ],
+      "childComponents": ["Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Button", "Input"]
+    },
+    {
+      "file": "client/src/components/TipSelector.tsx",
+      "name": "TipSelector",
+      "props": [
+        { "name": "baseAmount", "type": "number" },
+        { "name": "tipPct", "type": "number | null" },
+        { "name": "onSelect", "type": "(pct: number | null) => void" },
+        { "name": "loadingTip", "type": "boolean" }
+      ],
+      "childComponents": []
+    },
+    {
+      "file": "client/src/pages/customer/ScanPage.tsx",
+      "name": "ScanPage",
+      "props": [],
+      "childComponents": ["Button"]
+    },
+    {
+      "file": "client/src/pages/customer/LangSelectPage.tsx",
+      "name": "LangSelectPage",
+      "props": [],
+      "childComponents": []
+    },
+    {
+      "file": "client/src/pages/customer/MenuPage.tsx",
+      "name": "MenuPage",
+      "props": [],
+      "childComponents": ["Button", "Badge", "ScrollArea", "Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Input", "MenuItemDetailSheet"]
+    },
+    {
+      "file": "client/src/pages/customer/CartPage.tsx",
+      "name": "CartPage",
+      "props": [],
+      "childComponents": ["Button", "Badge", "Input"]
+    },
+    {
+      "file": "client/src/pages/customer/CheckoutPage.tsx",
+      "name": "CheckoutPage",
+      "props": [],
+      "childComponents": ["Elements (Stripe)", "PaymentElement (Stripe)", "Button", "TipSelector", "CheckoutForm (internal)"]
+    },
+    {
+      "file": "client/src/pages/customer/OrderConfirmPage.tsx",
+      "name": "OrderConfirmPage",
+      "props": [],
+      "childComponents": ["Button", "Badge"]
+    },
+    {
+      "file": "client/src/pages/customer/OrderHistoryPage.tsx",
+      "name": "OrderHistoryPage",
+      "props": [],
+      "childComponents": ["Button", "Badge"]
+    },
+    {
+      "file": "client/src/pages/admin/LoginPage.tsx",
+      "name": "LoginPage",
+      "props": [],
+      "childComponents": ["Input", "Button"]
+    },
+    {
+      "file": "client/src/pages/admin/DashboardPage.tsx",
+      "name": "DashboardPage",
+      "props": [],
+      "childComponents": ["OrderCard", "OrderDetailDialog", "OrderEditDialog", "Button"]
+    },
+    {
+      "file": "client/src/pages/admin/MenuManagePage.tsx",
+      "name": "MenuManagePage",
+      "props": [],
+      "childComponents": ["MenuItemForm", "MenuItemTable", "Button", "Badge", "CategorySlider (internal)", "OrderSidebar (internal)"]
+    },
+    {
+      "file": "client/src/pages/admin/TablesPage.tsx",
+      "name": "TablesPage",
+      "props": [],
+      "childComponents": ["CloseTableDialog", "TransferTableDialog", "SplitBillDialog", "TableCrudDialog", "Button", "Input"]
+    },
+    {
+      "file": "client/src/pages/admin/FloorPlanPage.tsx",
+      "name": "FloorPlanPage",
+      "props": [],
+      "childComponents": ["TableGrid", "TableDetailPanel", "ActiveOrdersSidebar", "WaitlistPanel", "Button", "Badge", "CenterTopBar (internal)", "UrgentNotifications (internal)"]
+    },
+    {
+      "file": "client/src/pages/admin/FloorPlanEditorPage.tsx",
+      "name": "FloorPlanEditorPage",
+      "props": [],
+      "childComponents": ["Button", "Input", "Badge", "Select"]
+    },
+    {
+      "file": "client/src/pages/admin/AnalyticsPage.tsx",
+      "name": "AnalyticsPage",
+      "props": [],
+      "childComponents": ["Card", "CardContent", "Button", "SummaryCard (internal)", "RevenueChart (internal)", "StaffPerformanceSection (internal)"]
+    },
+    {
+      "file": "client/src/pages/admin/CouponManagePage.tsx",
+      "name": "CouponManagePage",
+      "props": [],
+      "childComponents": ["Card", "CardContent", "CardHeader", "CardTitle", "Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Button", "Badge", "Input", "Switch", "Select", "Table"]
+    },
+    {
+      "file": "client/src/pages/admin/StaffManagePage.tsx",
+      "name": "StaffManagePage",
+      "props": [],
+      "childComponents": ["Card", "CardContent", "CardHeader", "CardTitle", "Dialog", "DialogContent", "DialogHeader", "DialogTitle", "Button", "Badge", "Input", "Select", "Table"]
+    },
+    {
+      "file": "client/src/pages/admin/StoreSettingsPage.tsx",
+      "name": "StoreSettingsPage",
+      "props": [],
+      "childComponents": ["Card", "CardContent", "CardHeader", "CardTitle", "Button", "Input", "Textarea", "Switch"]
+    }
+  ]
+}

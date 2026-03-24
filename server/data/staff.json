@@ -1,0 +1,18 @@
+[
+  {
+    "id": "staff-owner-001",
+    "storeId": "store-demo-002",
+    "username": "admin",
+    "password": "$2a$10$dummyhashfordemopurposesonly12345678",
+    "role": "owner",
+    "createdAt": "2026-03-01T00:00:00.000Z"
+  },
+  {
+    "id": "staff-waiter-001",
+    "storeId": "store-demo-002",
+    "username": "waiter1",
+    "password": "$2a$10$dummyhashfordemopurposesonly12345678",
+    "role": "staff",
+    "createdAt": "2026-03-10T00:00:00.000Z"
+  }
+]

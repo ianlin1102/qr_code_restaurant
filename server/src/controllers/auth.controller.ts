@@ -4,7 +4,10 @@ import { findUserByUsername } from '../repositories/auth.repository.js'
 import type { JwtPayload, LoginResponse } from '@qr-order/shared'
 import logger from '../lib/logger.js'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required')
+}
+const JWT_SECRET = process.env.JWT_SECRET
 const TOKEN_EXPIRY = '7d'
 
 export async function login(

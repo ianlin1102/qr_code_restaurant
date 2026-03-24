@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { CartItem } from '@qr-order/shared'
 
 /** Calculate unit price (base + all option adjustments) */
@@ -21,7 +22,9 @@ interface CartState {
   totalItems: () => number
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
   items: [],
 
   addItem: (item) => set(state => {
@@ -80,4 +83,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   totalPrice: () => get().items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0),
 
   totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
-}))
+    }),
+    { name: 'qr-order-cart' }
+  )
+)

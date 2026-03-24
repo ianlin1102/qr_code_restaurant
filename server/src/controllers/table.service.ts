@@ -13,6 +13,14 @@ export function getTableById(tableId: string): Table | undefined {
   return tableStore.getById(tableId)
 }
 
+export function updateTableStatus(storeId: string, tableId: string, status: Table['status']): Table | { error: string } {
+  const table = tableStore.getById(tableId)
+  if (!table || table.storeId !== storeId) {
+    return { error: 'Table not found' }
+  }
+  return tableStore.update(tableId, { status })!
+}
+
 export function createTable(storeId: string, name: string, nameEn?: string): Table | { error: string } {
   // Check for duplicate name
   const existing = tableStore.getByField('storeId', storeId)
@@ -23,7 +31,7 @@ export function createTable(storeId: string, name: string, nameEn?: string): Tab
   return tableStore.create(table)
 }
 
-export function updateTable(storeId: string, tableId: string, updates: { name?: string }): Table | { error: string } {
+export function updateTable(storeId: string, tableId: string, updates: Partial<Omit<Table, 'id' | 'storeId'>>): Table | { error: string } {
   const table = tableStore.getById(tableId)
   if (!table || table.storeId !== storeId) {
     return { error: 'Table not found' }

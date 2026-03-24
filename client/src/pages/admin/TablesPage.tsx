@@ -1,386 +1,352 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { QRCodeSVG } from 'qrcode.react'
-import { api } from '@/services/api'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { useState, useEffect, useCallback } from 'react'
+import { useT } from '@/i18n/useT'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import CloseTableDialog from '@/components/CloseTableDialog'
-import type { Table } from '@qr-order/shared'
+  Armchair, Plus, Printer, ArrowLeftRight, Split,
+  CheckCircle2, Loader2, QrCode, Pencil, ChevronDown,
+} from 'lucide-react'
+import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { formatPriceUSD } from '@/lib/format'
+import { printQrCodes } from '@/lib/qr-pdf'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
+import CloseTableDialog from '@/components/CloseTableDialog'
+import TransferTableDialog from '@/components/TransferTableDialog'
+import SplitBillDialog from '@/components/SplitBillDialog'
+import TableCrudDialog from '@/components/TableCrudDialog'
+import OrderingSheet from '@/components/OrderingSheet'
+import type { Table, Order, OrderItem } from '@qr-order/shared'
 
-const POLL_INTERVAL = 10_000
+const POLL = 10_000
 
-function getDefaultBaseUrl(): string {
-  const { protocol, hostname, port } = window.location
-  // Standard ports (80/443) or empty → omit port suffix
-  const needsPort = port && port !== '80' && port !== '443'
-  return `${protocol}//${hostname}${needsPort ? ':' + port : ''}`
+function elapsed(ms: number): string {
+  const m = Math.floor(ms / 60_000); const s = Math.floor((ms % 60_000) / 1000)
+  return `${m}:${String(s).padStart(2, '0')}`
 }
-
-function isLocalhost(url: string): boolean {
-  try {
-    const hostname = new URL(url).hostname
-    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
-  } catch {
-    return false
-  }
+function itemPrice(it: OrderItem) {
+  return (it.price + (it.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * it.quantity
 }
 
 export default function TablesPage() {
-  const { t } = useTranslation('admin')
-  const STORE_ID = useAuthStore(s => s.user!.storeId)
+  const { t } = useT()
+  const storeId = useAuthStore(s => s.user?.storeId) ?? ''
+
   const [tables, setTables] = useState<Table[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [selected, setSelected] = useState<Table | null>(null)
   const [loading, setLoading] = useState(true)
-  const [baseUrl, setBaseUrl] = useState(getDefaultBaseUrl)
-  const [activeTableIds, setActiveTableIds] = useState<Set<string>>(new Set())
+  const [menuItemMap, setMenuItemMap] = useState<Record<string, string>>({})
 
-  // Add/Edit dialog
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editNameEn, setEditNameEn] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [dialogError, setDialogError] = useState<string | null>(null)
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [splitOpen, setSplitOpen] = useState(false)
+  const [closeOpen, setCloseOpen] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [crudOpen, setCrudOpen] = useState(false)
+  const [baseUrl, setBaseUrl] = useState(() => {
+    const saved = localStorage.getItem('qr-base-url')
+    return saved || window.location.origin
+  })
+  const [editingTable, setEditingTable] = useState<Table | null>(null)
+  const [mobileDropdown, setMobileDropdown] = useState(false)
+  const [orderingOpen, setOrderingOpen] = useState(false)
 
-  // Close table dialog
-  const [closeDialogOpen, setCloseDialogOpen] = useState(false)
-  const [closingTable, setClosingTable] = useState<Table | null>(null)
-
-  // Inline rename
-  const [renameId, setRenameId] = useState<string | null>(null)
-  const [renameValue, setRenameValue] = useState('')
-  const renameRef = useRef<HTMLInputElement>(null)
-
-  const fetchTablesAndOrders = useCallback(async () => {
+  const fetchData = useCallback(async () => {
+    if (!storeId) return
     try {
-      const [tablesData, ordersData] = await Promise.all([
-        api.getTables(STORE_ID),
-        api.getOrders(STORE_ID),
-      ])
-      setTables(tablesData)
-      const active = new Set<string>()
-      for (const order of ordersData) {
-        if (order.status === 'pending' || order.status === 'preparing') {
-          active.add(order.tableId)
-        }
-      }
-      setActiveTableIds(active)
-    } catch (err) {
-      console.error('Failed to fetch tables:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [STORE_ID])
+      const [tbl, o] = await Promise.all([api.getTables(storeId), api.getOrders(storeId)])
+      setTables(tbl); setOrders(o)
+    } catch { /* silent */ } finally { setLoading(false) }
+  }, [storeId])
+
+  useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL); return () => clearInterval(id) }, [fetchData])
 
   useEffect(() => {
-    fetchTablesAndOrders()
-    const interval = setInterval(fetchTablesAndOrders, POLL_INTERVAL)
-    return () => clearInterval(interval)
-  }, [fetchTablesAndOrders])
-
-  // ===== CRUD =====
-
-  const handleAdd = () => {
-    setEditingId(null)
-    setEditName('')
-    setEditNameEn('')
-    setDialogError(null)
-    setDialogOpen(true)
-  }
-
-  const handleEdit = (table: Table) => {
-    setEditingId(table.id)
-    setEditName(table.name)
-    setEditNameEn(table.nameEn ?? '')
-    setDialogError(null)
-    setDialogOpen(true)
-  }
-
-  const handleSave = async () => {
-    const name = editName.trim()
-    if (!name) return
-    setSaving(true)
-    setDialogError(null)
-    try {
-      const nameEn = editNameEn.trim() || undefined
-      if (editingId) {
-        await api.updateTable(STORE_ID, editingId, { name, nameEn })
-      } else {
-        await api.createTable(STORE_ID, name, nameEn)
+    if (!storeId) return
+    api.getMenuItems(storeId).then(items => {
+      const map: Record<string, string> = {}
+      for (const item of items) {
+        if (item.image) map[item.id] = item.image
       }
-      setDialogOpen(false)
-      await fetchTablesAndOrders()
-    } catch (err) {
-      setDialogError(err instanceof Error ? err.message : t('tables.saveFailed'))
-    } finally {
-      setSaving(false)
-    }
+      setMenuItemMap(map)
+    }).catch(() => {})
+  }, [storeId])
+
+  // Derived
+  const activeOrders = selected
+    ? orders.filter(o => o.tableId === selected.id && o.status !== 'closed' && o.status !== 'completed')
+    : []
+  const historyOrders = selected
+    ? orders.filter(o => o.tableId === selected.id && (o.status === 'closed' || o.status === 'completed'))
+    : []
+  const displayOrders = showHistory ? historyOrders : activeOrders
+  const allItems = activeOrders.flatMap(o => o.items)
+  const subtotal = activeOrders.reduce((s, o) => s + o.totalPrice, 0)
+  const currentOrder = activeOrders[0] ?? null
+  const elapsedMs = activeOrders.length
+    ? Date.now() - new Date(activeOrders[activeOrders.length - 1].createdAt).getTime() : 0
+
+  const handleSelect = (tb: Table) => { setSelected(tb); setShowHistory(false); setMobileDropdown(false) }
+  const refresh = () => { fetchData(); setCloseOpen(false); setTransferOpen(false); setSplitOpen(false) }
+
+  const updateBaseUrl = (url: string) => {
+    setBaseUrl(url)
+    localStorage.setItem('qr-base-url', url)
+  }
+  const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
+  const handlePrintQr = () => printQrCodes(selected ? [selected] : tables, baseUrl, 'Restaurant')
+  const handlePrintAllQr = () => printQrCodes(tables, baseUrl, 'Restaurant')
+  const openAddTable = () => { setEditingTable(null); setCrudOpen(true) }
+  const openEditTable = (tb: Table) => { setEditingTable(tb); setCrudOpen(true) }
+
+  const statusBadge = (status: Table['status']) => {
+    if (status === 'occupied') return { label: t.tables.status.occupied, cls: 'text-red-600 bg-red-50' }
+    return { label: t.tables.status.idle, cls: 'text-green-600 bg-green-50' }
   }
 
-  const handleDelete = async (table: Table) => {
-    if (table.status === 'occupied') {
-      alert(t('tables.deleteOccupied', { name: table.name }))
-      return
-    }
-    if (!confirm(t('tables.confirmDelete', { name: table.name }))) return
-    try {
-      await api.deleteTable(STORE_ID, table.id)
-      await fetchTablesAndOrders()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : t('tables.saveFailed'))
-    }
-  }
-
-  const handleSettle = async (table: Table) => {
-    if (!confirm(t('tables.confirmSettle', { name: table.name }))) return
-    try {
-      const result = await api.settleTable(STORE_ID, table.id)
-      alert(t('tables.settled', { count: result.settled }))
-      await fetchTablesAndOrders()
-    } catch (err) {
-      console.error('Failed to settle:', err)
-    }
-  }
-
-  // ===== Inline rename =====
-
-  const startRename = (table: Table) => {
-    setRenameId(table.id)
-    setRenameValue(table.name)
-    setTimeout(() => renameRef.current?.select(), 0)
-  }
-
-  const commitRename = async () => {
-    if (!renameId) return
-    const name = renameValue.trim()
-    setRenameId(null)
-    if (!name) return
-    const table = tables.find(t => t.id === renameId)
-    if (table && name !== table.name) {
-      try {
-        await api.updateTable(STORE_ID, renameId, { name })
-        await fetchTablesAndOrders()
-      } catch (err) {
-        alert(err instanceof Error ? err.message : t('tables.renameFailed'))
-      }
-    }
-  }
-
-  // ===== Print =====
-
-  const handlePrintAll = () => window.print()
-
-  const handlePrintSingle = (tableName: string) => {
-    const cards = document.querySelectorAll<HTMLElement>('[data-table-card]')
-    cards.forEach(card => {
-      if (card.dataset.tableCard !== tableName) card.style.display = 'none'
-    })
-    window.print()
-    cards.forEach(card => { card.style.display = '' })
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    )
-  }
-
-  const isTableActive = (table: Table) =>
-    table.status === 'occupied' || activeTableIds.has(table.id)
-
-  const idleCount = tables.filter(t => !isTableActive(t)).length
-  const occupiedCount = tables.filter(t => isTableActive(t)).length
+  if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      {/* Header */}
-      <div className="mb-6 print:hidden space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">{t('tables.title')}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t('tables.summary', { total: tables.length, idle: idleCount, occupied: occupiedCount })}
-            </p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button size="sm" onClick={handleAdd}>{t('tables.addTable')}</Button>
-            <Button variant="outline" size="sm" onClick={handlePrintAll}>{t('tables.printAll')}</Button>
-          </div>
+    <div className="flex flex-col md:flex-row h-full overflow-hidden bg-background">
+      {/* ── Mobile: Table Selector ── */}
+      <div className="md:hidden border-b bg-muted px-3 py-2">
+        <div className="relative">
+          <button
+            onClick={() => setMobileDropdown(v => !v)}
+            className="w-full flex items-center justify-between px-3 py-2 bg-background rounded border text-sm"
+          >
+            <span>{selected ? selected.name : t.tables.selectTableMobile}</span>
+            <ChevronDown className={cn('size-4 transition-transform', mobileDropdown && 'rotate-180')} />
+          </button>
+          {mobileDropdown && (
+            <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-background border rounded shadow-lg max-h-60 overflow-y-auto">
+              {tables.map(tb => {
+                const { label, cls } = statusBadge(tb.status)
+                return (
+                  <button key={tb.id} onClick={() => handleSelect(tb)}
+                    className={cn('w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted',
+                      selected?.id === tb.id && 'bg-blue-50')}>
+                    <span>{tb.name}</span>
+                    <span className={cn('text-xs px-2 rounded', cls)}>{label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
-
-        {/* Base URL config */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground shrink-0">{t('tables.baseUrl')}</label>
-          <Input
-            value={baseUrl}
-            onChange={e => setBaseUrl(e.target.value)}
-            placeholder="http://192.168.1.39:5173"
-            className="font-mono text-base"
-          />
-        </div>
-        {isLocalhost(baseUrl) && (
-          <div className="rounded-md bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800">
-            {t('tables.baseUrlWarning')}
-          </div>
-        )}
       </div>
 
-      {/* Table Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tables.map(table => {
-          const scanUrl = `${baseUrl}/scan/${STORE_ID}/${table.id}`
-          return (
-            <Card
-              key={table.id}
-              data-table-card={table.name}
-              className="print:break-inside-avoid print:border-2"
-            >
-              <CardHeader className="pb-2 text-center">
-                <CardTitle className="text-xl">
-                  {renameId === table.id ? (
-                    <input
-                      ref={renameRef}
-                      value={renameValue}
-                      onChange={e => setRenameValue(e.target.value)}
-                      onBlur={commitRename}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') commitRename()
-                        if (e.key === 'Escape') setRenameId(null)
-                      }}
-                      className="border rounded px-2 py-1 text-center text-lg w-full max-w-[120px] mx-auto outline-none focus:ring-1 focus:ring-blue-500"
-                      autoFocus
-                    />
+      {/* ── Left: Table List (desktop) ── */}
+      <aside className="w-56 shrink-0 bg-muted flex-col hidden md:flex">
+        <div className="px-3 pt-3 pb-1">
+          <label className="text-[10px] text-gray-400 font-semibold tracking-wide">{t.tables.baseUrl}</label>
+          <Input value={baseUrl} onChange={e => updateBaseUrl(e.target.value)}
+            className="h-7 text-xs mt-0.5" placeholder="http://192.168.1.x:5173" />
+          {isLocalhost && (
+            <p className="text-[10px] text-orange-500 mt-0.5">{t.tables.baseUrlWarning}</p>
+          )}
+        </div>
+        <div className="px-3 pt-2 pb-2 flex items-center justify-between">
+          <p className="text-xs text-gray-400 font-semibold tracking-wide">{t.tables.tableStatus}</p>
+          <div className="flex gap-1">
+            <button onClick={handlePrintAllQr} className="p-1 text-gray-400 hover:text-gray-600" title={t.tables.printAllQr}>
+              <QrCode className="size-4" />
+            </button>
+            <button onClick={openAddTable} className="p-1 text-gray-400 hover:text-gray-600" title={t.tables.addTable}>
+              <Plus className="size-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 space-y-0.5">
+          {tables.map(tb => {
+            const { label, cls } = statusBadge(tb.status)
+            const isActive = selected?.id === tb.id
+            return (
+              <button key={tb.id} onClick={() => handleSelect(tb)}
+                className={cn('w-full flex items-center justify-between px-2 py-2 rounded cursor-pointer text-sm transition-colors group',
+                  isActive ? 'bg-blue-50 border-l-2 border-primary' : 'hover:bg-background')}>
+                <span className={cn('font-medium', isActive && 'font-semibold text-primary')}>{tb.name}</span>
+                <div className="flex items-center gap-1">
+                  <span className={cn('text-xs px-2 rounded', cls)}>{label}</span>
+                  <Pencil className="size-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={e => { e.stopPropagation(); openEditTable(tb) }} />
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </aside>
+
+      {/* ── Center: Detail ── */}
+      {!selected ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-400 gap-3">
+          <Armchair className="size-20 opacity-20" />
+          <p className="text-lg">{t.tables.selectTable}</p>
+          <p className="text-sm">{t.tables.selectTableHint}</p>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b bg-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Armchair className="size-5 text-primary" />
+                <h2 className="text-lg sm:text-xl font-bold">{selected.name} {t.tables.tableDetail}</h2>
+              </div>
+              <p className="text-sm text-gray-500">
+                {selected.capacity ?? '?'} {t.tables.guests} &bull; <span className="font-mono">{elapsed(elapsedMs)}</span> {t.tables.elapsed}
+              </p>
+            </div>
+            <Input placeholder={t.tables.searchMenu} className="w-full sm:w-48" />
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-gray-400 font-semibold tracking-wide">
+                {showHistory ? t.tables.orderHistory : t.tables.currentItems}
+              </p>
+              <button onClick={() => setShowHistory(h => !h)} className="text-sm text-blue-600 hover:underline">
+                {showHistory ? t.tables.showCurrent : t.tables.showHistory}
+              </button>
+            </div>
+            {displayOrders.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-12">
+                {showHistory ? t.tables.noPastOrders : t.tables.noActiveOrders}
+              </p>
+            ) : displayOrders.flatMap(o => o.items.map((it, i) => (
+              <div key={`${o.id}-${i}`} className="bg-card rounded-xl p-4 mb-3 shadow-sm hover:shadow-md transition-shadow flex gap-4">
+                <div className="w-16 h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
+                  {menuItemMap[it.menuItemId] ? (
+                    <img src={menuItemMap[it.menuItemId]} alt={it.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span
-                      onClick={() => startRename(table)}
-                      className="cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-2 rounded transition-colors print:cursor-default print:hover:bg-transparent"
-                      title={t('tables.nameLabel')}
-                    >
-                      {table.name}
-                    </span>
+                    <span className="text-2xl text-muted-foreground">{it.name.charAt(0)}</span>
                   )}
-                </CardTitle>
-                <Badge
-                  variant={isTableActive(table) ? 'default' : 'secondary'}
-                  className="print:hidden w-fit mx-auto"
-                >
-                  {isTableActive(table) ? t('tables.occupied') : t('tables.idle')}
-                </Badge>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center gap-3">
-                <div className="bg-white p-3 rounded-lg">
-                  <QRCodeSVG
-                    value={scanUrl}
-                    size={180}
-                    level="M"
-                    includeMargin={false}
-                  />
                 </div>
-                <p className="text-xs text-muted-foreground text-center break-all print:hidden">
-                  {scanUrl}
-                </p>
-                <p className="hidden print:block text-sm font-medium text-center">
-                  {t('tables.scanToOrder')}
-                </p>
-
-                {/* Action buttons */}
-                <div className="flex gap-2 flex-wrap justify-center print:hidden">
-                  <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handlePrintSingle(table.name)}>
-                    {t('tables.print')}
-                  </Button>
-                  <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleEdit(table)}>
-                    {t('common:edit')}
-                  </Button>
-                  {isTableActive(table) && (
-                    <>
-                      <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => handleSettle(table)}>
-                        {t('tables.settle')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="min-h-[44px] text-orange-600 hover:text-orange-700"
-                        onClick={() => { setClosingTable(table); setCloseDialogOpen(true) }}
-                      >
-                        {t('tables.closeTable')}
-                      </Button>
-                    </>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold">{it.name}</p>
+                  {it.selectedOptions && it.selectedOptions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {it.selectedOptions.map((o, idx) => (
+                        <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
+                          {o.optionName || ''}{o.optionName ? ': ' : ''}{o.choiceName}
+                        </span>
+                      ))}
+                    </div>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="min-h-[44px] text-red-600 hover:text-red-700"
-                    onClick={() => handleDelete(table)}
-                  >
-                    {t('common:delete')}
-                  </Button>
+                  {it.remark && <p className="text-sm text-muted-foreground italic">{t.tables.note}: {it.remark}</p>}
+                  <p className="text-xs text-gray-400 mt-1">{t.tables.qty}: {it.quantity}</p>
                 </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-sm w-[calc(100vw-2rem)]">
-          <DialogHeader>
-            <DialogTitle>{editingId ? t('tables.editTitle') : t('tables.addTitle')}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">{t('tables.nameLabel')}</label>
-              <Input
-                value={editName}
-                onChange={e => setEditName(e.target.value)}
-                placeholder={t('tables.namePlaceholder')}
-                className="text-base"
-                autoFocus
-                onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
-              />
-              <p className="text-xs text-muted-foreground mt-1">{t('tables.nameDuplicate')}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">English Name</label>
-              <Input
-                value={editNameEn}
-                onChange={e => setEditNameEn(e.target.value)}
-                placeholder="e.g. Table 1, Room 1"
-                className="text-base"
-                onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
-              />
-            </div>
-            {dialogError && (
-              <p className="text-sm text-destructive">{dialogError}</p>
+                <div className="text-right shrink-0">
+                  <p className="font-semibold text-primary">{formatPriceUSD(itemPrice(it))}</p>
+                </div>
+              </div>
+            )))}
+            {!showHistory && activeOrders.length > 0 && (
+              <div className="bg-card rounded-xl p-4 mt-4 grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-xs text-gray-400">{t.tables.totalItems}</p>
+                  <p className="text-lg font-bold">{allItems.reduce((s, it) => s + it.quantity, 0)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">{t.common.subtotal}</p>
+                  <p className="text-lg font-bold">{formatPriceUSD(subtotal)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">{t.tables.time}</p>
+                  <p className="text-lg font-bold font-mono">{elapsed(elapsedMs)}</p>
+                </div>
+              </div>
             )}
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('common:cancel')}</Button>
-              <Button onClick={handleSave} disabled={saving || !editName.trim()}>
-                {saving ? t('common:saving') : t('common:save')}
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Close Table Dialog */}
-      <CloseTableDialog
-        table={closingTable}
-        storeId={STORE_ID}
-        open={closeDialogOpen}
-        onOpenChange={setCloseDialogOpen}
-        onClosed={fetchTablesAndOrders}
-      />
+          {/* ── Mobile: Action buttons (visible on small screens when right sidebar is hidden) ── */}
+          <div className="lg:hidden border-t bg-card p-3 flex flex-wrap gap-2">
+            <Button size="sm" className="flex-1 min-w-[120px]"
+              onClick={() => setOrderingOpen(true)}>
+              <Plus className="size-4 mr-1" />{t.tables.addItems}
+            </Button>
+            <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
+              onClick={() => currentOrder && api.reprintOrder(storeId, currentOrder.id)}>
+              <Printer className="size-4 mr-1" />{t.tables.printBill}
+            </Button>
+            <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
+              onClick={() => setTransferOpen(true)}>
+              <ArrowLeftRight className="size-4 mr-1" />{t.tables.transfer}
+            </Button>
+            <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
+              onClick={() => setSplitOpen(true)}>
+              <Split className="size-4 mr-1" />{t.tables.splitBill}
+            </Button>
+            <Button size="sm" className="w-full bg-green-500 hover:bg-green-600"
+              disabled={!currentOrder} onClick={() => setCloseOpen(true)}>
+              <CheckCircle2 className="size-4 mr-1" />{t.tables.checkout}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Right: Actions (desktop) ── */}
+      {selected && (
+        <aside className="w-64 shrink-0 border-l bg-card flex-col hidden lg:flex">
+          <div className="p-4 border-b">
+            <p className="text-xs text-gray-400 font-semibold tracking-wide">{t.tables.orderActions}</p>
+          </div>
+          <div className="flex flex-col gap-3 p-4">
+            <ActionBtn icon={Plus} label={t.tables.addItems} primary
+              onClick={() => setOrderingOpen(true)} />
+            <ActionBtn icon={Printer} label={t.tables.printBill} onClick={() => currentOrder && api.reprintOrder(storeId, currentOrder.id)} />
+            <ActionBtn icon={ArrowLeftRight} label={t.tables.transfer} onClick={() => setTransferOpen(true)} />
+            <ActionBtn icon={Split} label={t.tables.splitBill} onClick={() => setSplitOpen(true)} />
+            <ActionBtn icon={QrCode} label={t.tables.printQr} onClick={handlePrintQr} />
+          </div>
+          <div className="flex-1" />
+          <div className="border-t p-4 space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">{t.tables.serviceFee}</span><span>+{formatPriceUSD(Math.round(subtotal * 0.1))}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">{t.tables.taxFee}</span><span>+{formatPriceUSD(Math.round(subtotal * 0.05))}</span></div>
+            <div className="flex justify-between text-xl font-bold">
+              <span>{t.common.total}</span><span className="text-primary">{formatPriceUSD(Math.round(subtotal * 1.15))}</span>
+            </div>
+            <Button className="w-full py-4 text-lg font-bold bg-green-500 hover:bg-green-600 mt-3"
+              disabled={!currentOrder} onClick={() => setCloseOpen(true)}>
+              <CheckCircle2 className="size-5 mr-2" />{t.tables.checkout}
+            </Button>
+          </div>
+        </aside>
+      )}
+
+      {/* Dialogs */}
+      <CloseTableDialog table={selected} storeId={storeId} open={closeOpen}
+        onOpenChange={setCloseOpen} onClosed={() => { setSelected(null); refresh() }} />
+      {currentOrder && (
+        <>
+          <TransferTableDialog open={transferOpen} onClose={() => setTransferOpen(false)}
+            order={currentOrder} storeId={storeId} onTransferred={refresh} />
+          <SplitBillDialog open={splitOpen} onClose={() => setSplitOpen(false)}
+            order={currentOrder} storeId={storeId} />
+        </>
+      )}
+      <TableCrudDialog table={editingTable} storeId={storeId} open={crudOpen}
+        onClose={() => setCrudOpen(false)} onSaved={() => { fetchData(); setCrudOpen(false) }} />
+      {selected && (
+        <OrderingSheet
+          open={orderingOpen}
+          onClose={() => setOrderingOpen(false)}
+          storeId={storeId}
+          tableId={selected.id}
+          tableName={selected.name}
+          onOrderCreated={refresh}
+        />
+      )}
     </div>
+  )
+}
+
+function ActionBtn({ icon: Icon, label, primary, onClick }: {
+  icon: typeof Plus; label: string; primary?: boolean; onClick?: () => void
+}) {
+  return (
+    <button onClick={onClick}
+      className={cn('w-full flex items-center gap-3 rounded-xl py-3 px-4 text-sm font-medium transition-colors',
+        primary ? 'bg-primary text-white hover:bg-primary/90' : 'border hover:bg-background')}>
+      <Icon className="size-4" />{label}
+    </button>
   )
 }
