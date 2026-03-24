@@ -1,8 +1,8 @@
 import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
-import type { Store, Category, MenuItem, MenuResponse } from '@qr-order/shared'
+import { storeStore } from './store.service.js'
+import type { Category, MenuItem, MenuResponse } from '@qr-order/shared'
 
-const storeStore = new JsonStore<Store>('stores.json')
 const categoryStore = new JsonStore<Category>('categories.json')
 const menuItemStore = new JsonStore<MenuItem>('menu-items.json')
 

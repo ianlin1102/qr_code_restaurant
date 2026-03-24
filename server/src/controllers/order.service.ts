@@ -6,8 +6,8 @@ import type { Order, OrderItem, Table, Store, CreateOrderRequest, OrderStatus } 
 import logger from '../lib/logger.js'
 
 export const orderStore = new JsonStore<Order>('orders.json')
-const tableStore = new JsonStore<Table>('tables.json')
-const storeConfigStore = new JsonStore<Store>('stores.json')
+import { tableStore } from './table.service.js'
+import { storeStore as storeConfigStore } from './store.service.js'
 
 const storeCounters = new Map<string, number>()
 

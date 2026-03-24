@@ -1,9 +1,9 @@
 import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
-import type { Table, Order } from '@qr-order/shared'
+import { orderStore } from './order.service.js'
+import type { Table } from '@qr-order/shared'
 
-const tableStore = new JsonStore<Table>('tables.json')
-const orderStore = new JsonStore<Order>('orders.json')
+export const tableStore = new JsonStore<Table>('tables.json')
 
 export function getTables(storeId: string): Table[] {
   return tableStore.getByField('storeId', storeId)

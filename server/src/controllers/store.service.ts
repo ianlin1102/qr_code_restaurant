@@ -1,7 +1,7 @@
 import { JsonStore } from '../repositories/json-store.js'
 import type { Store, UpdateStoreRequest } from '@qr-order/shared'
 
-const storeStore = new JsonStore<Store>('stores.json')
+export const storeStore = new JsonStore<Store>('stores.json')
 
 export function getStore(storeId: string): Store | undefined {
   return storeStore.getById(storeId)
