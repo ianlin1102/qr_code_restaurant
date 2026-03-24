@@ -17,7 +17,7 @@ export default function ItemCustomizeView({ item, t, onBack, onConfirm }: Props)
   const [selected, setSelected] = useState<Record<string, SelectedOption>>({})
   const [qty, setQty] = useState(1)
 
-  const selectChoice = (opt: MenuItem['options'][0 & number], choice: typeof opt.choices[number]) => {
+  const selectChoice = (opt: NonNullable<MenuItem['options']>[number], choice: typeof opt.choices[number]) => {
     setSelected(prev => ({
       ...prev,
       [opt.id]: {

@@ -8,11 +8,11 @@
     "createdAt": "2026-03-01T00:00:00.000Z"
   },
   {
-    "id": "cf18fa47-e1fb-45d0-9723-de71dd211c54",
+    "id": "8bec0727-ab89-4c95-9133-96ee20756044",
     "storeId": "store-demo-002",
     "username": "ian",
-    "password": "$2b$10$QxtUhT9DQ0eq0E4W/q1Fje3IZEmkE8bEp0MVI5f42Yqzz1BLm8keO",
+    "password": "$2b$10$5ldv2Y84JVzthqwMCZtHHuVn9pH5I/mX1gsnEeO55l.X6AHksxy/e",
     "role": "staff",
-    "createdAt": "2026-03-24T03:07:20.003Z"
+    "createdAt": "2026-03-24T03:11:56.512Z"
   }
 ]

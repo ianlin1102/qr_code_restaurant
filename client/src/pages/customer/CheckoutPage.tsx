@@ -23,7 +23,7 @@ type RouteState = {
   items?: { menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]
 } | null
 
-function CheckoutForm({ amount, items }: { amount: number; items: { name: string; quantity: number; price: number; selectedOptions?: { choiceName: string }[] }[] }) {
+function CheckoutForm({ amount, items }: { amount: number; items: { name: string; quantity: number; price: number; selectedOptions?: { choiceName: string; choiceNameEn?: string }[] }[] }) {
   const stripe = useStripe()
   const elements = useElements()
   const { t } = useTranslation('customer')
