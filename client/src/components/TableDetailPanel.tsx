@@ -73,7 +73,7 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="flex flex-col p-0 w-[380px] sm:max-w-[380px]">
+      <SheetContent side="right" className="flex flex-col p-0 w-full sm:w-[380px] sm:max-w-[380px]">
         <SheetHeader className="px-4 pt-4 pb-2">
           <SheetTitle>{table?.name ?? t.tables.tableDetail}</SheetTitle>
           {table && (
@@ -133,19 +133,21 @@ function CurrentTab({ order, storeId, onRefresh }: {
   }
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="font-semibold text-lg">#{order.orderNumber}</span>
-        <div className="flex items-center gap-2">
-          <Button size="xs" variant="outline" onClick={() => setSplitOpen(true)}>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-lg">#{order.orderNumber}</span>
+          <Badge variant="outline" className={STATUS_STYLE[order.status]}>{order.status}</Badge>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <Button size="sm" variant="outline" className="min-h-[36px] text-xs" onClick={() => setSplitOpen(true)}>
             <Split className="size-3 mr-1" />{t.splitBill.title}
           </Button>
-          <Button size="xs" variant="outline" onClick={() => setTransferOpen(true)}>
+          <Button size="sm" variant="outline" className="min-h-[36px] text-xs" onClick={() => setTransferOpen(true)}>
             <ArrowRightLeft className="size-3 mr-1" />{t.transferTable.title}
           </Button>
-          <Button size="xs" variant="outline" onClick={() => setEditing(true)}>
+          <Button size="sm" variant="outline" className="min-h-[36px] text-xs" onClick={() => setEditing(true)}>
             <Pencil className="size-3 mr-1" />{t.tableDetail.edit}
           </Button>
-          <Badge variant="outline" className={STATUS_STYLE[order.status]}>{order.status}</Badge>
         </div>
       </div>
       <div className="text-sm space-y-1 text-muted-foreground">

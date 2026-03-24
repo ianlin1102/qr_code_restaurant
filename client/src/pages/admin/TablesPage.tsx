@@ -212,8 +212,8 @@ export default function TablesPage() {
                 {showHistory ? t.tables.noPastOrders : t.tables.noActiveOrders}
               </p>
             ) : displayOrders.flatMap(o => o.items.map((it, i) => (
-              <div key={`${o.id}-${i}`} className="bg-card rounded-xl p-4 mb-3 shadow-sm hover:shadow-md transition-shadow flex gap-4">
-                <div className="w-16 h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
+              <div key={`${o.id}-${i}`} className="bg-card rounded-xl p-3 sm:p-4 mb-2 sm:mb-3 shadow-sm hover:shadow-md transition-shadow flex gap-3">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
                   {menuItemMap[it.menuItemId] ? (
                     <img src={menuItemMap[it.menuItemId]} alt={it.name} className="w-full h-full object-cover" />
                   ) : (
@@ -240,7 +240,7 @@ export default function TablesPage() {
               </div>
             )))}
             {!showHistory && activeOrders.length > 0 && (
-              <div className="bg-card rounded-xl p-4 mt-4 grid grid-cols-3 gap-4 text-center">
+              <div className="bg-card rounded-xl p-3 sm:p-4 mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
                 <div>
                   <p className="text-xs text-gray-400">{t.tables.totalItems}</p>
                   <p className="text-lg font-bold">{allItems.reduce((s, it) => s + it.quantity, 0)}</p>
@@ -258,7 +258,14 @@ export default function TablesPage() {
           </div>
 
           {/* ── Mobile: Action buttons (visible on small screens when right sidebar is hidden) ── */}
-          <div className="lg:hidden border-t bg-card p-3 flex flex-wrap gap-2">
+          <div className="lg:hidden border-t bg-card p-3 space-y-2">
+            {activeOrders.length > 0 && (
+              <div className="flex justify-between items-center text-sm px-1">
+                <span className="text-muted-foreground">{t.common.total}</span>
+                <span className="font-bold text-primary text-lg">{formatPriceUSD(Math.round(subtotal * 1.15))}</span>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
             <Button size="sm" className="flex-1 min-w-[120px]"
               onClick={() => setOrderingOpen(true)}>
               <Plus className="size-4 mr-1" />{t.tables.addItems}
@@ -279,6 +286,7 @@ export default function TablesPage() {
               disabled={!currentOrder} onClick={() => setCloseOpen(true)}>
               <CheckCircle2 className="size-4 mr-1" />{t.tables.checkout}
             </Button>
+            </div>
           </div>
         </div>
       )}

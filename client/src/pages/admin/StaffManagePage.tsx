@@ -110,49 +110,74 @@ export default function StaffManagePage() {
               {t.staff.noStaff}
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t.staff.username}</TableHead>
-                  <TableHead>{t.staff.role}</TableHead>
-                  <TableHead>{t.common.actions}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {staff.map(m => (
-                  <TableRow key={m.id} className={m.id === currentUserId ? 'bg-muted/50' : ''}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-bold ${avatarColor(m.username)}`}>
-                          {initials(m.username)}
-                        </span>
-                        <span>
-                          {m.username}
-                          {m.id === currentUserId && (
-                            <Badge variant="outline" className="ml-2">
-                              {t.staff.you}
-                            </Badge>
-                          )}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {m.id === currentUserId
-                        ? <Badge variant={m.role === 'owner' ? 'default' : 'secondary'}>
-                            {m.role === 'owner' ? t.staff.roles.owner : t.staff.roles.staff}
-                          </Badge>
-                        : <RoleSelect value={m.role} onChange={v => handleRoleChange(m.id, v)} t={t} />}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" className="text-red-600"
-                        disabled={!canDelete(m)} onClick={() => handleDelete(m)}>
-                        {t.common.delete}
-                      </Button>
-                    </TableCell>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t.staff.username}</TableHead>
+                    <TableHead>{t.staff.role}</TableHead>
+                    <TableHead>{t.common.actions}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {staff.map(m => (
+                    <TableRow key={m.id} className={m.id === currentUserId ? 'bg-muted/50' : ''}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-bold ${avatarColor(m.username)}`}>
+                            {initials(m.username)}
+                          </span>
+                          <span>
+                            {m.username}
+                            {m.id === currentUserId && (
+                              <Badge variant="outline" className="ml-2">
+                                {t.staff.you}
+                              </Badge>
+                            )}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {m.id === currentUserId
+                          ? <Badge variant={m.role === 'owner' ? 'default' : 'secondary'}>
+                              {m.role === 'owner' ? t.staff.roles.owner : t.staff.roles.staff}
+                            </Badge>
+                          : <RoleSelect value={m.role} onChange={v => handleRoleChange(m.id, v)} t={t} />}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" className="text-red-600"
+                          disabled={!canDelete(m)} onClick={() => handleDelete(m)}>
+                          {t.common.delete}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="md:hidden space-y-2">
+              {staff.map(m => (
+                <div key={m.id} className="bg-card rounded-xl p-3 shadow-card space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-bold ${avatarColor(m.username)}`}>
+                      {initials(m.username)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{m.username}
+                        {m.id === currentUserId && <Badge variant="outline" className="ml-2">{t.staff.you}</Badge>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    {m.id === currentUserId
+                      ? <Badge variant={m.role === 'owner' ? 'default' : 'secondary'}>{m.role === 'owner' ? t.staff.roles.owner : t.staff.roles.staff}</Badge>
+                      : <RoleSelect value={m.role} onChange={v => handleRoleChange(m.id, v)} t={t} />}
+                    <Button variant="outline" size="sm" className="text-red-600"
+                      disabled={!canDelete(m)} onClick={() => handleDelete(m)}>{t.common.delete}</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

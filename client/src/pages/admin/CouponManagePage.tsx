@@ -121,53 +121,75 @@ export default function CouponManagePage() {
           {coupons.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">{t.coupons.noCoupons}</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t.coupons.code}</TableHead>
-                  <TableHead>{t.coupons.discountType}</TableHead>
-                  <TableHead>{t.coupons.minOrder}</TableHead>
-                  <TableHead>{t.coupons.currentUses}</TableHead>
-                  <TableHead>{t.common.status}</TableHead>
-                  <TableHead>{t.coupons.expiresAt}</TableHead>
-                  <TableHead>{t.common.actions}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {coupons.map(c => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-mono font-semibold">{c.code}</TableCell>
-                    <TableCell>{fmtDiscount(c.discountType, c.discountValue)}</TableCell>
-                    <TableCell>{c.minOrderAmount ? formatPriceUSD(c.minOrderAmount) : '-'}</TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <span className="text-xs">{c.currentUses}{c.maxUses ? `/${c.maxUses}` : ''}</span>
-                        {c.maxUses && c.maxUses > 0 && (
-                          <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500 rounded-full transition-all"
-                              style={{ width: `${Math.min(100, (c.currentUses / c.maxUses) * 100)}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={c.active ? 'default' : 'secondary'}>
-                        {c.active ? t.coupons.active : t.coupons.inactive}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-'}</TableCell>
-                    <TableCell className="flex gap-2">
-                      <Switch checked={c.active} onCheckedChange={() => toggleActive(c)} />
-                      <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(c)}>
-                        {t.common.delete}
-                      </Button>
-                    </TableCell>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t.coupons.code}</TableHead>
+                    <TableHead>{t.coupons.discountType}</TableHead>
+                    <TableHead>{t.coupons.minOrder}</TableHead>
+                    <TableHead>{t.coupons.currentUses}</TableHead>
+                    <TableHead>{t.common.status}</TableHead>
+                    <TableHead>{t.coupons.expiresAt}</TableHead>
+                    <TableHead>{t.common.actions}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {coupons.map(c => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-mono font-semibold">{c.code}</TableCell>
+                      <TableCell>{fmtDiscount(c.discountType, c.discountValue)}</TableCell>
+                      <TableCell>{c.minOrderAmount ? formatPriceUSD(c.minOrderAmount) : '-'}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <span className="text-xs">{c.currentUses}{c.maxUses ? `/${c.maxUses}` : ''}</span>
+                          {c.maxUses && c.maxUses > 0 && (
+                            <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-500 rounded-full transition-all"
+                                style={{ width: `${Math.min(100, (c.currentUses / c.maxUses) * 100)}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={c.active ? 'default' : 'secondary'}>
+                          {c.active ? t.coupons.active : t.coupons.inactive}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell className="flex gap-2">
+                        <Switch checked={c.active} onCheckedChange={() => toggleActive(c)} />
+                        <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(c)}>
+                          {t.common.delete}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="md:hidden space-y-2">
+              {coupons.map(c => (
+                <div key={c.id} className="bg-card rounded-xl p-3 shadow-card space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold">{c.code}</span>
+                    <Badge>{c.active ? t.coupons.active : t.coupons.inactive}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{fmtDiscount(c.discountType, c.discountValue)}</span>
+                    <span className="text-muted-foreground">{c.currentUses}{c.maxUses ? `/${c.maxUses}` : ''}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Switch checked={c.active} onCheckedChange={() => toggleActive(c)} />
+                    <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(c)}>
+                      {t.common.delete}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
