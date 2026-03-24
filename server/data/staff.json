@@ -6,5 +6,13 @@
     "password": "$2a$10$dummyhashfordemopurposesonly12345678",
     "role": "owner",
     "createdAt": "2026-03-01T00:00:00.000Z"
+  },
+  {
+    "id": "c8472bba-2962-4e14-9126-ee56a3f8609e",
+    "storeId": "store-demo-002",
+    "username": "waiter",
+    "password": "$2b$10$pgW9pMjlgmxbdS52uJ9AiuYb8iVQP1gIvjDPDKK9TvNW9331x6R.e",
+    "role": "staff",
+    "createdAt": "2026-03-24T03:01:52.428Z"
   }
 ]

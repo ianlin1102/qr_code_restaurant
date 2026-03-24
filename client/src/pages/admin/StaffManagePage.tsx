@@ -109,7 +109,7 @@ export default function StaffManagePage() {
             <p className="text-muted-foreground text-center py-8">
               {t.staff.noStaff}
             </p>
-          ) : (
+          ) : (<>
             <div className="hidden md:block">
               <Table>
                 <TableHeader>
@@ -178,7 +178,7 @@ export default function StaffManagePage() {
                 </div>
               ))}
             </div>
-          )}
+          </>)}
         </CardContent>
       </Card>
 

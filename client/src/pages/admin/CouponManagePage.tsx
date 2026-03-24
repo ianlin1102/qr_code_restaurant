@@ -120,7 +120,7 @@ export default function CouponManagePage() {
           {error && <p className="text-sm text-destructive mb-4">{error}</p>}
           {coupons.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">{t.coupons.noCoupons}</p>
-          ) : (
+          ) : (<>
             <div className="hidden md:block">
               <Table>
                 <TableHeader>
@@ -190,7 +190,7 @@ export default function CouponManagePage() {
                 </div>
               ))}
             </div>
-          )}
+          </>)}
         </CardContent>
       </Card>
 

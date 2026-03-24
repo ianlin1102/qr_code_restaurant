@@ -31,6 +31,7 @@ export default function LoginPage() {
       navigate('/admin/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
+      setPassword('')
     } finally {
       setLoading(false)
     }
