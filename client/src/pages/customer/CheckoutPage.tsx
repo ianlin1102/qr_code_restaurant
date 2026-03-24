@@ -23,7 +23,7 @@ type RouteState = {
   items?: { menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]
 } | null
 
-function CheckoutForm({ amount, items }: { amount: number; items: { name: string; quantity: number; price: number }[] }) {
+function CheckoutForm({ amount, items }: { amount: number; items: { name: string; quantity: number; price: number; selectedOptions?: { choiceName: string }[] }[] }) {
   const stripe = useStripe()
   const elements = useElements()
   const { t } = useTranslation('customer')
@@ -64,7 +64,14 @@ function CheckoutForm({ amount, items }: { amount: number; items: { name: string
             <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">ORDER SUMMARY</p>
             {items.map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+                <span className="text-muted-foreground">
+                  {item.name} x{item.quantity}
+                  {item.selectedOptions && item.selectedOptions.length > 0 && (
+                    <span className="text-xs text-orange-600 ml-1">
+                      ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || "")).join(', ')})
+                    </span>
+                  )}
+                </span>
                 <span className="text-muted-foreground">{formatPriceUSD(item.price * item.quantity)}</span>
               </div>
             ))}

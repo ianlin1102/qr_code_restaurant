@@ -140,7 +140,7 @@ export default function OrderDetailDialog({
                 </div>
                 {item.selectedOptions && item.selectedOptions.length > 0 && (
                   <p className="text-xs text-orange-600">
-                    {item.selectedOptions.map(o => `${o.optionName}: ${o.choiceName}`).join(' | ')}
+                    {item.selectedOptions.map(o => `${(o.optionName || o.optionNameEn || "")}: ${(o.choiceName || o.choiceNameEn || "")}`).join(' | ')}
                   </p>
                 )}
                 {item.remark && (

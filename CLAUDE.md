@@ -543,6 +543,27 @@ createdAt DateTime
 - **服务器内存缓存**: 直接修改 `server/data/*.json` 文件后必须重启服务器（JsonStore 在启动时加载到内存）
 - **Tax/Service 费率不一致**: TablesPage 用 10% service + 5% tax，MenuManagePage 用 8% tax（应统一提取为配置）
 
+### 2026-03-23 追加修复
+- ✅ **selectedOptions 中文名为空**: Stripe compact metadata 解压时 `optionName/choiceName` 设为空字符串 → `order.service.ts` enrichedOptions 现在从 menuItem 定义填充中文名
+- ✅ **前端规格显示空括号**: 所有 12 个显示 `choiceName` 的文件加了 fallback: `o.choiceName || o.choiceNameEn || ''`
+- ✅ **Cart 按钮 Submit/Submitting 跳动**: 移除双语嵌套 span，统一单行 i18n + Loader2 spinner + 固定 min-w
+- ✅ **MenuPage Header 不可折叠**: 添加滚动检测，下滑自动收起店名/按钮，只保留搜索栏
+- ✅ **TablesPage 不显示图片**: 添加 menuItemMap（按 menuItemId 查 image URL），有图显示图片，无图显示首字母
+- ✅ **11 个 i18n key 缺失**: closeConfirm/confirmCloseTitle/grandTotal/splitBill.*/transferTable.* 补全
+- ✅ **OrderingSheet/ItemCustomizeView 内容和 X 叠加**: 添加 `pr-12 pt-4` padding
+
+### 当前仍未修复的问题
+- **Call Waiter 无真实通知**: 需要 WebSocket
+- **Stripe webhook 依赖 CLI**: 本地必须运行 `stripe listen`
+- **Docker `.env` 陷阱**: `docker compose restart` 不重读 `.env`
+- **Seed 后 categoryId 失效**: 需要按菜名重映射
+- **服务器内存缓存**: 改 JSON 文件后必须重启
+- **Tax/Service 费率不一致**: 应统一提取为配置
+- **购物车 localStorage 残留**: 同桌台旧购物车数据可能导致错误订单
+- **FloorPlan/Tables polling 延迟**: 10s 间隔，订单创建后最多等 10s 才更新状态
+- **`/auth/me` 端点未使用**
+- **部分管理端页面缺少 mobile 底部导航**
+
 ---
 
 ## Do NOT

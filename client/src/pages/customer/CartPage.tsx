@@ -111,7 +111,7 @@ export default function CartPage() {
                       <div className="flex flex-wrap gap-1 mt-1">
                         {item.selectedOptions.map(opt => (
                           <Badge key={opt.optionId} variant="outline" className="text-xs rounded-full bg-blue-50 border-blue-200 text-blue-700">
-                            {opt.optionName}: {opt.choiceName}
+                            {opt.optionName || opt.optionNameEn || ''}: {opt.choiceName || opt.choiceNameEn || ''}
                             {opt.priceAdjust > 0 && ` +${formatPriceUSD(opt.priceAdjust)}`}
                           </Badge>
                         ))}

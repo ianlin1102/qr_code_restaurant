@@ -104,6 +104,11 @@ export default function OrderConfirmPage() {
                     <div>
                       <span className="font-medium">{item.quantity}x</span>
                       <span className="ml-1.5">{item.name}</span>
+                      {item.selectedOptions && item.selectedOptions.length > 0 && (
+                        <span className="text-xs text-orange-600 ml-1">
+                          ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || "")).join(', ')})
+                        </span>
+                      )}
                       {item.remark && (
                         <p className="text-xs text-muted-foreground ml-5">{item.remark}</p>
                       )}

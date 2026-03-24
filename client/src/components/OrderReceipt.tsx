@@ -103,7 +103,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, Props>(({ order, storeName }, re
           </div>
           {item.selectedOptions && item.selectedOptions.length > 0 && (
             <div className="receipt-item-detail">
-              {item.selectedOptions.map(o => o.choiceName).join(', ')}
+              {item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || "")).join(', ')}
             </div>
           )}
           {item.remark && (

@@ -145,7 +145,7 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
                   <div className="flex flex-wrap gap-1 mt-0.5">
                     {item.selectedOptions.map((o, idx) => (
                       <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
-                        {o.optionName ? `${o.optionName}: ${o.choiceName}` : o.choiceName}
+                        {(o.optionName || o.optionNameEn || "") ? `${(o.optionName || o.optionNameEn || "")}: ${(o.choiceName || o.choiceNameEn || "")}` : (o.choiceName || o.choiceNameEn || "")}
                       </span>
                     ))}
                   </div>

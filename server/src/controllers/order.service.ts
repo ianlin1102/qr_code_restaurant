@@ -59,6 +59,8 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
       const choiceDef = optDef?.choices.find(c => c.id === so.choiceId)
       return {
         ...so,
+        optionName: so.optionName || optDef?.name || '',
+        choiceName: so.choiceName || choiceDef?.name || '',
         optionNameEn: optDef?.nameEn ?? so.optionName,
         choiceNameEn: choiceDef?.nameEn ?? so.choiceName,
       }

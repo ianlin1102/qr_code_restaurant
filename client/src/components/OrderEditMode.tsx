@@ -140,7 +140,7 @@ function EditableItemRow({ item, idx, onQty, onRemove, onRemark }: {
         <span className="shrink-0 ml-2">{formatPriceUSD(unitPrice(item) * item.quantity)}</span>
       </div>
       {opts && opts.length > 0 && (
-        <p className="text-xs text-orange-600">{opts.map((o) => `${o.optionName}: ${o.choiceName}`).join(' | ')}</p>
+        <p className="text-xs text-orange-600">{opts.map((o) => `${(o.optionName || o.optionNameEn || "")}: ${(o.choiceName || o.choiceNameEn || "")}`).join(' | ')}</p>
       )}
       <div className="flex items-center gap-1">
         <Button size="sm" variant="outline" className="min-h-[44px] min-w-[44px] p-0" onClick={() => onQty(idx, -1)}><Minus className="size-4" /></Button>

@@ -86,7 +86,14 @@ export default function CloseTableDialog({ table, storeId, open, onOpenChange, o
                 <ul className="space-y-0.5">
                   {order.items.map((item, idx) => (
                     <li key={idx} className="text-xs text-muted-foreground flex justify-between">
-                      <span>{item.name} x{item.quantity}</span>
+                      <span>
+                        {item.name} x{item.quantity}
+                        {item.selectedOptions && item.selectedOptions.length > 0 && (
+                          <span className="text-xs text-orange-600 ml-1">
+                            ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || "")).join(', ')})
+                          </span>
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ul>
