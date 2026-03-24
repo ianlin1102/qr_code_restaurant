@@ -185,12 +185,12 @@ skill-seekers package output/<name>/ --target claude
 ---
 
 <!-- ============================================================ -->
-<!-- 以下 sections 由 Loop 8 自动生成，请勿手动编辑                    -->
+<!-- 以下 sections 由自动扫描生成，请勿手动编辑                         -->
 <!-- ============================================================ -->
 
 ## Project Overview
 
-QR 扫码点餐 SaaS 系统 — 顾客扫桌台二维码浏览菜单、选规格下单、Stripe 在线支付；管理端实时看板处理订单、管理菜品/分类/桌台/门店设置。
+QR 扫码点餐 SaaS 系统 — 顾客扫桌台二维码浏览菜单、选规格下单、Stripe 在线支付（含小费）；管理端实时看板处理订单、管理菜品/分类/桌台/门店设置。
 
 **Monorepo 结构（pnpm workspace）：**
 
@@ -208,10 +208,11 @@ QR 扫码点餐 SaaS 系统 — 顾客扫桌台二维码浏览菜单、选规格
 ### 前端（client/）
 - **框架**: React 19.2 + Vite 7.3 + TypeScript 5.9
 - **路由**: React Router DOM 7.13
-- **UI 库**: shadcn/ui (radix-ui 1.4) + Tailwind CSS 4.2 + Lucide React icons
-- **状态管理**: Zustand 5（session-store, auth-store, cart-store）
-- **i18n**: i18next 25 + react-i18next 16（中英双语）
+- **UI 库**: shadcn/ui (radix-ui 1.4) + Tailwind CSS 4.2 + Lucide React 0.577 icons
+- **状态管理**: Zustand 5（session-store, auth-store, cart-store, admin-lang-store）
+- **i18n**: i18next 25 + react-i18next 16 + i18next-browser-languagedetector 8（中英双语）
 - **支付**: @stripe/react-stripe-js 5 + @stripe/stripe-js 8
+- **字体**: @fontsource/inter, @fontsource/plus-jakarta-sans
 - **其他**: qrcode.react 4（QR 码生成）, uuid 11, class-variance-authority 0.7
 
 ### 后端（server/）
@@ -221,7 +222,7 @@ QR 扫码点餐 SaaS 系统 — 顾客扫桌台二维码浏览菜单、选规格
 - **认证**: JWT (jsonwebtoken 9) + bcryptjs 3
 - **支付**: Stripe SDK 20（PaymentIntent + Webhook）
 - **存储**: AWS S3 (@aws-sdk/client-s3 3，图片上传)
-- **日志**: Pino 10 + Morgan 1
+- **日志**: Pino 10 + pino-pretty 13 + Morgan 1
 - **文件上传**: Multer 2（JPEG/PNG, 5MB 限制）
 - **环境变量**: dotenv 16
 
@@ -284,7 +285,7 @@ createdAt DateTime
 | Method | Path | Auth | 说明 |
 |--------|------|------|------|
 | GET | `/` | - | 获取门店信息 |
-| PUT | `/` | JWT | 更新门店信息（名称/描述/营业时间/公告） |
+| PUT | `/` | JWT | 更新门店信息（名称/描述/营业时间/公告/autoAcceptOrders） |
 
 ### 菜单 `/api/stores/:storeId/menu`
 | Method | Path | Auth | 说明 |
@@ -322,7 +323,7 @@ createdAt DateTime
 ### 支付
 | Method | Path | Auth | 说明 |
 |--------|------|------|------|
-| POST | `/api/stores/:storeId/checkout` | - | 创建 Stripe PaymentIntent（不创建订单） |
+| POST | `/api/stores/:storeId/checkout` | - | 创建 Stripe PaymentIntent（新购物车或已有未付订单 orderIds），支持 tipAmount |
 | POST | `/api/webhook/stripe` | - | Stripe webhook（payment_intent.succeeded 时创建订单） |
 
 ### 数据分析 `/api/stores/:storeId/analytics`
@@ -408,7 +409,8 @@ createdAt DateTime
 |-------|------|------|
 | `useSessionStore` | `stores/session-store.ts` | 顾客会话（storeId/tableId），localStorage 持久化 |
 | `useAuthStore` | `stores/auth-store.ts` | 管理员认证（JWT token/user），localStorage 持久化 |
-| `useCartStore` | `stores/cart-store.ts` | 购物车（不持久化，刷新清空） |
+| `useCartStore` | `stores/cart-store.ts` | 购物车，localStorage 持久化（key `qr-order-cart`） |
+| `useAdminLangStore` | `stores/admin-lang-store.ts` | 管理端语言偏好（zh/en），localStorage 持久化 |
 
 ### 共享组件（components/）
 | 组件 | 说明 |
@@ -420,7 +422,8 @@ createdAt DateTime
 | `CloseTableDialog` | 关台确认弹窗 |
 | `ImageUpload` | 图片上传组件（S3） |
 | `MenuItemDetailSheet` | 菜品详情 Sheet（规格选择+加购，顾客端） |
-| `MenuItemEditSheet` | 菜品编辑 Sheet（管理端内联编辑，含规格/选项/中英文） |
+| `OrderingSheet` | 桌内加单 Sheet（菜品浏览+规格选择+直接下单，顾客端） |
+| `ItemCustomizeView` | 菜品规格自定义视图（选项选择+数量，OrderingSheet 内嵌） |
 | `ActiveOrdersSidebar` | 活跃订单侧栏（按状态分组，15s 自动刷新） |
 | `TableGrid` | 桌台网格（楼层平面图用，状态色标） |
 | `TableDetailPanel` | 桌台详情面板（当前订单+历史订单） |
@@ -434,6 +437,15 @@ createdAt DateTime
 | `OrderEditDialog` | 订单编辑弹窗（调整数量/增删菜品/改选项/备注） |
 | `MenuItemTable` | 菜品列表（桌面表格/移动卡片/预览网格，内联编辑） |
 | `TipSelector` | 小费选择器（预设百分比+自定义，CheckoutPage 用） |
+
+### i18n
+| 文件 | 说明 |
+|------|------|
+| `i18n/index.ts` | i18next 初始化配置（browser language detector） |
+| `i18n/useT.ts` | 管理端 i18n hook（自动读取 admin-lang-store 语言偏好） |
+| `i18n/admin.ts` | 管理端翻译资源（zh/en 内联定义，429 行） |
+| `i18n/en/*.json` | 英文翻译（admin.json + customer.json） |
+| `i18n/zh/*.json` | 中文翻译（admin.json + customer.json） |
 
 ### 工具函数
 | 文件 | 导出 | 说明 |
@@ -450,12 +462,14 @@ createdAt DateTime
 - **价格**: 全部用整数（分/cents）存储和传输，前端展示时 `/100`
 - **多租户**: 所有 API 路径带 `/api/stores/:storeId/` 前缀，middleware 校验 JWT storeId 与 URL storeId 一致
 - **订单快照**: OrderItem 冻结下单时的菜名/价格/规格，菜单改价不影响历史订单
-- **支付流程**: 两阶段 — 先创建 PaymentIntent（不建订单），Stripe webhook 确认支付后才创建订单（`isPaid: true`）
+- **支付流程**: 两阶段 — 先创建 PaymentIntent（不建订单），Stripe webhook 确认支付后才创建订单（`isPaid: true`）；支持新购物车结账和已有未付订单结账（`orderIds`），可选 `tipAmount`
 - **cartKey**: 同一菜品不同规格 = 购物车中不同条目，通过 menuItemId + 选项组合区分
 - **i18n 字段命名**: 中文用 `name`/`description`，英文用 `nameEn`/`descriptionEn`，`localized()` 按语言选择
+- **i18n 双系统**: 顾客端用 react-i18next（JSON 文件），管理端用 `useT()` hook + `admin-lang-store`（内联翻译资源 `i18n/admin.ts`）
 - **文件命名**: 页面 `XxxPage.tsx`，路由 `xxx.routes.ts`，控制器 `xxx.service.ts` / `xxx.controller.ts`
 - **监听地址**: `0.0.0.0:3001`（支持局域网手机扫码 + 电脑后台）
 - **订单号**: A001-A999, B001-B999... 循环递增，人类可读
+- **JsonStore 单例**: 每个 JSON 数据文件只能有一个 `JsonStore` 实例，多个 service 共享同一实例（避免内存不同步 bug）
 
 ---
 
@@ -464,10 +478,10 @@ createdAt DateTime
 ### 架构 & 数据层
 - **Prisma 迁移未执行**: `schema.prisma` 只定义了 Store 和 StoreUser，Menu/Category/Table/Order 等核心模型仍用 JSON 文件存储，Prisma migration 待完成
 - **自定义 Hooks 缺失**: `client/src/hooks/` 目录为空，数据获取逻辑直接写在页面组件中（违反架构原则，待提取为 `useMenu`/`useOrders` 等 hooks）
-- **控制器命名不一致**: 部分用 `.service.ts`（menu/order/table/store/analytics/coupon/waitlist/split-bill/printer/staff），部分用 `.controller.ts`（auth），待统一
-- **`api.ts` 超过 200 行限制**: 当前 279 行，新增 analytics/coupons/waitlist/split-bill/printer/staff API 后需拆分（如按模块拆为 `api/menu.ts`、`api/orders.ts` 等）
-- **6 个文件严重超限（>300 行）**: `CategoryManagePage.tsx`（421 行）、`MenuItemForm.tsx`（374 行）、`OrderEditDialog.tsx`（372 行）、`MenuPage.tsx`（359 行）、`AnalyticsPage.tsx`（317 行）、`MenuItemTable.tsx`（301 行）均远超 200 行限制，需优先拆分
-- **13 个文件轻微超限（200-285 行）**: `MenuManagePage.tsx`（285 行）、`TablesPage.tsx`（270 行）、`MenuItemDetailSheet.tsx`（250 行）、`CouponManagePage.tsx`（226 行）、`MenuItemEditSheet.tsx`（222 行）、`DashboardPage.tsx`（214 行）、`TableDetailPanel.tsx`（213 行）、`StaffManagePage.tsx`（208 行）、`AdminLayout.tsx`（206 行）、`OrderDetailDialog.tsx`（206 行）、`CartPage.tsx`（204 行）、`FloorPlanEditorPage.tsx`（204 行）、`ActiveOrdersSidebar.tsx`（201 行）
+- **控制器命名不一致**: 部分用 `.service.ts`（menu/order/table/store/analytics/coupon/waitlist/split-bill/printer/staff/payment），部分用 `.controller.ts`（auth），待统一
+- **`api.ts` 超过 200 行限制**: 当前 286 行，需拆分（如按模块拆为 `api/menu.ts`、`api/orders.ts` 等）
+- **7 个文件严重超限（>300 行）**: `MenuPage.tsx`（500 行）、`CategoryManagePage.tsx`（423 行）、`MenuItemForm.tsx`（375 行）、`OrderEditDialog.tsx`（372 行）、`TablesPage.tsx`（352 行）、`AnalyticsPage.tsx`（317 行）、`MenuItemTable.tsx`（317 行）均远超 200 行限制，需优先拆分
+- **12 个文件轻微超限（200-291 行）**: `MenuManagePage.tsx`（291 行）、`MenuItemDetailSheet.tsx`（250 行）、`CouponManagePage.tsx`（225 行）、`TableDetailPanel.tsx`（223 行）、`DashboardPage.tsx`（214 行）、`AdminLayout.tsx`（212 行）、`ActiveOrdersSidebar.tsx`（210 行）、`StaffManagePage.tsx`（206 行）、`OrderDetailDialog.tsx`（206 行）、`order.service.ts`（206 行）、`CartPage.tsx`（204 行）、`FloorPlanEditorPage.tsx`（202 行）
 - ~~**AuthUser 类型重复**~~: ✅ 已修复 — `AuthUser` 已提取到 `shared/types.ts`，`auth-store.ts` 通过 import 引用
 - **session-store 与 URL 双数据源**: `session-store` 持久化 storeId/tableId 到 localStorage，但 URL 参数中也包含这些值，存在状态不一致风险。未来应以 URL 为 source of truth
 
@@ -519,7 +533,7 @@ createdAt DateTime
 - **键盘无障碍缺失**: TableGrid 和 TransferTableDialog 的卡片缺少 `role="button"`/`tabIndex`/`onKeyDown`
 
 ### 其他
-- **购物车不持久化**: ~~`cart-store` 未使用 persist middleware~~ ✅ 已修复 — 使用 persist，key `qr-order-cart`。但 **localStorage 残留数据可能导致错误订单**（同一桌台旧购物车数据未清理）
+- **购物车 localStorage 残留**: 购物车已持久化（persist，key `qr-order-cart`），但同一桌台旧购物车数据未清理，可能导致错误订单
 - **`/auth/me` 端点未使用**: auth.routes.ts 定义了 GET `/me`，但前端未调用
 
 ### 2026-03-23 测试发现的问题（已修复）
@@ -552,6 +566,14 @@ createdAt DateTime
 - ✅ **11 个 i18n key 缺失**: closeConfirm/confirmCloseTitle/grandTotal/splitBill.*/transferTable.* 补全
 - ✅ **OrderingSheet/ItemCustomizeView 内容和 X 叠加**: 添加 `pr-12 pt-4` padding
 
+### 2026-03-24 追加修复
+- ✅ **桌台状态不更新（occupied/idle）**: JsonStore 多实例 bug — `order.service.ts` 和 `table.service.ts` 各自 `new JsonStore('tables.json')` 导致内存不同步 → 改为单例 export/import 共享
+- ✅ **stores.json 也有 3 个实例**: menu.service + order.service + store.service → 统一从 store.service 导出
+
+### 待实现功能
+- **FloorPlan 交互式地图**: 将 FloorPlanPage 从卡片网格改为按 x/y 坐标渲染桌台（复用 FloorPlanEditorPage 的布局数据），让运营视图和编辑器视图一致
+- **Checkout Session 优化**: Stripe metadata 改为服务端存 checkout_session 表 + metadata 只存 session ID，彻底绕开 500 char 限制
+
 ### 当前仍未修复的问题
 - **Call Waiter 无真实通知**: 需要 WebSocket
 - **Stripe webhook 依赖 CLI**: 本地必须运行 `stripe listen`
@@ -578,7 +600,8 @@ createdAt DateTime
 - **不要新增公开 API 端点返回全量数据** — 未认证请求必须限定范围（如 `tableId`），防止数据泄漏。参考 `GET /orders` 的 `optionalAuth` 模式
 - **不要在 `shared/types.ts` 之外重复定义类型** — 前后端共享类型统一在 `shared/types.ts`，组件/store 通过 import 引用
 - **不要在环境变量缺失时使用 fallback 默认值** — 关键配置（`JWT_SECRET`、`DATABASE_URL` 等）缺失时必须 throw，不允许 `|| 'dev-secret'`
+- **不要为同一 JSON 数据文件创建多个 JsonStore 实例** — 必须共享单例，否则内存缓存不同步
 
 ---
 
-> Last updated: 2026-03-21 08:30 CST (auto-generated by Loop 8)
+> Last updated: 2026-03-24 CST (auto-generated)
