@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { login, verifyToken } from '../controllers/auth.controller.js'
+import { login } from '../controllers/auth.controller.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 
 const router = Router({ mergeParams: true })

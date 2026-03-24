@@ -22,9 +22,8 @@ export interface StoreUser {
   id: string
   storeId: string
   username: string
-  passwordHash: string
+  password: string
   role: Role
-  name: string
   createdAt: string
 }
 
@@ -143,11 +142,6 @@ export interface JwtPayload {
   role: 'owner' | 'staff'
 }
 
-export interface LoginRequest {
-  username: string
-  password: string
-}
-
 export interface AuthUser {
   id: string
   username: string
@@ -253,14 +247,6 @@ export interface CreateOrderRequest {
     selectedOptions?: SelectedOption[]
   }[]
   customerName?: string
-}
-
-export interface UpdateOrderStatusRequest {
-  status: OrderStatus
-}
-
-export interface UpdateOrderItemsRequest {
-  items: OrderItem[]
 }
 
 export interface MenuResponse {

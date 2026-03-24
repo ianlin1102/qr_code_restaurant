@@ -190,14 +190,36 @@ export function updateOrderItems(storeId: string, orderId: string, items: OrderI
     return { error: 'Order must have at least one item' }
   }
 
+  // Enrich selectedOptions with English names from menu item definitions
+  const enrichedItems = items.map(item => {
+    const menuItem = getMenuItemById(item.menuItemId)
+    if (menuItem && item.selectedOptions) {
+      return {
+        ...item,
+        selectedOptions: item.selectedOptions.map(so => {
+          const optDef = menuItem.options?.find(o => o.id === so.optionId)
+          const choiceDef = optDef?.choices.find(c => c.id === so.choiceId)
+          return {
+            ...so,
+            optionName: so.optionName || optDef?.name || '',
+            choiceName: so.choiceName || choiceDef?.name || '',
+            optionNameEn: optDef?.nameEn ?? so.optionName,
+            choiceNameEn: choiceDef?.nameEn ?? so.choiceName,
+          }
+        }),
+      }
+    }
+    return item
+  })
+
   // Recalculate total
-  const totalPrice = items.reduce((sum, item) => {
+  const totalPrice = enrichedItems.reduce((sum, item) => {
     const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
     return sum + (item.price + optAdjust) * item.quantity
   }, 0)
 
   const updated = orderStore.update(orderId, {
-    items,
+    items: enrichedItems,
     totalPrice,
     updatedAt: new Date().toISOString(),
   })

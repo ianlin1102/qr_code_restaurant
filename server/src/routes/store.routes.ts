@@ -8,7 +8,9 @@ const router = Router({ mergeParams: true })
 router.get('/', (req, res) => {
   const store = getStore(req.params.storeId)
   if (!store) return res.status(404).json({ error: 'Store not found' })
-  res.json(store)
+  // Strip internal fields for public API
+  const { autoAcceptOrders, createdAt, updatedAt, ...publicStore } = store
+  res.json(publicStore)
 })
 
 // PUT /api/stores/:storeId (admin only)

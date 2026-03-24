@@ -17,7 +17,9 @@ router.get('/:tableId', (req, res) => {
     res.status(404).json({ error: 'Table not found' })
     return
   }
-  res.json(table)
+  // Strip internal/layout fields for public API
+  const { currentOrderId, x, y, width, height, shape, ...publicTable } = table
+  res.json(publicTable)
 })
 
 // POST create table (admin)

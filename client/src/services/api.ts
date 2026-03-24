@@ -148,11 +148,6 @@ export const api = {
       method: 'DELETE',
     }),
 
-  settleTable: (storeId: string, tableId: string) =>
-    fetchJSON<{ settled: number }>(`/stores/${storeId}/tables/${tableId}/settle`, {
-      method: 'POST',
-    }),
-
   closeTable: (storeId: string, tableId: string) =>
     fetchJSON<{ closed: number }>(`/stores/${storeId}/tables/${tableId}/close`, {
       method: 'POST',
@@ -213,12 +208,6 @@ export const api = {
   addToWaitlist: (storeId: string, data: { name: string; partySize: number; phone?: string }) =>
     fetchJSON<WaitlistEntry>(`/stores/${storeId}/waitlist`, {
       method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
-  updateWaitlistEntry: (storeId: string, entryId: string, data: Partial<WaitlistEntry>) =>
-    fetchJSON<WaitlistEntry>(`/stores/${storeId}/waitlist/${entryId}`, {
-      method: 'PATCH',
       body: JSON.stringify(data),
     }),
 
