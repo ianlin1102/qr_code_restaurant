@@ -189,7 +189,7 @@ export function transferOrder(storeId: string, orderId: string, targetTableId: s
   return updated
 }
 
-export function updateOrderItems(storeId: string, orderId: string, items: OrderItem[]): Order | { error: string } {
+export async function updateOrderItems(storeId: string, orderId: string, items: OrderItem[]): Promise<Order | { error: string }> {
   const order = orderStore.getById(orderId)
   if (!order || order.storeId !== storeId) {
     return { error: 'Order not found' }
@@ -234,6 +234,26 @@ export function updateOrderItems(storeId: string, orderId: string, items: OrderI
     totalPrice,
     updatedAt: new Date().toISOString(),
   })
+
+  // Recalculate bill subtotal if order belongs to an active bill
+  const { billStore } = await import('./bill.service.js')
+  const bills = billStore.getByField('storeId', storeId)
+  const activeBill = bills.find(b => b.orderIds.includes(orderId) && b.status !== 'settled')
+  if (activeBill) {
+    const allOrders = activeBill.orderIds.map(id => orderStore.getById(id)).filter(Boolean)
+    const newSubtotal = allOrders.reduce((sum, o) => sum + (o?.totalPrice ?? 0), 0)
+    const discountAmount = activeBill.couponDiscountType === 'percentage'
+      ? Math.round(newSubtotal * (activeBill.couponDiscountValue ?? 0) / 100)
+      : activeBill.couponDiscountType === 'fixed'
+      ? Math.min(activeBill.couponDiscountValue ?? 0, newSubtotal)
+      : activeBill.discountAmount
+    billStore.update(activeBill.id, {
+      subtotal: newSubtotal,
+      discountAmount,
+      totalDue: newSubtotal - discountAmount,
+      version: activeBill.version + 1,
+    })
+  }
 
   return updated!
 }

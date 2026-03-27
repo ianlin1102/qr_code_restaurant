@@ -295,6 +295,6 @@ export interface CreateOrderRequest {
 }
 
 export interface MenuResponse {
-  store: Pick<Store, 'id' | 'name' | 'logo' | 'description' | 'openingHours' | 'announcement'>
+  store: Pick<Store, 'id' | 'name' | 'logo' | 'description' | 'openingHours' | 'announcement' | 'announcementEn'>
   categories: (Category & { items: MenuItem[] })[]
 }

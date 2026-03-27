@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
 import type { Bill, Split, DiscountType } from '@qr-order/shared'
+import { tableStore } from './table.service.js'
 import logger from '../lib/logger.js'
 
 export const billStore = new JsonStore<Bill>('bills.json')
@@ -206,6 +207,9 @@ export function settleBillFull(billId: string, paidBy: 'customer' | 'waiter'): B
 
   const payResult = markSplitPaid(result[0].id, paidBy)
   if ('error' in payResult) return payResult
+
+  // Release the table now that the bill is settled
+  tableStore.update(payResult.bill.tableId, { status: 'idle', currentBillId: undefined })
 
   return payResult.bill
 }

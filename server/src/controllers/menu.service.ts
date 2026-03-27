@@ -36,6 +36,7 @@ export function getMenu(storeId: string): MenuResponse | null {
       description: store.description,
       openingHours: store.openingHours,
       announcement: store.announcement,
+      announcementEn: store.announcementEn,
     },
     categories: categoriesWithItems
   }

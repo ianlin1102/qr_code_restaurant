@@ -12,7 +12,7 @@ import { api } from '@/services/api'
 
 export default function CartPage() {
   const navigate = useNavigate()
-  const { storeId, tableId, tableName } = useSessionStore()
+  const { storeId, tableId, tableName, customerName } = useSessionStore()
   const { items, updateQuantity, updateRemark, totalPrice, totalItems, clearCart } = useCartStore()
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
@@ -59,7 +59,7 @@ export default function CartPage() {
     try {
       if (paymentMode === 'pay-later') {
         // Pay-later: create order directly without payment
-        const order = await api.createOrder(storeId, { tableId, items: cartItems })
+        const order = await api.createOrder(storeId, { tableId, items: cartItems, customerName })
         clearCart()
         navigate('/order/confirm', { state: { order } })
         return
@@ -67,7 +67,7 @@ export default function CartPage() {
 
       // Pay-first: create Stripe PaymentIntent, no order yet
       const { clientSecret, amount } = await api.createCheckout(storeId, {
-        tableId, items: cartItems,
+        tableId, items: cartItems, customerName,
       })
       navigate(`/store/${storeId}/checkout`, { state: {
         clientSecret, amount, tableId, items: cartItems,

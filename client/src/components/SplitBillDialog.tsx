@@ -8,7 +8,12 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { formatPriceUSD } from '@/lib/format'
 import { api } from '@/services/api'
-import type { Order, SplitBillSession, SplitBillShare } from '@qr-order/shared'
+import type { Order } from '@qr-order/shared'
+
+// DEPRECATED: replaced by BillSettleDialog (Phase 3)
+interface SplitBillShare { personName: string; items: { menuItemId: string; name: string; quantity: number; amount: number }[]; amount: number }
+interface SplitBillRequest { orderId: string; mode: 'equal' | 'by-item'; numberOfPeople?: number; shares?: SplitBillShare[] }
+interface SplitBillSession { orderId: string; shares: (SplitBillShare & { clientSecret?: string; paid: boolean })[]; totalAmount: number }
 
 interface Props { open: boolean; onClose: () => void; order: Order; storeId: string }
 type Mode = 'equal' | 'by-item'
