@@ -12,6 +12,7 @@ import {
   batchImportMenuItems,
 } from '../controllers/menu.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
+import { requirePermission } from '../middleware/permission.middleware.js'
 
 const router = Router({ mergeParams: true })
 
@@ -28,7 +29,7 @@ router.get('/', (req, res) => {
 // ===== Admin: Menu Items (all protected) =====
 
 // POST /api/stores/:storeId/menu/items/batch — bulk import menu items
-router.post('/items/batch', requireAuth, (req, res) => {
+router.post('/items/batch', requireAuth, requirePermission('menu:write'), (req, res) => {
   const { items } = req.body
   if (!items || !Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'items array is required' })
@@ -43,13 +44,13 @@ router.post('/items/batch', requireAuth, (req, res) => {
 })
 
 // GET /api/stores/:storeId/menu/items — all items (including unavailable)
-router.get('/items', requireAuth, (req, res) => {
+router.get('/items', requireAuth, requirePermission('menu:read'), (req, res) => {
   const items = getAllMenuItems(req.params.storeId)
   res.json(items)
 })
 
 // POST /api/stores/:storeId/menu/items
-router.post('/items', requireAuth, (req, res) => {
+router.post('/items', requireAuth, requirePermission('menu:write'), (req, res) => {
   const { storeId } = req.params
   const { categoryId, name, nameEn, description, descriptionEn, price, image, available, sortOrder, options } = req.body
   if (!categoryId || !name || price == null) {
@@ -72,7 +73,7 @@ router.post('/items', requireAuth, (req, res) => {
 })
 
 // PUT /api/stores/:storeId/menu/items/:itemId
-router.put('/items/:itemId', requireAuth, (req, res) => {
+router.put('/items/:itemId', requireAuth, requirePermission('menu:write'), (req, res) => {
   const result = updateMenuItem(req.params.storeId, req.params.itemId, req.body)
   if ('error' in result) {
     res.status(404).json(result)
@@ -82,7 +83,7 @@ router.put('/items/:itemId', requireAuth, (req, res) => {
 })
 
 // DELETE /api/stores/:storeId/menu/items/:itemId
-router.delete('/items/:itemId', requireAuth, (req, res) => {
+router.delete('/items/:itemId', requireAuth, requirePermission('menu:write'), (req, res) => {
   const result = deleteMenuItem(req.params.storeId, req.params.itemId)
   if (typeof result === 'object' && 'error' in result) {
     res.status(404).json(result)
@@ -94,13 +95,13 @@ router.delete('/items/:itemId', requireAuth, (req, res) => {
 // ===== Admin: Categories =====
 
 // GET /api/stores/:storeId/menu/categories (admin)
-router.get('/categories', requireAuth, (req, res) => {
+router.get('/categories', requireAuth, requirePermission('menu:read'), (req, res) => {
   const cats = getCategories(req.params.storeId)
   res.json(cats)
 })
 
 // POST /api/stores/:storeId/menu/categories
-router.post('/categories', requireAuth, (req, res) => {
+router.post('/categories', requireAuth, requirePermission('menu:write'), (req, res) => {
   const { name, nameEn, sortOrder } = req.body
   if (!name) {
     res.status(400).json({ error: 'name is required' })
@@ -111,7 +112,7 @@ router.post('/categories', requireAuth, (req, res) => {
 })
 
 // PUT /api/stores/:storeId/menu/categories/:catId
-router.put('/categories/:catId', requireAuth, (req, res) => {
+router.put('/categories/:catId', requireAuth, requirePermission('menu:write'), (req, res) => {
   const result = updateCategory(req.params.storeId, req.params.catId, req.body)
   if ('error' in result) {
     res.status(404).json(result)
@@ -121,7 +122,7 @@ router.put('/categories/:catId', requireAuth, (req, res) => {
 })
 
 // DELETE /api/stores/:storeId/menu/categories/:catId
-router.delete('/categories/:catId', requireAuth, (req, res) => {
+router.delete('/categories/:catId', requireAuth, requirePermission('menu:write'), (req, res) => {
   const result = deleteCategory(req.params.storeId, req.params.catId)
   if (typeof result === 'object' && 'error' in result) {
     res.status(404).json(result)

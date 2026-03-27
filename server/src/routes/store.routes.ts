@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { getStore, updateStore } from '../controllers/store.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
+import { requirePermission } from '../middleware/permission.middleware.js'
 
 const router = Router({ mergeParams: true })
 
@@ -14,7 +15,7 @@ router.get('/', (req, res) => {
 })
 
 // PUT /api/stores/:storeId (admin only)
-router.put('/', requireAuth, (req, res) => {
+router.put('/', requireAuth, requirePermission('settings:write'), (req, res) => {
   const result = updateStore(req.params.storeId, req.body)
   if ('error' in result) return res.status(400).json(result)
   res.json(result)

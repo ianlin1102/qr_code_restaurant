@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.middleware.js'
+import { requirePermission } from '../middleware/permission.middleware.js'
 import * as billService from '../controllers/bill.service.js'
 import type { Request, Response } from 'express'
 
@@ -28,7 +29,7 @@ router.get('/:billId', (req: Request, res: Response) => {
 })
 
 // POST /bills/:billId/splits — create splits
-router.post('/:billId/splits', requireAuth, (req: Request, res: Response) => {
+router.post('/:billId/splits', requireAuth, requirePermission('tables:write'), (req: Request, res: Response) => {
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 
@@ -39,7 +40,7 @@ router.post('/:billId/splits', requireAuth, (req: Request, res: Response) => {
 })
 
 // PATCH /bills/:billId/splits/:splitId — waiter marks split paid
-router.patch('/:billId/splits/:splitId', requireAuth, (req: Request, res: Response) => {
+router.patch('/:billId/splits/:splitId', requireAuth, requirePermission('tables:write'), (req: Request, res: Response) => {
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 
@@ -49,7 +50,7 @@ router.patch('/:billId/splits/:splitId', requireAuth, (req: Request, res: Respon
 })
 
 // POST /bills/:billId/apply-coupon — waiter applies coupon
-router.post('/:billId/apply-coupon', requireAuth, (req: Request, res: Response) => {
+router.post('/:billId/apply-coupon', requireAuth, requirePermission('billing:write'), (req: Request, res: Response) => {
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 
@@ -62,7 +63,7 @@ router.post('/:billId/apply-coupon', requireAuth, (req: Request, res: Response) 
 })
 
 // DELETE /bills/:billId/coupon — remove coupon
-router.delete('/:billId/coupon', requireAuth, (req: Request, res: Response) => {
+router.delete('/:billId/coupon', requireAuth, requirePermission('billing:write'), (req: Request, res: Response) => {
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 
@@ -72,7 +73,7 @@ router.delete('/:billId/coupon', requireAuth, (req: Request, res: Response) => {
 })
 
 // POST /bills/:billId/settle — settle entire bill
-router.post('/:billId/settle', requireAuth, (req: Request, res: Response) => {
+router.post('/:billId/settle', requireAuth, requirePermission('tables:write'), (req: Request, res: Response) => {
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 

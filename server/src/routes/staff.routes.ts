@@ -1,5 +1,6 @@
 import { Router } from 'express'
-import { requireAuth, requireRole } from '../middleware/auth.middleware.js'
+import { requireAuth } from '../middleware/auth.middleware.js'
+import { requirePermission } from '../middleware/permission.middleware.js'
 import {
   getStaff,
   addStaff,
@@ -9,12 +10,12 @@ import {
 
 const router = Router({ mergeParams: true })
 
-router.get('/', requireAuth, requireRole('owner'), async (req, res) => {
+router.get('/', requireAuth, requirePermission('staff:manage'), async (req, res) => {
   const staff = await getStaff(req.params.storeId)
   res.json(staff)
 })
 
-router.post('/', requireAuth, requireRole('owner'), async (req, res) => {
+router.post('/', requireAuth, requirePermission('staff:manage'), async (req, res) => {
   const { username, password, role } = req.body
   if (!username || !password) {
     res.status(400).json({ error: 'Username and password are required' })
@@ -28,7 +29,7 @@ router.post('/', requireAuth, requireRole('owner'), async (req, res) => {
   res.status(201).json(result)
 })
 
-router.patch('/:userId', requireAuth, requireRole('owner'), async (req, res) => {
+router.patch('/:userId', requireAuth, requirePermission('staff:manage'), async (req, res) => {
   const { role } = req.body
   if (!role) {
     res.status(400).json({ error: 'Role is required' })
@@ -42,7 +43,7 @@ router.patch('/:userId', requireAuth, requireRole('owner'), async (req, res) => 
   res.json(result)
 })
 
-router.delete('/:userId', requireAuth, requireRole('owner'), async (req, res) => {
+router.delete('/:userId', requireAuth, requirePermission('staff:manage'), async (req, res) => {
   const result = await removeStaff(req.params.storeId, req.params.userId)
   if ('error' in result) {
     res.status(result.status).json({ error: result.error })

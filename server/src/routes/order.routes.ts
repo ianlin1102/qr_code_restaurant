@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { createOrder, getOrders, updateOrderStatus, updateOrderItems, transferOrder } from '../controllers/order.service.js'
 import { requireAuth, optionalAuth } from '../middleware/auth.middleware.js'
+import { requirePermission } from '../middleware/permission.middleware.js'
 import type { OrderStatus, Order } from '@qr-order/shared'
 
 const router = Router({ mergeParams: true })
@@ -35,7 +36,7 @@ router.get('/', optionalAuth, (req, res) => {
 })
 
 // PATCH (admin only)
-router.patch('/:orderId/status', requireAuth, (req, res) => {
+router.patch('/:orderId/status', requireAuth, requirePermission('orders:write'), (req, res) => {
   const result = updateOrderStatus(req.params.storeId, req.params.orderId, req.body.status)
   if ('error' in result) {
     res.status(404).json(result)
@@ -45,7 +46,7 @@ router.patch('/:orderId/status', requireAuth, (req, res) => {
 })
 
 // POST /api/stores/:storeId/orders/:orderId/transfer (admin only)
-router.post('/:orderId/transfer', requireAuth, (req, res) => {
+router.post('/:orderId/transfer', requireAuth, requirePermission('orders:write'), (req, res) => {
   const { targetTableId } = req.body
   if (!targetTableId) {
     res.status(400).json({ error: 'targetTableId is required' })
@@ -60,7 +61,7 @@ router.post('/:orderId/transfer', requireAuth, (req, res) => {
 })
 
 // PUT /api/stores/:storeId/orders/:orderId/items (admin only)
-router.put('/:orderId/items', requireAuth, async (req, res) => {
+router.put('/:orderId/items', requireAuth, requirePermission('orders:write'), async (req, res) => {
   const result = await updateOrderItems(req.params.storeId, req.params.orderId, req.body.items)
   if ('error' in result) {
     res.status(400).json(result)

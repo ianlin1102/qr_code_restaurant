@@ -5,30 +5,35 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { useT } from '@/i18n/useT'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import type { Permission } from '@qr-order/shared'
 
 type NavKey = 'orders' | 'floorPlan' | 'menu' | 'categories' | 'tables' | 'coupons' | 'staff' | 'analytics' | 'settings'
 
-const NAV_ITEMS: { to: string; navKey: NavKey; icon: string; ownerOnly?: boolean }[] = [
-  { to: '/admin/dashboard', navKey: 'orders', icon: '📋' },
-  { to: '/admin/floor-plan', navKey: 'floorPlan', icon: '🗺️' },
-  { to: '/admin/menu', navKey: 'menu', icon: '🍜' },
-  { to: '/admin/categories', navKey: 'categories', icon: '📂' },
-  { to: '/admin/tables', navKey: 'tables', icon: '🪑' },
-  { to: '/admin/coupons', navKey: 'coupons', icon: '🎟️', ownerOnly: true },
-  { to: '/admin/staff', navKey: 'staff', icon: '👥', ownerOnly: true },
-  { to: '/admin/analytics', navKey: 'analytics', icon: '📊', ownerOnly: true },
-  { to: '/admin/settings', navKey: 'settings', icon: '⚙️' },
+const NAV_ITEMS: { to: string; navKey: NavKey; icon: string; perm?: Permission }[] = [
+  { to: '/admin/dashboard', navKey: 'orders', icon: '📋', perm: 'orders:read' },
+  { to: '/admin/floor-plan', navKey: 'floorPlan', icon: '🗺️', perm: 'tables:read' },
+  { to: '/admin/menu', navKey: 'menu', icon: '🍜', perm: 'menu:read' },
+  { to: '/admin/categories', navKey: 'categories', icon: '📂', perm: 'menu:read' },
+  { to: '/admin/tables', navKey: 'tables', icon: '🪑', perm: 'tables:read' },
+  { to: '/admin/coupons', navKey: 'coupons', icon: '🎟️', perm: 'billing:read' },
+  { to: '/admin/staff', navKey: 'staff', icon: '👥', perm: 'staff:manage' },
+  { to: '/admin/analytics', navKey: 'analytics', icon: '📊', perm: 'analytics:read' },
+  { to: '/admin/settings', navKey: 'settings', icon: '⚙️' },  // everyone can see settings
 ]
 
 export default function AdminLayout() {
   const user = useAuthStore(s => s.user)
   const logout = useAuthStore(s => s.logout)
-  const isOwner = useAuthStore(s => s.isOwner)
+  const userPerms = useAuthStore(s => s.user?.permissions) ?? []
   const { t, lang, toggle } = useT()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === '1')
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const visibleNavItems = NAV_ITEMS.filter(item => !item.ownerOnly || isOwner())
+  const visibleNavItems = NAV_ITEMS.filter(item => {
+    if (!item.perm) return true
+    if (user?.role === 'owner') return true
+    return userPerms.includes(item.perm)
+  })
 
   const handleLogout = () => {
     const storeId = user?.storeId

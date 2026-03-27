@@ -1,18 +1,19 @@
 import { Router } from 'express'
 import { getTables, getTablePublic, enableTable, disableTable, updateTable, settleTable, closeTable, getNextAvailableNumber, regenerateTableId } from '../controllers/table.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
+import { requirePermission } from '../middleware/permission.middleware.js'
 
 const router = Router({ mergeParams: true })
 
 // GET tables list (admin)
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, requirePermission('tables:read'), (req, res) => {
   const includeDisabled = req.query.includeDisabled === 'true'
   const tables = getTables(req.params.storeId, includeDisabled)
   res.json(tables)
 })
 
 // GET next available table number (admin)
-router.get('/next-number', requireAuth, (req, res) => {
+router.get('/next-number', requireAuth, requirePermission('tables:write'), (req, res) => {
   const result = getNextAvailableNumber(req.params.storeId)
   res.json(result)
 })
@@ -28,7 +29,7 @@ router.get('/:tableId', (req, res) => {
 })
 
 // POST enable table (admin) — replaces POST / (create)
-router.post('/enable', requireAuth, (req, res) => {
+router.post('/enable', requireAuth, requirePermission('tables:write'), (req, res) => {
   const { number, name, nameEn } = req.body
   if (!number || typeof number !== 'number') {
     res.status(400).json({ error: 'Table number is required' })
@@ -43,7 +44,7 @@ router.post('/enable', requireAuth, (req, res) => {
 })
 
 // PUT update table (admin) — unchanged
-router.put('/:tableId', requireAuth, (req, res) => {
+router.put('/:tableId', requireAuth, requirePermission('tables:write'), (req, res) => {
   const result = updateTable(req.params.storeId, req.params.tableId, req.body)
   if ('error' in result) {
     res.status(400).json(result)
@@ -53,7 +54,7 @@ router.put('/:tableId', requireAuth, (req, res) => {
 })
 
 // POST disable table (admin) — replaces DELETE /:tableId
-router.post('/:tableId/disable', requireAuth, (req, res) => {
+router.post('/:tableId/disable', requireAuth, requirePermission('tables:write'), (req, res) => {
   const result = disableTable(req.params.storeId, req.params.tableId)
   if ('error' in result) {
     res.status(400).json(result)
@@ -63,7 +64,7 @@ router.post('/:tableId/disable', requireAuth, (req, res) => {
 })
 
 // POST regenerate QR code (admin) — new random ID, old QR stops working
-router.post('/:tableId/regenerate-qr', requireAuth, (req, res) => {
+router.post('/:tableId/regenerate-qr', requireAuth, requirePermission('tables:write'), (req, res) => {
   const result = regenerateTableId(req.params.storeId, req.params.tableId)
   if ('error' in result) {
     res.status(400).json(result)
@@ -73,7 +74,7 @@ router.post('/:tableId/regenerate-qr', requireAuth, (req, res) => {
 })
 
 // POST settle table (admin) — unchanged
-router.post('/:tableId/settle', requireAuth, (req, res) => {
+router.post('/:tableId/settle', requireAuth, requirePermission('tables:write'), (req, res) => {
   const result = settleTable(req.params.storeId, req.params.tableId)
   if ('error' in result) {
     res.status(400).json(result)
@@ -83,7 +84,7 @@ router.post('/:tableId/settle', requireAuth, (req, res) => {
 })
 
 // POST close table (admin) — unchanged
-router.post('/:tableId/close', requireAuth, (req, res) => {
+router.post('/:tableId/close', requireAuth, requirePermission('tables:write'), (req, res) => {
   const result = closeTable(req.params.storeId, req.params.tableId)
   if ('error' in result) {
     res.status(400).json(result)

@@ -1,12 +1,13 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.middleware.js'
+import { requirePermission } from '../middleware/permission.middleware.js'
 import { getPrinterConfig, updatePrinterConfig, reprintOrder } from '../controllers/printer.service.js'
 import { orderStore } from '../repositories/stores.js'
 
 const router = Router({ mergeParams: true })
 
 // GET /api/stores/:storeId/printer/config
-router.get('/config', requireAuth, (req, res) => {
+router.get('/config', requireAuth, requirePermission('settings:read'), (req, res) => {
   const config = getPrinterConfig(req.params.storeId)
   if (!config) {
     res.json({ enabled: false })
@@ -16,13 +17,13 @@ router.get('/config', requireAuth, (req, res) => {
 })
 
 // PUT /api/stores/:storeId/printer/config
-router.put('/config', requireAuth, (req, res) => {
+router.put('/config', requireAuth, requirePermission('settings:write'), (req, res) => {
   const config = updatePrinterConfig(req.params.storeId, req.body)
   res.json(config)
 })
 
 // POST /api/stores/:storeId/printer/print/:orderId
-router.post('/print/:orderId', requireAuth, async (req, res) => {
+router.post('/print/:orderId', requireAuth, requirePermission('orders:write'), async (req, res) => {
   const order = orderStore.getById(req.params.orderId)
   if (!order || order.storeId !== req.params.storeId) {
     res.status(404).json({ error: 'Order not found' })

@@ -11,10 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { AuthUser, RoleDefinition, Permission } from '@qr-order/shared'
 
 const ALL_PERMISSIONS: Permission[] = [
-  'menu:read', 'menu:write', 'orders:read', 'orders:write',
-  'tables:read', 'tables:write', 'analytics:read',
-  'coupons:read', 'coupons:write', 'staff:manage',
-  'settings:write', 'floor-plan:write', 'bill:write',
+  'orders:read', 'orders:write',
+  'menu:read', 'menu:write',
+  'tables:read', 'tables:write',
+  'billing:read', 'billing:write',
+  'analytics:read',
+  'staff:manage',
+  'settings:read', 'settings:write',
 ]
 
 type Form = { username: string; password: string; role: string }
@@ -76,7 +79,7 @@ export default function StaffManagePage() {
   // Role handlers
   const openNewRole = () => {
     setEditingRole(null)
-    setRoleForm({ name: '', nameEn: '', permissions: ['menu:read', 'orders:read'] })
+    setRoleForm({ name: '', nameEn: '', permissions: ['orders:read', 'menu:read'] })
     setRoleDialogOpen(true)
   }
   const openEditRole = (r: RoleDefinition) => {

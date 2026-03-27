@@ -8,8 +8,9 @@ export function usePermission(perm: Permission): boolean {
     if (user?.role === 'owner') return true
     if (user?.role === 'staff') {
       const staffPerms: Permission[] = [
-        'menu:read', 'orders:read', 'orders:write',
-        'tables:read', 'tables:write', 'bill:write',
+        'orders:read', 'orders:write',
+        'menu:read',
+        'tables:read', 'tables:write',
       ]
       return staffPerms.includes(perm)
     }
