@@ -6,6 +6,7 @@ import { useT } from '@/i18n/useT'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { FloorCanvas } from '@/components/FloorCanvas'
 import TableGrid from '@/components/TableGrid'
 import TableDetailPanel from '@/components/TableDetailPanel'
 import ActiveOrdersSidebar from '@/components/ActiveOrdersSidebar'
@@ -19,6 +20,11 @@ const POLL_INTERVAL = 10_000
 
 function secondsAgo(d: Date): number {
   return Math.round((Date.now() - d.getTime()) / 1000)
+}
+
+/** True when at least one table has x/y coordinates (placed on the floor plan) */
+function hasPlacedTables(tables: Table[]): boolean {
+  return tables.some(t => t.x != null && t.y != null)
 }
 
 export default function FloorPlanPage() {
@@ -38,26 +44,29 @@ export default function FloorPlanPage() {
   const fetchData = useCallback(async () => {
     if (!storeId) return
     try {
-      const [t, o] = await Promise.all([api.getTables(storeId), api.getOrders(storeId)])
-      setTables(t); setOrders(o); setLastUpdated(new Date())
+      const [tbl, o] = await Promise.all([api.getTables(storeId), api.getOrders(storeId)])
+      setTables(tbl); setOrders(o); setLastUpdated(new Date())
     } catch { /* silent retry */ } finally { setLoading(false) }
   }, [storeId])
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL_INTERVAL); return () => clearInterval(id) }, [fetchData])
   useEffect(() => { const id = setInterval(() => setElapsed(secondsAgo(lastUpdated)), 1000); return () => clearInterval(id) }, [lastUpdated])
 
-  const occupiedCount = tables.filter(tb => tb.status === 'occupied').length
-  const idleCount = tables.length - occupiedCount
-  const occupancyPct = tables.length ? Math.round(occupiedCount / tables.length * 100) : 0
+  const enabledTables = tables.filter(tb => tb.enabled)
+  const occupiedCount = enabledTables.filter(tb => tb.status === 'occupied').length
+  const idleCount = enabledTables.length - occupiedCount
+  const occupancyPct = enabledTables.length ? Math.round(occupiedCount / enabledTables.length * 100) : 0
   const activeOrderCount = orders.filter(o => o.status === 'pending' || o.status === 'preparing').length
-  const zones = ['all', ...Array.from(new Set(tables.map(tb => tb.zone).filter(Boolean)))] as string[]
-  const filteredTables = activeZone === 'all' ? tables : tables.filter(tb => tb.zone === activeZone)
+  const zones = ['all', ...Array.from(new Set(enabledTables.map(tb => tb.zone).filter(Boolean)))] as string[]
+  const filteredTables = activeZone === 'all' ? enabledTables : enabledTables.filter(tb => tb.zone === activeZone)
 
   const handleTableClick = (table: Table) => { setSelectedTable(table); setDetailOpen(true) }
   const handleOrderClick = (order: Order) => {
     const matched = tables.find(tb => tb.id === order.tableId)
     if (matched) { setSelectedTable(matched); setDetailOpen(true) }
   }
+
+  const useSvgCanvas = hasPlacedTables(filteredTables)
 
   if (!storeId) return <div className="flex items-center justify-center h-full"><p className="text-muted-foreground">{t.floorPlan.notAuth}</p></div>
   if (loading && !tables.length) return <div className="flex items-center justify-center h-full"><p className="text-muted-foreground">{t.floorPlan.loading}</p></div>
@@ -70,7 +79,15 @@ export default function FloorPlanPage() {
           elapsed={elapsed} t={t} occupancyPct={occupancyPct} idleCount={idleCount}
           activeOrderCount={activeOrderCount} setActiveTab={setActiveTab} />
         <div className="flex-1 overflow-auto p-4">
-          <TableGrid tables={filteredTables} orders={orders} onTableClick={handleTableClick} />
+          {useSvgCanvas ? (
+            <FloorCanvas
+              tables={filteredTables}
+              selectedTableId={selectedTable?.id}
+              onTableClick={handleTableClick}
+            />
+          ) : (
+            <TableGrid tables={filteredTables} orders={orders} onTableClick={handleTableClick} />
+          )}
         </div>
       </div>
       {/* Right Sidebar */}
