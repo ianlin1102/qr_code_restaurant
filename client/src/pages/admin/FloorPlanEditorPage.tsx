@@ -125,6 +125,7 @@ export default function FloorPlanEditorPage() {
         updateField={updateField}
         deleteSelected={deleteSelected}
         t={t}
+        zones={zones}
       />
     </div>
   )
@@ -165,11 +166,12 @@ function EditorToolbar({ addTable, saveLayout, saving, t, zones, activeZone, set
 }
 
 /* ---- Properties Panel ---- */
-function PropertiesPanel({ selected, updateField, deleteSelected, t }: {
+function PropertiesPanel({ selected, updateField, deleteSelected, t, zones }: {
   selected: Table | null
   updateField: (field: keyof Table, value: string | number) => void
   deleteSelected: () => void
   t: ReturnType<typeof useT>['t']
+  zones: string[]
 }) {
   return (
     <div className="w-64 shrink-0 bg-muted p-4 space-y-4 overflow-y-auto">
@@ -184,7 +186,7 @@ function PropertiesPanel({ selected, updateField, deleteSelected, t }: {
           <Select value={selected.zone ?? 'Main'} onValueChange={v => updateField('zone', v)}>
             <SelectTrigger className="w-full mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {ZONES.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+              {zones.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
