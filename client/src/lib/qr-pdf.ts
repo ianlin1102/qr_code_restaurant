@@ -16,10 +16,11 @@ function renderQrSvg(url: string): string {
 function buildQrBlockHtml(table: Table, baseUrl: string, storeId: string): string {
   const scanUrl = `${baseUrl}/scan/${storeId}/${table.id}`
   const svg = renderQrSvg(scanUrl)
+  const label = table.name ? `#${table.number} ${table.name}` : `Table ${table.number}`
   return `
     <div class="qr-block">
       <div class="qr-svg">${svg}</div>
-      <p class="table-name">${table.name}</p>
+      <p class="table-name">${label}</p>
       <p class="scan-text">Scan to Order</p>
     </div>`
 }
