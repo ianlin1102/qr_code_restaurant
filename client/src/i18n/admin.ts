@@ -245,6 +245,20 @@ export const adminT = {
       preview: '预览', rowsFound: '行', importing: '导入中...', confirmImport: '确认导入',
       created: '个菜品已创建', skipped: '行被跳过',
     },
+    roles: {
+      title: '角色管理', newRole: '新建角色', roleName: '角色名',
+      permissions: '权限', system: '系统角色', custom: '自定义',
+      confirmDelete: '确定删除此角色？',
+      permLabels: {
+        'menu:read': '查看菜单', 'menu:write': '编辑菜单',
+        'orders:read': '查看订单', 'orders:write': '处理订单',
+        'tables:read': '查看桌台', 'tables:write': '管理桌台',
+        'analytics:read': '查看数据', 'coupons:read': '查看优惠券',
+        'coupons:write': '管理优惠券', 'staff:manage': '管理员工',
+        'settings:write': '修改设置', 'floor-plan:write': '编辑平面图',
+        'bill:write': '管理账单',
+      },
+    },
   },
 
   en: {
@@ -490,6 +504,20 @@ export const adminT = {
       name: 'Name *', nameEn: 'English Name', price: 'Price (¥)', category: 'Category', description: 'Description',
       preview: 'Preview', rowsFound: 'rows found', importing: 'Importing...', confirmImport: 'Confirm Import',
       created: 'items created', skipped: 'rows skipped',
+    },
+    roles: {
+      title: 'Role Management', newRole: 'New Role', roleName: 'Role Name',
+      permissions: 'Permissions', system: 'System', custom: 'Custom',
+      confirmDelete: 'Delete this role?',
+      permLabels: {
+        'menu:read': 'View Menu', 'menu:write': 'Edit Menu',
+        'orders:read': 'View Orders', 'orders:write': 'Manage Orders',
+        'tables:read': 'View Tables', 'tables:write': 'Manage Tables',
+        'analytics:read': 'View Analytics', 'coupons:read': 'View Coupons',
+        'coupons:write': 'Manage Coupons', 'staff:manage': 'Manage Staff',
+        'settings:write': 'Edit Settings', 'floor-plan:write': 'Edit Floor Plan',
+        'bill:write': 'Manage Bills',
+      },
     },
   },
 } satisfies Record<Lang, Record<string, unknown>>

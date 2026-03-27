@@ -17,6 +17,7 @@ import splitBillRoutes from './routes/split-bill.routes.js'
 import printerRoutes from './routes/printer.routes.js'
 import staffRoutes from './routes/staff.routes.js'
 import billRoutes from './routes/bill.routes.js'
+import roleRoutes from './routes/role.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
@@ -52,6 +53,7 @@ app.use('/api/stores/:storeId/waitlist', waitlistRoutes)
 app.use('/api/stores/:storeId/split-bill', splitBillRoutes)
 app.use('/api/stores/:storeId/printer', printerRoutes)
 app.use('/api/stores/:storeId/staff', staffRoutes)
+app.use('/api/stores/:storeId/roles', roleRoutes)
 app.use('/api', uploadRoutes)
 
 // Global error handler — must be after all routes

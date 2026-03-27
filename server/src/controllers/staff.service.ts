@@ -10,13 +10,17 @@ interface StaffRecord {
   username: string
   password: string
   role: string
+  roleId?: string
   createdAt: string
 }
 
 export const staffStore = new JsonStore<StaffRecord>('staff.json')
 
 function toAuthUser(u: StaffRecord): AuthUser {
-  return { id: u.id, username: u.username, role: u.role, storeId: u.storeId }
+  return {
+    id: u.id, username: u.username, role: u.role,
+    roleId: u.roleId, storeId: u.storeId,
+  }
 }
 
 export function getStaff(storeId: string): AuthUser[] {

@@ -1,4 +1,4 @@
-import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, SplitBillRequest, SplitBillSession, AuthUser, Bill, Split } from '@qr-order/shared'
+import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, SplitBillRequest, SplitBillSession, AuthUser, Bill, Split, RoleDefinition } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
 const BASE = '/api'
@@ -301,6 +301,27 @@ export const api = {
     fetchJSON<Bill>(`/stores/${storeId}/bills/${billId}/settle`, {
       method: 'POST',
       body: JSON.stringify({ paidBy }),
+    }),
+
+  // Roles
+  getRoles: (storeId: string) =>
+    fetchJSON<RoleDefinition[]>(`/stores/${storeId}/roles`),
+
+  createRole: (storeId: string, data: { name: string; nameEn?: string; permissions: string[] }) =>
+    fetchJSON<RoleDefinition>(`/stores/${storeId}/roles`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateRole: (storeId: string, roleId: string, data: { name?: string; nameEn?: string; permissions?: string[] }) =>
+    fetchJSON<RoleDefinition>(`/stores/${storeId}/roles/${roleId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteRole: (storeId: string, roleId: string) =>
+    fetchJSON<void>(`/stores/${storeId}/roles/${roleId}`, {
+      method: 'DELETE',
     }),
 
   // Upload

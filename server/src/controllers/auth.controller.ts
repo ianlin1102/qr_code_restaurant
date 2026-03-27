@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { findUserByUsername } from '../repositories/auth.repository.js'
+import { resolvePermissions, ensureSystemRoles } from './role.service.js'
 import type { JwtPayload, LoginResponse } from '@qr-order/shared'
 import logger from '../lib/logger.js'
 
@@ -27,10 +28,16 @@ export async function login(
     return { error: 'Invalid username or password', status: 401 }
   }
 
+  ensureSystemRoles(user.storeId)
+  const userRoleId = 'roleId' in user ? (user.roleId as string | undefined) : undefined
+  const permissions = resolvePermissions(user.storeId, userRoleId, user.role)
+
   const payload: JwtPayload = {
     userId: user.id,
     storeId: user.storeId,
-    role: user.role as JwtPayload['role'],
+    role: user.role as string, // keep for backward compat
+    roleId: userRoleId,
+    permissions,
   }
 
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY })
@@ -44,6 +51,8 @@ export async function login(
         id: user.id,
         username: user.username,
         role: user.role,
+        roleId: userRoleId,
+        permissions,
         storeId: user.storeId,
       },
     },
