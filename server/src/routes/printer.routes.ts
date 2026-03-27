@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.middleware.js'
 import { getPrinterConfig, updatePrinterConfig, reprintOrder } from '../controllers/printer.service.js'
-import { orderStore } from '../controllers/order.service.js'
+import { orderStore } from '../repositories/stores.js'
 
 const router = Router({ mergeParams: true })
 

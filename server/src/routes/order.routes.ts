@@ -60,8 +60,8 @@ router.post('/:orderId/transfer', requireAuth, (req, res) => {
 })
 
 // PUT /api/stores/:storeId/orders/:orderId/items (admin only)
-router.put('/:orderId/items', requireAuth, (req, res) => {
-  const result = updateOrderItems(req.params.storeId, req.params.orderId, req.body.items)
+router.put('/:orderId/items', requireAuth, async (req, res) => {
+  const result = await updateOrderItems(req.params.storeId, req.params.orderId, req.body.items)
   if ('error' in result) {
     res.status(400).json(result)
     return

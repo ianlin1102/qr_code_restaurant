@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
-import MenuItemDetailSheet from '@/components/MenuItemDetailSheet'
+import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import type { MenuResponse, MenuItem, Order } from '@qr-order/shared'
 
 export default function MenuPage() {

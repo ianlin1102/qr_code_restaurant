@@ -142,7 +142,7 @@ export function CsvImportDialog({ open, onClose, categories, onImported, t }: Pr
             onNext={() => setStep('preview')} t={t} />
         )}
         {step === 'preview' && (
-          <PreviewStep rows={rows} buildItems={buildItems}
+          <PreviewStep rows={rows} previewItems={buildItems.slice(0, 20)}
             importing={importing} onBack={() => setStep('map')}
             onImport={handleImport} t={t} />
         )}
@@ -199,16 +199,15 @@ function MapStep({ fields, headers, mapping, setMapping, onBack, onNext, t }: {
   )
 }
 
-function PreviewStep({ rows, buildItems, importing, onBack, onImport, t }: {
-  rows: string[][]; buildItems: () => Array<{ name: string; price: number; categoryId: string }>
+function PreviewStep({ rows, previewItems, importing, onBack, onImport, t }: {
+  rows: string[][]; previewItems: Array<{ name: string; price: number; categoryId: string }>
   importing: boolean; onBack: () => void; onImport: () => void; t: Record<string, any>
 }) {
-  const previewItems = buildItems().slice(0, 20)
   return (
     <div>
       <p className="text-sm mb-2">{rows.length} {t.csv?.rowsFound || 'rows found'}</p>
-      <div className="border rounded max-h-60 overflow-y-auto">
-        <table className="w-full text-xs">
+      <div className="border rounded max-h-60 overflow-x-auto overflow-y-auto">
+        <table className="w-full text-xs min-w-[400px]">
           <thead className="bg-muted sticky top-0">
             <tr>
               <th className="p-1 text-left">#</th>

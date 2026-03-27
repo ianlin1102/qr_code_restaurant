@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-import { verifyToken } from '../controllers/auth.controller.js'
+import { verifyToken } from '../controllers/auth.service.js'
 import type { JwtPayload } from '@qr-order/shared'
 
 declare global {

@@ -478,7 +478,7 @@ createdAt DateTime
 ### 架构 & 数据层
 - **Prisma 迁移未执行**: `schema.prisma` 只定义了 Store 和 StoreUser，Menu/Category/Table/Order 等核心模型仍用 JSON 文件存储，Prisma migration 待完成
 - **自定义 Hooks 缺失**: `client/src/hooks/` 目录为空，数据获取逻辑直接写在页面组件中（违反架构原则，待提取为 `useMenu`/`useOrders` 等 hooks）
-- **控制器命名不一致**: 部分用 `.service.ts`（menu/order/table/store/analytics/coupon/waitlist/split-bill/printer/staff/payment），部分用 `.controller.ts`（auth），待统一
+- ~~**控制器命名不一致**~~: ✅ 已修复 — `auth.controller.ts` 已重命名为 `auth.service.ts`，所有控制器统一使用 `.service.ts` 命名
 - **`api.ts` 超过 200 行限制**: 当前 286 行，需拆分（如按模块拆为 `api/menu.ts`、`api/orders.ts` 等）
 - **7 个文件严重超限（>300 行）**: `MenuPage.tsx`（500 行）、`CategoryManagePage.tsx`（423 行）、`MenuItemForm.tsx`（375 行）、`OrderEditDialog.tsx`（372 行）、`TablesPage.tsx`（352 行）、`AnalyticsPage.tsx`（317 行）、`MenuItemTable.tsx`（317 行）均远超 200 行限制，需优先拆分
 - **12 个文件轻微超限（200-291 行）**: `MenuManagePage.tsx`（291 行）、`MenuItemDetailSheet.tsx`（250 行）、`CouponManagePage.tsx`（225 行）、`TableDetailPanel.tsx`（223 行）、`DashboardPage.tsx`（214 行）、`AdminLayout.tsx`（212 行）、`ActiveOrdersSidebar.tsx`（210 行）、`StaffManagePage.tsx`（206 行）、`OrderDetailDialog.tsx`（206 行）、`order.service.ts`（206 行）、`CartPage.tsx`（204 行）、`FloorPlanEditorPage.tsx`（202 行）
@@ -492,7 +492,7 @@ createdAt DateTime
 - **S3 bucket 硬编码**: fallback `'qr-restaurant-images'` 应改为必需环境变量
 - **S3 URL 硬编码**: `s3.ts` 中 `https://${bucket}.s3.${region}.amazonaws.com/` 需提取为 `CDN_BASE_URL` 环境变量支持 CloudFront
 - **货币硬编码**: `payment.service.ts` 中 Stripe 固定用 `'usd'`（出现两处），`format.ts` 中 `$` 符号硬编码，待提取为 `DEFAULT_CURRENCY` 配置
-- **JWT 过期硬编码**: `auth.controller.ts` 中 `'7d'` 固定写死，待提取为环境变量
+- **JWT 过期硬编码**: `auth.service.ts` 中 `'7d'` 固定写死，待提取为环境变量
 - ~~**server.ts 调试日志**~~: ✅ 已修复 — "HELLO FROM IAN" debug 消息已清除
 - **缺少根 `.env.example`**: 只有 `server/.env.example`，根目录缺少统一的环境变量文档
 
@@ -573,6 +573,7 @@ createdAt DateTime
 ### 待实现功能
 - **FloorPlan 交互式地图**: 将 FloorPlanPage 从卡片网格改为按 x/y 坐标渲染桌台（复用 FloorPlanEditorPage 的布局数据），让运营视图和编辑器视图一致
 - **Checkout Session 优化**: Stripe metadata 改为服务端存 checkout_session 表 + metadata 只存 session ID，彻底绕开 500 char 限制
+- **Apple Pay / Google Pay**: Stripe PaymentElement 会自动显示，但需要 HTTPS + 域名 + Stripe Dashboard 开启 Apple Pay domain verification + 网站根目录放 `.well-known/apple-developer-merchantid-domain-association` 文件。当前裸 IP + HTTP 不支持
 
 ### 当前仍未修复的问题
 - **Call Waiter 无真实通知**: 需要 WebSocket

@@ -6,7 +6,10 @@
     "description": "这是一家示例餐厅",
     "descriptionEn": "A demo restaurant",
     "openingHours": "09:00-22:00",
-    "createdAt": "2026-03-23T08:38:13.228Z"
+    "createdAt": "2026-03-23T08:38:13.228Z",
+    "announcement": "新老顾客欢迎",
+    "autoAcceptOrders": false,
+    "paymentMode": "pay-later"
   },
   {
     "id": "store-demo-002",

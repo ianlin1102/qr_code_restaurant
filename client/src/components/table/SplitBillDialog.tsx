@@ -1,3 +1,4 @@
+// DEPRECATED: Use BillSettleDialog instead
 import { useState } from 'react'
 import { useT } from '@/i18n/useT'
 import {

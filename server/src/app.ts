@@ -13,7 +13,6 @@ import webhookRoutes from './routes/webhook.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
 import couponRoutes from './routes/coupon.routes.js'
 import waitlistRoutes from './routes/waitlist.routes.js'
-import splitBillRoutes from './routes/split-bill.routes.js'
 import printerRoutes from './routes/printer.routes.js'
 import staffRoutes from './routes/staff.routes.js'
 import billRoutes from './routes/bill.routes.js'
@@ -50,7 +49,6 @@ app.use('/api/stores/:storeId/bills', billRoutes)
 app.use('/api/stores/:storeId/analytics', analyticsRoutes)
 app.use('/api/stores/:storeId/coupons', couponRoutes)
 app.use('/api/stores/:storeId/waitlist', waitlistRoutes)
-app.use('/api/stores/:storeId/split-bill', splitBillRoutes)
 app.use('/api/stores/:storeId/printer', printerRoutes)
 app.use('/api/stores/:storeId/staff', staffRoutes)
 app.use('/api/stores/:storeId/roles', roleRoutes)

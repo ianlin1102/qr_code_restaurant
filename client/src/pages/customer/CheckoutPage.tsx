@@ -14,7 +14,7 @@ import { useSessionStore } from '@/stores/session-store'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
 import { api } from '@/services/api'
-import TipSelector from '@/components/TipSelector'
+import TipSelector from '@/components/shared/TipSelector'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 

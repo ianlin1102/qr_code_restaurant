@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useSessionStore } from './stores/session-store'
 import ScanPage from './pages/customer/ScanPage'
 import LangSelectPage from './pages/customer/LangSelectPage'
 import MenuPage from './pages/customer/MenuPage'
@@ -6,9 +7,9 @@ import CartPage from './pages/customer/CartPage'
 import OrderConfirmPage from './pages/customer/OrderConfirmPage'
 import CheckoutPage from './pages/customer/CheckoutPage'
 import OrderHistoryPage from './pages/customer/OrderHistoryPage'
-import AdminLayout from './components/AdminLayout'
+import AdminLayout from './components/layout/AdminLayout'
 import LoginPage from './pages/admin/LoginPage'
-import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRoute from './components/layout/ProtectedRoute'
 import DashboardPage from './pages/admin/DashboardPage'
 import TablesPage from './pages/admin/TablesPage'
 import MenuManagePage from './pages/admin/MenuManagePage'
@@ -19,6 +20,12 @@ import AnalyticsPage from './pages/admin/AnalyticsPage'
 import CouponManagePage from './pages/admin/CouponManagePage'
 import FloorPlanEditorPage from './pages/admin/FloorPlanEditorPage'
 import StaffManagePage from './pages/admin/StaffManagePage'
+
+function FallbackRedirect() {
+  const storeId = useSessionStore(s => s.storeId)
+  if (storeId) return <Navigate to={`/menu/${storeId}`} replace />
+  return <Navigate to="/admin/login" replace />
+}
 
 export default function App() {
   return (
@@ -58,7 +65,7 @@ export default function App() {
           <Route index element={<Navigate to="dashboard" />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/admin/dashboard" />} />
+        <Route path="*" element={<FallbackRedirect />} />
       </Routes>
     </BrowserRouter>
   )

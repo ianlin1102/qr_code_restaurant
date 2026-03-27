@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": "37533730-8022-49de-b289-fd55e23c293c",
+    "storeId": "store-demo-001",
+    "tableId": "56228a9a-58ea-4d81-b26a-6399a6727983",
+    "version": 2,
+    "status": "pending-payment",
+    "orderIds": [
+      "70db7bc1-8ae9-486e-9914-fda7493f76ee"
+    ],
+    "subtotal": 1899,
+    "discountAmount": 0,
+    "totalDue": 1899,
+    "paidAmount": 0,
+    "createdAt": "2026-03-27T18:23:55.646Z"
+  }
+]
