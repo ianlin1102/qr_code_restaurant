@@ -11,9 +11,10 @@ export interface Store {
   createdAt: string
   autoAcceptOrders?: boolean
   updatedAt?: string
+  maxTables?: number
 }
 
-export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store, 'description' | 'openingHours' | 'announcement' | 'autoAcceptOrders'>>
+export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store, 'description' | 'openingHours' | 'announcement' | 'autoAcceptOrders' | 'maxTables'>>
 
 // ===== User/Role =====
 export type Role = 'owner' | 'staff'
@@ -74,9 +75,11 @@ export interface Table {
   storeId: string
   name: string
   nameEn?: string
-  qrCode?: string
+  number: number              // 1-N, stable, used for QR code label
+  enabled: boolean            // true = active, false = disabled
   status: 'idle' | 'occupied' | 'cleaning' | 'bill-requested'
-  currentOrderId?: string
+  currentOrderId?: string     // DEPRECATED — will be replaced by currentBillId in Phase 2
+  currentBillId?: string      // prep for Phase 2 Bill entity
   zone?: string
   capacity?: number
   x?: number
