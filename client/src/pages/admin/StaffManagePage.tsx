@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { AuthUser } from '@qr-order/shared'
+import type { AuthUser, RoleDefinition } from '@qr-order/shared'
 
 type Form = { username: string; password: string; role: string }
 const EMPTY: Form = { username: '', password: '', role: 'staff' }
+const FALLBACK_ROLES = [{ value: 'owner', label: 'Owner' }, { value: 'staff', label: 'Staff' }]
 
 const AVATAR_COLORS = [
   'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500',
@@ -41,10 +42,14 @@ export default function StaffManagePage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [roles, setRoles] = useState<RoleDefinition[]>([])
 
   const fetchStaff = useCallback(async () => {
     if (!storeId) return
-    try { setStaff(await api.getStaff(storeId)); setError(null) }
+    try {
+      const [s, r] = await Promise.all([api.getStaff(storeId), api.getRoles(storeId)])
+      setStaff(s); setRoles(r); setError(null)
+    }
     catch (e) { setError(e instanceof Error ? e.message : 'Failed to load') }
     finally { setLoading(false) }
   }, [storeId])
@@ -142,7 +147,7 @@ export default function StaffManagePage() {
                           ? <Badge variant={m.role === 'owner' ? 'default' : 'secondary'}>
                               {m.role === 'owner' ? t.staff.roles.owner : t.staff.roles.staff}
                             </Badge>
-                          : <RoleSelect value={m.role} onChange={v => handleRoleChange(m.id, v)} t={t} />}
+                          : <RoleSelect value={m.role} onChange={v => handleRoleChange(m.id, v)} t={t} roles={roles} />}
                       </TableCell>
                       <TableCell>
                         <Button variant="outline" size="sm" className="text-red-600"
@@ -171,7 +176,7 @@ export default function StaffManagePage() {
                   <div className="flex items-center justify-between">
                     {m.id === currentUserId
                       ? <Badge variant={m.role === 'owner' ? 'default' : 'secondary'}>{m.role === 'owner' ? t.staff.roles.owner : t.staff.roles.staff}</Badge>
-                      : <RoleSelect value={m.role} onChange={v => handleRoleChange(m.id, v)} t={t} />}
+                      : <RoleSelect value={m.role} onChange={v => handleRoleChange(m.id, v)} t={t} roles={roles} />}
                     <Button variant="outline" size="sm" className="text-red-600"
                       disabled={!canDelete(m)} onClick={() => handleDelete(m)}>{t.common.delete}</Button>
                   </div>
@@ -200,7 +205,7 @@ export default function StaffManagePage() {
                 placeholder={t.staff.passwordPlaceholder} />
             </Label>
             <Label text={t.staff.role}>
-              <RoleSelect value={form.role} onChange={v => setForm(f => ({ ...f, role: v }))} t={t} />
+              <RoleSelect value={form.role} onChange={v => setForm(f => ({ ...f, role: v }))} t={t} roles={roles} />
             </Label>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
@@ -218,13 +223,17 @@ export default function StaffManagePage() {
   )
 }
 
-function RoleSelect({ value, onChange, t }: { value: string; onChange: (v: string) => void; t: ReturnType<typeof useT>['t'] }) {
+function RoleSelect({ value, onChange, t, roles }: { value: string; onChange: (v: string) => void; t: ReturnType<typeof useT>['t']; roles: RoleDefinition[] }) {
+  const items = roles.length > 0
+    ? roles.map(r => ({ value: r.name, label: r.nameEn || r.name }))
+    : FALLBACK_ROLES
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+      <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
       <SelectContent>
-        <SelectItem value="owner">{t.staff.roles.owner}</SelectItem>
-        <SelectItem value="staff">{t.staff.roles.staff}</SelectItem>
+        {items.map(r => (
+          <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+        ))}
       </SelectContent>
     </Select>
   )
