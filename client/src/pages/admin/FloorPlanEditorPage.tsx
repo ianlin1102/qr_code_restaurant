@@ -64,9 +64,10 @@ export default function FloorPlanEditorPage() {
     if (!storeId) return
     const { number } = await api.getNextTableNumber(storeId)
     const created = await api.enableTable(storeId, number, `Table ${tables.length + 1}`)
-    setTables(prev => [...prev, { ...created, x: 20, y: 20, width: DEFAULT_W, height: DEFAULT_H }])
+    const zone = activeZone !== 'all' ? activeZone : zones[0] || undefined
+    setTables(prev => [...prev, { ...created, x: 20, y: 20, width: DEFAULT_W, height: DEFAULT_H, zone }])
     setSelectedId(created.id)
-  }, [storeId, tables.length])
+  }, [storeId, tables.length, activeZone, zones])
 
   const updateField = useCallback((field: keyof Table, value: string | number) => {
     setTables(prev => prev.map(tb => (tb.id === selectedId ? { ...tb, [field]: value } : tb)))
