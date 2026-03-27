@@ -24,6 +24,7 @@ export default function StoreSettingsPage() {
   const [openingHours, setOpeningHours] = useState('')
   const [announcement, setAnnouncement] = useState('')
   const [autoAccept, setAutoAccept] = useState(false)
+  const [paymentMode, setPaymentMode] = useState<'pay-first' | 'pay-later'>('pay-first')
 
   useEffect(() => {
     loadStore()
@@ -38,6 +39,7 @@ export default function StoreSettingsPage() {
       setOpeningHours(data.openingHours ?? '')
       setAnnouncement(data.announcement ?? '')
       setAutoAccept(data.autoAcceptOrders ?? false)
+      setPaymentMode(data.paymentMode ?? 'pay-first')
     } catch (err) {
       setMessage({ type: 'error', text: t.settings.loadFailed })
     } finally {
@@ -59,6 +61,7 @@ export default function StoreSettingsPage() {
         openingHours: openingHours.trim() || undefined,
         announcement: announcement.trim() || undefined,
         autoAcceptOrders: autoAccept,
+        paymentMode,
       })
       setStore(updated)
       setMessage({ type: 'success', text: t.settings.saveSuccess })
@@ -148,6 +151,19 @@ export default function StoreSettingsPage() {
               <Switch checked={autoAccept} onCheckedChange={v => setAutoAccept(v)} />
               <span className="text-xs text-muted-foreground">
                 {autoAccept ? t.settings.enabled : t.settings.disabled}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <label className="text-sm font-medium">{t.settings.paymentMode || 'Payment Mode'}</label>
+              <p className="text-xs text-muted-foreground">{t.settings.paymentModeDesc || 'Pay First: customer pays before ordering; Pay Later: customer orders first, settles at the end'}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={paymentMode === 'pay-later'} onCheckedChange={v => setPaymentMode(v ? 'pay-later' : 'pay-first')} />
+              <span className="text-xs text-muted-foreground min-w-[60px]">
+                {paymentMode === 'pay-later' ? (t.settings.payLater || 'Pay Later') : (t.settings.payFirst || 'Pay First')}
               </span>
             </div>
           </div>

@@ -62,8 +62,10 @@ export default function ScanPage() {
               type="text"
               value={nameInput}
               onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { if (nameInput.trim()) useSessionStore.getState().setCustomerName(nameInput.trim()); navigate(`/menu/${storeId}`, { replace: true }) } }}
               placeholder={t('scan.namePlaceholder')}
               className="w-full max-w-xs px-3 py-2 border rounded-md text-sm"
+              autoComplete="name"
               autoFocus
             />
             <div className="flex gap-2 w-full max-w-xs">

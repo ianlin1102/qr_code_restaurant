@@ -154,16 +154,16 @@ export default function TablesPage() {
             <p className="text-[10px] text-orange-500 mt-0.5">{t.tables.baseUrlWarning}</p>
           )}
         </div>
-        <div className="px-3 pt-2 pb-1 flex items-center justify-between">
-          <p className="text-xs text-gray-400 font-semibold tracking-wide">{t.tables.tableStatus}</p>
-          <div className="flex gap-1">
+        <div className="px-3 pt-2 pb-1 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-400 font-semibold tracking-wide">{t.tables.tableStatus}</p>
             <button onClick={handlePrintAllQr} className="p-1 text-gray-400 hover:text-gray-600" title={t.tables.printAllQr}>
               <QrCode className="size-4" />
             </button>
-            <button onClick={openAddTable} className="p-1 text-gray-400 hover:text-gray-600" title={t.tables.enableNew}>
-              <Plus className="size-4" />
-            </button>
           </div>
+          <Button size="sm" variant="outline" className="w-full text-xs gap-1" onClick={openAddTable}>
+            <Plus className="size-3.5" />{t.tables.enableNew}
+          </Button>
         </div>
         <div className="px-3 pb-2">
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
