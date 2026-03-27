@@ -125,27 +125,34 @@ export const api = {
     }),
 
   // Tables
-  getTables: (storeId: string) =>
-    fetchJSON<Table[]>(`/stores/${storeId}/tables`),
+  getTables: (storeId: string, includeDisabled = false) =>
+    fetchJSON<Table[]>(`/stores/${storeId}/tables${includeDisabled ? '?includeDisabled=true' : ''}`),
 
   getTable: (storeId: string, tableId: string) =>
     fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}`),
 
-  createTable: (storeId: string, name: string, nameEn?: string) =>
-    fetchJSON<Table>(`/stores/${storeId}/tables`, {
+  enableTable: (storeId: string, number: number, name?: string, nameEn?: string) =>
+    fetchJSON<Table>(`/stores/${storeId}/tables/enable`, {
       method: 'POST',
-      body: JSON.stringify({ name, ...(nameEn ? { nameEn } : {}) }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ''}` },
+      body: JSON.stringify({ number, name, nameEn }),
+    }),
+
+  disableTable: (storeId: string, tableId: string) =>
+    fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}/disable`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ''}` },
+    }),
+
+  getNextTableNumber: (storeId: string) =>
+    fetchJSON<{ number: number; allFull: boolean }>(`/stores/${storeId}/tables/next-number`, {
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ''}` },
     }),
 
   updateTable: (storeId: string, tableId: string, data: { name?: string; nameEn?: string }) =>
     fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }),
-
-  deleteTable: (storeId: string, tableId: string) =>
-    fetchJSON<void>(`/stores/${storeId}/tables/${tableId}`, {
-      method: 'DELETE',
     }),
 
   closeTable: (storeId: string, tableId: string) =>

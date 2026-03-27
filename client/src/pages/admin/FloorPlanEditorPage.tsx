@@ -71,7 +71,8 @@ export default function FloorPlanEditorPage() {
 
   const addTable = async () => {
     if (!storeId) return
-    const created = await api.createTable(storeId, `Table ${tables.length + 1}`)
+    const { number } = await api.getNextTableNumber(storeId)
+    const created = await api.enableTable(storeId, number, `Table ${tables.length + 1}`)
     setTables(prev => [...prev, { ...created, x: 20, y: 20, width: DEFAULT_W, height: DEFAULT_H }])
     setSelectedId(created.id)
   }
@@ -82,7 +83,7 @@ export default function FloorPlanEditorPage() {
 
   const deleteSelected = async () => {
     if (!storeId || !selectedId) return
-    await api.deleteTable(storeId, selectedId)
+    await api.disableTable(storeId, selectedId)
     setTables(prev => prev.filter(tb => tb.id !== selectedId))
     setSelectedId(null)
   }
