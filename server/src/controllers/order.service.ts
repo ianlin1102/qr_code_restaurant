@@ -1,14 +1,10 @@
 import { v4 as uuid } from 'uuid'
-import { JsonStore } from '../repositories/json-store.js'
 import { getMenuItemById } from './menu.service.js'
 import { printOrder } from './printer.service.js'
 import { createBill, getActiveBill, addOrderToBill } from './bill.service.js'
 import type { Order, OrderItem, Table, Store, CreateOrderRequest, OrderStatus } from '@qr-order/shared'
 import logger from '../lib/logger.js'
-
-export const orderStore = new JsonStore<Order>('orders.json')
-import { tableStore } from './table.service.js'
-import { storeStore as storeConfigStore } from './store.service.js'
+import { orderStore, tableStore, storeStore, billStore } from '../repositories/stores.js'
 
 const storeCounters = new Map<string, number>()
 
@@ -77,7 +73,7 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
     })
   }
 
-  const storeConfig = storeConfigStore.getById(storeId)
+  const storeConfig = storeStore.getById(storeId)
   const initialStatus = storeConfig?.autoAcceptOrders ? 'preparing' : 'pending'
 
   const now = new Date().toISOString()
@@ -236,7 +232,6 @@ export async function updateOrderItems(storeId: string, orderId: string, items: 
   })
 
   // Recalculate bill subtotal if order belongs to an active bill
-  const { billStore } = await import('./bill.service.js')
   const bills = billStore.getByField('storeId', storeId)
   const activeBill = bills.find(b => b.orderIds.includes(orderId) && b.status !== 'settled')
   if (activeBill) {

@@ -1,10 +1,6 @@
 import { v4 as uuid } from 'uuid'
-import { JsonStore } from '../repositories/json-store.js'
-import { orderStore } from './order.service.js'
-import { getStore } from './store.service.js'
 import type { Table } from '@qr-order/shared'
-
-export const tableStore = new JsonStore<Table>('tables.json')
+import { tableStore, orderStore, storeStore } from '../repositories/stores.js'
 
 const INITIAL_BATCH = 20
 
@@ -33,7 +29,7 @@ function migrateExistingTables(storeId: string): void {
 function fillUpTables(storeId: string): void {
   const existing = tableStore.getByField('storeId', storeId)
   const usedNumbers = new Set(existing.map(t => t.number).filter(Boolean))
-  const store = getStore(storeId)
+  const store = storeStore.getById(storeId)
   const max = Math.min(store?.maxTables ?? 100, INITIAL_BATCH)
   for (let i = 1; i <= max; i++) {
     if (usedNumbers.has(i)) continue
@@ -60,6 +56,18 @@ export function getTables(storeId: string, includeDisabled = false): Table[] {
 
 export function getTableById(tableId: string): Table | undefined {
   return tableStore.getById(tableId)
+}
+
+/** Public table info for customer scan — strips internal/layout fields, resolves paymentMode. */
+export function getTablePublic(
+  storeId: string,
+  tableId: string
+): (Omit<Table, 'currentOrderId' | 'currentBillId' | 'x' | 'y' | 'width' | 'height' | 'shape'> & { paymentMode: string }) | null {
+  const table = tableStore.getById(tableId)
+  if (!table || table.storeId !== storeId) return null
+  const store = storeStore.getById(storeId)
+  const { currentOrderId, currentBillId, x, y, width, height, shape, ...publicTable } = table
+  return { ...publicTable, paymentMode: table.paymentMode ?? store?.paymentMode ?? 'pay-first' }
 }
 
 export function updateTableStatus(storeId: string, tableId: string, status: Table['status']): Table | { error: string } {

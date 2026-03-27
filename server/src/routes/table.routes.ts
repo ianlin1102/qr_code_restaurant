@@ -1,6 +1,5 @@
 import { Router } from 'express'
-import { getTables, getTableById, enableTable, disableTable, updateTable, settleTable, closeTable, getNextAvailableNumber, regenerateTableId } from '../controllers/table.service.js'
-import { storeStore } from '../controllers/store.service.js'
+import { getTables, getTablePublic, enableTable, disableTable, updateTable, settleTable, closeTable, getNextAvailableNumber, regenerateTableId } from '../controllers/table.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 
 const router = Router({ mergeParams: true })
@@ -20,17 +19,12 @@ router.get('/next-number', requireAuth, (req, res) => {
 
 // GET single table (public — customer scan needs this)
 router.get('/:tableId', (req, res) => {
-  const table = getTableById(req.params.tableId)
-  if (!table || table.storeId !== req.params.storeId) {
+  const result = getTablePublic(req.params.storeId as string, req.params.tableId as string)
+  if (!result) {
     res.status(404).json({ error: 'Table not found' })
     return
   }
-  // Strip internal/layout fields for public API, keep enabled + number
-  const { currentOrderId, currentBillId, x, y, width, height, shape, ...publicTable } = table
-  // Resolve paymentMode: table override > store default > 'pay-first'
-  const storeConfig = storeStore.getById(req.params.storeId)
-  const resolvedPaymentMode = table.paymentMode ?? storeConfig?.paymentMode ?? 'pay-first'
-  res.json({ ...publicTable, paymentMode: resolvedPaymentMode })
+  res.json(result)
 })
 
 // POST enable table (admin) — replaces POST / (create)

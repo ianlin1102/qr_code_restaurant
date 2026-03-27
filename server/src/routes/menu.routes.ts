@@ -9,6 +9,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  batchImportMenuItems,
 } from '../controllers/menu.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 
@@ -28,9 +29,7 @@ router.get('/', (req, res) => {
 
 // POST /api/stores/:storeId/menu/items/batch — bulk import menu items
 router.post('/items/batch', requireAuth, (req, res) => {
-  const storeId = req.params.storeId as string
-  const { items } = req.body as { items: Array<{ name: string; nameEn?: string; price: number; categoryId: string; description?: string; descriptionEn?: string }> }
-
+  const { items } = req.body
   if (!items || !Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'items array is required' })
     return
@@ -39,41 +38,8 @@ router.post('/items/batch', requireAuth, (req, res) => {
     res.status(400).json({ error: 'Maximum 500 items per import' })
     return
   }
-
-  const created: unknown[] = []
-  const skipped: Array<{ row: number; reason: string }> = []
-
-  const categories = getCategories(storeId)
-  const categoryIds = new Set(categories.map(c => c.id))
-
-  items.forEach((item, index) => {
-    if (!item.name || !item.name.trim()) {
-      skipped.push({ row: index + 1, reason: 'Missing name' })
-      return
-    }
-    if (typeof item.price !== 'number' || item.price < 0) {
-      skipped.push({ row: index + 1, reason: 'Invalid price' })
-      return
-    }
-    if (!item.categoryId || !categoryIds.has(item.categoryId)) {
-      skipped.push({ row: index + 1, reason: 'Unknown category' })
-      return
-    }
-
-    const menuItem = createMenuItem(storeId, {
-      name: item.name.trim(),
-      nameEn: item.nameEn?.trim(),
-      price: item.price,
-      categoryId: item.categoryId,
-      description: item.description?.trim(),
-      descriptionEn: item.descriptionEn?.trim(),
-      available: true,
-      sortOrder: created.length,
-    })
-    created.push(menuItem)
-  })
-
-  res.json({ created, skipped })
+  const result = batchImportMenuItems(req.params.storeId as string, items)
+  res.json(result)
 })
 
 // GET /api/stores/:storeId/menu/items — all items (including unavailable)

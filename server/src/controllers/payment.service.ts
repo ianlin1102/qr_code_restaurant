@@ -1,5 +1,6 @@
 import { getStripe } from '../lib/stripe.js'
-import { createOrder, orderStore } from './order.service.js'
+import { createOrder } from './order.service.js'
+import { orderStore } from '../repositories/stores.js'
 import logger from '../lib/logger.js'
 import type { CreateOrderRequest, Order } from '@qr-order/shared'
 

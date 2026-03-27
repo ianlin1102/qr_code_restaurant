@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
-import { storeStore } from './store.service.js'
+import { storeStore } from '../repositories/stores.js'
 import type { Category, MenuItem, MenuResponse } from '@qr-order/shared'
 
 const categoryStore = new JsonStore<Category>('categories.json')
@@ -108,4 +108,31 @@ export function deleteCategory(storeId: string, id: string): boolean | { error: 
     return { error: 'Category not found' }
   }
   return categoryStore.delete(id)
+}
+
+// ===== Batch Import =====
+
+export function batchImportMenuItems(
+  storeId: string,
+  items: Array<{ name: string; nameEn?: string; price: number; categoryId: string; description?: string; descriptionEn?: string }>
+): { created: MenuItem[]; skipped: Array<{ row: number; reason: string }> } {
+  const categories = getCategories(storeId)
+  const categoryIds = new Set(categories.map(c => c.id))
+  const created: MenuItem[] = []
+  const skipped: Array<{ row: number; reason: string }> = []
+
+  items.forEach((item, index) => {
+    if (!item.name || !item.name.trim()) { skipped.push({ row: index + 1, reason: 'Missing name' }); return }
+    if (typeof item.price !== 'number' || item.price < 0) { skipped.push({ row: index + 1, reason: 'Invalid price' }); return }
+    if (!item.categoryId || !categoryIds.has(item.categoryId)) { skipped.push({ row: index + 1, reason: 'Unknown category' }); return }
+
+    const menuItem = createMenuItem(storeId, {
+      name: item.name.trim(), nameEn: item.nameEn?.trim(), price: item.price,
+      categoryId: item.categoryId, description: item.description?.trim(),
+      descriptionEn: item.descriptionEn?.trim(), available: true, sortOrder: created.length,
+    })
+    created.push(menuItem)
+  })
+
+  return { created, skipped }
 }

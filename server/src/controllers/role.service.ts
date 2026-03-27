@@ -1,9 +1,7 @@
 import { v4 as uuid } from 'uuid'
-import { JsonStore } from '../repositories/json-store.js'
 import type { RoleDefinition, Permission } from '@qr-order/shared'
 import logger from '../lib/logger.js'
-
-export const roleStore = new JsonStore<RoleDefinition>('roles.json')
+import { roleStore } from '../repositories/stores.js'
 
 const ALL_PERMISSIONS: Permission[] = [
   'menu:read', 'menu:write', 'orders:read', 'orders:write',

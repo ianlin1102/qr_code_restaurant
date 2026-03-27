@@ -1,11 +1,7 @@
 import { v4 as uuid } from 'uuid'
-import { JsonStore } from '../repositories/json-store.js'
 import type { Bill, Split, DiscountType } from '@qr-order/shared'
-import { tableStore } from './table.service.js'
 import logger from '../lib/logger.js'
-
-export const billStore = new JsonStore<Bill>('bills.json')
-export const splitStore = new JsonStore<Split>('splits.json')
+import { billStore, splitStore, tableStore } from '../repositories/stores.js'
 
 export function createBill(storeId: string, tableId: string, status: Bill['status']): Bill {
   const now = new Date().toISOString()

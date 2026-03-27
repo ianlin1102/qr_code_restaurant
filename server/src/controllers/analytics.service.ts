@@ -1,4 +1,4 @@
-import { orderStore } from './order.service.js'
+import { orderStore } from '../repositories/stores.js'
 import { getStaff } from './staff.service.js'
 import type { Order, AnalyticsResponse, DailyStats, TopItem } from '@qr-order/shared'
 

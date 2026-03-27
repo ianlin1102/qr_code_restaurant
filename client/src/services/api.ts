@@ -1,11 +1,6 @@
 import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Bill, Split, RoleDefinition } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
-// DEPRECATED: replaced by BillSettleDialog (Phase 3)
-interface SplitBillShare { personName: string; items: { menuItemId: string; name: string; quantity: number; amount: number }[]; amount: number }
-interface SplitBillRequest { orderId: string; mode: 'equal' | 'by-item'; numberOfPeople?: number; shares?: SplitBillShare[] }
-interface SplitBillSession { orderId: string; shares: (SplitBillShare & { clientSecret?: string; paid: boolean })[]; totalAmount: number }
-
 const BASE = '/api'
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
@@ -242,13 +237,6 @@ export const api = {
   seatWaitlistEntry: (storeId: string, entryId: string) =>
     fetchJSON<WaitlistEntry>(`/stores/${storeId}/waitlist/${entryId}/seat`, {
       method: 'POST',
-    }),
-
-  // Split Bill
-  createSplitBill: (storeId: string, data: SplitBillRequest) =>
-    fetchJSON<SplitBillSession>(`/stores/${storeId}/split-bill`, {
-      method: 'POST',
-      body: JSON.stringify(data),
     }),
 
   // Staff Management
