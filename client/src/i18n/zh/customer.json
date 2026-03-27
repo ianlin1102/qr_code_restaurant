@@ -15,7 +15,9 @@
     "callWaiter": "呼叫服务员",
     "waiterCalled": "已通知工作人员！",
     "viewOrders": "查看订单",
-    "itemsSoldOut": "以下购物车中的菜品已售罄并已移除：{{names}}"
+    "itemsSoldOut": "以下购物车中的菜品已售罄并已移除：{{names}}",
+    "announcement": "公告",
+    "gotIt": "知道了"
   },
   "cart": {
     "title": "我的订单",
@@ -62,7 +64,11 @@
     "loading": "正在确认桌位信息...",
     "loadingZh": "Checking table availability...",
     "disabled": "该桌台暂未开放",
-    "disabledDesc": "请联系服务员获取帮助。"
+    "disabledDesc": "请联系服务员获取帮助。",
+    "namePrompt": "请输入您的名字（可选）",
+    "namePlaceholder": "输入名字",
+    "continue": "继续",
+    "skip": "跳过"
   },
   "checkout": {
     "title": "结账",

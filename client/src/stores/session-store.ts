@@ -5,7 +5,9 @@ interface SessionState {
   storeId: string | null
   tableId: string | null
   tableName: string | null
+  customerName?: string
   setSession: (storeId: string, tableId: string, tableName?: string) => void
+  setCustomerName: (name: string) => void
   clearSession: () => void
 }
 
@@ -15,8 +17,10 @@ export const useSessionStore = create<SessionState>()(
       storeId: null,
       tableId: null,
       tableName: null,
+      customerName: undefined,
       setSession: (storeId, tableId, tableName) => set({ storeId, tableId, tableName }),
-      clearSession: () => set({ storeId: null, tableId: null, tableName: null }),
+      setCustomerName: (name) => set({ customerName: name }),
+      clearSession: () => set({ storeId: null, tableId: null, tableName: null, customerName: undefined }),
     }),
     { name: 'qr-order-session' }
   )

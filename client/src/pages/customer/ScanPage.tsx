@@ -15,6 +15,8 @@ export default function ScanPage() {
   const { t } = useTranslation('customer')
   const [error, setError] = useState<string | null>(null)
   const [disabled, setDisabled] = useState(false)
+  const [showNameInput, setShowNameInput] = useState(false)
+  const [nameInput, setNameInput] = useState('')
 
   useEffect(() => {
     if (!storeId || !tableId) return
@@ -30,7 +32,7 @@ export default function ScanPage() {
         const hasLang = localStorage.getItem('i18n-lang')
         if (!hasLang) { navigate(`/lang-select/${storeId}/${tableId}`, { replace: true }); return }
         session.setSession(storeId!, tableId!, table.name)
-        navigate(`/menu/${storeId}`, { replace: true })
+        setShowNameInput(true)
       } catch { setError(t('scan.error')) }
     }
     init()
@@ -53,7 +55,38 @@ export default function ScanPage() {
         </div>
 
         {/* Spinner or Error */}
-        {disabled ? (
+        {showNameInput ? (
+          <div className="flex flex-col items-center gap-4 animate-in fade-in">
+            <p className="text-sm font-medium">{t('scan.namePrompt')}</p>
+            <input
+              type="text"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              placeholder={t('scan.namePlaceholder')}
+              className="w-full max-w-xs px-3 py-2 border rounded-md text-sm"
+              autoFocus
+            />
+            <div className="flex gap-2 w-full max-w-xs">
+              <button
+                onClick={() => {
+                  if (nameInput.trim()) {
+                    useSessionStore.getState().setCustomerName(nameInput.trim())
+                  }
+                  navigate(`/menu/${storeId}`, { replace: true })
+                }}
+                className="flex-1 bg-primary text-primary-foreground rounded-md py-2 text-sm font-medium"
+              >
+                {t('scan.continue')}
+              </button>
+            </div>
+            <button
+              onClick={() => navigate(`/menu/${storeId}`, { replace: true })}
+              className="text-xs text-muted-foreground underline"
+            >
+              {t('scan.skip')}
+            </button>
+          </div>
+        ) : disabled ? (
           <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4">
             <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
               <UtensilsCrossed className="w-8 h-8 text-amber-500" />

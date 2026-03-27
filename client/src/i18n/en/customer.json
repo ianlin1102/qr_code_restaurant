@@ -15,7 +15,9 @@
     "callWaiter": "Call Waiter",
     "waiterCalled": "Staff has been notified!",
     "viewOrders": "View orders",
-    "itemsSoldOut": "Some items in your cart are now sold out and have been removed: {{names}}"
+    "itemsSoldOut": "Some items in your cart are now sold out and have been removed: {{names}}",
+    "announcement": "Announcement",
+    "gotIt": "Got it"
   },
   "cart": {
     "title": "My Orders",
@@ -62,7 +64,11 @@
     "loading": "Checking table availability...",
     "loadingZh": "正在确认桌位信息...",
     "disabled": "This table is currently not in service.",
-    "disabledDesc": "Please ask staff for assistance."
+    "disabledDesc": "Please ask staff for assistance.",
+    "namePrompt": "What's your name? (optional)",
+    "namePlaceholder": "Enter your name",
+    "continue": "Continue",
+    "skip": "Skip"
   },
   "checkout": {
     "title": "Checkout",

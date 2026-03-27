@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import MenuItemDetailSheet from '@/components/MenuItemDetailSheet'
 import type { MenuResponse, MenuItem, Order } from '@qr-order/shared'
@@ -34,7 +33,7 @@ export default function MenuPage() {
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
 
-  const [announcementOpen, setAnnouncementOpen] = useState(false)
+  const [showAnnouncement, setShowAnnouncement] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [waiterCalled, setWaiterCalled] = useState(false)
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
@@ -71,12 +70,12 @@ export default function MenuPage() {
         if (data.categories.length > 0) {
           setActiveCategory(data.categories[0].id)
         }
-        // Show announcement modal once per store per session
+        // Show announcement popup if content changed since last dismissal
         if (data.store.announcement) {
-          const key = `announcement-seen-${storeId}`
-          if (!sessionStorage.getItem(key)) {
-            setAnnouncementOpen(true)
-            sessionStorage.setItem(key, '1')
+          const hash = btoa(data.store.announcement).slice(0, 8)
+          const storedHash = localStorage.getItem(`announcement-hash-${data.store.id}`)
+          if (storedHash !== hash) {
+            setShowAnnouncement(true)
           }
         }
       })
@@ -129,6 +128,14 @@ export default function MenuPage() {
     cartItems.filter(i => i.menuItemId === menuItemId).reduce((sum, i) => sum + i.quantity, 0)
 
   const handleAdd = (item: MenuItem) => { setSelectedMenuItem(item); setDetailSheetOpen(true) }
+
+  const dismissAnnouncement = () => {
+    if (menu?.store.announcement) {
+      const hash = btoa(menu.store.announcement).slice(0, 8)
+      localStorage.setItem(`announcement-hash-${menu.store.id}`, hash)
+    }
+    setShowAnnouncement(false)
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen">
@@ -461,40 +468,24 @@ export default function MenuPage() {
         onClose={() => { setDetailSheetOpen(false); setSelectedMenuItem(null) }}
       />
 
-      {/* Announcement Modal */}
-      <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
-        <DialogContent className="max-w-sm w-[calc(100vw-2rem)] p-0 overflow-hidden rounded-2xl">
-          {/* Hero gradient area */}
-          <div className="relative bg-gradient-to-br from-primary to-primary/80 px-5 pt-5 pb-4">
-            <span className="absolute top-3 left-3 bg-primary text-white text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              New Release
-            </span>
-            <DialogHeader className="mt-4">
-              <DialogTitle className="text-white text-lg">
-                {lang === 'zh' ? '特别公告' : 'Special Announcement'}
-                <span className="text-white/60 font-normal text-sm ml-1.5">
-                  / {lang === 'zh' ? 'Special Announcement' : '特别公告'}
-                </span>
-              </DialogTitle>
-            </DialogHeader>
-          </div>
-          {/* Body */}
-          <div className="p-5 space-y-4">
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-              {menu.store.announcement}
-            </p>
-            <Button className="w-full bg-primary hover:bg-primary/90"
-              onClick={() => setAnnouncementOpen(false)}>
-              {lang === 'zh' ? '查看菜单' : 'View Menu'}
-              <span className="text-white/60 text-xs ml-1">/ {lang === 'zh' ? 'View Menu' : '查看菜单'}</span>
-            </Button>
-            <button className="w-full text-sm text-muted-foreground hover:text-foreground text-center"
-              onClick={() => setAnnouncementOpen(false)}>
-              {lang === 'zh' ? '关闭' : 'Dismiss'} / {lang === 'zh' ? 'Dismiss' : '关闭'}
+      {/* Announcement Popup */}
+      {showAnnouncement && menu.store.announcement && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full max-h-[60vh] overflow-y-auto">
+            <h3 className="font-semibold mb-3">{t('menu.announcement')}</h3>
+            <div
+              className="prose prose-sm text-sm"
+              dangerouslySetInnerHTML={{ __html: menu.store.announcement }}
+            />
+            <button
+              onClick={dismissAnnouncement}
+              className="mt-4 w-full bg-primary text-primary-foreground rounded-md py-2 text-sm font-medium"
+            >
+              {t('menu.gotIt')}
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   )
 }
