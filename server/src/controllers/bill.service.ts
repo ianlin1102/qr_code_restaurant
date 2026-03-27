@@ -65,9 +65,13 @@ export function applyCoupon(
   couponCode: string,
   discountType: DiscountType,
   discountValue: number,
+  expectedVersion?: number,
 ): Bill | { error: string } {
   const bill = billStore.getById(billId)
   if (!bill) return { error: 'Bill not found' }
+  if (expectedVersion != null && bill.version !== expectedVersion) {
+    return { error: 'Bill has been modified. Please refresh and try again.' }
+  }
   if (bill.status === 'settled') return { error: 'Bill is already settled' }
   if (bill.couponId) return { error: 'A coupon is already applied' }
 
@@ -90,9 +94,12 @@ export function applyCoupon(
   return updated!
 }
 
-export function removeCoupon(billId: string): Bill | { error: string } {
+export function removeCoupon(billId: string, expectedVersion?: number): Bill | { error: string } {
   const bill = billStore.getById(billId)
   if (!bill) return { error: 'Bill not found' }
+  if (expectedVersion != null && bill.version !== expectedVersion) {
+    return { error: 'Bill has been modified. Please refresh and try again.' }
+  }
   if (bill.status === 'settled') return { error: 'Bill is already settled' }
 
   const updated = billStore.update(billId, {
@@ -111,9 +118,13 @@ export function createSplits(
   billId: string,
   method: Bill['splitMethod'],
   count?: number,
+  expectedVersion?: number,
 ): Split[] | { error: string } {
   const bill = billStore.getById(billId)
   if (!bill) return { error: 'Bill not found' }
+  if (expectedVersion != null && bill.version !== expectedVersion) {
+    return { error: 'Bill has been modified. Please refresh and try again.' }
+  }
   if (bill.status === 'settled') return { error: 'Bill is already settled' }
 
   // Clear existing unpaid splits
@@ -193,9 +204,12 @@ export function getSplitsForBill(billId: string): Split[] {
   return splitStore.getByField('billId', billId)
 }
 
-export function settleBillFull(billId: string, paidBy: 'customer' | 'waiter'): Bill | { error: string } {
+export function settleBillFull(billId: string, paidBy: 'customer' | 'waiter', expectedVersion?: number): Bill | { error: string } {
   const bill = billStore.getById(billId)
   if (!bill) return { error: 'Bill not found' }
+  if (expectedVersion != null && bill.version !== expectedVersion) {
+    return { error: 'Bill has been modified. Please refresh and try again.' }
+  }
   if (bill.status === 'settled') return { error: 'Bill is already settled' }
 
   const result = createSplits(billId, 'full')

@@ -33,8 +33,8 @@ router.post('/:billId/splits', requireAuth, requirePermission('tables:write'), (
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 
-  const { method, count } = req.body
-  const result = billService.createSplits(req.params.billId, method, count)
+  const { method, count, version } = req.body
+  const result = billService.createSplits(req.params.billId, method, count, version)
   if ('error' in result) { res.status(400).json(result); return }
   res.json(result)
 })
@@ -54,9 +54,9 @@ router.post('/:billId/apply-coupon', requireAuth, requirePermission('billing:wri
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 
-  const { couponId, couponCode, discountType, discountValue } = req.body
+  const { couponId, couponCode, discountType, discountValue, version } = req.body
   const result = billService.applyCoupon(
-    req.params.billId, couponId, couponCode, discountType, discountValue,
+    req.params.billId, couponId, couponCode, discountType, discountValue, version,
   )
   if ('error' in result) { res.status(400).json(result); return }
   res.json(result)
@@ -67,7 +67,7 @@ router.delete('/:billId/coupon', requireAuth, requirePermission('billing:write')
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 
-  const result = billService.removeCoupon(req.params.billId)
+  const result = billService.removeCoupon(req.params.billId, req.body?.version)
   if ('error' in result) { res.status(400).json(result); return }
   res.json(result)
 })
@@ -77,8 +77,8 @@ router.post('/:billId/settle', requireAuth, requirePermission('tables:write'), (
   const bill = billService.getBillById(req.params.billId)
   if (!bill || bill.storeId !== req.params.storeId) { res.status(404).json({ error: 'Bill not found' }); return }
 
-  const { paidBy } = req.body
-  const result = billService.settleBillFull(req.params.billId, paidBy ?? 'waiter')
+  const { paidBy, version } = req.body
+  const result = billService.settleBillFull(req.params.billId, paidBy ?? 'waiter', version)
   if ('error' in result) { res.status(400).json(result); return }
 
   res.json(result)

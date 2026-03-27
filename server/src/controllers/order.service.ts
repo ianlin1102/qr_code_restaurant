@@ -34,6 +34,18 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
     return { error: 'Order must have at least one item' }
   }
 
+  // Rate limit for pay-later mode: max 10 orders per table per hour
+  const storeConfig = storeStore.getById(storeId)
+  const isPayLater = (table.paymentMode ?? storeConfig?.paymentMode ?? 'pay-first') === 'pay-later'
+  if (isPayLater) {
+    const oneHourAgo = new Date(Date.now() - 3600_000).toISOString()
+    const recentOrders = orderStore.getByField('storeId', storeId)
+      .filter(o => o.tableId === table.id && o.createdAt > oneHourAgo)
+    if (recentOrders.length >= 10) {
+      return { error: 'Too many orders for this table. Please ask staff for help.' }
+    }
+  }
+
   const orderItems = []
   let totalPrice = 0
 
@@ -73,7 +85,6 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
     })
   }
 
-  const storeConfig = storeStore.getById(storeId)
   const initialStatus = storeConfig?.autoAcceptOrders ? 'preparing' : 'pending'
 
   const now = new Date().toISOString()

@@ -14,6 +14,25 @@ import { Input } from '@/components/ui/input'
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import type { MenuResponse, MenuItem, Order } from '@qr-order/shared'
 
+/** Strip dangerous HTML tags/attributes, keep safe formatting */
+function sanitizeHtml(html: string): string {
+  const div = document.createElement('div')
+  div.innerHTML = html
+  // Remove script, iframe, object, embed, form tags
+  const dangerous = div.querySelectorAll('script,iframe,object,embed,form,style,link')
+  dangerous.forEach(el => el.remove())
+  // Remove event handler attributes from all elements
+  div.querySelectorAll('*').forEach(el => {
+    for (const attr of Array.from(el.attributes)) {
+      if (attr.name.startsWith('on') || attr.name === 'srcdoc' ||
+          (attr.name === 'href' && attr.value.trim().toLowerCase().startsWith('javascript:'))) {
+        el.removeAttribute(attr.name)
+      }
+    }
+  })
+  return div.innerHTML
+}
+
 export default function MenuPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const navigate = useNavigate()
@@ -480,7 +499,7 @@ export default function MenuPage() {
             <h3 className="font-semibold mb-3">{t('menu.announcement')}</h3>
             <div
               className="prose prose-sm text-sm"
-              dangerouslySetInnerHTML={{ __html: menu.store.announcement }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(menu.store.announcement) }}
             />
             <button
               onClick={dismissAnnouncement}

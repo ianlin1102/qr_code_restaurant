@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import type { Table } from '@qr-order/shared'
-import { tableStore, orderStore, storeStore } from '../repositories/stores.js'
+import { tableStore, orderStore, storeStore, billStore } from '../repositories/stores.js'
 
 const INITIAL_BATCH = 20
 
@@ -162,6 +162,22 @@ export function regenerateTableId(storeId: string, tableId: string): Table | { e
   const newId = `${storeId}-t-${uuid().slice(0, 8)}`
   const newTable: Table = { ...table, id: newId }
   tableStore.create(newTable)
+
+  // Update all orders referencing the old tableId
+  const orders = orderStore.getByField('storeId', storeId)
+  for (const order of orders) {
+    if (order.tableId === tableId) {
+      orderStore.update(order.id, { tableId: newId })
+    }
+  }
+
+  // Update all bills referencing the old tableId
+  const bills = billStore.getByField('storeId', storeId)
+  for (const bill of bills) {
+    if (bill.tableId === tableId) {
+      billStore.update(bill.id, { tableId: newId })
+    }
+  }
 
   // Delete old record
   tableStore.delete(tableId)
