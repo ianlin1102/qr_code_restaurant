@@ -75,11 +75,8 @@ export function enableTable(
   name?: string,
   nameEn?: string
 ): Table | { error: string } {
-  const store = getStore(storeId)
-  const maxTables = store?.maxTables ?? 100
-
-  if (tableNumber < 1 || tableNumber > maxTables) {
-    return { error: `Table number must be between 1 and ${maxTables}` }
+  if (tableNumber < 1) {
+    return { error: 'Table number must be at least 1' }
   }
 
   const tableId = `${storeId}-table-${String(tableNumber).padStart(3, '0')}`
@@ -140,12 +137,10 @@ export function updateTable(storeId: string, tableId: string, updates: Partial<O
 export function getNextAvailableNumber(storeId: string): { number: number; allFull: boolean } {
   const tables = tableStore.getByField('storeId', storeId)
   const usedNumbers = new Set(tables.filter(t => t.enabled).map(t => t.number))
-  const store = getStore(storeId)
-  const max = store?.maxTables ?? 100
-  for (let i = 1; i <= max; i++) {
+  // No upper cap — pool auto-expands. Find the first unused number.
+  for (let i = 1; ; i++) {
     if (!usedNumbers.has(i)) return { number: i, allFull: false }
   }
-  return { number: max, allFull: true }
 }
 
 /** Settle a table: mark all non-completed orders as completed, reset table to idle */

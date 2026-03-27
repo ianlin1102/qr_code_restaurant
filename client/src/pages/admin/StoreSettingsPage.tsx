@@ -26,7 +26,6 @@ export default function StoreSettingsPage() {
   const [autoAccept, setAutoAccept] = useState(false)
   const [paymentMode, setPaymentMode] = useState<'pay-first' | 'pay-later'>('pay-first')
   const [announcementEn, setAnnouncementEn] = useState('')
-  const [maxTables, setMaxTables] = useState(100)
 
   useEffect(() => {
     loadStore()
@@ -43,7 +42,6 @@ export default function StoreSettingsPage() {
       setAutoAccept(data.autoAcceptOrders ?? false)
       setPaymentMode(data.paymentMode ?? 'pay-first')
       setAnnouncementEn(data.announcementEn ?? '')
-      setMaxTables(data.maxTables ?? 100)
     } catch (err) {
       setMessage({ type: 'error', text: t.settings.loadFailed })
     } finally {
@@ -67,7 +65,6 @@ export default function StoreSettingsPage() {
         autoAcceptOrders: autoAccept,
         paymentMode,
         announcementEn: announcementEn.trim() || undefined,
-        maxTables,
       })
       setStore(updated)
       setMessage({ type: 'success', text: t.settings.saveSuccess })
@@ -193,19 +190,6 @@ export default function StoreSettingsPage() {
               placeholder={t.settings.announcementEnPlaceholder || 'English version of announcement (optional)'}
               className="text-base"
               rows={3}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">{'Max Tables'}</label>
-            <p className="text-xs text-muted-foreground mb-1">{'Maximum number of table slots (default 100)'}</p>
-            <Input
-              type="number"
-              min={1}
-              max={999}
-              value={maxTables}
-              onChange={e => setMaxTables(parseInt(e.target.value) || 100)}
-              className="w-32 text-base"
             />
           </div>
 
