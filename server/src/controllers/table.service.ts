@@ -1,3 +1,4 @@
+import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
 import { orderStore } from './order.service.js'
 import { getStore } from './store.service.js'
@@ -141,6 +142,23 @@ export function getNextAvailableNumber(storeId: string): { number: number; allFu
   for (let i = 1; ; i++) {
     if (!usedNumbers.has(i)) return { number: i, allFull: false }
   }
+}
+
+/** Regenerate table ID — creates a new random ID, old QR code stops working. */
+export function regenerateTableId(storeId: string, tableId: string): Table | { error: string } {
+  const table = tableStore.getById(tableId)
+  if (!table || table.storeId !== storeId) return { error: 'Table not found' }
+  if (table.status === 'occupied') return { error: 'Cannot regenerate QR for an occupied table' }
+
+  // Create new table record with random ID, copy all data
+  const newId = `${storeId}-t-${uuid().slice(0, 8)}`
+  const newTable: Table = { ...table, id: newId }
+  tableStore.create(newTable)
+
+  // Delete old record
+  tableStore.delete(tableId)
+
+  return newTable
 }
 
 /** Settle a table: mark all non-completed orders as completed, reset table to idle */

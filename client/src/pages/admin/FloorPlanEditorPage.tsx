@@ -11,7 +11,7 @@ import { FloorCanvas } from '@/components/FloorCanvas'
 import type { Table } from '@qr-order/shared'
 
 const DEFAULT_W = 100, DEFAULT_H = 80
-const ZONES = ['Main', 'Outdoor', 'Bar', 'VIP']
+const DEFAULT_ZONES = ['Main', 'Outdoor', 'Bar', 'VIP']
 const SHAPES = ['square', 'round', 'long'] as const
 const SHAPE_LABELS: Record<string, string> = { square: '■ Square', round: '● Round', long: '▬ Long' }
 
@@ -35,12 +35,20 @@ export default function FloorPlanEditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [zones, setZones] = useState<string[]>(DEFAULT_ZONES)
+  const [activeZone, setActiveZone] = useState<string>('all')
   const selected = tables.find(tb => tb.id === selectedId) ?? null
 
   useEffect(() => {
     if (!storeId) return
     api.getTables(storeId)
-      .then(data => { setTables(autoArrange(data)); setLoading(false) })
+      .then(data => {
+        setTables(autoArrange(data))
+        // Collect existing zones from table data
+        const existingZones = new Set(data.map(t => t.zone).filter(Boolean) as string[])
+        setZones(prev => [...new Set([...prev, ...existingZones])])
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [storeId])
 
@@ -94,10 +102,15 @@ export default function FloorPlanEditorPage() {
   return (
     <div className="flex h-full">
       <div className="flex-1 flex flex-col min-w-0">
-        <EditorToolbar addTable={addTable} saveLayout={saveLayout} saving={saving} t={t} />
+        <EditorToolbar addTable={addTable} saveLayout={saveLayout} saving={saving} t={t}
+          zones={zones} activeZone={activeZone} setActiveZone={setActiveZone}
+          onAddZone={() => {
+            const name = prompt('New zone/floor name:')
+            if (name?.trim()) setZones(prev => [...new Set([...prev, name.trim()])])
+          }} />
         <div className="flex-1 overflow-auto p-2">
           <FloorCanvas
-            tables={tables}
+            tables={activeZone === 'all' ? tables : tables.filter(tb => tb.zone === activeZone)}
             editable
             selectedTableId={selectedId}
             onTableClick={handleTableClick}
@@ -118,19 +131,35 @@ export default function FloorPlanEditorPage() {
 }
 
 /* ---- Editor Toolbar ---- */
-function EditorToolbar({ addTable, saveLayout, saving, t }: {
+function EditorToolbar({ addTable, saveLayout, saving, t, zones, activeZone, setActiveZone, onAddZone }: {
   addTable: () => void; saveLayout: () => void; saving: boolean
   t: ReturnType<typeof useT>['t']
+  zones: string[]; activeZone: string; setActiveZone: (z: string) => void; onAddZone: () => void
 }) {
   return (
-    <div className="flex items-center gap-2 p-3 border-b flex-wrap">
-      <h1 className="text-lg font-bold mr-auto">{t.nav.floorPlan} Editor</h1>
-      <Button size="sm" variant="outline" onClick={addTable}>
-        <Plus className="h-4 w-4 mr-1" />{t.tables.addTable}
-      </Button>
-      <Button size="sm" onClick={saveLayout} disabled={saving}>
-        <Save className="h-4 w-4 mr-1" />{saving ? t.common.saving : t.common.save}
-      </Button>
+    <div className="border-b">
+      <div className="flex items-center gap-2 p-3 flex-wrap">
+        <h1 className="text-lg font-bold mr-auto">{t.nav.floorPlan}</h1>
+        <Button size="sm" variant="outline" onClick={addTable}>
+          <Plus className="h-4 w-4 mr-1" />{t.tables.addTable}
+        </Button>
+        <Button size="sm" onClick={saveLayout} disabled={saving}>
+          <Save className="h-4 w-4 mr-1" />{saving ? t.common.saving : t.common.save}
+        </Button>
+      </div>
+      <div className="flex items-center gap-1 px-3 pb-2 flex-wrap">
+        <Button size="sm" variant={activeZone === 'all' ? 'default' : 'outline'} onClick={() => setActiveZone('all')}>
+          {t.floorPlan.allZone}
+        </Button>
+        {zones.map(z => (
+          <Button key={z} size="sm" variant={activeZone === z ? 'default' : 'outline'} onClick={() => setActiveZone(z)}>
+            {z}
+          </Button>
+        ))}
+        <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={onAddZone}>
+          <Plus className="h-3 w-3 mr-1" />Zone
+        </Button>
+      </div>
     </div>
   )
 }

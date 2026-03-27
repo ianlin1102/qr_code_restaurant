@@ -155,6 +155,11 @@ export const api = {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ''}` },
     }),
 
+  regenerateQr: (storeId: string, tableId: string) =>
+    fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}/regenerate-qr`, {
+      method: 'POST',
+    }),
+
   getNextTableNumber: (storeId: string) =>
     fetchJSON<{ number: number; allFull: boolean }>(`/stores/${storeId}/tables/next-number`, {
       headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ''}` },

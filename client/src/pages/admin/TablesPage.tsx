@@ -332,6 +332,19 @@ export default function TablesPage() {
               <ActionBtn icon={CheckCircle2} label={t.bill?.title || 'Bill'} onClick={() => setBillDialogOpen(true)} />
             )}
             <ActionBtn icon={QrCode} label={t.tables.printQr} onClick={handlePrintQr} />
+            {selected?.status !== 'occupied' && (
+              <Button variant="outline" size="sm"
+                onClick={async () => {
+                  if (!confirm('Regenerate QR code? The old QR code will stop working.')) return
+                  try {
+                    const updated = await api.regenerateQr(storeId!, selected!.id)
+                    fetchData()
+                    setSelected(updated)
+                  } catch (e) { console.error(e) }
+                }}>
+                🔄 New QR
+              </Button>
+            )}
             {selected?.enabled && selected.status !== 'occupied' && (
               <Button variant="outline" size="sm" className="text-red-600"
                 onClick={async () => {

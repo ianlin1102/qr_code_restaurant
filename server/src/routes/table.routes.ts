@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getTables, getTableById, enableTable, disableTable, updateTable, settleTable, closeTable, getNextAvailableNumber } from '../controllers/table.service.js'
+import { getTables, getTableById, enableTable, disableTable, updateTable, settleTable, closeTable, getNextAvailableNumber, regenerateTableId } from '../controllers/table.service.js'
 import { storeStore } from '../controllers/store.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 
@@ -61,6 +61,16 @@ router.put('/:tableId', requireAuth, (req, res) => {
 // POST disable table (admin) — replaces DELETE /:tableId
 router.post('/:tableId/disable', requireAuth, (req, res) => {
   const result = disableTable(req.params.storeId, req.params.tableId)
+  if ('error' in result) {
+    res.status(400).json(result)
+    return
+  }
+  res.json(result)
+})
+
+// POST regenerate QR code (admin) — new random ID, old QR stops working
+router.post('/:tableId/regenerate-qr', requireAuth, (req, res) => {
+  const result = regenerateTableId(req.params.storeId, req.params.tableId)
   if ('error' in result) {
     res.status(400).json(result)
     return

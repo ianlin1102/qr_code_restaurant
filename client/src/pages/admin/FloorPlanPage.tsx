@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, AlertTriangle, Info } from 'lucide-react'
+import { Plus, AlertTriangle, Info, Pencil } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { useT } from '@/i18n/useT'
@@ -29,7 +30,9 @@ function hasPlacedTables(tables: Table[]): boolean {
 
 export default function FloorPlanPage() {
   const { t } = useT()
+  const navigate = useNavigate()
   const storeId = useAuthStore(s => s.user?.storeId) ?? ''
+  const isOwner = useAuthStore(s => s.isOwner)
 
   const [tables, setTables] = useState<Table[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -77,7 +80,8 @@ export default function FloorPlanPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <CenterTopBar zones={zones} activeZone={activeZone} setActiveZone={setActiveZone}
           elapsed={elapsed} t={t} occupancyPct={occupancyPct} idleCount={idleCount}
-          activeOrderCount={activeOrderCount} setActiveTab={setActiveTab} />
+          activeOrderCount={activeOrderCount} setActiveTab={setActiveTab}
+          onEditLayout={isOwner() ? () => navigate('/admin/floor-plan/editor') : undefined} />
         <div className="flex-1 overflow-auto p-4">
           {useSvgCanvas ? (
             <FloorCanvas
@@ -115,10 +119,10 @@ export default function FloorPlanPage() {
 }
 
 /* ---- Center Top Bar ---- */
-function CenterTopBar({ zones, activeZone, setActiveZone, elapsed, t, occupancyPct, idleCount, activeOrderCount, setActiveTab }: {
+function CenterTopBar({ zones, activeZone, setActiveZone, elapsed, t, occupancyPct, idleCount, activeOrderCount, setActiveTab, onEditLayout }: {
   zones: string[]; activeZone: string; setActiveZone: (z: string) => void; elapsed: number
   t: T; occupancyPct: number; idleCount: number; activeOrderCount: number
-  setActiveTab: (t: 'orders' | 'waitlist') => void
+  setActiveTab: (t: 'orders' | 'waitlist') => void; onEditLayout?: () => void
 }) {
   return (
     <div className="glass">
@@ -155,6 +159,11 @@ function CenterTopBar({ zones, activeZone, setActiveZone, elapsed, t, occupancyP
           </Button>
         ))}
         <div className="flex-1" />
+        {onEditLayout && (
+          <Button size="sm" variant="outline" onClick={onEditLayout}>
+            <Pencil className="size-3 mr-1" />{t.common.edit}
+          </Button>
+        )}
         <Button size="sm" variant="outline" onClick={() => setActiveTab('waitlist')}>
           <Plus className="size-3 mr-1" />{t.waitlist.addEntry}
         </Button>
