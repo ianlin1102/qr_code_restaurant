@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import MenuItemForm, { blankItem } from '@/components/MenuItemForm'
 import MenuItemTable from '@/components/MenuItemTable'
+import { CsvImportDialog } from '@/components/CsvImportDialog'
 import type { MenuItem, Category } from '@qr-order/shared'
 
 const CAT_ICONS: Record<string, string> = {
@@ -37,6 +38,7 @@ export default function MenuManagePage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Partial<MenuItem> | null>(null)
   const [isNew, setIsNew] = useState(false)
+  const [csvOpen, setCsvOpen] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -68,6 +70,24 @@ export default function MenuManagePage() {
   const closeForm = () => { setFormOpen(false); setEditingItem(null) }
   const onSaved = () => { closeForm(); fetchData() }
 
+  const handleExport = () => {
+    if (!items.length) return
+    const header = 'name,nameEn,price,category,description'
+    const catMap = new Map(categories.map(c => [c.id, c.name]))
+    const escape = (s?: string) => s ? `"${s.replace(/"/g, '""')}"` : ''
+    const csvRows = items.map(item => {
+      const cat = catMap.get(item.categoryId) || ''
+      const price = (item.price / 100).toFixed(2)
+      return `${escape(item.name)},${escape(item.nameEn)},${price},${escape(cat)},${escape(item.description)}`
+    })
+    const csv = [header, ...csvRows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'menu-export.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
   if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
 
   return (
@@ -86,6 +106,12 @@ export default function MenuManagePage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCsvOpen(true)}>
+                {t.csv?.importBtn || 'Import CSV'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                {t.csv?.exportBtn || 'Export CSV'}
+              </Button>
               <Button className="bg-primary hover:bg-primary/90" onClick={handleAdd}>
                 <Plus className="size-4 mr-1" />{t.menu.newItem}
               </Button>
@@ -129,6 +155,8 @@ export default function MenuManagePage() {
       {/* Dialogs */}
       <MenuItemForm item={editingItem} categories={categories} storeId={storeId}
         open={formOpen} isNew={isNew} onClose={closeForm} onSaved={onSaved} />
+      <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)}
+        categories={categories} onImported={fetchData} t={t} />
     </div>
   )
 }

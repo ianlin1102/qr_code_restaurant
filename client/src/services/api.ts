@@ -1,4 +1,4 @@
-import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, SplitBillRequest, SplitBillSession, AuthUser } from '@qr-order/shared'
+import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, SplitBillRequest, SplitBillSession, AuthUser, Bill, Split } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
 const BASE = '/api'
@@ -101,6 +101,12 @@ export const api = {
   deleteMenuItem: (storeId: string, itemId: string) =>
     fetchJSON<void>(`/stores/${storeId}/menu/items/${itemId}`, {
       method: 'DELETE',
+    }),
+
+  batchImportMenuItems: (storeId: string, items: Array<{ name: string; nameEn?: string; price: number; categoryId: string; description?: string; descriptionEn?: string }>) =>
+    fetchJSON<{ created: MenuItem[]; skipped: Array<{ row: number; reason: string }> }>(`/stores/${storeId}/menu/items/batch`, {
+      method: 'POST',
+      body: JSON.stringify({ items }),
     }),
 
   // Admin: Categories
@@ -260,6 +266,41 @@ export const api = {
   reprintOrder: (storeId: string, orderId: string) =>
     fetchJSON<{ success: boolean }>(`/stores/${storeId}/printer/print/${orderId}`, {
       method: 'POST',
+    }),
+
+  // Bills
+  getActiveBill: (storeId: string, tableId: string) =>
+    fetchJSON<(Bill & { splits: Split[] }) | null>(`/stores/${storeId}/bills?tableId=${tableId}`),
+
+  getBill: (storeId: string, billId: string) =>
+    fetchJSON<Bill & { splits: Split[] }>(`/stores/${storeId}/bills/${billId}`),
+
+  createBillSplits: (storeId: string, billId: string, method: string, count?: number) =>
+    fetchJSON<Split[]>(`/stores/${storeId}/bills/${billId}/splits`, {
+      method: 'POST',
+      body: JSON.stringify({ method, count }),
+    }),
+
+  markSplitPaid: (storeId: string, billId: string, splitId: string) =>
+    fetchJSON<{ bill: Bill; split: Split }>(`/stores/${storeId}/bills/${billId}/splits/${splitId}`, {
+      method: 'PATCH',
+    }),
+
+  applyBillCoupon: (storeId: string, billId: string, couponId: string, couponCode: string, discountType: string, discountValue: number) =>
+    fetchJSON<Bill>(`/stores/${storeId}/bills/${billId}/apply-coupon`, {
+      method: 'POST',
+      body: JSON.stringify({ couponId, couponCode, discountType, discountValue }),
+    }),
+
+  removeBillCoupon: (storeId: string, billId: string) =>
+    fetchJSON<Bill>(`/stores/${storeId}/bills/${billId}/coupon`, {
+      method: 'DELETE',
+    }),
+
+  settleBill: (storeId: string, billId: string, paidBy?: string) =>
+    fetchJSON<Bill>(`/stores/${storeId}/bills/${billId}/settle`, {
+      method: 'POST',
+      body: JSON.stringify({ paidBy }),
     }),
 
   // Upload
