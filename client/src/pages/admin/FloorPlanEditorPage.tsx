@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Save, Trash2 } from 'lucide-react'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
@@ -52,34 +52,34 @@ export default function FloorPlanEditorPage() {
       .catch(() => setLoading(false))
   }, [storeId])
 
-  const handleTableMove = (tableId: string, x: number, y: number) => {
+  const handleTableMove = useCallback((tableId: string, x: number, y: number) => {
     setTables(prev => prev.map(tb => (tb.id === tableId ? { ...tb, x, y } : tb)))
-  }
+  }, [])
 
-  const handleTableClick = (table: Table) => {
+  const handleTableClick = useCallback((table: Table) => {
     setSelectedId(table.id)
-  }
+  }, [])
 
-  const addTable = async () => {
+  const addTable = useCallback(async () => {
     if (!storeId) return
     const { number } = await api.getNextTableNumber(storeId)
     const created = await api.enableTable(storeId, number, `Table ${tables.length + 1}`)
     setTables(prev => [...prev, { ...created, x: 20, y: 20, width: DEFAULT_W, height: DEFAULT_H }])
     setSelectedId(created.id)
-  }
+  }, [storeId, tables.length])
 
-  const updateField = (field: keyof Table, value: string | number) => {
+  const updateField = useCallback((field: keyof Table, value: string | number) => {
     setTables(prev => prev.map(tb => (tb.id === selectedId ? { ...tb, [field]: value } : tb)))
-  }
+  }, [selectedId])
 
-  const deleteSelected = async () => {
+  const deleteSelected = useCallback(async () => {
     if (!storeId || !selectedId) return
     await api.disableTable(storeId, selectedId)
     setTables(prev => prev.filter(tb => tb.id !== selectedId))
     setSelectedId(null)
-  }
+  }, [storeId, selectedId])
 
-  const saveLayout = async () => {
+  const saveLayout = useCallback(async () => {
     if (!storeId) return
     setSaving(true)
     try {
@@ -89,7 +89,7 @@ export default function FloorPlanEditorPage() {
         capacity: tb.capacity, x: tb.x, y: tb.y, width: tb.width, height: tb.height,
       })))
     } finally { setSaving(false) }
-  }
+  }, [storeId, tables])
 
   if (!isOwner()) return (
     <div className="flex items-center justify-center h-64">
@@ -128,14 +128,27 @@ export default function FloorPlanEditorPage() {
         </div>
       </div>
 
-      {/* Properties Panel */}
-      <PropertiesPanel
-        selected={selected}
-        updateField={updateField}
-        deleteSelected={deleteSelected}
-        t={t}
-        zones={zones}
-      />
+      {/* Properties Panel — desktop only */}
+      <div className="hidden md:block">
+        <PropertiesPanel
+          selected={selected}
+          updateField={updateField}
+          deleteSelected={deleteSelected}
+          t={t}
+          zones={zones}
+        />
+      </div>
+
+      {/* Mobile bottom bar — shown only when a table is selected */}
+      {selected && (
+        <MobileBottomBar
+          selected={selected}
+          updateField={updateField}
+          deleteSelected={deleteSelected}
+          zones={zones}
+          t={t}
+        />
+      )}
     </div>
   )
 }
@@ -184,7 +197,7 @@ function EditorToolbar({ addTable, saveLayout, saving, t, zones, activeZone, set
   )
 }
 
-/* ---- Properties Panel ---- */
+/* ---- Properties Panel (desktop sidebar) ---- */
 function PropertiesPanel({ selected, updateField, deleteSelected, t, zones }: {
   selected: Table | null
   updateField: (field: keyof Table, value: string | number) => void
@@ -239,6 +252,55 @@ function PropertiesPanel({ selected, updateField, deleteSelected, t, zones }: {
       </>) : (
         <p className="text-sm text-muted-foreground">{t.tables.selectTableHint}</p>
       )}
+    </div>
+  )
+}
+
+/* ---- Mobile Bottom Bar (visible on small screens when a table is selected) ---- */
+function MobileBottomBar({ selected, updateField, deleteSelected, zones, t }: {
+  selected: Table
+  updateField: (field: keyof Table, value: string | number) => void
+  deleteSelected: () => void
+  zones: string[]
+  t: ReturnType<typeof useT>['t']
+}) {
+  return (
+    <div className="md:hidden fixed bottom-0 inset-x-0 bg-background border-t shadow-lg p-3 z-50">
+      <div className="flex items-center gap-2 max-w-screen-sm mx-auto">
+        <span className="text-sm font-medium truncate min-w-0">{selected.name}</span>
+
+        {/* Zone selector */}
+        <Select value={selected.zone ?? 'Main'} onValueChange={v => updateField('zone', v)}>
+          <SelectTrigger className="w-24 h-9 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {zones.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        {/* Shape buttons */}
+        <div className="flex gap-1">
+          {SHAPES.map(s => (
+            <button
+              key={s}
+              onClick={() => updateField('shape', s)}
+              className={cn(
+                'px-2 py-1.5 text-xs rounded border transition-colors',
+                (selected.shape ?? 'square') === s
+                  ? 'bg-blue-50 border-blue-400 text-blue-700 font-medium'
+                  : 'border-gray-200'
+              )}
+            >
+              {SHAPE_LABELS[s].charAt(0)}
+            </button>
+          ))}
+        </div>
+
+        {/* Delete */}
+        <Button size="sm" variant="destructive" className="ml-auto shrink-0" onClick={deleteSelected}>
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">{t.common.delete}</span>
+        </Button>
+      </div>
     </div>
   )
 }

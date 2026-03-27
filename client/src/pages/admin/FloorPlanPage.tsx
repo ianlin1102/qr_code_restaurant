@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Plus, AlertTriangle, Info, Pencil } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
@@ -43,6 +43,7 @@ export default function FloorPlanPage() {
   const [lastUpdated, setLastUpdated] = useState(new Date())
   const [loading, setLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
+  const [mobilePanel, setMobilePanel] = useState<'map' | 'orders'>('map')
 
   const fetchData = useCallback(async () => {
     if (!storeId) return
@@ -55,13 +56,13 @@ export default function FloorPlanPage() {
   useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL_INTERVAL); return () => clearInterval(id) }, [fetchData])
   useEffect(() => { const id = setInterval(() => setElapsed(secondsAgo(lastUpdated)), 1000); return () => clearInterval(id) }, [lastUpdated])
 
-  const enabledTables = tables.filter(tb => tb.enabled)
-  const occupiedCount = enabledTables.filter(tb => tb.status === 'occupied').length
+  const enabledTables = useMemo(() => tables.filter(tb => tb.enabled), [tables])
+  const occupiedCount = useMemo(() => enabledTables.filter(tb => tb.status === 'occupied').length, [enabledTables])
   const idleCount = enabledTables.length - occupiedCount
   const occupancyPct = enabledTables.length ? Math.round(occupiedCount / enabledTables.length * 100) : 0
-  const activeOrderCount = orders.filter(o => o.status === 'pending' || o.status === 'preparing').length
-  const zones = ['all', ...Array.from(new Set(enabledTables.map(tb => tb.zone).filter(Boolean)))] as string[]
-  const filteredTables = activeZone === 'all' ? enabledTables : enabledTables.filter(tb => tb.zone === activeZone)
+  const activeOrderCount = useMemo(() => orders.filter(o => o.status === 'pending' || o.status === 'preparing').length, [orders])
+  const zones = useMemo(() => ['all', ...Array.from(new Set(enabledTables.map(tb => tb.zone).filter(Boolean)))] as string[], [enabledTables])
+  const filteredTables = useMemo(() => activeZone === 'all' ? enabledTables : enabledTables.filter(tb => tb.zone === activeZone), [enabledTables, activeZone])
 
   const handleTableClick = (table: Table) => { setSelectedTable(table); setDetailOpen(true) }
   const handleOrderClick = (order: Order) => {
@@ -75,9 +76,41 @@ export default function FloorPlanPage() {
   if (loading && !tables.length) return <div className="flex items-center justify-center h-full"><p className="text-muted-foreground">{t.floorPlan.loading}</p></div>
 
   return (
-    <div className="flex h-full bg-background">
-      {/* Center Panel */}
-      <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex flex-col md:flex-row h-full bg-background">
+      {/* Mobile panel toggle */}
+      <div className="md:hidden flex border-b bg-card">
+        {(['map', 'orders'] as const).map(panel => (
+          <button key={panel} onClick={() => setMobilePanel(panel)}
+            className={cn('flex-1 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors',
+              mobilePanel === panel ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+            {panel === 'map' ? t.floorPlan.allZone : t.activeOrders.title}
+          </button>
+        ))}
+      </div>
+
+      {/* Mobile: Orders/Waitlist panel (shown when "Orders" tab selected) */}
+      {mobilePanel === 'orders' && (
+        <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+          <div className="flex border-b bg-card">
+            {(['orders', 'waitlist'] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={cn('flex-1 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+                {tab === 'orders' ? t.activeOrders.title : t.waitlist.title}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {activeTab === 'orders'
+              ? <ActiveOrdersSidebar storeId={storeId} onOrderClick={handleOrderClick} />
+              : <WaitlistPanel storeId={storeId} />}
+          </div>
+          <UrgentNotifications tables={tables} orders={orders} t={t} />
+        </div>
+      )}
+
+      {/* Center Panel (always visible on desktop, hidden on mobile when orders panel is open) */}
+      <div className={cn('flex-1 flex flex-col min-w-0', mobilePanel === 'orders' && 'hidden md:flex')}>
         <CenterTopBar zones={zones} activeZone={activeZone} setActiveZone={setActiveZone}
           elapsed={elapsed} t={t} occupancyPct={occupancyPct} idleCount={idleCount}
           activeOrderCount={activeOrderCount} setActiveTab={setActiveTab}
@@ -94,8 +127,8 @@ export default function FloorPlanPage() {
           )}
         </div>
       </div>
-      {/* Right Sidebar */}
-      <div className="w-80 shrink-0 border-l bg-card flex flex-col hidden md:flex">
+      {/* Right Sidebar (desktop only) */}
+      <div className="w-80 shrink-0 border-l bg-card hidden md:flex flex-col">
         <div className="flex border-b">
           {(['orders', 'waitlist'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
@@ -127,8 +160,8 @@ function CenterTopBar({ zones, activeZone, setActiveZone, elapsed, t, occupancyP
   return (
     <div className="glass">
       {/* Stats row */}
-      <div className="flex items-center gap-4 px-4 py-3">
-        <div className="flex items-center gap-6 flex-1">
+      <div className="flex flex-wrap items-center gap-4 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-semibold text-muted-foreground tracking-wider">{t.floorPlan.occupancy}</span>
             <span className={cn('text-sm font-bold', occupancyPct >= 80 ? 'text-yellow-600' : 'text-green-600')}>

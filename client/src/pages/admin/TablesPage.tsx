@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useT } from '@/i18n/useT'
 import {
   Armchair, Plus, Printer, ArrowLeftRight, Split,
@@ -76,22 +76,22 @@ export default function TablesPage() {
     }).catch(() => {})
   }, [storeId])
 
-  // Derived
-  const activeOrders = selected
+  // Derived (memoized)
+  const activeOrders = useMemo(() => selected
     ? orders.filter(o => o.tableId === selected.id && o.status !== 'closed' && o.status !== 'completed')
-    : []
-  const historyOrders = selected
+    : [], [selected, orders])
+  const historyOrders = useMemo(() => selected
     ? orders.filter(o => o.tableId === selected.id && (o.status === 'closed' || o.status === 'completed'))
-    : []
+    : [], [selected, orders])
   const displayOrders = showHistory ? historyOrders : activeOrders
-  const allItems = activeOrders.flatMap(o => o.items)
-  const subtotal = activeOrders.reduce((s, o) => s + o.totalPrice, 0)
+  const allItems = useMemo(() => activeOrders.flatMap(o => o.items), [activeOrders])
+  const subtotal = useMemo(() => activeOrders.reduce((s, o) => s + o.totalPrice, 0), [activeOrders])
   const currentOrder = activeOrders[0] ?? null
   const elapsedMs = activeOrders.length
     ? Date.now() - new Date(activeOrders[activeOrders.length - 1].createdAt).getTime() : 0
 
   const handleSelect = (tb: Table) => { setSelected(tb); setShowHistory(false); setMobileDropdown(false) }
-  const refresh = () => { fetchData(); setCloseOpen(false); setTransferOpen(false); setSplitOpen(false) }
+  const refresh = useCallback(() => { fetchData(); setCloseOpen(false); setTransferOpen(false); setSplitOpen(false) }, [fetchData])
 
   const updateBaseUrl = (url: string) => {
     setBaseUrl(url)

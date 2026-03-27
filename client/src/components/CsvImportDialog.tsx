@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
@@ -85,7 +85,7 @@ export function CsvImportDialog({ open, onClose, categories, onImported, t }: Pr
     reader.readAsText(file)
   }
 
-  const buildItems = () => {
+  const buildItems = useMemo(() => {
     const catMap = new Map(categories.map(c => [c.name, c.id]))
     const catMapEn = new Map(categories.filter(c => c.nameEn).map(c => [c.nameEn!, c.id]))
 
@@ -99,13 +99,13 @@ export function CsvImportDialog({ open, onClose, categories, onImported, t }: Pr
       const categoryId = catMap.get(catName) || catMapEn.get(catName) || ''
       return { name, nameEn, price, categoryId, description }
     })
-  }
+  }, [rows, mapping, categories])
 
   const handleImport = async () => {
     if (!storeId) return
     setImporting(true)
     try {
-      const items = buildItems()
+      const items = buildItems
       const res = await api.batchImportMenuItems(storeId, items)
       setResult({ created: res.created.length, skipped: res.skipped })
       setStep('result')
@@ -127,7 +127,7 @@ export function CsvImportDialog({ open, onClose, categories, onImported, t }: Pr
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-semibold">{t.csv?.importTitle || 'Import CSV'}</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">

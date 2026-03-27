@@ -213,7 +213,7 @@ function OverviewActions({ bill, splitCount, setSplitCount, loading, onPayFull, 
           <Input
             type="number" min={2} max={20} value={splitCount}
             onChange={e => setSplitCount(Math.max(2, parseInt(e.target.value) || 2))}
-            className="w-16 h-8 text-sm"
+            className="w-20 h-10 text-sm"
           />
           <span className="text-sm text-muted-foreground">
             ({formatPriceUSD(Math.ceil(bill.totalDue / splitCount))} {ts.perPerson || 'each'})
@@ -238,7 +238,7 @@ function SplitList({ splits, onMarkPaid, onBack, tb, ts, tc }: {
         {paidCount}/{splits.length} {ts.paid || 'paid'}
       </p>
       {splits.map((split, i) => (
-        <div key={split.id} className="flex items-center justify-between border rounded px-3 py-2">
+        <div key={split.id} className="flex items-center justify-between border rounded px-3 py-3">
           <div>
             <span className="text-sm font-medium">
               {(ts.person || 'Person {{n}}').replace('{{n}}', String(i + 1))}

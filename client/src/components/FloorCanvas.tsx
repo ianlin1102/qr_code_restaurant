@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useMemo } from 'react'
 import type { Table } from '@qr-order/shared'
 import { FloorTableShape } from './FloorTableShape'
 
@@ -23,13 +23,17 @@ export function FloorCanvas({
     id: string; startX: number; startY: number; origX: number; origY: number
   } | null>(null)
 
-  const handleMouseDown = (table: Table, e: React.MouseEvent) => {
-    if (!editable || !onTableMove) return
-    e.preventDefault()
+  /* --- Shared helpers for mouse & touch --- */
+  const toSvgPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current!
     const pt = svg.createSVGPoint()
-    pt.x = e.clientX; pt.y = e.clientY
-    const svgPt = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    pt.x = clientX; pt.y = clientY
+    return pt.matrixTransform(svg.getScreenCTM()!.inverse())
+  }
+
+  const startDrag = (table: Table, clientX: number, clientY: number) => {
+    if (!editable || !onTableMove) return
+    const svgPt = toSvgPoint(clientX, clientY)
     dragRef.current = {
       id: table.id,
       startX: svgPt.x,
@@ -39,12 +43,9 @@ export function FloorCanvas({
     }
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const moveDrag = (clientX: number, clientY: number) => {
     if (!dragRef.current || !svgRef.current) return
-    const svg = svgRef.current
-    const pt = svg.createSVGPoint()
-    pt.x = e.clientX; pt.y = e.clientY
-    const svgPt = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    const svgPt = toSvgPoint(clientX, clientY)
     const dx = svgPt.x - dragRef.current.startX
     const dy = svgPt.y - dragRef.current.startY
     const newX = Math.round((dragRef.current.origX + dx) / GRID_SIZE) * GRID_SIZE
@@ -52,23 +53,46 @@ export function FloorCanvas({
     onTableMove?.(dragRef.current.id, Math.max(0, newX), Math.max(0, newY))
   }
 
-  const handleMouseUp = () => {
-    dragRef.current = null
-  }
+  const endDrag = () => { dragRef.current = null }
 
-  const gridLines: React.ReactElement[] = []
-  for (let x = 0; x <= CANVAS_W; x += GRID_SIZE) {
-    gridLines.push(
-      <line key={`v${x}`} x1={x} y1={0} x2={x} y2={CANVAS_H}
-        stroke="#f0f0f0" strokeWidth={0.5} />,
-    )
+  /* --- Mouse handlers --- */
+  const handleMouseDown = (table: Table, e: React.MouseEvent) => {
+    e.preventDefault()
+    startDrag(table, e.clientX, e.clientY)
   }
-  for (let y = 0; y <= CANVAS_H; y += GRID_SIZE) {
-    gridLines.push(
-      <line key={`h${y}`} x1={0} y1={y} x2={CANVAS_W} y2={y}
-        stroke="#f0f0f0" strokeWidth={0.5} />,
-    )
+  const handleMouseMove = (e: React.MouseEvent) => moveDrag(e.clientX, e.clientY)
+  const handleMouseUp = () => endDrag()
+
+  /* --- Touch handlers --- */
+  const handleTouchStart = (table: Table, e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    startDrag(table, touch.clientX, touch.clientY)
   }
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragRef.current) return
+    e.preventDefault()           // prevent scroll while dragging
+    const touch = e.touches[0]
+    moveDrag(touch.clientX, touch.clientY)
+  }
+  const handleTouchEnd = () => endDrag()
+
+  /* --- Memoized grid lines (static, never changes) --- */
+  const gridLines = useMemo(() => {
+    const lines: React.ReactElement[] = []
+    for (let x = 0; x <= CANVAS_W; x += GRID_SIZE) {
+      lines.push(
+        <line key={`v${x}`} x1={x} y1={0} x2={x} y2={CANVAS_H}
+          stroke="#f0f0f0" strokeWidth={0.5} />,
+      )
+    }
+    for (let y = 0; y <= CANVAS_H; y += GRID_SIZE) {
+      lines.push(
+        <line key={`h${y}`} x1={0} y1={y} x2={CANVAS_W} y2={y}
+          stroke="#f0f0f0" strokeWidth={0.5} />,
+      )
+    }
+    return lines
+  }, [])
 
   const placedTables = tables.filter(t => t.x != null && t.y != null)
 
@@ -77,15 +101,20 @@ export function FloorCanvas({
       ref={svgRef}
       viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
       className={`w-full border rounded-lg bg-white ${className || ''}`}
+      style={{ minHeight: 300 }}
       onMouseMove={editable ? handleMouseMove : undefined}
       onMouseUp={editable ? handleMouseUp : undefined}
       onMouseLeave={editable ? handleMouseUp : undefined}
+      onTouchMove={editable ? handleTouchMove : undefined}
+      onTouchEnd={editable ? handleTouchEnd : undefined}
+      onTouchCancel={editable ? handleTouchEnd : undefined}
     >
       {gridLines}
       {placedTables.map(table => (
         <g
           key={table.id}
           onMouseDown={editable ? (e) => handleMouseDown(table, e) : undefined}
+          onTouchStart={editable ? (e) => handleTouchStart(table, e) : undefined}
         >
           <FloorTableShape
             table={table}

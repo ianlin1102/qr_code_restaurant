@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
@@ -104,20 +104,24 @@ export default function MenuPage() {
     return () => clearInterval(id)
   }, [storeId, cleanupUnavailableCartItems])
 
-  // Collapse/expand header on scroll (mobile browser address-bar behavior)
-  useEffect(() => {
+  // Stable scroll handler — useCallback avoids re-attaching on every menu poll
+  const handleScroll = useCallback(() => {
     const viewport = menuScrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null
     if (!viewport) return
     const THRESHOLD = 10
-    const handleScroll = () => {
-      const y = viewport.scrollTop
-      if (y - lastScrollY.current > THRESHOLD) setHeaderCollapsed(true)
-      else if (lastScrollY.current - y > THRESHOLD) setHeaderCollapsed(false)
-      lastScrollY.current = y
-    }
+    const y = viewport.scrollTop
+    if (y - lastScrollY.current > THRESHOLD) setHeaderCollapsed(true)
+    else if (lastScrollY.current - y > THRESHOLD) setHeaderCollapsed(false)
+    lastScrollY.current = y
+  }, [])
+
+  // Attach scroll listener once after menu loads (not on every menu change)
+  useEffect(() => {
+    const viewport = menuScrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null
+    if (!viewport) return
     viewport.addEventListener('scroll', handleScroll, { passive: true })
     return () => viewport.removeEventListener('scroll', handleScroll)
-  }, [menu])
+  }, [handleScroll, loading])
 
   const scrollToCategory = (categoryId: string) => {
     setActiveCategory(categoryId)
@@ -152,15 +156,16 @@ export default function MenuPage() {
   const searchLower = searchQuery.trim().toLowerCase()
 
   // Filtered categories for search mode (bilingual: items + category names)
-  const filteredCategories = isSearching
-    ? menu.categories.map(cat => {
-        const catMatch = cat.name.toLowerCase().includes(searchLower) || cat.nameEn?.toLowerCase().includes(searchLower)
-        const matchItem = (item: MenuItem) =>
-          item.name.toLowerCase().includes(searchLower) || item.nameEn?.toLowerCase().includes(searchLower) ||
-          item.description?.toLowerCase().includes(searchLower) || item.descriptionEn?.toLowerCase().includes(searchLower)
-        return { ...cat, items: catMatch ? cat.items : cat.items.filter(matchItem) }
-      }).filter(cat => cat.items.length > 0)
-    : menu.categories
+  const filteredCategories = useMemo(() => {
+    if (!isSearching) return menu.categories
+    return menu.categories.map(cat => {
+      const catMatch = cat.name.toLowerCase().includes(searchLower) || cat.nameEn?.toLowerCase().includes(searchLower)
+      const matchItem = (item: MenuItem) =>
+        item.name.toLowerCase().includes(searchLower) || item.nameEn?.toLowerCase().includes(searchLower) ||
+        item.description?.toLowerCase().includes(searchLower) || item.descriptionEn?.toLowerCase().includes(searchLower)
+      return { ...cat, items: catMatch ? cat.items : cat.items.filter(matchItem) }
+    }).filter(cat => cat.items.length > 0)
+  }, [menu.categories, isSearching, searchLower])
 
   const itemCount = totalItems()
   const priceTotal = totalPrice()

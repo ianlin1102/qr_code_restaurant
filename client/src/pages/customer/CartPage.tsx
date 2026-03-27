@@ -196,7 +196,7 @@ export default function CartPage() {
               size="lg"
               onClick={handleCheckout}
               disabled={submitting}
-              className="min-w-[160px] min-h-[48px] bg-primary hover:bg-primary/90"
+              className="min-w-[120px] sm:min-w-[160px] min-h-[48px] bg-primary hover:bg-primary/90"
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
