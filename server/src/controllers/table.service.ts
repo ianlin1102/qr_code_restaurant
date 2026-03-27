@@ -1,12 +1,60 @@
-import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
 import { orderStore } from './order.service.js'
+import { getStore } from './store.service.js'
 import type { Table } from '@qr-order/shared'
 
 export const tableStore = new JsonStore<Table>('tables.json')
 
-export function getTables(storeId: string): Table[] {
-  return tableStore.getByField('storeId', storeId)
+const INITIAL_BATCH = 20
+
+/** One-time migration: assign `number` and `enabled` to existing tables that lack them. */
+function migrateExistingTables(storeId: string): void {
+  const tables = tableStore.getByField('storeId', storeId)
+  let nextNumber = 1
+  for (const t of tables) {
+    if (t.number && t.number >= nextNumber) nextNumber = t.number + 1
+  }
+  for (const t of tables) {
+    const updates: Partial<Table> = {}
+    if (t.number == null) {
+      updates.number = nextNumber++
+    }
+    if (t.enabled == null) {
+      updates.enabled = true
+    }
+    if (Object.keys(updates).length > 0) {
+      tableStore.update(t.id, updates)
+    }
+  }
+}
+
+/** Ensure a store has pre-generated table records up to INITIAL_BATCH. */
+function fillUpTables(storeId: string): void {
+  const existing = tableStore.getByField('storeId', storeId)
+  const usedNumbers = new Set(existing.map(t => t.number).filter(Boolean))
+  const store = getStore(storeId)
+  const max = Math.min(store?.maxTables ?? 100, INITIAL_BATCH)
+  for (let i = 1; i <= max; i++) {
+    if (usedNumbers.has(i)) continue
+    const tableId = `${storeId}-table-${String(i).padStart(3, '0')}`
+    if (tableStore.getById(tableId)) continue
+    tableStore.create({
+      id: tableId,
+      storeId,
+      name: '',
+      number: i,
+      enabled: false,
+      status: 'idle',
+    })
+  }
+}
+
+export function getTables(storeId: string, includeDisabled = false): Table[] {
+  migrateExistingTables(storeId)
+  fillUpTables(storeId)
+  const all = tableStore.getByField('storeId', storeId)
+  if (includeDisabled) return all
+  return all.filter(t => t.enabled !== false)
 }
 
 export function getTableById(tableId: string): Table | undefined {
@@ -21,14 +69,58 @@ export function updateTableStatus(storeId: string, tableId: string, status: Tabl
   return tableStore.update(tableId, { status })!
 }
 
-export function createTable(storeId: string, name: string, nameEn?: string): Table | { error: string } {
-  // Check for duplicate name
-  const existing = tableStore.getByField('storeId', storeId)
-  if (existing.some(t => t.name === name)) {
-    return { error: `桌台"${name}"已存在` }
+export function enableTable(
+  storeId: string,
+  tableNumber: number,
+  name?: string,
+  nameEn?: string
+): Table | { error: string } {
+  const store = getStore(storeId)
+  const maxTables = store?.maxTables ?? 100
+
+  if (tableNumber < 1 || tableNumber > maxTables) {
+    return { error: `Table number must be between 1 and ${maxTables}` }
   }
-  const table: Table = { id: uuid(), storeId, name, ...(nameEn ? { nameEn } : {}), status: 'idle' }
-  return tableStore.create(table)
+
+  const tableId = `${storeId}-table-${String(tableNumber).padStart(3, '0')}`
+  let table = tableStore.getById(tableId)
+
+  if (!table) {
+    table = tableStore.create({
+      id: tableId,
+      storeId,
+      name: name?.trim() || `Table ${tableNumber}`,
+      ...(nameEn ? { nameEn } : {}),
+      number: tableNumber,
+      enabled: true,
+      status: 'idle',
+    })
+    return table
+  }
+
+  if (table.enabled) {
+    return { error: `Table ${tableNumber} is already enabled` }
+  }
+
+  return tableStore.update(tableId, {
+    enabled: true,
+    name: name?.trim() || table.name || `Table ${tableNumber}`,
+    ...(nameEn != null ? { nameEn } : {}),
+  })!
+}
+
+export function disableTable(storeId: string, tableId: string): Table | { error: string } {
+  const table = tableStore.getById(tableId)
+  if (!table || table.storeId !== storeId) {
+    return { error: 'Table not found' }
+  }
+  if (table.status === 'occupied') {
+    return { error: 'Cannot disable an occupied table' }
+  }
+  if (!table.enabled) {
+    return { error: 'Table is already disabled' }
+  }
+  return tableStore.update(tableId, { enabled: false, status: 'idle' })!
 }
 
 export function updateTable(storeId: string, tableId: string, updates: Partial<Omit<Table, 'id' | 'storeId'>>): Table | { error: string } {
@@ -45,15 +137,15 @@ export function updateTable(storeId: string, tableId: string, updates: Partial<O
   return tableStore.update(tableId, updates)!
 }
 
-export function deleteTable(storeId: string, tableId: string): boolean | { error: string } {
-  const table = tableStore.getById(tableId)
-  if (!table || table.storeId !== storeId) {
-    return { error: 'Table not found' }
+export function getNextAvailableNumber(storeId: string): { number: number; allFull: boolean } {
+  const tables = tableStore.getByField('storeId', storeId)
+  const usedNumbers = new Set(tables.filter(t => t.enabled).map(t => t.number))
+  const store = getStore(storeId)
+  const max = store?.maxTables ?? 100
+  for (let i = 1; i <= max; i++) {
+    if (!usedNumbers.has(i)) return { number: i, allFull: false }
   }
-  if (table.status === 'occupied') {
-    return { error: '该桌台正在使用中，无法删除' }
-  }
-  return tableStore.delete(tableId)
+  return { number: max, allFull: true }
 }
 
 /** Settle a table: mark all non-completed orders as completed, reset table to idle */
