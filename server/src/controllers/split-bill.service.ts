@@ -1,7 +1,11 @@
 import { orderStore } from './order.service.js'
 import { createSplitPaymentIntent } from './payment.service.js'
 import logger from '../lib/logger.js'
-import type { SplitBillRequest, SplitBillSession, SplitBillShare } from '@qr-order/shared'
+// DEPRECATED: This service is replaced by bill.service.ts splits (Phase 3)
+// Types inlined since they were removed from shared/types.ts
+interface SplitBillShare { personName: string; items: { menuItemId: string; name: string; quantity: number; amount: number }[]; amount: number }
+interface SplitBillRequest { orderId: string; mode: 'equal' | 'by-item'; numberOfPeople?: number; shares?: SplitBillShare[] }
+interface SplitBillSession { orderId: string; shares: (SplitBillShare & { clientSecret?: string; paid: boolean })[]; totalAmount: number }
 
 function buildEqualShares(
   totalPrice: number,
