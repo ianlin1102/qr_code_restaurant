@@ -11,7 +11,7 @@ import { FloorCanvas } from '@/components/FloorCanvas'
 import type { Table } from '@qr-order/shared'
 
 const DEFAULT_W = 100, DEFAULT_H = 80
-const DEFAULT_ZONES = ['Main', 'Outdoor', 'Bar', 'VIP']
+const DEFAULT_ZONES: string[] = []
 const SHAPES = ['square', 'round', 'long'] as const
 const SHAPE_LABELS: Record<string, string> = { square: '■ Square', round: '● Round', long: '▬ Long' }
 
@@ -107,6 +107,15 @@ export default function FloorPlanEditorPage() {
           onAddZone={() => {
             const name = prompt('New zone/floor name:')
             if (name?.trim()) setZones(prev => [...new Set([...prev, name.trim()])])
+          }}
+          onDeleteZone={(z) => {
+            const assigned = tables.filter(tb => tb.zone === z)
+            if (assigned.length > 0) {
+              alert(`Cannot delete "${z}" — ${assigned.length} table(s) still assigned. Move them first.`)
+              return
+            }
+            setZones(prev => prev.filter(x => x !== z))
+            if (activeZone === z) setActiveZone('all')
           }} />
         <div className="flex-1 overflow-auto p-2">
           <FloorCanvas
@@ -132,10 +141,11 @@ export default function FloorPlanEditorPage() {
 }
 
 /* ---- Editor Toolbar ---- */
-function EditorToolbar({ addTable, saveLayout, saving, t, zones, activeZone, setActiveZone, onAddZone }: {
+function EditorToolbar({ addTable, saveLayout, saving, t, zones, activeZone, setActiveZone, onAddZone, onDeleteZone }: {
   addTable: () => void; saveLayout: () => void; saving: boolean
   t: ReturnType<typeof useT>['t']
-  zones: string[]; activeZone: string; setActiveZone: (z: string) => void; onAddZone: () => void
+  zones: string[]; activeZone: string; setActiveZone: (z: string) => void
+  onAddZone: () => void; onDeleteZone: (z: string) => void
 }) {
   return (
     <div className="border-b">
@@ -153,9 +163,18 @@ function EditorToolbar({ addTable, saveLayout, saving, t, zones, activeZone, set
           {t.floorPlan.allZone}
         </Button>
         {zones.map(z => (
-          <Button key={z} size="sm" variant={activeZone === z ? 'default' : 'outline'} onClick={() => setActiveZone(z)}>
-            {z}
-          </Button>
+          <div key={z} className="relative group inline-flex">
+            <Button size="sm" variant={activeZone === z ? 'default' : 'outline'} onClick={() => setActiveZone(z)}>
+              {z}
+            </Button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDeleteZone(z) }}
+              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] leading-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              title={`Delete ${z}`}
+            >
+              ✕
+            </button>
+          </div>
         ))}
         <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={onAddZone}>
           <Plus className="h-3 w-3 mr-1" />Zone
