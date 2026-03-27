@@ -14,12 +14,17 @@ export default function ScanPage() {
   const navigate = useNavigate()
   const { t } = useTranslation('customer')
   const [error, setError] = useState<string | null>(null)
+  const [disabled, setDisabled] = useState(false)
 
   useEffect(() => {
     if (!storeId || !tableId) return
     async function init() {
       try {
         const table = await api.getTable(storeId!, tableId!)
+        if (table.enabled === false) {
+          setDisabled(true)
+          return
+        }
         const isSameSession = session.storeId === storeId && session.tableId === tableId
         if (!isSameSession) clearCart()
         const hasLang = localStorage.getItem('i18n-lang')
@@ -48,7 +53,15 @@ export default function ScanPage() {
         </div>
 
         {/* Spinner or Error */}
-        {error ? (
+        {disabled ? (
+          <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4">
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+              <UtensilsCrossed className="w-8 h-8 text-amber-500" />
+            </div>
+            <p className="text-sm font-medium text-center max-w-xs">{t('scan.disabled')}</p>
+            <p className="text-xs text-muted-foreground text-center">{t('scan.disabledDesc')}</p>
+          </div>
+        ) : error ? (
           <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4">
             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
               <UtensilsCrossed className="w-8 h-8 text-red-500" />
