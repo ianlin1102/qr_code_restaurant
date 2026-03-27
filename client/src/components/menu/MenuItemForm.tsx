@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select'
 import type { MenuItem, Category, MenuItemOption, MenuItemOptionChoice } from '@qr-order/shared'
 import { v4 as uuid } from 'uuid'
-import ImageUpload from '@/components/ImageUpload'
+import ImageUpload from '@/components/shared/ImageUpload'
 
 export function blankItem(categoryId: string): Omit<MenuItem, 'id' | 'storeId'> {
   return {

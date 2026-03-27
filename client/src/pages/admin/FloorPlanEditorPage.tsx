@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { FloorCanvas } from '@/components/FloorCanvas'
+import { FloorCanvas } from '@/components/floor/FloorCanvas'
 import type { Table } from '@qr-order/shared'
 
 const DEFAULT_W = 100, DEFAULT_H = 80

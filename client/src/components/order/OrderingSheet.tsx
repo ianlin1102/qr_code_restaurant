@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, Minus, Send, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import ItemCustomizeView from '@/components/ItemCustomizeView'
+import ItemCustomizeView from '@/components/menu/ItemCustomizeView'
 import type { MenuItem, Category, SelectedOption } from '@qr-order/shared'
 
 interface OrderItem {

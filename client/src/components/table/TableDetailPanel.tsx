@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import OrderEditMode from '@/components/OrderEditMode'
-import TransferTableDialog from '@/components/TransferTableDialog'
-import SplitBillDialog from '@/components/SplitBillDialog'
+import OrderEditMode from '@/components/order/OrderEditMode'
+import TransferTableDialog from '@/components/table/TransferTableDialog'
+import SplitBillDialog from '@/components/table/SplitBillDialog'
 import { Pencil, ArrowRightLeft, Split } from 'lucide-react'
 
 const STATUS_STYLE: Record<OrderStatus, string> = {

@@ -9,9 +9,9 @@ import { formatPriceUSD } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import MenuItemForm, { blankItem } from '@/components/MenuItemForm'
-import MenuItemTable from '@/components/MenuItemTable'
-import { CsvImportDialog } from '@/components/CsvImportDialog'
+import MenuItemForm, { blankItem } from '@/components/menu/MenuItemForm'
+import MenuItemTable from '@/components/menu/MenuItemTable'
+import { CsvImportDialog } from '@/components/menu/CsvImportDialog'
 import type { MenuItem, Category } from '@qr-order/shared'
 
 const CAT_ICONS: Record<string, string> = {

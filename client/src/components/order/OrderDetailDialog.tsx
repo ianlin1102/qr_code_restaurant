@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import OrderReceipt from '@/components/OrderReceipt'
+import OrderReceipt from '@/components/order/OrderReceipt'
 import type { Order, OrderItem, OrderStatus } from '@qr-order/shared'
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
