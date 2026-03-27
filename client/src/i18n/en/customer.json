@@ -37,7 +37,9 @@
     "submitOrder": "Place order",
     "submitAddMore": "Add to order",
     "submitting": "Submitting...",
-    "continueOrder": "Order more"
+    "continueOrder": "Order more",
+    "placeOrder": "Place Order",
+    "ordering": "Placing Order..."
   },
   "orderConfirm": {
     "notFound": "Order not found",

@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
 import { getMenuItemById } from './menu.service.js'
 import { printOrder } from './printer.service.js'
+import { createBill, getActiveBill, addOrderToBill } from './bill.service.js'
 import type { Order, OrderItem, Table, Store, CreateOrderRequest, OrderStatus } from '@qr-order/shared'
 import logger from '../lib/logger.js'
 
@@ -97,6 +98,16 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
 
   orderStore.create(order)
   tableStore.update(table.id, { status: 'occupied', currentOrderId: order.id })
+
+  // Bill integration — create or append to active bill
+  let bill = getActiveBill(storeId, table.id)
+  if (!bill) {
+    const paymentMode = table.paymentMode ?? storeConfig?.paymentMode ?? 'pay-first'
+    const billStatus = paymentMode === 'pay-later' ? 'open' : 'pending-payment'
+    bill = createBill(storeId, table.id, billStatus)
+    tableStore.update(table.id, { currentBillId: bill.id })
+  }
+  addOrderToBill(bill.id, order.id, totalPrice)
 
   logger.info(
     { storeId, orderId: order.id, orderNumber: order.orderNumber, itemCount: orderItems.length },

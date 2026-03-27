@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Info, Loader2, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -13,11 +13,19 @@ import { api } from '@/services/api'
 export default function CartPage() {
   const navigate = useNavigate()
   const { storeId, tableId, tableName } = useSessionStore()
-  const { items, updateQuantity, updateRemark, totalPrice, totalItems } = useCartStore()
+  const { items, updateQuantity, updateRemark, totalPrice, totalItems, clearCart } = useCartStore()
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paymentMode, setPaymentMode] = useState<'pay-first' | 'pay-later'>('pay-first')
+
+  useEffect(() => {
+    if (!storeId || !tableId) return
+    api.getTable(storeId, tableId).then(table => {
+      if (table.paymentMode === 'pay-later') setPaymentMode('pay-later')
+    }).catch(() => { /* keep default pay-first */ })
+  }, [storeId, tableId])
 
   if (!storeId || !tableId) return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -41,25 +49,28 @@ export default function CartPage() {
     setError(null)
     setSubmitting(true)
 
+    const cartItems = items.map(({ menuItemId, quantity, remark, selectedOptions }) => ({
+      menuItemId,
+      quantity,
+      ...(remark ? { remark } : {}),
+      ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
+    }))
+
     try {
-      // Only create Stripe PaymentIntent — no order created yet
+      if (paymentMode === 'pay-later') {
+        // Pay-later: create order directly without payment
+        const order = await api.createOrder(storeId, { tableId, items: cartItems })
+        clearCart()
+        navigate('/order/confirm', { state: { order } })
+        return
+      }
+
+      // Pay-first: create Stripe PaymentIntent, no order yet
       const { clientSecret, amount } = await api.createCheckout(storeId, {
-        tableId,
-        items: items.map(({ menuItemId, quantity, remark, selectedOptions }) => ({
-          menuItemId,
-          quantity,
-          ...(remark ? { remark } : {}),
-          ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
-        })),
+        tableId, items: cartItems,
       })
-      // Navigate to payment page with clientSecret (order created after payment succeeds)
       navigate(`/store/${storeId}/checkout`, { state: {
-        clientSecret, amount, tableId,
-        items: items.map(({ menuItemId, quantity, remark, selectedOptions }) => ({
-          menuItemId, quantity,
-          ...(remark ? { remark } : {}),
-          ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
-        })),
+        clientSecret, amount, tableId, items: cartItems,
       } })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start checkout')
@@ -190,10 +201,10 @@ export default function CartPage() {
               {submitting ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="size-4 animate-spin" />
-                  {t('cart.submitting')}
+                  {paymentMode === 'pay-later' ? t('cart.ordering') : t('cart.submitting')}
                 </span>
               ) : (
-                t('cart.submitOrder')
+                paymentMode === 'pay-later' ? t('cart.placeOrder') : t('cart.submitOrder')
               )}
             </Button>
           </div>

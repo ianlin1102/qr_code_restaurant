@@ -37,7 +37,9 @@
     "submitOrder": "提交订单",
     "submitAddMore": "提交加菜",
     "submitting": "提交中...",
-    "continueOrder": "继续点菜"
+    "continueOrder": "继续点菜",
+    "placeOrder": "下单",
+    "ordering": "下单中..."
   },
   "orderConfirm": {
     "notFound": "未找到订单",

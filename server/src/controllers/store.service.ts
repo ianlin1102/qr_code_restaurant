@@ -19,8 +19,10 @@ export function updateStore(storeId: string, data: UpdateStoreRequest): Store | 
     description: data.description ?? store.description,
     openingHours: data.openingHours ?? store.openingHours,
     announcement: data.announcement ?? store.announcement,
+    announcementEn: data.announcementEn ?? store.announcementEn,
     autoAcceptOrders: data.autoAcceptOrders ?? store.autoAcceptOrders,
     maxTables: data.maxTables ?? store.maxTables,
+    paymentMode: data.paymentMode ?? store.paymentMode,
   })
 
   return updated!

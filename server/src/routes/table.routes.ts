@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { getTables, getTableById, enableTable, disableTable, updateTable, settleTable, closeTable, getNextAvailableNumber } from '../controllers/table.service.js'
+import { storeStore } from '../controllers/store.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 
 const router = Router({ mergeParams: true })
@@ -26,7 +27,10 @@ router.get('/:tableId', (req, res) => {
   }
   // Strip internal/layout fields for public API, keep enabled + number
   const { currentOrderId, currentBillId, x, y, width, height, shape, ...publicTable } = table
-  res.json(publicTable)
+  // Resolve paymentMode: table override > store default > 'pay-first'
+  const storeConfig = storeStore.getById(req.params.storeId)
+  const resolvedPaymentMode = table.paymentMode ?? storeConfig?.paymentMode ?? 'pay-first'
+  res.json({ ...publicTable, paymentMode: resolvedPaymentMode })
 })
 
 // POST enable table (admin) — replaces POST / (create)
