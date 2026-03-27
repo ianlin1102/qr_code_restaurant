@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import CloseTableDialog from '@/components/CloseTableDialog'
 import TransferTableDialog from '@/components/TransferTableDialog'
 import SplitBillDialog from '@/components/SplitBillDialog'
+import BillSettleDialog from '@/components/BillSettleDialog'
 import TableCrudDialog from '@/components/TableCrudDialog'
 import OrderingSheet from '@/components/OrderingSheet'
 import type { Table, Order, OrderItem } from '@qr-order/shared'
@@ -52,6 +53,7 @@ export default function TablesPage() {
   const [editingTable, setEditingTable] = useState<Table | null>(null)
   const [mobileDropdown, setMobileDropdown] = useState(false)
   const [orderingOpen, setOrderingOpen] = useState(false)
+  const [billDialogOpen, setBillDialogOpen] = useState(false)
 
   const fetchData = useCallback(async () => {
     if (!storeId) return
@@ -299,6 +301,12 @@ export default function TablesPage() {
               onClick={() => setSplitOpen(true)}>
               <Split className="size-4 mr-1" />{t.tables.splitBill}
             </Button>
+            {selected?.currentBillId && (
+              <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
+                onClick={() => setBillDialogOpen(true)}>
+                <CheckCircle2 className="size-4 mr-1" />{t.bill?.title || 'Bill'}
+              </Button>
+            )}
             <Button size="sm" className="w-full bg-green-500 hover:bg-green-600"
               disabled={!currentOrder} onClick={() => setCloseOpen(true)}>
               <CheckCircle2 className="size-4 mr-1" />{t.tables.checkout}
@@ -320,6 +328,9 @@ export default function TablesPage() {
             <ActionBtn icon={Printer} label={t.tables.printBill} onClick={() => currentOrder && api.reprintOrder(storeId, currentOrder.id)} />
             <ActionBtn icon={ArrowLeftRight} label={t.tables.transfer} onClick={() => setTransferOpen(true)} />
             <ActionBtn icon={Split} label={t.tables.splitBill} onClick={() => setSplitOpen(true)} />
+            {selected?.currentBillId && (
+              <ActionBtn icon={CheckCircle2} label={t.bill?.title || 'Bill'} onClick={() => setBillDialogOpen(true)} />
+            )}
             <ActionBtn icon={QrCode} label={t.tables.printQr} onClick={handlePrintQr} />
             {selected?.enabled && selected.status !== 'occupied' && (
               <Button variant="outline" size="sm" className="text-red-600"
@@ -362,6 +373,15 @@ export default function TablesPage() {
           <SplitBillDialog open={splitOpen} onClose={() => setSplitOpen(false)}
             order={currentOrder} storeId={storeId} />
         </>
+      )}
+      {billDialogOpen && selected?.currentBillId && storeId && (
+        <BillSettleDialog
+          open={billDialogOpen}
+          onClose={() => { setBillDialogOpen(false); fetchData() }}
+          storeId={storeId}
+          billId={selected.currentBillId}
+          t={t}
+        />
       )}
       <TableCrudDialog table={editingTable} storeId={storeId} open={crudOpen}
         onClose={() => setCrudOpen(false)} onSaved={() => { fetchData(); setCrudOpen(false) }} />
