@@ -60,7 +60,9 @@
     "retry": "重试",
     "retryDesc": "请检查网络连接后重试。",
     "loading": "正在确认桌位信息...",
-    "loadingZh": "Checking table availability..."
+    "loadingZh": "Checking table availability...",
+    "disabled": "该桌台暂未开放",
+    "disabledDesc": "请联系服务员获取帮助。"
   },
   "checkout": {
     "title": "结账",

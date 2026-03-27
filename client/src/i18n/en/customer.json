@@ -60,7 +60,9 @@
     "retry": "Retry",
     "retryDesc": "Please check your internet connection and try again.",
     "loading": "Checking table availability...",
-    "loadingZh": "正在确认桌位信息..."
+    "loadingZh": "正在确认桌位信息...",
+    "disabled": "This table is currently not in service.",
+    "disabledDesc": "Please ask staff for assistance."
   },
   "checkout": {
     "title": "Checkout",
