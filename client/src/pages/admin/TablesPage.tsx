@@ -38,6 +38,8 @@ export default function TablesPage() {
   const [loading, setLoading] = useState(true)
   const [menuItemMap, setMenuItemMap] = useState<Record<string, string>>({})
 
+  const [showDisabled, setShowDisabled] = useState(false)
+
   const [transferOpen, setTransferOpen] = useState(false)
   const [splitOpen, setSplitOpen] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
@@ -54,12 +56,12 @@ export default function TablesPage() {
   const fetchData = useCallback(async () => {
     if (!storeId) return
     try {
-      const [tbl, o] = await Promise.all([api.getTables(storeId), api.getOrders(storeId)])
+      const [tbl, o] = await Promise.all([api.getTables(storeId!, showDisabled), api.getOrders(storeId)])
       setTables(tbl); setOrders(o)
     } catch { /* silent */ } finally { setLoading(false) }
-  }, [storeId])
+  }, [storeId, showDisabled])
 
-  useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL); return () => clearInterval(id) }, [fetchData])
+  useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL); return () => clearInterval(id) }, [fetchData, showDisabled])
 
   useEffect(() => {
     if (!storeId) return
@@ -95,7 +97,10 @@ export default function TablesPage() {
   }
   const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
   const handlePrintQr = () => printQrCodes(selected ? [selected] : tables, baseUrl, 'Restaurant')
-  const handlePrintAllQr = () => printQrCodes(tables, baseUrl, 'Restaurant')
+  const handlePrintAllQr = async () => {
+    const allTables = await api.getTables(storeId!, true)
+    printQrCodes(allTables, baseUrl, 'Restaurant')
+  }
   const openAddTable = () => { setEditingTable(null); setCrudOpen(true) }
   const openEditTable = (tb: Table) => { setEditingTable(tb); setCrudOpen(true) }
 
@@ -125,8 +130,9 @@ export default function TablesPage() {
                 return (
                   <button key={tb.id} onClick={() => handleSelect(tb)}
                     className={cn('w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted',
-                      selected?.id === tb.id && 'bg-blue-50')}>
-                    <span>{tb.name}</span>
+                      selected?.id === tb.id && 'bg-blue-50',
+                      !tb.enabled ? 'opacity-50' : '')}>
+                    <span>#{tb.number} {tb.name || ''}</span>
                     <span className={cn('text-xs px-2 rounded', cls)}>{label}</span>
                   </button>
                 )
@@ -146,16 +152,24 @@ export default function TablesPage() {
             <p className="text-[10px] text-orange-500 mt-0.5">{t.tables.baseUrlWarning}</p>
           )}
         </div>
-        <div className="px-3 pt-2 pb-2 flex items-center justify-between">
+        <div className="px-3 pt-2 pb-1 flex items-center justify-between">
           <p className="text-xs text-gray-400 font-semibold tracking-wide">{t.tables.tableStatus}</p>
           <div className="flex gap-1">
             <button onClick={handlePrintAllQr} className="p-1 text-gray-400 hover:text-gray-600" title={t.tables.printAllQr}>
               <QrCode className="size-4" />
             </button>
-            <button onClick={openAddTable} className="p-1 text-gray-400 hover:text-gray-600" title={t.tables.addTable}>
+            <button onClick={openAddTable} className="p-1 text-gray-400 hover:text-gray-600" title={t.tables.enableNew}>
               <Plus className="size-4" />
             </button>
           </div>
+        </div>
+        <div className="px-3 pb-2">
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={showDisabled}
+              onChange={e => setShowDisabled(e.target.checked)}
+              className="rounded" />
+            {t.tables.showDisabled}
+          </label>
         </div>
         <div className="flex-1 overflow-y-auto px-3 space-y-0.5">
           {tables.map(tb => {
@@ -164,8 +178,11 @@ export default function TablesPage() {
             return (
               <button key={tb.id} onClick={() => handleSelect(tb)}
                 className={cn('w-full flex items-center justify-between px-2 py-2 rounded cursor-pointer text-sm transition-colors group',
-                  isActive ? 'bg-blue-50 border-l-2 border-primary' : 'hover:bg-background')}>
-                <span className={cn('font-medium', isActive && 'font-semibold text-primary')}>{tb.name}</span>
+                  isActive ? 'bg-blue-50 border-l-2 border-primary' : 'hover:bg-background',
+                  !tb.enabled ? 'opacity-50' : '')}>
+                <span className={cn('font-medium', isActive && 'font-semibold text-primary')}>
+                  #{tb.number} {tb.name || ''}
+                </span>
                 <div className="flex items-center gap-1">
                   <span className={cn('text-xs px-2 rounded', cls)}>{label}</span>
                   <Pencil className="size-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -304,6 +321,21 @@ export default function TablesPage() {
             <ActionBtn icon={ArrowLeftRight} label={t.tables.transfer} onClick={() => setTransferOpen(true)} />
             <ActionBtn icon={Split} label={t.tables.splitBill} onClick={() => setSplitOpen(true)} />
             <ActionBtn icon={QrCode} label={t.tables.printQr} onClick={handlePrintQr} />
+            {selected?.enabled && selected.status !== 'occupied' && (
+              <Button variant="outline" size="sm" className="text-red-600"
+                onClick={async () => {
+                  if (!confirm(t.tables.confirmDisable)) return
+                  try {
+                    await api.disableTable(storeId!, selected.id)
+                    fetchData()
+                    setSelected(null)
+                  } catch (e) {
+                    console.error(e)
+                  }
+                }}>
+                {t.tables.disable}
+              </Button>
+            )}
           </div>
           <div className="flex-1" />
           <div className="border-t p-4 space-y-2 text-sm">
