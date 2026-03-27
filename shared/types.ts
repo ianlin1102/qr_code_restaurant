@@ -8,23 +8,45 @@ export interface Store {
   descriptionEn?: string
   openingHours?: string
   announcement?: string
+  announcementEn?: string
   createdAt: string
   autoAcceptOrders?: boolean
   updatedAt?: string
   maxTables?: number
+  paymentMode?: 'pay-first' | 'pay-later'
 }
 
-export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store, 'description' | 'openingHours' | 'announcement' | 'autoAcceptOrders' | 'maxTables'>>
+export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store, 'description' | 'openingHours' | 'announcement' | 'announcementEn' | 'autoAcceptOrders' | 'maxTables' | 'paymentMode'>>
 
 // ===== User/Role =====
-export type Role = 'owner' | 'staff'
+export type Permission =
+  | 'menu:read' | 'menu:write'
+  | 'orders:read' | 'orders:write'
+  | 'tables:read' | 'tables:write'
+  | 'analytics:read'
+  | 'coupons:read' | 'coupons:write'
+  | 'staff:manage'
+  | 'settings:write'
+  | 'floor-plan:write'
+  | 'bill:write'
+
+export interface RoleDefinition {
+  id: string
+  storeId: string
+  name: string
+  nameEn?: string
+  permissions: Permission[]
+  isSystem: boolean
+  createdAt: string
+}
 
 export interface StoreUser {
   id: string
   storeId: string
   username: string
   password: string
-  role: Role
+  role: string              // legacy field, kept for backward compat
+  roleId?: string           // new: references RoleDefinition.id
   createdAt: string
 }
 
@@ -75,11 +97,12 @@ export interface Table {
   storeId: string
   name: string
   nameEn?: string
-  number: number              // 1-N, stable, used for QR code label
-  enabled: boolean            // true = active, false = disabled
+  number: number
+  enabled: boolean
   status: 'idle' | 'occupied' | 'cleaning' | 'bill-requested'
-  currentOrderId?: string     // DEPRECATED — will be replaced by currentBillId in Phase 2
-  currentBillId?: string      // prep for Phase 2 Bill entity
+  currentOrderId?: string
+  currentBillId?: string
+  paymentMode?: 'pay-first' | 'pay-later' | null
   zone?: string
   capacity?: number
   x?: number
@@ -138,17 +161,56 @@ export interface Order {
   updatedAt: string
 }
 
+// ===== Bill =====
+export interface Bill {
+  id: string
+  storeId: string
+  tableId: string
+  version: number
+  status: 'pending-payment' | 'open' | 'partially-paid' | 'settled'
+  splitMethod?: 'equal' | 'percentage' | 'by-item' | 'full'
+  orderIds: string[]
+  subtotal: number
+  couponId?: string
+  couponCode?: string
+  couponDiscountType?: DiscountType
+  couponDiscountValue?: number
+  discountAmount: number
+  totalDue: number
+  paidAmount: number
+  createdAt: string
+  settledAt?: string
+}
+
+export interface Split {
+  id: string
+  billId: string
+  storeId: string
+  amount: number
+  percentage?: number
+  status: 'unpaid' | 'paid'
+  paidBy?: 'customer' | 'waiter'
+  paymentIntentId?: string
+  itemIds?: string[]
+  customerName?: string
+  createdAt: string
+}
+
 // ===== Auth =====
 export interface JwtPayload {
   userId: string
   storeId: string
-  role: 'owner' | 'staff'
+  role: string              // legacy
+  roleId?: string
+  permissions?: Permission[]
 }
 
 export interface AuthUser {
   id: string
   username: string
   role: string
+  roleId?: string
+  permissions?: Permission[]
   storeId: string
 }
 
@@ -208,26 +270,6 @@ export interface WaitlistEntry {
   estimatedWait?: number
   status: 'waiting' | 'seated' | 'cancelled'
   createdAt: string
-}
-
-// ===== Split Bill =====
-export interface SplitBillShare {
-  personName: string
-  items: { menuItemId: string; name: string; quantity: number; amount: number }[]
-  amount: number
-}
-
-export interface SplitBillRequest {
-  orderId: string
-  mode: 'equal' | 'by-item'
-  numberOfPeople?: number
-  shares?: SplitBillShare[]
-}
-
-export interface SplitBillSession {
-  orderId: string
-  shares: (SplitBillShare & { clientSecret?: string; paid: boolean })[]
-  totalAmount: number
 }
 
 // ===== Printer =====
