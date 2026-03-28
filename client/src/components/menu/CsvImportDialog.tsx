@@ -70,19 +70,37 @@ export function CsvImportDialog({ open, onClose, categories, onImported, t }: Pr
 
   if (!open) return null
 
+  const readFileWithEncoding = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const text = reader.result as string
+        // Check for garbled text (common when GBK file read as UTF-8)
+        const hasGarbled = text.includes('�') || /[\ufffd]/.test(text)
+        if (hasGarbled) {
+          // Retry with GBK encoding
+          const gbkReader = new FileReader()
+          gbkReader.onload = () => resolve(gbkReader.result as string)
+          gbkReader.readAsText(file, 'GBK')
+        } else {
+          resolve(text)
+        }
+      }
+      reader.readAsText(file, 'UTF-8')
+    })
+  }
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const parsed = parseCsv(reader.result as string)
+    readFileWithEncoding(file).then(text => {
+      const parsed = parseCsv(text)
       if (parsed.length < 2) return
       setHeaders(parsed[0])
       setRows(parsed.slice(1))
       setMapping(autoMapHeaders(parsed[0]))
       setStep('map')
-    }
-    reader.readAsText(file)
+    })
   }
 
   const buildItems = useMemo(() => {

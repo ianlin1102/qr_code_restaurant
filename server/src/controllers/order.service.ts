@@ -149,7 +149,14 @@ export function updateOrderStatus(storeId: string, orderId: string, status: Orde
     updatedAt: new Date().toISOString(),
   })
 
-  // 桌台状态由"结算"操作统一管理，单个订单完成不重置桌台
+  // Auto-release table if all orders are completed/closed
+  if (status === 'completed' || status === 'closed') {
+    const tableOrders = orderStore.getByField('storeId', storeId)
+      .filter(o => o.tableId === order.tableId && o.status !== 'completed' && o.status !== 'closed' && o.id !== orderId)
+    if (tableOrders.length === 0) {
+      tableStore.update(order.tableId, { status: 'idle', currentOrderId: undefined, currentBillId: undefined })
+    }
+  }
 
   return updated!
 }

@@ -39,6 +39,15 @@ export async function createPaymentIntent(req: CheckoutRequest) {
     return { error: 'Invalid order total', status: 400 }
   }
 
+  // Create or get pending bill for this table (allows coupon application before payment)
+  const { createBill, getActiveBill, addOrderToBill } = await import('./bill.service.js')
+  let bill = getActiveBill(req.storeId, req.tableId)
+  if (!bill) {
+    bill = createBill(req.storeId, req.tableId, 'pending-payment')
+  }
+  // Use bill.totalDue if coupon was applied, otherwise use calculated total
+  const chargeAmount = bill.couponId ? bill.totalDue : totalPrice
+
   // Store cart data in metadata — Stripe limits each value to 500 chars
   // Compact format: only IDs + quantities, strip option names
   const compactItems = req.items.map(i => ({
@@ -58,6 +67,7 @@ export async function createPaymentIntent(req: CheckoutRequest) {
   const metadata: Record<string, string> = {
     storeId: req.storeId,
     tableId: req.tableId,
+    billId: bill.id,
   }
   if (cartData.length <= 500) {
     metadata.cartData = cartData
@@ -70,17 +80,17 @@ export async function createPaymentIntent(req: CheckoutRequest) {
   }
 
   const paymentIntent = await getStripe().paymentIntents.create({
-    amount: totalPrice,
+    amount: chargeAmount,
     currency: 'usd',
     metadata,
   })
 
   logger.info(
-    { storeId: req.storeId, paymentIntentId: paymentIntent.id, totalPrice },
+    { storeId: req.storeId, paymentIntentId: paymentIntent.id, chargeAmount, billId: bill.id },
     'payment intent created (no order yet)',
   )
 
-  return { clientSecret: paymentIntent.client_secret, amount: totalPrice }
+  return { clientSecret: paymentIntent.client_secret, amount: chargeAmount }
 }
 
 export async function createPaymentIntentForOrders(req: CheckoutOrdersRequest) {
@@ -240,8 +250,17 @@ export async function handleWebhookEvent(
       updatedAt: new Date().toISOString(),
     })
 
+    // Link order to existing bill (created at checkout time)
+    const billId = paymentIntent.metadata.billId
+    if (billId) {
+      const { addOrderToBill } = await import('./bill.service.js')
+      const { billStore } = await import('../repositories/stores.js')
+      addOrderToBill(billId, result.id, result.totalPrice)
+      billStore.update(billId, { status: 'settled', settledAt: new Date().toISOString() })
+    }
+
     logger.info(
-      { orderId: result.id, orderNumber: result.orderNumber, storeId, paymentIntentId: paymentIntent.id },
+      { orderId: result.id, orderNumber: result.orderNumber, storeId, billId, paymentIntentId: paymentIntent.id },
       'order created (paid) via webhook',
     )
   }

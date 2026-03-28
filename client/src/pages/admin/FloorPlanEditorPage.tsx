@@ -35,6 +35,7 @@ export default function FloorPlanEditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [dirty, setDirty] = useState(false)
   const [zones, setZones] = useState<string[]>(DEFAULT_ZONES)
   const [activeZone, setActiveZone] = useState<string>('all')
   const selected = tables.find(tb => tb.id === selectedId) ?? null
@@ -54,6 +55,7 @@ export default function FloorPlanEditorPage() {
 
   const handleTableMove = useCallback((tableId: string, x: number, y: number) => {
     setTables(prev => prev.map(tb => (tb.id === tableId ? { ...tb, x, y } : tb)))
+    setDirty(true)
   }, [])
 
   const handleTableClick = useCallback((table: Table) => {
@@ -71,6 +73,7 @@ export default function FloorPlanEditorPage() {
 
   const updateField = useCallback((field: keyof Table, value: string | number) => {
     setTables(prev => prev.map(tb => (tb.id === selectedId ? { ...tb, [field]: value } : tb)))
+    setDirty(true)
   }, [selectedId])
 
   const deleteSelected = useCallback(async () => {
@@ -89,8 +92,16 @@ export default function FloorPlanEditorPage() {
         name: tb.name, nameEn: tb.nameEn, zone: tb.zone, shape: tb.shape,
         capacity: tb.capacity, x: tb.x, y: tb.y, width: tb.width, height: tb.height,
       })))
+      setDirty(false)
     } finally { setSaving(false) }
   }, [storeId, tables])
+
+  useEffect(() => {
+    if (!dirty) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [dirty])
 
   if (!isOwner()) return (
     <div className="flex items-center justify-center h-64">
@@ -103,7 +114,7 @@ export default function FloorPlanEditorPage() {
   return (
     <div className="flex h-full">
       <div className="flex-1 flex flex-col min-w-0">
-        <EditorToolbar addTable={addTable} saveLayout={saveLayout} saving={saving} t={t}
+        <EditorToolbar addTable={addTable} saveLayout={saveLayout} saving={saving} dirty={dirty} t={t}
           zones={zones} activeZone={activeZone} setActiveZone={setActiveZone}
           onAddZone={() => {
             const name = prompt('New zone/floor name:')
@@ -155,8 +166,8 @@ export default function FloorPlanEditorPage() {
 }
 
 /* ---- Editor Toolbar ---- */
-function EditorToolbar({ addTable, saveLayout, saving, t, zones, activeZone, setActiveZone, onAddZone, onDeleteZone }: {
-  addTable: () => void; saveLayout: () => void; saving: boolean
+function EditorToolbar({ addTable, saveLayout, saving, dirty, t, zones, activeZone, setActiveZone, onAddZone, onDeleteZone }: {
+  addTable: () => void; saveLayout: () => void; saving: boolean; dirty: boolean
   t: ReturnType<typeof useT>['t']
   zones: string[]; activeZone: string; setActiveZone: (z: string) => void
   onAddZone: () => void; onDeleteZone: (z: string) => void
@@ -170,6 +181,7 @@ function EditorToolbar({ addTable, saveLayout, saving, t, zones, activeZone, set
         </Button>
         <Button size="sm" onClick={saveLayout} disabled={saving}>
           <Save className="h-4 w-4 mr-1" />{saving ? t.common.saving : t.common.save}
+          {dirty && <span className="ml-1 w-2 h-2 rounded-full bg-orange-400" />}
         </Button>
       </div>
       <div className="flex items-center gap-1 px-3 pb-2 flex-wrap">

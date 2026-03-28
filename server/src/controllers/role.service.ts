@@ -28,22 +28,34 @@ export function ensureSystemRoles(storeId: string): void {
   const now = new Date().toISOString()
 
   if (!names.has('owner')) {
-    roleStore.create({
-      id: `${storeId}-role-owner`, storeId, name: 'owner', nameEn: 'Owner',
-      permissions: ALL_PERMISSIONS, isSystem: true, createdAt: now,
-    })
+    // Check one more time (in case of concurrent creation)
+    const existingOwner = roleStore.getByField('storeId', storeId).find(r => r.name === 'owner')
+    if (!existingOwner) {
+      roleStore.create({
+        id: `${storeId}-role-owner`, storeId, name: 'owner', nameEn: 'Owner',
+        permissions: ALL_PERMISSIONS, isSystem: true, createdAt: now,
+      })
+    }
   }
   if (!names.has('manager')) {
-    roleStore.create({
-      id: `${storeId}-role-manager`, storeId, name: 'manager', nameEn: 'Manager',
-      permissions: MANAGER_PERMISSIONS, isSystem: true, createdAt: now,
-    })
+    // Check one more time (in case of concurrent creation)
+    const existingManager = roleStore.getByField('storeId', storeId).find(r => r.name === 'manager')
+    if (!existingManager) {
+      roleStore.create({
+        id: `${storeId}-role-manager`, storeId, name: 'manager', nameEn: 'Manager',
+        permissions: MANAGER_PERMISSIONS, isSystem: true, createdAt: now,
+      })
+    }
   }
   if (!names.has('waiter')) {
-    roleStore.create({
-      id: `${storeId}-role-waiter`, storeId, name: 'waiter', nameEn: 'Waiter',
-      permissions: WAITER_PERMISSIONS, isSystem: true, createdAt: now,
-    })
+    // Check one more time (in case of concurrent creation)
+    const existingWaiter = roleStore.getByField('storeId', storeId).find(r => r.name === 'waiter')
+    if (!existingWaiter) {
+      roleStore.create({
+        id: `${storeId}-role-waiter`, storeId, name: 'waiter', nameEn: 'Waiter',
+        permissions: WAITER_PERMISSIONS, isSystem: true, createdAt: now,
+      })
+    }
   }
 
   // Migrate existing system roles to new permission set
