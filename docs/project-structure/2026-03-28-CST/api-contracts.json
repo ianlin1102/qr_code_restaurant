@@ -1,0 +1,405 @@
+{
+  "generatedAt": "2026-03-28T00:00:00+08:00",
+  "description": "Frontend API contracts: every call in client/src/services/api.ts, the URL it hits, request shape, and expected response shape",
+  "sourceFile": "client/src/services/api.ts",
+  "contracts": [
+    {
+      "method": "login",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/auth/login",
+      "request": { "username": "string", "password": "string" },
+      "response": "LoginResponse => { token: string, user: AuthUser }"
+    },
+    {
+      "method": "getStore",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}",
+      "request": null,
+      "response": "Store"
+    },
+    {
+      "method": "updateStore",
+      "httpMethod": "PUT",
+      "url": "/stores/{storeId}",
+      "request": "UpdateStoreRequest",
+      "response": "Store"
+    },
+    {
+      "method": "getMenu",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/menu",
+      "request": null,
+      "response": "MenuResponse => { store: Pick<Store, ...>, categories: (Category & { items: MenuItem[] })[] }"
+    },
+    {
+      "method": "createOrder",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/orders",
+      "request": "CreateOrderRequest => { tableId: string, items: { menuItemId, quantity, remark?, selectedOptions? }[], customerName? }",
+      "response": "Order"
+    },
+    {
+      "method": "getOrders",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/orders?status={status}&tableId={tableId}",
+      "request": null,
+      "queryParams": {
+        "status": "OrderStatus? (optional filter)",
+        "tableId": "string? (optional filter)"
+      },
+      "response": "Order[]"
+    },
+    {
+      "method": "updateOrderStatus",
+      "httpMethod": "PATCH",
+      "url": "/stores/{storeId}/orders/{orderId}/status",
+      "request": { "status": "OrderStatus" },
+      "response": "Order"
+    },
+    {
+      "method": "transferOrder",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/orders/{orderId}/transfer",
+      "request": { "targetTableId": "string" },
+      "response": "Order"
+    },
+    {
+      "method": "updateOrderItems",
+      "httpMethod": "PUT",
+      "url": "/stores/{storeId}/orders/{orderId}/items",
+      "request": { "items": "OrderItem[]" },
+      "response": "Order"
+    },
+    {
+      "method": "getMenuItems",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/menu/items",
+      "request": null,
+      "response": "MenuItem[]"
+    },
+    {
+      "method": "createMenuItem",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/menu/items",
+      "request": "Omit<MenuItem, 'id' | 'storeId'>",
+      "response": "MenuItem"
+    },
+    {
+      "method": "updateMenuItem",
+      "httpMethod": "PUT",
+      "url": "/stores/{storeId}/menu/items/{itemId}",
+      "request": "Partial<MenuItem>",
+      "response": "MenuItem"
+    },
+    {
+      "method": "deleteMenuItem",
+      "httpMethod": "DELETE",
+      "url": "/stores/{storeId}/menu/items/{itemId}",
+      "request": null,
+      "response": "void"
+    },
+    {
+      "method": "batchImportMenuItems",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/menu/items/batch",
+      "request": {
+        "items": "Array<{ name: string; nameEn?: string; price: number; categoryId: string; description?: string; descriptionEn?: string }>"
+      },
+      "response": "{ created: MenuItem[]; skipped: Array<{ row: number; reason: string }> }"
+    },
+    {
+      "method": "getCategories",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/menu/categories",
+      "request": null,
+      "response": "Category[]"
+    },
+    {
+      "method": "createCategory",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/menu/categories",
+      "request": { "name": "string", "nameEn": "string?", "sortOrder": "number" },
+      "response": "Category"
+    },
+    {
+      "method": "updateCategory",
+      "httpMethod": "PUT",
+      "url": "/stores/{storeId}/menu/categories/{catId}",
+      "request": "Partial<Category>",
+      "response": "Category"
+    },
+    {
+      "method": "deleteCategory",
+      "httpMethod": "DELETE",
+      "url": "/stores/{storeId}/menu/categories/{catId}",
+      "request": null,
+      "response": "void"
+    },
+    {
+      "method": "getTables",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/tables",
+      "queryParams": { "includeDisabled": "boolean? (default false)" },
+      "request": null,
+      "response": "Table[]"
+    },
+    {
+      "method": "getTable",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/tables/{tableId}",
+      "request": null,
+      "response": "Table"
+    },
+    {
+      "method": "enableTable",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/tables/enable",
+      "request": { "number": "number", "name": "string?", "nameEn": "string?" },
+      "response": "Table"
+    },
+    {
+      "method": "disableTable",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/tables/{tableId}/disable",
+      "request": null,
+      "response": "Table"
+    },
+    {
+      "method": "regenerateQr",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/tables/{tableId}/regenerate-qr",
+      "request": null,
+      "response": "Table"
+    },
+    {
+      "method": "getNextTableNumber",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/tables/next-number",
+      "request": null,
+      "response": "{ number: number; allFull: boolean }"
+    },
+    {
+      "method": "updateTable",
+      "httpMethod": "PUT",
+      "url": "/stores/{storeId}/tables/{tableId}",
+      "request": { "name": "string?", "nameEn": "string?" },
+      "response": "Table"
+    },
+    {
+      "method": "closeTable",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/tables/{tableId}/close",
+      "request": null,
+      "response": "{ closed: number }"
+    },
+    {
+      "method": "getTableOrders",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/orders?tableId={tableId}",
+      "request": null,
+      "response": "Order[]"
+    },
+    {
+      "method": "createCheckout",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/checkout",
+      "request": {
+        "tableId": "string",
+        "items": "{ menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]",
+        "customerName": "string?",
+        "tipAmount": "number?"
+      },
+      "response": "{ clientSecret: string; amount: number }"
+    },
+    {
+      "method": "createCheckoutForOrders",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/checkout",
+      "request": { "orderIds": "string[]" },
+      "response": "{ clientSecret: string; amount: number }"
+    },
+    {
+      "method": "getAnalytics",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/analytics",
+      "queryParams": { "startDate": "string?", "endDate": "string?" },
+      "request": null,
+      "response": "AnalyticsResponse"
+    },
+    {
+      "method": "getCoupons",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/coupons",
+      "request": null,
+      "response": "Coupon[]"
+    },
+    {
+      "method": "createCoupon",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/coupons",
+      "request": "Omit<Coupon, 'id' | 'storeId' | 'currentUses' | 'createdAt'>",
+      "response": "Coupon"
+    },
+    {
+      "method": "updateCoupon",
+      "httpMethod": "PUT",
+      "url": "/stores/{storeId}/coupons/{couponId}",
+      "request": "Partial<Coupon>",
+      "response": "Coupon"
+    },
+    {
+      "method": "deleteCoupon",
+      "httpMethod": "DELETE",
+      "url": "/stores/{storeId}/coupons/{couponId}",
+      "request": null,
+      "response": "void"
+    },
+    {
+      "method": "getWaitlist",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/waitlist",
+      "request": null,
+      "response": "WaitlistEntry[]"
+    },
+    {
+      "method": "addToWaitlist",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/waitlist",
+      "request": { "name": "string", "partySize": "number", "phone": "string?" },
+      "response": "WaitlistEntry"
+    },
+    {
+      "method": "removeFromWaitlist",
+      "httpMethod": "DELETE",
+      "url": "/stores/{storeId}/waitlist/{entryId}",
+      "request": null,
+      "response": "void"
+    },
+    {
+      "method": "seatWaitlistEntry",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/waitlist/{entryId}/seat",
+      "request": null,
+      "response": "WaitlistEntry"
+    },
+    {
+      "method": "getStaff",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/staff",
+      "request": null,
+      "response": "AuthUser[]"
+    },
+    {
+      "method": "createStaff",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/staff",
+      "request": { "username": "string", "password": "string", "role": "string" },
+      "response": "AuthUser"
+    },
+    {
+      "method": "updateStaff",
+      "httpMethod": "PATCH",
+      "url": "/stores/{storeId}/staff/{userId}",
+      "request": { "role": "string?" },
+      "response": "AuthUser"
+    },
+    {
+      "method": "deleteStaff",
+      "httpMethod": "DELETE",
+      "url": "/stores/{storeId}/staff/{userId}",
+      "request": null,
+      "response": "void"
+    },
+    {
+      "method": "reprintOrder",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/printer/print/{orderId}",
+      "request": null,
+      "response": "{ success: boolean }"
+    },
+    {
+      "method": "getActiveBill",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/bills?tableId={tableId}",
+      "request": null,
+      "response": "(Bill & { splits: Split[] }) | null"
+    },
+    {
+      "method": "getBill",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/bills/{billId}",
+      "request": null,
+      "response": "Bill & { splits: Split[] }"
+    },
+    {
+      "method": "createBillSplits",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/bills/{billId}/splits",
+      "request": { "method": "string", "count": "number?" },
+      "response": "Split[]"
+    },
+    {
+      "method": "markSplitPaid",
+      "httpMethod": "PATCH",
+      "url": "/stores/{storeId}/bills/{billId}/splits/{splitId}",
+      "request": null,
+      "response": "{ bill: Bill; split: Split }"
+    },
+    {
+      "method": "applyBillCoupon",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/bills/{billId}/apply-coupon",
+      "request": { "couponId": "string", "couponCode": "string", "discountType": "string", "discountValue": "number" },
+      "response": "Bill"
+    },
+    {
+      "method": "removeBillCoupon",
+      "httpMethod": "DELETE",
+      "url": "/stores/{storeId}/bills/{billId}/coupon",
+      "request": null,
+      "response": "Bill"
+    },
+    {
+      "method": "settleBill",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/bills/{billId}/settle",
+      "request": { "paidBy": "string?" },
+      "response": "Bill"
+    },
+    {
+      "method": "getRoles",
+      "httpMethod": "GET",
+      "url": "/stores/{storeId}/roles",
+      "request": null,
+      "response": "RoleDefinition[]"
+    },
+    {
+      "method": "createRole",
+      "httpMethod": "POST",
+      "url": "/stores/{storeId}/roles",
+      "request": { "name": "string", "nameEn": "string?", "permissions": "string[]" },
+      "response": "RoleDefinition"
+    },
+    {
+      "method": "updateRole",
+      "httpMethod": "PUT",
+      "url": "/stores/{storeId}/roles/{roleId}",
+      "request": { "name": "string?", "nameEn": "string?", "permissions": "string[]?" },
+      "response": "RoleDefinition"
+    },
+    {
+      "method": "deleteRole",
+      "httpMethod": "DELETE",
+      "url": "/stores/{storeId}/roles/{roleId}",
+      "request": null,
+      "response": "void"
+    },
+    {
+      "method": "uploadImage",
+      "httpMethod": "POST",
+      "url": "/upload",
+      "request": "FormData { file: File }",
+      "response": "string (url)"
+    }
+  ]
+}
