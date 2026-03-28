@@ -190,7 +190,7 @@ skill-seekers package output/<name>/ --target claude
 
 ## Project Overview
 
-QR 扫码点餐 SaaS 系统 — 顾客扫桌台二维码浏览菜单、选规格下单、Stripe 在线支付（含小费）；管理端实时看板处理订单、管理菜品/分类/桌台/门店设置。
+QR 扫码点餐 SaaS 系统 — 顾客扫桌台二维码浏览菜单、选规格下单、Stripe 在线支付（含小费）；管理端实时看板处理订单、管理菜品/分类/桌台/门店设置。支持 RBAC 权限控制、账单/分账管理、自定义角色。
 
 **Monorepo 结构（pnpm workspace）：**
 
@@ -220,6 +220,7 @@ QR 扫码点餐 SaaS 系统 — 顾客扫桌台二维码浏览菜单、选规格
 - **ORM**: Prisma 6.19（schema 已定义，当前 MVP 仍用 JSON 文件存储）
 - **数据库**: PostgreSQL 16（docker-compose，Prisma schema 已就绪）
 - **认证**: JWT (jsonwebtoken 9) + bcryptjs 3
+- **权限**: RBAC — `permission.middleware.ts` + `role.service.ts`（基于 `Permission` 类型的细粒度权限控制）
 - **支付**: Stripe SDK 20（PaymentIntent + Webhook）
 - **存储**: AWS S3 (@aws-sdk/client-s3 3，图片上传)
 - **日志**: Pino 10 + pino-pretty 13 + Morgan 1
@@ -237,32 +238,99 @@ QR 扫码点餐 SaaS 系统 — 顾客扫桌台二维码浏览菜单、选规格
 ## Current Database Schema
 
 > Prisma schema 位于 `server/prisma/schema.prisma`，当前 MVP 仍用 JSON 文件，Prisma 迁移待执行。
+> JSON 数据文件位于 `server/data/`：bills.json, categories.json, coupons.json, menu-items.json, orders.json, roles.json, splits.json, staff.json, stores.json, tables.json, waitlist.json
 
 ### Store（门店）
 ```
-id           String    @id @default(uuid())
-name         String
-description  String?
-openingHours String?
-announcement String?
-logo         String?
-createdAt    DateTime
-updatedAt    DateTime
-→ has many StoreUser
+id               String    @id @default(uuid())
+name             String
+nameEn           String?
+logo             String?
+description      String?
+descriptionEn    String?
+openingHours     String?
+announcement     String?
+announcementEn   String?
+autoAcceptOrders Boolean?
+maxTables        Number?
+paymentMode      'pay-first' | 'pay-later'
+createdAt        DateTime
+updatedAt        DateTime
+→ has many StoreUser, RoleDefinition
 ```
 
 ### StoreUser（门店用户）
 ```
 id        String   @id @default(uuid())
+storeId   String   → Store.id
 username  String
 password  String
-role      String   @default("staff")   // 'owner' | 'staff'
-storeId   String   → Store.id
+role      String   @default("staff")   // legacy field
+roleId    String?  → RoleDefinition.id  // new RBAC
 createdAt DateTime
 @@unique([storeId, username])
 ```
 
+### RoleDefinition（角色定义）
+```
+id          String       @id @default(uuid())
+storeId     String       → Store.id
+name        String
+nameEn      String?
+permissions Permission[] // 细粒度权限列表
+isSystem    Boolean      // 系统内置角色不可删除
+createdAt   DateTime
+```
+
+### Bill（账单）
+```
+id                 String   @id @default(uuid())
+storeId            String   → Store.id
+tableId            String   → Table.id
+version            Number   // 乐观锁
+status             'pending-payment' | 'open' | 'partially-paid' | 'settled'
+splitMethod        'equal' | 'percentage' | 'by-item' | 'full'
+orderIds           String[]
+subtotal           Number   // cents
+couponId           String?
+couponCode         String?
+couponDiscountType DiscountType?
+couponDiscountValue Number?
+discountAmount     Number   // cents
+totalDue           Number   // cents
+paidAmount         Number   // cents
+createdAt          DateTime
+settledAt          DateTime?
+→ has many Split
+```
+
+### Split（分账）
+```
+id              String   @id @default(uuid())
+billId          String   → Bill.id
+storeId         String   → Store.id
+amount          Number   // cents
+percentage      Number?
+status          'unpaid' | 'paid'
+paidBy          'customer' | 'waiter'
+paymentIntentId String?
+itemIds         String[]?
+customerName    String?
+createdAt       DateTime
+```
+
 > **注意**：Menu/Category/Table/Order 等模型尚未迁移到 Prisma，仍在 JSON 文件中（`server/data/*.json`），类型定义在 `shared/types.ts`。
+
+### Permission 类型（RBAC）
+```
+'orders:read' | 'orders:write'
+'menu:read' | 'menu:write'
+'tables:read' | 'tables:write'    // includes floor plan + bill operations
+'billing:read' | 'billing:write'  // includes coupons
+'analytics:read'
+'staff:manage'
+'settings:read' | 'settings:write'
+```
 
 ---
 
@@ -285,7 +353,7 @@ createdAt DateTime
 | Method | Path | Auth | 说明 |
 |--------|------|------|------|
 | GET | `/` | - | 获取门店信息 |
-| PUT | `/` | JWT | 更新门店信息（名称/描述/营业时间/公告/autoAcceptOrders） |
+| PUT | `/` | JWT | 更新门店信息（名称/描述/营业时间/公告/autoAcceptOrders/maxTables/paymentMode） |
 
 ### 菜单 `/api/stores/:storeId/menu`
 | Method | Path | Auth | 说明 |
@@ -303,13 +371,15 @@ createdAt DateTime
 ### 桌台 `/api/stores/:storeId/tables`
 | Method | Path | Auth | 说明 |
 |--------|------|------|------|
-| GET | `/` | JWT | 获取所有桌台 |
+| GET | `/` | JWT (tables:read) | 获取所有桌台（?includeDisabled=true 含禁用桌台） |
+| GET | `/next-number` | JWT (tables:write) | 获取下一个可用桌台编号 |
 | GET | `/:tableId` | - | 获取单个桌台（顾客扫码用） |
-| POST | `/` | JWT | 创建桌台 |
-| PUT | `/:tableId` | JWT | 修改桌台 |
-| DELETE | `/:tableId` | JWT | 删除桌台（占用中不可删） |
-| POST | `/:tableId/settle` | JWT | 结账（所有订单→completed，桌台→idle） |
-| POST | `/:tableId/close` | JWT | 关台（订单→closed，桌台→idle） |
+| POST | `/enable` | JWT (tables:write) | 启用桌台（从 ID 池分配，number + name + nameEn） |
+| PUT | `/:tableId` | JWT (tables:write) | 修改桌台 |
+| POST | `/:tableId/disable` | JWT (tables:write) | 禁用桌台（占用中不可禁用） |
+| POST | `/:tableId/regenerate-qr` | JWT (tables:write) | 重新生成桌台 QR 码（新随机 ID，旧 QR 失效） |
+| POST | `/:tableId/settle` | JWT (tables:write) | 结账（所有订单→completed，桌台→idle） |
+| POST | `/:tableId/close` | JWT (tables:write) | 关台（订单→closed，桌台→idle） |
 
 ### 订单 `/api/stores/:storeId/orders`
 | Method | Path | Auth | 说明 |
@@ -319,6 +389,17 @@ createdAt DateTime
 | PATCH | `/:orderId/status` | JWT | 更新订单状态 |
 | POST | `/:orderId/transfer` | JWT | 转桌（将订单移到目标桌台） |
 | PUT | `/:orderId/items` | JWT | 修改订单项（增删菜品/改规格/重算价格） |
+
+### 账单 `/api/stores/:storeId/bills`
+| Method | Path | Auth | 说明 |
+|--------|------|------|------|
+| GET | `/?tableId=` | - | 获取桌台的活跃账单（含 splits） |
+| GET | `/:billId` | - | 获取单个账单（含 splits） |
+| POST | `/:billId/splits` | JWT (tables:write) | 创建分账（method + count + version 乐观锁） |
+| PATCH | `/:billId/splits/:splitId` | JWT (tables:write) | 标记分账已付（waiter） |
+| POST | `/:billId/apply-coupon` | JWT (billing:write) | 账单应用优惠券 |
+| DELETE | `/:billId/coupon` | JWT (billing:write) | 移除账单优惠券 |
+| POST | `/:billId/settle` | JWT (tables:write) | 整单结账（paidBy + version 乐观锁） |
 
 ### 支付
 | Method | Path | Auth | 说明 |
@@ -348,10 +429,13 @@ createdAt DateTime
 | DELETE | `/:entryId` | JWT | 移除候位 |
 | POST | `/:entryId/seat` | JWT | 标记为已入座 |
 
-### 分账 `/api/stores/:storeId/split-bill`
+### 角色 `/api/stores/:storeId/roles`
 | Method | Path | Auth | 说明 |
 |--------|------|------|------|
-| POST | `/` | JWT | 创建分账（equal 或 by-item 模式） |
+| GET | `/` | JWT (staff:manage) | 获取所有角色定义 |
+| POST | `/` | JWT (staff:manage) | 创建角色（name + nameEn + permissions） |
+| PUT | `/:roleId` | JWT (staff:manage) | 修改角色 |
+| DELETE | `/:roleId` | JWT (staff:manage) | 删除角色（系统角色不可删） |
 
 ### 打印 `/api/stores/:storeId/printer`
 | Method | Path | Auth | 说明 |
@@ -363,10 +447,10 @@ createdAt DateTime
 ### 员工 `/api/stores/:storeId/staff`
 | Method | Path | Auth | 说明 |
 |--------|------|------|------|
-| GET | `/` | JWT (owner) | 获取所有员工 |
-| POST | `/` | JWT (owner) | 添加员工账号 |
-| PATCH | `/:userId` | JWT (owner) | 修改员工角色 |
-| DELETE | `/:userId` | JWT (owner) | 删除员工（不可删除最后一个 owner） |
+| GET | `/` | JWT (staff:manage) | 获取所有员工 |
+| POST | `/` | JWT (staff:manage) | 添加员工账号 |
+| PATCH | `/:userId` | JWT (staff:manage) | 修改员工角色 |
+| DELETE | `/:userId` | JWT (staff:manage) | 删除员工（不可删除最后一个 owner） |
 
 ### 上传
 | Method | Path | Auth | 说明 |
@@ -395,12 +479,12 @@ createdAt DateTime
 | `/admin/dashboard` | DashboardPage | 订单面板（筛选/状态更新/修改订单） |
 | `/admin/menu` | MenuManagePage | 菜品管理（表格/预览/内联编辑） |
 | `/admin/categories` | CategoryManagePage | 分类管理 |
-| `/admin/tables` | TablesPage | 桌台管理（QR 码生成/打印/结账/关台/转桌/分账） |
+| `/admin/tables` | TablesPage | 桌台管理（启用/禁用/QR 码/结账/关台/分账） |
 | `/admin/floor-plan` | FloorPlanPage | 楼层平面图（桌台可视化+候位+活跃订单侧栏） |
 | `/admin/floor-plan/editor` | FloorPlanEditorPage | 楼层编辑器（拖拽布局桌台位置） |
 | `/admin/analytics` | AnalyticsPage | 数据分析（订单/收入/热门菜品/员工，支持日期范围+CSV导出） |
 | `/admin/coupons` | CouponManagePage | 优惠券管理（CRUD，支持百分比/固定/买赠类型） |
-| `/admin/staff` | StaffManagePage | 员工管理（owner 专属，CRUD 员工账号/角色） |
+| `/admin/staff` | StaffManagePage | 员工管理（RBAC，CRUD 员工账号/角色分配） |
 | `/admin/settings` | StoreSettingsPage | 门店设置 |
 | `*` | → `/admin/dashboard` | 默认跳转 |
 
@@ -408,42 +492,74 @@ createdAt DateTime
 | Store | 文件 | 说明 |
 |-------|------|------|
 | `useSessionStore` | `stores/session-store.ts` | 顾客会话（storeId/tableId），localStorage 持久化 |
-| `useAuthStore` | `stores/auth-store.ts` | 管理员认证（JWT token/user），localStorage 持久化 |
+| `useAuthStore` | `stores/auth-store.ts` | 管理员认证（JWT token/user/permissions），localStorage 持久化 |
 | `useCartStore` | `stores/cart-store.ts` | 购物车，localStorage 持久化（key `qr-order-cart`） |
 | `useAdminLangStore` | `stores/admin-lang-store.ts` | 管理端语言偏好（zh/en），localStorage 持久化 |
 
-### 共享组件（components/）
+### 组件（components/ — 按领域分子目录）
+
+#### components/order/
+| 组件 | 说明 |
+|------|------|
+| `OrderCard` | 订单卡片（订单摘要+重打印+编辑入口，Dashboard 用） |
+| `OrderDetailDialog` | 订单详情弹窗（明细/规格/备注） |
+| `OrderEditDialog` | 订单编辑弹窗（调整数量/增删菜品/改选项/备注） |
+| `OrderEditMode` | 订单内联编辑（增删菜品/改数量/重算价格） |
+| `OrderingSheet` | 桌内加单 Sheet（菜品浏览+规格选择+直接下单，顾客端） |
+| `OrderReceipt` | 订单小票（打印格式） |
+
+#### components/table/
+| 组件 | 说明 |
+|------|------|
+| `BillSettleDialog` | 账单结账弹窗（分账/应用优惠券/整单结账） |
+| `CloseTableDialog` | 关台确认弹窗 |
+| `SplitBillDialog` | 分账弹窗（均分/按菜品分） |
+| `TableCrudDialog` | 桌台启用/编辑弹窗（桌台号+名称） |
+| `TableDetailPanel` | 桌台详情面板（当前订单+历史订单） |
+| `TableGrid` | 桌台网格（楼层平面图用，状态色标） |
+| `TransferTableDialog` | 转桌弹窗（选择空闲桌台转移订单） |
+
+#### components/menu/
+| 组件 | 说明 |
+|------|------|
+| `CsvImportDialog` | CSV 菜品批量导入弹窗 |
+| `ItemCustomizeView` | 菜品规格自定义视图（选项选择+数量，OrderingSheet 内嵌） |
+| `MenuItemDetailSheet` | 菜品详情 Sheet（规格选择+加购，顾客端） |
+| `MenuItemForm` | 菜品创建/编辑表单弹窗（含规格/选项/中英文） |
+| `MenuItemTable` | 菜品列表（桌面表格/移动卡片/预览网格，内联编辑） |
+
+#### components/floor/
+| 组件 | 说明 |
+|------|------|
+| `ActiveOrdersSidebar` | 活跃订单侧栏（按状态分组，15s 自动刷新） |
+| `FloorCanvas` | 楼层画布（按 x/y 坐标渲染桌台形状） |
+| `FloorTableShape` | 单个桌台形状组件（square/round/long） |
+| `WaitlistPanel` | 候位管理面板（添加/入座/移除，30s 自动刷新） |
+
+#### components/layout/
 | 组件 | 说明 |
 |------|------|
 | `AdminLayout` | 管理端布局框架（侧栏导航+内容区） |
 | `ProtectedRoute` | 路由守卫（未登录跳转 LoginPage） |
-| `OrderDetailDialog` | 订单详情弹窗（明细/规格/备注） |
-| `OrderReceipt` | 订单小票（打印格式） |
-| `CloseTableDialog` | 关台确认弹窗 |
+
+#### components/shared/
+| 组件 | 说明 |
+|------|------|
 | `ImageUpload` | 图片上传组件（S3） |
-| `MenuItemDetailSheet` | 菜品详情 Sheet（规格选择+加购，顾客端） |
-| `OrderingSheet` | 桌内加单 Sheet（菜品浏览+规格选择+直接下单，顾客端） |
-| `ItemCustomizeView` | 菜品规格自定义视图（选项选择+数量，OrderingSheet 内嵌） |
-| `ActiveOrdersSidebar` | 活跃订单侧栏（按状态分组，15s 自动刷新） |
-| `TableGrid` | 桌台网格（楼层平面图用，状态色标） |
-| `TableDetailPanel` | 桌台详情面板（当前订单+历史订单） |
-| `TableCrudDialog` | 桌台创建/编辑/删除弹窗（TablesPage 用） |
-| `TransferTableDialog` | 转桌弹窗（选择空闲桌台转移订单） |
-| `WaitlistPanel` | 候位管理面板（添加/入座/移除，30s 自动刷新） |
-| `OrderEditMode` | 订单内联编辑（增删菜品/改数量/重算价格） |
-| `SplitBillDialog` | 分账弹窗（均分/按菜品分，生成支付链接） |
-| `OrderCard` | 订单卡片（订单摘要+重打印+编辑入口，Dashboard 用） |
-| `MenuItemForm` | 菜品创建/编辑表单弹窗（含规格/选项/中英文） |
-| `OrderEditDialog` | 订单编辑弹窗（调整数量/增删菜品/改选项/备注） |
-| `MenuItemTable` | 菜品列表（桌面表格/移动卡片/预览网格，内联编辑） |
 | `TipSelector` | 小费选择器（预设百分比+自定义，CheckoutPage 用） |
+
+### Hooks（hooks/）
+| Hook | 说明 |
+|------|------|
+| `usePermission(perm)` | 检查当前用户是否有指定权限（支持 legacy role 降级） |
+| `useIsOwner()` | 检查当前用户是否有 `staff:manage` 权限 |
 
 ### i18n
 | 文件 | 说明 |
 |------|------|
 | `i18n/index.ts` | i18next 初始化配置（browser language detector） |
 | `i18n/useT.ts` | 管理端 i18n hook（自动读取 admin-lang-store 语言偏好） |
-| `i18n/admin.ts` | 管理端翻译资源（zh/en 内联定义，429 行） |
+| `i18n/admin.ts` | 管理端翻译资源（zh/en 内联定义，523 行） |
 | `i18n/en/*.json` | 英文翻译（admin.json + customer.json） |
 | `i18n/zh/*.json` | 中文翻译（admin.json + customer.json） |
 
@@ -461,27 +577,30 @@ createdAt DateTime
 
 - **价格**: 全部用整数（分/cents）存储和传输，前端展示时 `/100`
 - **多租户**: 所有 API 路径带 `/api/stores/:storeId/` 前缀，middleware 校验 JWT storeId 与 URL storeId 一致
+- **RBAC 权限**: JWT 中携带 `permissions` 数组，`permission.middleware.ts` 按端点校验；legacy token 通过 `resolvePermissions()` 降级兼容
 - **订单快照**: OrderItem 冻结下单时的菜名/价格/规格，菜单改价不影响历史订单
+- **账单流程**: 桌台结账时自动创建 Bill（聚合该桌所有订单），支持分账（equal/by-item）、优惠券、乐观锁（version）防并发冲突
 - **支付流程**: 两阶段 — 先创建 PaymentIntent（不建订单），Stripe webhook 确认支付后才创建订单（`isPaid: true`）；支持新购物车结账和已有未付订单结账（`orderIds`），可选 `tipAmount`
+- **桌台 ID 池**: 桌台使用 enable/disable 模型，禁用的桌台保留数据但不可扫码；`regenerate-qr` 生成新随机 ID 使旧 QR 码失效
 - **cartKey**: 同一菜品不同规格 = 购物车中不同条目，通过 menuItemId + 选项组合区分
 - **i18n 字段命名**: 中文用 `name`/`description`，英文用 `nameEn`/`descriptionEn`，`localized()` 按语言选择
 - **i18n 双系统**: 顾客端用 react-i18next（JSON 文件），管理端用 `useT()` hook + `admin-lang-store`（内联翻译资源 `i18n/admin.ts`）
-- **文件命名**: 页面 `XxxPage.tsx`，路由 `xxx.routes.ts`，控制器 `xxx.service.ts` / `xxx.controller.ts`
+- **文件命名**: 页面 `XxxPage.tsx`，路由 `xxx.routes.ts`，控制器 `xxx.service.ts`
 - **监听地址**: `0.0.0.0:3001`（支持局域网手机扫码 + 电脑后台）
 - **订单号**: A001-A999, B001-B999... 循环递增，人类可读
-- **JsonStore 单例**: 每个 JSON 数据文件只能有一个 `JsonStore` 实例，多个 service 共享同一实例（避免内存不同步 bug）
+- **JsonStore 单例**: 所有 JsonStore 实例集中在 `repositories/stores.ts`，各 service 通过 import 共享（避免内存不同步 bug）。当前单例：orderStore, tableStore, storeStore, billStore, splitStore, roleStore
 
 ---
 
 ## Known Issues / Deferred Work
 
 ### 架构 & 数据层
-- **Prisma 迁移未执行**: `schema.prisma` 只定义了 Store 和 StoreUser，Menu/Category/Table/Order 等核心模型仍用 JSON 文件存储，Prisma migration 待完成
-- **自定义 Hooks 缺失**: `client/src/hooks/` 目录为空，数据获取逻辑直接写在页面组件中（违反架构原则，待提取为 `useMenu`/`useOrders` 等 hooks）
-- ~~**控制器命名不一致**~~: ✅ 已修复 — `auth.controller.ts` 已重命名为 `auth.service.ts`，所有控制器统一使用 `.service.ts` 命名
-- **`api.ts` 超过 200 行限制**: 当前 286 行，需拆分（如按模块拆为 `api/menu.ts`、`api/orders.ts` 等）
-- **7 个文件严重超限（>300 行）**: `MenuPage.tsx`（500 行）、`CategoryManagePage.tsx`（423 行）、`MenuItemForm.tsx`（375 行）、`OrderEditDialog.tsx`（372 行）、`TablesPage.tsx`（352 行）、`AnalyticsPage.tsx`（317 行）、`MenuItemTable.tsx`（317 行）均远超 200 行限制，需优先拆分
-- **12 个文件轻微超限（200-291 行）**: `MenuManagePage.tsx`（291 行）、`MenuItemDetailSheet.tsx`（250 行）、`CouponManagePage.tsx`（225 行）、`TableDetailPanel.tsx`（223 行）、`DashboardPage.tsx`（214 行）、`AdminLayout.tsx`（212 行）、`ActiveOrdersSidebar.tsx`（210 行）、`StaffManagePage.tsx`（206 行）、`OrderDetailDialog.tsx`（206 行）、`order.service.ts`（206 行）、`CartPage.tsx`（204 行）、`FloorPlanEditorPage.tsx`（202 行）
+- **Prisma 迁移未执行**: `schema.prisma` 只定义了 Store 和 StoreUser，Menu/Category/Table/Order/Bill/Split/Role 等核心模型仍用 JSON 文件存储，Prisma migration 待完成
+- **自定义 Hooks 不完整**: `client/src/hooks/` 目前仅有 `usePermission.ts`，数据获取逻辑仍直接写在页面组件中（违反架构原则，待提取为 `useMenu`/`useOrders` 等 hooks）
+- ~~**控制器命名不一致**~~: ✅ 已修复 — 所有控制器统一使用 `.service.ts` 命名（auth/bill/coupon/menu/order/payment/printer/role/staff/store/table/waitlist/analytics）
+- **`api.ts` 超过 200 行限制**: 当前 342 行（含 bills + roles API），需拆分（如按模块拆为 `api/menu.ts`、`api/orders.ts`、`api/bills.ts` 等）
+- **9 个文件严重超限（>300 行）**: `i18n/admin.ts`（523 行）、`MenuPage.tsx`（515 行）、`TablesPage.tsx`（425 行）、`CategoryManagePage.tsx`（423 行）、`MenuItemForm.tsx`（375 行）、`OrderEditDialog.tsx`（372 行）、`api.ts`（342 行）、`StaffManagePage.tsx`（336 行）、`FloorPlanEditorPage.tsx`（319 行）均远超 200 行限制，需优先拆分
+- **9 个文件轻微超限（200-300 行）**: `MenuManagePage.tsx`（319 行）、`AnalyticsPage.tsx`（317 行）、`MenuItemTable.tsx`（317 行）、`CsvImportDialog.tsx`（284 行）、`order.service.ts`（272 行）、`payment.service.ts`（267 行）、`BillSettleDialog.tsx`（262 行）、`MenuItemDetailSheet.tsx`（250 行）、`FloorPlanPage.tsx`（250 行）
 - ~~**AuthUser 类型重复**~~: ✅ 已修复 — `AuthUser` 已提取到 `shared/types.ts`，`auth-store.ts` 通过 import 引用
 - **session-store 与 URL 双数据源**: `session-store` 持久化 storeId/tableId 到 localStorage，但 URL 参数中也包含这些值，存在状态不一致风险。未来应以 URL 为 source of truth
 
@@ -505,7 +624,7 @@ createdAt DateTime
 - ~~**orderConfirm.loadingOrder 无 defaultValue**~~: ✅ 已修复 — key 已定义在 en/zh customer.json 中
 - **15+ 处硬编码英文字符串**: "Access restricted to store owners"（3 处：CouponManagePage/FloorPlanEditorPage/AnalyticsPage）、"Owner"/"Staff" 标签（StaffManagePage SelectItem + 角色显示共 3 处）、"Loading..."（FloorPlanEditorPage）、error catch fallback 等
 - ~~**ScanPage 硬编码中文错误**~~: ✅ 已修复 — 现使用 `t('scan.error')` 获取翻译
-- **Store 缺 `announcementEn`**: 公告是顾客可见内容但不支持双语
+- ~~**Store 缺 `announcementEn`**~~: ✅ 已修复 — `Store` 类型已添加 `announcementEn` 字段，`MenuResponse` 也已包含
 - **server 端硬编码中文错误消息**: `table.service.ts` 中 3 处中文错误返回（`桌台"${name}"已存在`、`该桌台正在使用中，无法删除`）
 - **login.passwordPlaceholder 缺 i18n 定义**: LoginPage 使用 `t('login.passwordPlaceholder', 'Enter password')` 但 key 未定义在任何 i18n JSON 文件中
 
@@ -516,7 +635,7 @@ createdAt DateTime
 ### 死代码（来自 dead-code audit 2026-03-20）
 - **未使用的 API 路由**: `GET /auth/me`（前端未调用）、`GET/PUT /printer/config`（前端无对应方法）
 - **`api.seatWaitlistEntry()` 与 `updateWaitlistEntry` 重复**: WaitlistPanel 同时使用两者（`seatWaitlistEntry` 调 POST `/seat`，`updateWaitlistEntry` 调 PATCH），功能可能重叠
-- **未使用的类型**: `StoreUser`、`LoginRequest`、`UpdateOrderStatusRequest`、`UpdateOrderItemsRequest`（共 4 个，均在 `shared/types.ts` 中定义但从未被 import）
+- **未使用的类型**: `StoreUser`（定义在 `shared/types.ts` 但仅被 types.ts 自身引用，前后端均未 import）
 
 ### UX（来自 ux-audit 2026-03-20）
 - **OrderEditMode 按钮严重过小**: 数量/删除/折扣按钮仅 24px（`icon-xs`/`xs`），远低于 44px 最小触摸目标
@@ -568,7 +687,16 @@ createdAt DateTime
 
 ### 2026-03-24 追加修复
 - ✅ **桌台状态不更新（occupied/idle）**: JsonStore 多实例 bug — `order.service.ts` 和 `table.service.ts` 各自 `new JsonStore('tables.json')` 导致内存不同步 → 改为单例 export/import 共享
-- ✅ **stores.json 也有 3 个实例**: menu.service + order.service + store.service → 统一从 store.service 导出
+- ✅ **stores.json 也有 3 个实例**: menu.service + order.service + store.service → 统一从 `repositories/stores.ts` 导出
+
+### 2026-03-27 新增功能
+- ✅ **RBAC 权限系统**: 新增 `Permission` 类型 + `RoleDefinition` 模型 + `permission.middleware.ts` + `role.service.ts` + `usePermission` hook，支持细粒度权限控制
+- ✅ **账单/分账系统**: 新增 `Bill` + `Split` 模型 + `bill.service.ts` + `bill.routes.ts`，替代旧的 `split-bill` 路由，支持乐观锁、优惠券应用、分账结账
+- ✅ **桌台 enable/disable 模型**: 替代旧的 create/delete，支持桌台号池管理 + QR 码重新生成
+- ✅ **组件目录重组**: 从扁平结构迁移到 `order/`、`table/`、`menu/`、`floor/`、`layout/`、`shared/` 子目录
+- ✅ **JsonStore 单例集中管理**: 所有 JsonStore 实例集中在 `repositories/stores.ts`
+- ✅ **Store 支持 announcementEn**: 公告双语支持已实现
+- ✅ **新增组件**: `BillSettleDialog`、`CsvImportDialog`、`FloorCanvas`、`FloorTableShape`
 
 ### 待实现功能
 - **FloorPlan 交互式地图**: 将 FloorPlanPage 从卡片网格改为按 x/y 坐标渲染桌台（复用 FloorPlanEditorPage 的布局数据），让运营视图和编辑器视图一致
@@ -595,14 +723,15 @@ createdAt DateTime
 - **不要修改 Stripe webhook 签名验证逻辑** — `webhook.routes.ts` 使用 raw body parser，改动可能导致签名校验失败
 - **不要在 `app.ts` 中把 `express.json()` 放到 webhook 路由之前** — webhook 需要 raw body
 - **不要直接操作 `server/data/*.json` 文件** — 必须通过 `repositories/json-store.ts` 读写
+- **不要在 `repositories/stores.ts` 之外创建 JsonStore 实例** — 所有单例集中管理，否则内存缓存不同步
 - **不要在 `routes/` 文件中写业务逻辑** — 路由只做参数解析和响应，逻辑放 `controllers/`
 - **不要在页面组件中直接调用 `fetch`** — 使用 `services/api.ts` 中的封装函数
 - **不要用浮点数存储价格** — 全部用整数（分）
 - **不要新增公开 API 端点返回全量数据** — 未认证请求必须限定范围（如 `tableId`），防止数据泄漏。参考 `GET /orders` 的 `optionalAuth` 模式
 - **不要在 `shared/types.ts` 之外重复定义类型** — 前后端共享类型统一在 `shared/types.ts`，组件/store 通过 import 引用
 - **不要在环境变量缺失时使用 fallback 默认值** — 关键配置（`JWT_SECRET`、`DATABASE_URL` 等）缺失时必须 throw，不允许 `|| 'dev-secret'`
-- **不要为同一 JSON 数据文件创建多个 JsonStore 实例** — 必须共享单例，否则内存缓存不同步
+- **不要绕过 RBAC 权限检查** — 新增的受保护端点必须使用 `requirePermission()` middleware，不要用旧的 `requireRole('owner')` 模式
 
 ---
 
-> Last updated: 2026-03-24 CST (auto-generated)
+> Last updated: 2026-03-28 CST (auto-generated by Loop 8)
