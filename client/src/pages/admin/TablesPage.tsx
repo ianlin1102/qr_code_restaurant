@@ -56,7 +56,7 @@ export default function TablesPage() {
   const [editingTable, setEditingTable] = useState<Table | null>(null)
   const [mobileDropdown, setMobileDropdown] = useState(false)
   const [orderingOpen, setOrderingOpen] = useState(false)
-  const [billDialogOpen, setBillDialogOpen] = useState(false)
+  const [sessionDialogOpen, setSessionDialogOpen] = useState(false)
 
   const fetchData = useCallback(async () => {
     if (!storeId) return
@@ -103,10 +103,10 @@ export default function TablesPage() {
 
   // Derived (memoized)
   const activeOrders = useMemo(() => selected
-    ? orders.filter(o => o.tableId === selected.id && o.status !== 'closed' && o.status !== 'served')
+    ? orders.filter(o => o.tableId === selected.id && o.status !== 'served')
     : [], [selected, orders])
   const historyOrders = useMemo(() => selected
-    ? orders.filter(o => o.tableId === selected.id && (o.status === 'closed' || o.status === 'served'))
+    ? orders.filter(o => o.tableId === selected.id && o.status === 'served')
     : [], [selected, orders])
   const displayOrders = showHistory ? historyOrders : activeOrders
   const allItems = useMemo(() => activeOrders.flatMap(o => o.items), [activeOrders])
@@ -354,10 +354,10 @@ export default function TablesPage() {
               onClick={() => setSplitOpen(true)}>
               <Split className="size-4 mr-1" />{t.tables.splitBill}
             </Button>
-            {selected?.currentBillId && (
+            {selected?.currentSessionId && (
               <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
-                onClick={() => setBillDialogOpen(true)}>
-                <CheckCircle2 className="size-4 mr-1" />{t.bill?.title || 'Bill'}
+                onClick={() => setSessionDialogOpen(true)}>
+                <CheckCircle2 className="size-4 mr-1" />{t.session?.title || t.bill?.title || 'Session'}
               </Button>
             )}
             <Button size="sm" className="w-full bg-green-500 hover:bg-green-600"
@@ -381,8 +381,8 @@ export default function TablesPage() {
             <ActionBtn icon={Printer} label={t.tables.printBill} onClick={() => currentOrder && api.reprintOrder(storeId, currentOrder.id)} />
             <ActionBtn icon={ArrowLeftRight} label={t.tables.transfer} onClick={() => setTransferOpen(true)} />
             <ActionBtn icon={Split} label={t.tables.splitBill} onClick={() => setSplitOpen(true)} />
-            {selected?.currentBillId && (
-              <ActionBtn icon={CheckCircle2} label={t.bill?.title || 'Bill'} onClick={() => setBillDialogOpen(true)} />
+            {selected?.currentSessionId && (
+              <ActionBtn icon={CheckCircle2} label={t.session?.title || t.bill?.title || 'Session'} onClick={() => setSessionDialogOpen(true)} />
             )}
             <ActionBtn icon={QrCode} label={t.tables.printQr} onClick={handlePrintQr} />
             {selected?.status !== 'occupied' && (
@@ -440,12 +440,12 @@ export default function TablesPage() {
             order={currentOrder} storeId={storeId} />
         </>
       )}
-      {billDialogOpen && selected?.currentBillId && storeId && (
+      {sessionDialogOpen && selected?.currentSessionId && storeId && (
         <BillSettleDialog
-          open={billDialogOpen}
-          onClose={() => { setBillDialogOpen(false); fetchData() }}
+          open={sessionDialogOpen}
+          onClose={() => { setSessionDialogOpen(false); fetchData() }}
           storeId={storeId}
-          billId={selected.currentBillId}
+          sessionId={selected.currentSessionId}
           t={t}
         />
       )}

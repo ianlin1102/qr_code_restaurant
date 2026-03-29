@@ -60,7 +60,7 @@ export default function FloorPlanPage() {
   const occupiedCount = useMemo(() => enabledTables.filter(tb => tb.status === 'occupied').length, [enabledTables])
   const idleCount = enabledTables.length - occupiedCount
   const occupancyPct = enabledTables.length ? Math.round(occupiedCount / enabledTables.length * 100) : 0
-  const activeOrderCount = useMemo(() => orders.filter(o => o.status === 'pending' || o.status === 'preparing').length, [orders])
+  const activeOrderCount = useMemo(() => orders.filter(o => o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing').length, [orders])
   const zones = useMemo(() => Array.from(new Set(enabledTables.map(tb => tb.zone).filter(Boolean))) as string[], [enabledTables])
   const filteredTables = useMemo(() => {
     // __base__ = tables with no zone assigned (base layer)

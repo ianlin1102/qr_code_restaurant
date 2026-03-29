@@ -2,11 +2,9 @@ import { Router } from 'express'
 import { createOrder, getOrders, updateOrderStatus, updateOrderItems, transferOrder } from '../controllers/order.service.js'
 import { requireAuth, optionalAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
-import type { OrderStatus, Order } from '@qr-order/shared'
+import type { OrderStatus } from '@qr-order/shared'
 
 const router = Router({ mergeParams: true })
-
-function stripSensitive({ paymentIntentId, ...rest }: Order) { return rest }
 
 // POST /api/stores/:storeId/orders (public — customer creates order)
 router.post('/', (req, res) => {
@@ -15,7 +13,7 @@ router.post('/', (req, res) => {
     res.status(400).json(result)
     return
   }
-  res.status(201).json(stripSensitive(result))
+  res.status(201).json(result)
 })
 
 // GET /api/stores/:storeId/orders
@@ -32,7 +30,7 @@ router.get('/', optionalAuth, (req, res) => {
 
   const orders = getOrders(req.params.storeId, status, tableId)
 
-  res.json(orders.map(stripSensitive))
+  res.json(orders)
 })
 
 // PATCH (admin only)
@@ -42,7 +40,7 @@ router.patch('/:orderId/status', requireAuth, requirePermission('orders:write'),
     res.status(404).json(result)
     return
   }
-  res.json(stripSensitive(result))
+  res.json(result)
 })
 
 // POST /api/stores/:storeId/orders/:orderId/transfer (admin only)
@@ -57,7 +55,7 @@ router.post('/:orderId/transfer', requireAuth, requirePermission('orders:write')
     res.status(400).json(result)
     return
   }
-  res.json(stripSensitive(result))
+  res.json(result)
 })
 
 // PUT /api/stores/:storeId/orders/:orderId/items (admin only)
@@ -67,7 +65,7 @@ router.put('/:orderId/items', requireAuth, requirePermission('orders:write'), as
     res.status(400).json(result)
     return
   }
-  res.json(stripSensitive(result))
+  res.json(result)
 })
 
 export default router

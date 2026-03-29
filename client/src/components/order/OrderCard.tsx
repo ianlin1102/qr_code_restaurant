@@ -11,10 +11,9 @@ import type { Order, OrderItem, OrderStatus } from '@qr-order/shared'
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   pending: 'bg-orange-100 text-orange-800 border-orange-200',
-  paid: 'bg-purple-100 text-purple-800 border-purple-200',
+  confirmed: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   preparing: 'bg-blue-100 text-blue-800 border-blue-200',
-  completed: 'bg-green-100 text-green-800 border-green-200',
-  closed: 'bg-gray-100 text-gray-800 border-gray-200',
+  served: 'bg-green-100 text-green-800 border-green-200',
 }
 
 function timeAgo(dateStr: string): string {
@@ -84,11 +83,6 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
             <Badge variant="outline" className={config.color}>
               {config.label}
             </Badge>
-            {order.isPaid && (
-              <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-                {t.dashboard.status.paid}
-              </Badge>
-            )}
             <span className={`text-sm font-medium ${timeColor(order.createdAt)}`}>
               {timeAgo(order.createdAt)}
             </span>
@@ -106,7 +100,7 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
                 ? <span className="text-xs text-green-600">{t.dashboard.printed}</span>
                 : <Printer className="h-4 w-4" />}
             </Button>
-            {order.status !== 'served' && order.status !== 'closed' && (
+            {order.status !== 'served' && (
               <Button
                 variant="ghost"
                 size="sm"

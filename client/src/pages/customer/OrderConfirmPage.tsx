@@ -43,8 +43,9 @@ export default function OrderConfirmPage() {
     const maxAttempts = 5
     const poll = () => {
       api.getTableOrders(storeId, tableId).then((orders) => {
+        // In the new Session model, orders no longer carry isPaid.
+        // After payment, the most recent order is the one just placed.
         const paid = orders
-          .filter((o) => o.isPaid)
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
         if (paid) {
           setPaidOrder(paid)

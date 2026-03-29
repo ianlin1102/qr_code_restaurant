@@ -22,7 +22,7 @@ function formatElapsed(dateStr: string): string {
 
 function getActiveOrder(table: Table, orders: Order[]): Order | undefined {
   return orders.find(
-    o => o.tableId === table.id && (o.status === 'pending' || o.status === 'preparing'),
+    o => o.tableId === table.id && (o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing'),
   )
 }
 
@@ -42,7 +42,7 @@ export default function TableGrid({ tables, orders, onTableClick }: TableGridPro
       {tables.map(table => {
         const activeOrder = getActiveOrder(table, orders)
         const orderTotal = orders
-          .filter(o => o.tableId === table.id && o.status !== 'closed' && o.status !== 'served')
+          .filter(o => o.tableId === table.id && o.status !== 'served')
           .reduce((sum, o) => sum + o.totalPrice, 0)
 
         // Status config

@@ -69,6 +69,8 @@ export default function MenuPage() {
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null)
   const [unpaidOrders, setUnpaidOrders] = useState<Order[]>([])
   const [sessionOrders, setSessionOrders] = useState<Order[]>([])
+  const [sessionRemaining, setSessionRemaining] = useState(0)
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [payingOrders, setPayingOrders] = useState(false)
   const [headerCollapsed, setHeaderCollapsed] = useState(false)
   const lastScrollY = useRef(0)
@@ -78,12 +80,16 @@ export default function MenuPage() {
   useEffect(() => {
     if (!storeId || !tableId) return
     const fetchUnpaid = () => {
-      api.getTableOrders(storeId, tableId).then(orders => {
-        // Unpaid = not paid AND not closed (completed but unpaid still needs payment in pay-later mode)
-        const unpaid = orders.filter(o => !o.isPaid && o.status !== 'closed')
-        setUnpaidOrders(unpaid)
-        const history = orders.filter(o => o.isPaid || o.status === 'closed')
+      api.getTableOrders(storeId, tableId).then(allOrders => {
+        const active = allOrders.filter(o => o.status !== 'served' && o.status !== 'closed')
+        setUnpaidOrders(active)
+        const history = allOrders.filter(o => o.status === 'served')
         setSessionOrders(history)
+      }).catch(() => {})
+      // Fetch session remaining for "Pay Now" banner
+      api.getActiveSession(storeId, tableId).then(s => {
+        if (s) { setSessionRemaining(s.remaining); setActiveSessionId(s.id) }
+        else { setSessionRemaining(0); setActiveSessionId(null) }
       }).catch(() => {})
     }
     fetchUnpaid()
@@ -295,16 +301,16 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* Unpaid orders banner */}
-      {unpaidOrders.length > 0 && (
+      {/* Pay Now banner — shows when session has remaining balance */}
+      {sessionRemaining > 0 && activeSessionId && (
         <div className="bg-orange-50 border-b border-orange-200 px-4 py-3">
           <div className="max-w-lg mx-auto flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-orange-800">
-                {lang === 'zh' ? '待付款订单' : 'Unpaid Orders'}
+                {lang === 'zh' ? '待付款' : 'Payment Due'}
               </p>
               <p className="text-xs text-orange-600">
-                {unpaidOrders.length} {lang === 'zh' ? '单' : 'order(s)'} · {formatPriceUSD(unpaidOrders.reduce((s, o) => s + o.totalPrice, 0))}
+                {formatPriceUSD(sessionRemaining)}
               </p>
             </div>
             <Button
@@ -312,9 +318,9 @@ export default function MenuPage() {
               disabled={payingOrders}
               className="bg-orange-500 hover:bg-orange-600 text-white"
               onClick={() => {
-                if (!storeId) return
+                if (!storeId || !activeSessionId) return
                 setPayingOrders(true)
-                api.createCheckoutForOrders(storeId, unpaidOrders.map(o => o.id))
+                api.createCheckoutForSession(storeId, activeSessionId, sessionRemaining)
                   .then(({ clientSecret, amount }) => {
                     navigate(`/store/${storeId}/checkout`, {
                       state: { clientSecret, amount, tableId },

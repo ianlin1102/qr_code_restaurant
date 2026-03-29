@@ -15,7 +15,7 @@ import couponRoutes from './routes/coupon.routes.js'
 import waitlistRoutes from './routes/waitlist.routes.js'
 import printerRoutes from './routes/printer.routes.js'
 import staffRoutes from './routes/staff.routes.js'
-import billRoutes from './routes/bill.routes.js'
+import sessionRoutes from './routes/session.routes.js'
 import roleRoutes from './routes/role.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
@@ -45,7 +45,7 @@ app.use('/api/stores/:storeId/menu', menuRoutes)
 app.use('/api/stores/:storeId/orders', orderRoutes)
 app.use('/api/stores/:storeId/checkout', paymentRoutes)
 app.use('/api/stores/:storeId/tables', tableRoutes)
-app.use('/api/stores/:storeId/bills', billRoutes)
+app.use('/api/stores/:storeId/sessions', sessionRoutes)
 app.use('/api/stores/:storeId/analytics', analyticsRoutes)
 app.use('/api/stores/:storeId/coupons', couponRoutes)
 app.use('/api/stores/:storeId/waitlist', waitlistRoutes)

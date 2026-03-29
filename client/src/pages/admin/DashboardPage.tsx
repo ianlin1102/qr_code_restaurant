@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const TABS: { key: TabFilter; label: string }[] = [
     { key: 'all', label: t.dashboard.all },
     { key: 'pending', label: t.dashboard.status.pending },
+    { key: 'confirmed', label: t.dashboard.status.confirmed || 'Confirmed' },
     { key: 'preparing', label: t.dashboard.status.preparing },
     { key: 'served', label: t.dashboard.status.served },
   ]
@@ -103,6 +104,18 @@ export default function DashboardPage() {
       return (
         <Button
           size="sm"
+          className="bg-yellow-600 hover:bg-yellow-700 text-white min-h-[44px]"
+          disabled={updatingOrderId === order.id}
+          onClick={e => { e.stopPropagation(); handleStatusUpdate(order.id, 'confirmed') }}
+        >
+          {updatingOrderId === order.id ? '...' : (t.dashboard.status.confirmed || 'Confirm')}
+        </Button>
+      )
+    }
+    if (order.status === 'confirmed') {
+      return (
+        <Button
+          size="sm"
           className="bg-blue-600 hover:bg-blue-700 text-white min-h-[44px]"
           disabled={updatingOrderId === order.id}
           onClick={e => { e.stopPropagation(); handleStatusUpdate(order.id, 'preparing') }}
@@ -120,19 +133,6 @@ export default function DashboardPage() {
           onClick={e => { e.stopPropagation(); handleStatusUpdate(order.id, 'served') }}
         >
           {updatingOrderId === order.id ? '...' : t.dashboard.markComplete}
-        </Button>
-      )
-    }
-    if (order.status === 'served') {
-      return (
-        <Button
-          size="sm"
-          variant="outline"
-          className="min-h-[44px] border-orange-300 text-orange-600 hover:bg-orange-50"
-          disabled={updatingOrderId === order.id}
-          onClick={e => { e.stopPropagation(); handleStatusUpdate(order.id, 'preparing') }}
-        >
-          {updatingOrderId === order.id ? '...' : t.dashboard.reopen}
         </Button>
       )
     }

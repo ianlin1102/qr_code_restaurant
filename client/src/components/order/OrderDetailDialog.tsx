@@ -15,10 +15,9 @@ import type { Order, OrderItem, OrderStatus } from '@qr-order/shared'
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   pending: 'bg-orange-100 text-orange-800 border-orange-200',
-  paid: 'bg-purple-100 text-purple-800 border-purple-200',
+  confirmed: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   preparing: 'bg-blue-100 text-blue-800 border-blue-200',
-  completed: 'bg-green-100 text-green-800 border-green-200',
-  closed: 'bg-gray-100 text-gray-800 border-gray-200',
+  served: 'bg-green-100 text-green-800 border-green-200',
 }
 
 function itemUnitPrice(item: OrderItem): number {
@@ -59,10 +58,9 @@ export default function OrderDetailDialog({
 
   const STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
     pending: { label: t.dashboard.status.pending, color: STATUS_COLORS.pending },
-    paid: { label: t.dashboard.status.paid, color: STATUS_COLORS.paid },
+    confirmed: { label: t.dashboard.status.confirmed || 'Confirmed', color: STATUS_COLORS.confirmed },
     preparing: { label: t.dashboard.status.preparing, color: STATUS_COLORS.preparing },
-    completed: { label: t.dashboard.status.completed, color: STATUS_COLORS.completed },
-    closed: { label: t.dashboard.status.closed, color: STATUS_COLORS.closed },
+    served: { label: t.dashboard.status.served, color: STATUS_COLORS.served },
   }
 
   const handlePrint = useCallback(() => {
@@ -94,11 +92,6 @@ export default function OrderDetailDialog({
           <DialogTitle className="flex items-center gap-3">
             <span className="text-xl">#{order.orderNumber}</span>
             <Badge variant="outline" className={config.color}>{config.label}</Badge>
-            {order.isPaid && (
-              <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-                {t.dashboard.status.paid}
-              </Badge>
-            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -174,12 +167,22 @@ export default function OrderDetailDialog({
           <Button variant="outline" size="sm" className="min-h-[44px]" onClick={handlePrint}>
             {t.orderDetail.printReceipt}
           </Button>
-          {order.status !== 'served' && order.status !== 'closed' && onEdit && (
+          {order.status !== 'served' && onEdit && (
             <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => onEdit(order)}>
               {t.orderDetail.editOrder}
             </Button>
           )}
           {order.status === 'pending' && onStatusUpdate && (
+            <Button
+              size="sm"
+              className="min-h-[44px] bg-yellow-600 hover:bg-yellow-700 text-white"
+              disabled={updating}
+              onClick={() => onStatusUpdate(order.id, 'confirmed')}
+            >
+              {updating ? '...' : (t.dashboard?.status?.confirmed || 'Confirm')}
+            </Button>
+          )}
+          {order.status === 'confirmed' && onStatusUpdate && (
             <Button
               size="sm"
               className="min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"

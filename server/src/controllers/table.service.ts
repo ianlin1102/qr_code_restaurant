@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import type { Table } from '@qr-order/shared'
-import { tableStore, orderStore, storeStore, billStore } from '../repositories/stores.js'
+import { tableStore, orderStore, storeStore, sessionStore } from '../repositories/stores.js'
+import { closeSession, getActiveSession } from './session.service.js'
 
 const INITIAL_BATCH = 20
 
@@ -62,12 +63,12 @@ export function getTableById(tableId: string): Table | undefined {
 /** Public table info for customer scan — strips internal/layout fields, resolves paymentMode. */
 export function getTablePublic(
   storeId: string,
-  tableId: string
-): (Omit<Table, 'currentOrderId' | 'currentBillId' | 'x' | 'y' | 'width' | 'height' | 'shape'> & { paymentMode: string }) | null {
+  tableId: string,
+): (Omit<Table, 'currentOrderId' | 'currentBillId' | 'currentSessionId' | 'x' | 'y' | 'width' | 'height' | 'shape'> & { paymentMode: string }) | null {
   const table = tableStore.getById(tableId)
   if (!table || table.storeId !== storeId) return null
   const store = storeStore.getById(storeId)
-  const { currentOrderId, currentBillId, x, y, width, height, shape, ...publicTable } = table
+  const { currentOrderId, currentBillId, currentSessionId, x, y, width, height, shape, ...publicTable } = table
   return { ...publicTable, paymentMode: table.paymentMode ?? store?.paymentMode ?? 'pay-first' }
 }
 
@@ -172,11 +173,11 @@ export function regenerateTableId(storeId: string, tableId: string): Table | { e
     }
   }
 
-  // Update all bills referencing the old tableId
-  const bills = billStore.getByField('storeId', storeId)
-  for (const bill of bills) {
-    if (bill.tableId === tableId) {
-      billStore.update(bill.id, { tableId: newId })
+  // Update all sessions referencing the old tableId
+  const sessions = sessionStore.getByField('storeId', storeId)
+  for (const session of sessions) {
+    if (session.tableId === tableId) {
+      sessionStore.update(session.id, { tableId: newId })
     }
   }
 
@@ -186,7 +187,7 @@ export function regenerateTableId(storeId: string, tableId: string): Table | { e
   return newTable
 }
 
-/** Settle a table: mark all non-completed orders as completed, reset table to idle */
+/** Settle a table: mark all non-served orders as served, close the active session */
 export function settleTable(storeId: string, tableId: string): { settled: number } | { error: string } {
   const table = tableStore.getById(tableId)
   if (!table || table.storeId !== storeId) {
@@ -194,19 +195,25 @@ export function settleTable(storeId: string, tableId: string): { settled: number
   }
 
   const orders = orderStore.getByField('storeId', storeId)
-    .filter(o => o.tableId === tableId && o.status !== 'served' && o.status !== 'closed')
+    .filter(o => o.tableId === tableId && o.status !== 'served')
 
   const now = new Date().toISOString()
   for (const order of orders) {
     orderStore.update(order.id, { status: 'served', updatedAt: now })
   }
 
-  tableStore.update(tableId, { status: 'idle', currentOrderId: undefined })
+  // Close active session (this also resets the table to idle)
+  const session = getActiveSession(storeId, tableId)
+  if (session) {
+    closeSession(storeId, session.id)
+  } else {
+    tableStore.update(tableId, { status: 'idle', currentSessionId: undefined })
+  }
 
   return { settled: orders.length }
 }
 
-/** Close a table: mark pending/preparing orders as 'closed', reset table to idle */
+/** Close a table: mark pending/preparing orders as 'served', close the active session */
 export function closeTable(storeId: string, tableId: string): { closed: number } | { error: string } {
   const table = tableStore.getById(tableId)
   if (!table || table.storeId !== storeId) {
@@ -218,10 +225,16 @@ export function closeTable(storeId: string, tableId: string): { closed: number }
 
   const now = new Date().toISOString()
   for (const order of orders) {
-    orderStore.update(order.id, { status: 'closed', updatedAt: now })
+    orderStore.update(order.id, { status: 'served', updatedAt: now })
   }
 
-  tableStore.update(tableId, { status: 'idle', currentOrderId: undefined })
+  // Close active session (this also resets the table to idle)
+  const session = getActiveSession(storeId, tableId)
+  if (session) {
+    closeSession(storeId, session.id)
+  } else {
+    tableStore.update(tableId, { status: 'idle', currentSessionId: undefined })
+  }
 
   return { closed: orders.length }
 }

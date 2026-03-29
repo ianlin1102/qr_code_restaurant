@@ -1,10 +1,10 @@
 import { v4 as uuid } from 'uuid'
 import { getMenuItemById } from './menu.service.js'
 import { printOrder } from './printer.service.js'
-import { createBill, getActiveBill, addOrderToBill } from './bill.service.js'
-import type { Order, OrderItem, Table, Store, CreateOrderRequest, OrderStatus } from '@qr-order/shared'
+import { createSession, getActiveSession, addOrderToSession, recalcSessionTotal } from './session.service.js'
+import type { Order, OrderItem, CreateOrderRequest, OrderStatus } from '@qr-order/shared'
 import logger from '../lib/logger.js'
-import { orderStore, tableStore, storeStore, billStore } from '../repositories/stores.js'
+import { orderStore, tableStore, storeStore, sessionStore } from '../repositories/stores.js'
 
 const storeCounters = new Map<string, number>()
 
@@ -87,12 +87,19 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
 
   const initialStatus = storeConfig?.autoAcceptOrders ? 'preparing' : 'pending'
 
+  // Session integration — create or get active session
+  let session = getActiveSession(storeId, table.id)
+  if (!session) {
+    session = createSession(storeId, table.id)
+  }
+
   const now = new Date().toISOString()
   const order: Order = {
     id: uuid(),
     orderNumber: generateOrderNumber(storeId),
     storeId,
     tableId: table.id,
+    sessionId: session.id,
     tableName: table.name,
     items: orderItems,
     totalPrice,
@@ -104,20 +111,11 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
   }
 
   orderStore.create(order)
-  tableStore.update(table.id, { status: 'occupied', currentOrderId: order.id })
-
-  // Bill integration — create or append to active bill
-  let bill = getActiveBill(storeId, table.id)
-  if (!bill) {
-    const paymentMode = table.paymentMode ?? storeConfig?.paymentMode ?? 'pay-first'
-    const billStatus = paymentMode === 'pay-later' ? 'open' : 'pending-payment'
-    bill = createBill(storeId, table.id, billStatus)
-    tableStore.update(table.id, { currentBillId: bill.id })
-  }
-  addOrderToBill(bill.id, order.id, totalPrice)
+  tableStore.update(table.id, { status: 'occupied', currentSessionId: session.id })
+  addOrderToSession(session.id, order.id, totalPrice)
 
   logger.info(
-    { storeId, orderId: order.id, orderNumber: order.orderNumber, itemCount: orderItems.length },
+    { storeId, orderId: order.id, orderNumber: order.orderNumber, sessionId: session.id, itemCount: orderItems.length },
     'order created',
   )
 
@@ -149,15 +147,7 @@ export function updateOrderStatus(storeId: string, orderId: string, status: Orde
     updatedAt: new Date().toISOString(),
   })
 
-  // Auto-release table if all orders are completed/closed
-  if (status === 'served' || status === 'closed') {
-    const tableOrders = orderStore.getByField('storeId', storeId)
-      .filter(o => o.tableId === order.tableId && o.status !== 'served' && o.status !== 'closed' && o.id !== orderId)
-    if (tableOrders.length === 0) {
-      tableStore.update(order.tableId, { status: 'idle', currentOrderId: undefined, currentBillId: undefined })
-    }
-  }
-
+  // No auto-idle here; session close handles table release
   return updated!
 }
 
@@ -166,8 +156,8 @@ export function transferOrder(storeId: string, orderId: string, targetTableId: s
   if (!order || order.storeId !== storeId) {
     return { error: 'Order not found' }
   }
-  if (order.status === 'served' || order.status === 'closed') {
-    return { error: 'Cannot transfer a completed or closed order' }
+  if (order.status === 'served') {
+    return { error: 'Cannot transfer a served order' }
   }
 
   const targetTable = tableStore.getById(targetTableId)
@@ -190,9 +180,9 @@ export function transferOrder(storeId: string, orderId: string, targetTableId: s
   // If no other active orders remain on the source table, set it to idle
   const remainingActive = orderStore.getByField('storeId', storeId)
     .filter(o => o.tableId === sourceTableId && o.id !== orderId
-      && o.status !== 'served' && o.status !== 'closed')
+      && o.status !== 'served')
   if (remainingActive.length === 0) {
-    tableStore.update(sourceTableId, { status: 'idle', currentOrderId: undefined })
+    tableStore.update(sourceTableId, { status: 'idle', currentSessionId: undefined })
   }
 
   logger.info(
@@ -208,8 +198,8 @@ export async function updateOrderItems(storeId: string, orderId: string, items: 
   if (!order || order.storeId !== storeId) {
     return { error: 'Order not found' }
   }
-  if (order.status === 'served' || order.status === 'closed') {
-    return { error: 'Cannot modify a completed or closed order' }
+  if (order.status === 'served') {
+    return { error: 'Cannot modify a served order' }
   }
   if (!items || items.length === 0) {
     return { error: 'Order must have at least one item' }
@@ -249,23 +239,14 @@ export async function updateOrderItems(storeId: string, orderId: string, items: 
     updatedAt: new Date().toISOString(),
   })
 
-  // Recalculate bill subtotal if order belongs to an active bill
-  const bills = billStore.getByField('storeId', storeId)
-  const activeBill = bills.find(b => b.orderIds.includes(orderId) && b.status !== 'settled')
-  if (activeBill) {
-    const allOrders = activeBill.orderIds.map(id => orderStore.getById(id)).filter(Boolean)
-    const newSubtotal = allOrders.reduce((sum, o) => sum + (o?.totalPrice ?? 0), 0)
-    const discountAmount = activeBill.couponDiscountType === 'percentage'
-      ? Math.round(newSubtotal * (activeBill.couponDiscountValue ?? 0) / 100)
-      : activeBill.couponDiscountType === 'fixed'
-      ? Math.min(activeBill.couponDiscountValue ?? 0, newSubtotal)
-      : activeBill.discountAmount
-    billStore.update(activeBill.id, {
-      subtotal: newSubtotal,
-      discountAmount,
-      totalDue: newSubtotal - discountAmount,
-      version: activeBill.version + 1,
-    })
+  // Recalculate session totals if order belongs to an active session
+  if (order.sessionId) {
+    recalcSessionTotal(order.sessionId)
+  } else {
+    // Fallback: find session containing this order
+    const sessions = sessionStore.getByField('storeId', storeId)
+    const active = sessions.find(s => s.orderIds.includes(orderId) && s.status === 'active')
+    if (active) recalcSessionTotal(active.id)
   }
 
   return updated!

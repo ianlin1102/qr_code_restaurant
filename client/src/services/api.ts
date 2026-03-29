@@ -188,11 +188,11 @@ export const api = {
       { method: 'POST', body: JSON.stringify(data) },
     ),
 
-  // Checkout for existing unpaid orders
-  createCheckoutForOrders: (storeId: string, orderIds: string[]) =>
+  // Checkout for session (pay-later: pay remaining balance)
+  createCheckoutForSession: (storeId: string, sessionId: string, amount: number, paidBy?: string) =>
     fetchJSON<{ clientSecret: string; amount: number }>(
       `/stores/${storeId}/checkout`,
-      { method: 'POST', body: JSON.stringify({ orderIds }) },
+      { method: 'POST', body: JSON.stringify({ sessionId, amount, paidBy }) },
     ),
 
   // Analytics

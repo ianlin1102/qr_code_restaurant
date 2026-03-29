@@ -1,8 +1,11 @@
 import { getStripe } from '../lib/stripe.js'
 import { createOrder } from './order.service.js'
-import { orderStore } from '../repositories/stores.js'
+import { getActiveSession, addPayment } from './session.service.js'
+import { orderStore, sessionStore, paymentStore } from '../repositories/stores.js'
 import logger from '../lib/logger.js'
-import type { CreateOrderRequest, Order } from '@qr-order/shared'
+import type { CreateOrderRequest } from '@qr-order/shared'
+
+// ===== Pay-first: new cart checkout =====
 
 interface CheckoutRequest {
   storeId: string
@@ -12,14 +15,7 @@ interface CheckoutRequest {
   tipAmount?: number
 }
 
-interface CheckoutOrdersRequest {
-  storeId: string
-  orderIds: string[]
-  tipAmount?: number
-}
-
 export async function createPaymentIntent(req: CheckoutRequest) {
-  // Calculate total from menu items (validate server-side)
   const { getMenuItemById } = await import('./menu.service.js')
 
   let totalPrice = 0
@@ -39,40 +35,30 @@ export async function createPaymentIntent(req: CheckoutRequest) {
     return { error: 'Invalid order total', status: 400 }
   }
 
-  // Create or get pending bill for this table (allows coupon application before payment)
-  const { createBill, getActiveBill, addOrderToBill } = await import('./bill.service.js')
-  let bill = getActiveBill(req.storeId, req.tableId)
-  if (!bill) {
-    bill = createBill(req.storeId, req.tableId, 'pending-payment')
-  }
-  // Use bill.totalDue if coupon was applied, otherwise use calculated total
-  const chargeAmount = bill.couponId ? bill.totalDue : totalPrice
+  // Apply session discount if coupon was applied
+  const session = getActiveSession(req.storeId, req.tableId)
+  const chargeAmount = session?.couponId
+    ? Math.max(0, totalPrice - (session.discountAmount ?? 0))
+    : totalPrice
 
-  // Store cart data in metadata — Stripe limits each value to 500 chars
-  // Compact format: only IDs + quantities, strip option names
+  // Compact cart metadata for Stripe (500 char limit per value)
   const compactItems = req.items.map(i => ({
-    m: i.menuItemId,
-    q: i.quantity,
-    r: i.remark,
+    m: i.menuItemId, q: i.quantity, r: i.remark,
     o: i.selectedOptions?.map(o => ({ oi: o.optionId, ci: o.choiceId, p: o.priceAdjust })),
   }))
   const cartData = JSON.stringify({
-    s: req.storeId,
-    t: req.tableId,
-    i: compactItems,
-    c: req.customerName,
+    s: req.storeId, t: req.tableId, i: compactItems, c: req.customerName,
   })
 
-  // If still too long, split across multiple metadata keys
   const metadata: Record<string, string> = {
     storeId: req.storeId,
     tableId: req.tableId,
-    billId: bill.id,
+    type: 'pay-first',
+    ...(session ? { sessionId: session.id } : {}),
   }
   if (cartData.length <= 500) {
     metadata.cartData = cartData
   } else {
-    // Split into chunks of 500 chars
     for (let idx = 0; idx * 500 < cartData.length; idx++) {
       metadata[`cart_${idx}`] = cartData.slice(idx * 500, (idx + 1) * 500)
     }
@@ -80,95 +66,65 @@ export async function createPaymentIntent(req: CheckoutRequest) {
   }
 
   const paymentIntent = await getStripe().paymentIntents.create({
-    amount: chargeAmount,
-    currency: 'usd',
-    metadata,
+    amount: chargeAmount, currency: 'usd', metadata,
   })
 
   logger.info(
-    { storeId: req.storeId, paymentIntentId: paymentIntent.id, chargeAmount, billId: bill.id },
-    'payment intent created (no order yet)',
+    { storeId: req.storeId, paymentIntentId: paymentIntent.id, chargeAmount, sessionId: session?.id },
+    'payment intent created (pay-first, no order yet)',
   )
 
   return { clientSecret: paymentIntent.client_secret, amount: chargeAmount }
 }
 
-export async function createPaymentIntentForOrders(req: CheckoutOrdersRequest) {
-  if (!req.orderIds || req.orderIds.length === 0) {
-    return { error: 'orderIds are required', status: 400 }
+// ===== Pay-later: pay for existing session =====
+
+interface SessionCheckoutRequest {
+  storeId: string
+  sessionId: string
+  amount: number
+  paidBy?: string
+  tipAmount?: number
+}
+
+export async function createPaymentIntentForSession(req: SessionCheckoutRequest) {
+  const session = sessionStore.getById(req.sessionId)
+  if (!session || session.storeId !== req.storeId) {
+    return { error: 'Session not found', status: 404 }
+  }
+  if (session.status === 'closed') {
+    return { error: 'Session is already closed', status: 400 }
   }
 
-  const orders = req.orderIds.map(id => orderStore.getById(id)).filter(Boolean) as Order[]
-
-  if (orders.length !== req.orderIds.length) {
-    return { error: 'One or more orders not found', status: 404 }
-  }
-
-  for (const order of orders) {
-    if (order.storeId !== req.storeId) {
-      return { error: 'Order does not belong to this store', status: 403 }
-    }
-    if (order.isPaid) {
-      return { error: `Order ${order.orderNumber} is already paid`, status: 400 }
-    }
-    // closed = cancelled/archived, cannot pay. completed = food served, can still pay (pay-later mode)
-    if (order.status === 'closed') {
-      return { error: `Order ${order.orderNumber} is closed`, status: 400 }
-    }
-  }
-
-  let totalPrice = orders.reduce((sum, o) => sum + o.totalPrice, 0)
+  const netDue = session.totalAmount - session.discountAmount
+  const remaining = netDue - session.totalPaid
   const tip = req.tipAmount && req.tipAmount > 0 ? req.tipAmount : 0
-  totalPrice += tip
+  const chargeAmount = Math.min(req.amount, remaining) + tip
 
-  if (totalPrice <= 0) {
-    return { error: 'Invalid order total', status: 400 }
+  if (chargeAmount <= 0) {
+    return { error: 'Nothing to pay', status: 400 }
   }
 
   const paymentIntent = await getStripe().paymentIntents.create({
-    amount: totalPrice,
+    amount: chargeAmount,
     currency: 'usd',
     metadata: {
       storeId: req.storeId,
-      type: 'pay-existing-orders',
-      orderIds: JSON.stringify(req.orderIds),
+      sessionId: req.sessionId,
+      type: 'session-payment',
+      paidBy: req.paidBy ?? '',
     },
   })
 
   logger.info(
-    { storeId: req.storeId, paymentIntentId: paymentIntent.id, orderIds: req.orderIds, totalPrice },
-    'payment intent created for existing unpaid orders',
+    { storeId: req.storeId, sessionId: req.sessionId, chargeAmount, paidBy: req.paidBy },
+    'payment intent created for session',
   )
 
-  return { clientSecret: paymentIntent.client_secret, amount: totalPrice }
+  return { clientSecret: paymentIntent.client_secret, amount: chargeAmount }
 }
 
-export async function createSplitPaymentIntent(
-  amount: number,
-  storeId: string,
-  orderId: string,
-  personName: string,
-): Promise<{ clientSecret: string }> {
-  if (amount <= 0) throw new Error('Split amount must be positive')
-
-  const paymentIntent = await getStripe().paymentIntents.create({
-    amount,
-    currency: 'usd',
-    metadata: {
-      storeId,
-      orderId,
-      splitPerson: personName,
-      type: 'split-bill',
-    },
-  })
-
-  logger.info(
-    { storeId, orderId, personName, amount, paymentIntentId: paymentIntent.id },
-    'split payment intent created',
-  )
-
-  return { clientSecret: paymentIntent.client_secret! }
-}
+// ===== Stripe Webhook =====
 
 export async function handleWebhookEvent(
   payload: Buffer,
@@ -182,84 +138,68 @@ export async function handleWebhookEvent(
   const event = getStripe().webhooks.constructEvent(payload, signature, webhookSecret)
 
   if (event.type === 'payment_intent.succeeded') {
-    const paymentIntent = event.data.object
-    const { storeId, type: paymentType } = paymentIntent.metadata
+    const pi = event.data.object
+    const { storeId, sessionId, type: paymentType, paidBy } = pi.metadata
 
-    // Handle payment for existing unpaid orders
-    if (paymentType === 'pay-existing-orders') {
-      const orderIds = JSON.parse(paymentIntent.metadata.orderIds ?? '[]') as string[]
-      const now = new Date().toISOString()
-      for (const oid of orderIds) {
-        orderStore.update(oid, {
-          isPaid: true,
-          paymentIntentId: paymentIntent.id,
-          updatedAt: now,
-        })
+    // --- Session payment (pay-later or split) ---
+    if (paymentType === 'session-payment' && sessionId) {
+      const result = addPayment(storeId, sessionId, pi.amount, paidBy || 'customer', pi.id)
+      if ('error' in result) {
+        logger.error({ error: result.error, paymentIntentId: pi.id }, 'webhook: failed to record session payment')
+      } else {
+        logger.info(
+          { storeId, sessionId, amount: pi.amount, paymentIntentId: pi.id },
+          'session payment recorded via webhook',
+        )
       }
-      logger.info(
-        { storeId, orderIds, paymentIntentId: paymentIntent.id },
-        'existing orders marked as paid via webhook',
-      )
       return event.type
     }
 
-    // Handle new order creation from cart checkout
-    // Reassemble cartData (may be chunked if > 500 chars)
-    let cartDataRaw = paymentIntent.metadata.cartData
-    if (!cartDataRaw && paymentIntent.metadata.cartChunks) {
-      const chunks = parseInt(paymentIntent.metadata.cartChunks)
+    // --- Pay-first: create order from cart metadata ---
+    let cartDataRaw = pi.metadata.cartData
+    if (!cartDataRaw && pi.metadata.cartChunks) {
+      const chunks = parseInt(pi.metadata.cartChunks)
       cartDataRaw = ''
-      for (let i = 0; i < chunks; i++) cartDataRaw += paymentIntent.metadata[`cart_${i}`] ?? ''
+      for (let i = 0; i < chunks; i++) cartDataRaw += pi.metadata[`cart_${i}`] ?? ''
     }
 
     if (!cartDataRaw || !storeId) {
-      logger.warn({ paymentIntentId: paymentIntent.id }, 'webhook: missing cart metadata')
+      logger.warn({ paymentIntentId: pi.id }, 'webhook: missing cart metadata')
       return event.type
     }
 
-    // Parse compact format: { s, t, i: [{ m, q, r, o: [{ oi, ci, p }] }], c }
+    // Parse compact format
     const raw = JSON.parse(cartDataRaw)
     const cart: { storeId: string; tableId: string; items: CreateOrderRequest['items']; customerName?: string } =
       raw.s ? {
-        storeId: raw.s,
-        tableId: raw.t,
-        customerName: raw.c,
+        storeId: raw.s, tableId: raw.t, customerName: raw.c,
         items: (raw.i as { m: string; q: number; r?: string; o?: { oi: string; ci: string; p: number }[] }[]).map(ci => ({
-          menuItemId: ci.m,
-          quantity: ci.q,
-          remark: ci.r,
+          menuItemId: ci.m, quantity: ci.q, remark: ci.r,
           selectedOptions: ci.o?.map(o => ({ optionId: o.oi, choiceId: o.ci, priceAdjust: o.p, optionName: '', choiceName: '' })),
         })),
       } : raw
 
-    // Create the order for the first time — status will be overridden to 'paid'
+    // Create order (isPaid: true for pay-first)
     const result = createOrder(cart.storeId, {
-      tableId: cart.tableId,
-      items: cart.items,
-      customerName: cart.customerName,
+      tableId: cart.tableId, items: cart.items, customerName: cart.customerName,
     })
 
     if ('error' in result) {
-      logger.error({ error: result.error, paymentIntentId: paymentIntent.id }, 'webhook: failed to create order')
+      logger.error({ error: result.error, paymentIntentId: pi.id }, 'webhook: failed to create order')
       return event.type
     }
 
-    // Mark as paid, keep status 'pending' so admin sees it in queue
-    orderStore.update(result.id, {
-      isPaid: true,
-      paymentIntentId: paymentIntent.id,
-      updatedAt: new Date().toISOString(),
-    })
+    // Mark order as paid (pay-first specific)
+    orderStore.update(result.id, { isPaid: true, updatedAt: new Date().toISOString() })
 
-    // Settle the bill (created at checkout time, order already linked by createOrder)
-    const billId = paymentIntent.metadata.billId
-    if (billId) {
-      const { billStore } = await import('../repositories/stores.js')
-      billStore.update(billId, { status: 'settled', settledAt: new Date().toISOString() })
+    // Record payment on session
+    const sid = sessionId || result.sessionId
+    if (sid) {
+      addPayment(storeId, sid, pi.amount, cart.customerName || 'customer', pi.id)
     }
 
     logger.info(
-      { orderId: result.id, orderNumber: result.orderNumber, storeId, billId, paymentIntentId: paymentIntent.id },
+      { orderId: result.id, orderNumber: result.orderNumber, storeId, sessionId: sid, paymentIntentId: pi.id },
       'order created (paid) via webhook',
     )
   }

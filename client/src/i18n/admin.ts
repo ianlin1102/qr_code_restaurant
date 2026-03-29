@@ -38,8 +38,7 @@ export const adminT = {
       saveChanges: '保存修改',
       remark: '备注...',
       status: {
-        pending: '待处理', preparing: '备餐中', served: '已上菜',
-        paid: '已付款', closed: '已关闭',
+        pending: '待处理', confirmed: '已接单', preparing: '备餐中', served: '已上菜',
       },
     },
     menu: {
@@ -116,7 +115,7 @@ export const adminT = {
       allZone: '全部', secondsAgo: '{{s}}秒前',
     },
     activeOrders: {
-      title: '活跃订单', new: '新订单', preparing: '制作中', paid: '已付款',
+      title: '活跃订单', new: '新订单', confirmed: '已接单', preparing: '制作中',
       noActiveOrders: '当前无活跃订单',
       itemCount: '{{count}} 件',
       inProgress: '{{count}} 个订单进行中',
@@ -186,6 +185,13 @@ export const adminT = {
       splitEqual: '平均分', splitFull: '全额支付', numberOfPeople: '分账人数',
       markPaid: '标记已付', allPaid: '全部已付',
       payLater: '后付款模式', payFirst: '先付款模式',
+    },
+    session: {
+      title: '用餐会话', close: '结束用餐', reopen: '重新开启',
+      addPayment: '记录付款', remaining: '待付', paid: '已付',
+      sessionClosed: '已结束', payFull: '全额支付',
+      amount: '金额', paidByLabel: '付款人（选填）',
+      allPaid: '已全额付清', paymentHistory: '付款记录',
     },
     waitlist: {
       title: '候位名单', addEntry: '添加候位', partySize: '人数',
@@ -298,8 +304,7 @@ export const adminT = {
       saveChanges: 'Save changes',
       remark: 'Notes...',
       status: {
-        pending: 'Pending', preparing: 'Preparing', served: 'Served',
-        paid: 'Paid', closed: 'Closed',
+        pending: 'Pending', confirmed: 'Confirmed', preparing: 'Preparing', served: 'Served',
       },
     },
     menu: {
@@ -376,7 +381,7 @@ export const adminT = {
       allZone: 'All', secondsAgo: '{{s}}s ago',
     },
     activeOrders: {
-      title: 'Active Orders', new: 'New', preparing: 'Preparing', paid: 'Paid',
+      title: 'Active Orders', new: 'New', confirmed: 'Confirmed', preparing: 'Preparing',
       noActiveOrders: 'No active orders right now.',
       itemCount: '{{count}} items',
       inProgress: '{{count}} orders in progress',
@@ -446,6 +451,13 @@ export const adminT = {
       splitEqual: 'Split Equally', splitFull: 'Pay in Full', numberOfPeople: 'Number of People',
       markPaid: 'Mark Paid', allPaid: 'All Paid',
       payLater: 'Pay Later', payFirst: 'Pay First',
+    },
+    session: {
+      title: 'Session', close: 'Close Session', reopen: 'Reopen Session',
+      addPayment: 'Add Payment', remaining: 'Remaining', paid: 'Paid',
+      sessionClosed: 'Session Closed', payFull: 'Pay in Full',
+      amount: 'Amount ($)', paidByLabel: 'Paid by (optional)',
+      allPaid: 'Fully Paid!', paymentHistory: 'Payments',
     },
     waitlist: {
       title: 'Waitlist', addEntry: 'Add to Waitlist', partySize: 'Party Size',

@@ -18,17 +18,23 @@
     "id": "7c682909-12c1-47b1-8269-31368b5f5465",
     "storeId": "store-demo-001",
     "tableId": "f9f6d503-faac-4f30-8fa6-2eae2587df67",
-    "version": 4,
-    "status": "open",
+    "version": 7,
+    "status": "settled",
     "orderIds": [
       "14a0d0ff-6270-47c6-94e9-b0780aa12c21",
       "5fb284bc-e2dc-463f-9720-aafc7ae0febe",
       "80cf3c9b-a509-48f3-871f-493bb2f8f531"
     ],
     "subtotal": 4797,
-    "discountAmount": 0,
-    "totalDue": 4797,
-    "paidAmount": 0,
-    "createdAt": "2026-03-29T17:46:46.307Z"
+    "discountAmount": 480,
+    "totalDue": 4317,
+    "paidAmount": 4317,
+    "createdAt": "2026-03-29T17:46:46.307Z",
+    "couponId": "7f8fe7d8-56fa-4eb0-a302-34683ffbeda9",
+    "couponCode": "EMPLOYEE",
+    "couponDiscountType": "percentage",
+    "couponDiscountValue": 10,
+    "splitMethod": "full",
+    "settledAt": "2026-03-29T18:50:27.671Z"
   }
 ]

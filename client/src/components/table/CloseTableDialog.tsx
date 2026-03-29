@@ -34,7 +34,7 @@ export default function CloseTableDialog({ table, storeId, open, onOpenChange, o
     api.getOrders(storeId, undefined, table.id)
       .then(data => {
         const active = data.filter(o =>
-          o.status === 'pending' || o.status === 'preparing' || o.status === 'paid',
+          o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing',
         )
         setOrders(active)
       })

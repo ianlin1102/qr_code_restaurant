@@ -16,12 +16,11 @@ import { useNavigate } from 'react-router-dom'
 
 const STATUS_STYLE: Record<OrderStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  paid: 'bg-blue-100 text-blue-800 border-blue-200',
+  confirmed: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   preparing: 'bg-orange-100 text-orange-800 border-orange-200',
   served: 'bg-green-100 text-green-800 border-green-200',
-  closed: 'bg-gray-100 text-gray-800 border-gray-200',
 }
-const ACTIVE: OrderStatus[] = ['pending', 'paid', 'preparing']
+const ACTIVE: OrderStatus[] = ['pending', 'confirmed', 'preparing']
 
 function unitPrice(item: OrderItem): number {
   return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
@@ -65,7 +64,7 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
 
   const active = orders.find((o) => ACTIVE.includes(o.status))
   const past = orders
-    .filter((o) => o.status === 'served' || o.status === 'closed')
+    .filter((o) => o.status === 'served')
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   const tabCls = (on: boolean) =>

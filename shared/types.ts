@@ -98,8 +98,9 @@ export interface Table {
   number: number
   enabled: boolean
   status: 'idle' | 'occupied' | 'cleaning' | 'bill-requested'
-  currentOrderId?: string
-  currentBillId?: string
+  currentOrderId?: string     // DEPRECATED
+  currentBillId?: string      // DEPRECATED
+  currentSessionId?: string
   paymentMode?: 'pay-first' | 'pay-later' | null
   zone?: string
   capacity?: number
@@ -131,10 +132,10 @@ export interface CartItem {
 }
 
 // ===== Orders =====
-// pending → preparing → served (food on table) → closed (cancelled/void, abnormal only)
-// isPaid is orthogonal: true at any stage (pay-first: from start; pay-later: when customer pays)
-// 'paid' status = payment confirmed in pay-first mode, waiting for kitchen
-export type OrderStatus = 'pending' | 'paid' | 'preparing' | 'served' | 'closed'
+// Kitchen flow: pending → confirmed → preparing → served
+// Payment: paid (pay-first confirmed via Stripe)
+// Abnormal: closed (cancelled/void)
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'served' | 'paid' | 'closed'
 
 export interface OrderItem {
   menuItemId: string
@@ -151,49 +152,45 @@ export interface Order {
   orderNumber: string
   storeId: string
   tableId: string
+  sessionId: string
   tableName: string
   items: OrderItem[]
   totalPrice: number
   status: OrderStatus
-  isPaid: boolean
-  paymentIntentId?: string
+  isPaid: boolean              // independent of status — true if paid at order time (pay-first)
   customerName?: string
   createdAt: string
   updatedAt: string
 }
 
-// ===== Bill =====
-export interface Bill {
+// ===== Session (dining session = one visit at a table) =====
+// status: active (dining in progress) | closed (visit ended, soft close)
+// isPaid: derived from totalPaid >= totalAmount
+export interface Session {
   id: string
   storeId: string
   tableId: string
-  version: number
-  status: 'pending-payment' | 'open' | 'partially-paid' | 'settled'
-  splitMethod?: 'equal' | 'percentage' | 'by-item' | 'full'
+  status: 'active' | 'closed'
   orderIds: string[]
-  subtotal: number
+  totalAmount: number          // sum of all order totals (cents)
+  totalPaid: number            // sum of all payment records (cents)
   couponId?: string
   couponCode?: string
   couponDiscountType?: DiscountType
   couponDiscountValue?: number
   discountAmount: number
-  totalDue: number
-  paidAmount: number
   createdAt: string
-  settledAt?: string
+  closedAt?: string
 }
 
-export interface Split {
+// ===== Payment (immutable record, belongs to session) =====
+export interface Payment {
   id: string
-  billId: string
+  sessionId: string
   storeId: string
-  amount: number
-  percentage?: number
-  status: 'unpaid' | 'paid'
-  paidBy?: 'customer' | 'waiter'
-  paymentIntentId?: string
-  itemIds?: string[]
-  customerName?: string
+  amount: number               // cents
+  stripePaymentIntentId?: string
+  paidBy?: string              // customer name or "waiter" for cash
   createdAt: string
 }
 

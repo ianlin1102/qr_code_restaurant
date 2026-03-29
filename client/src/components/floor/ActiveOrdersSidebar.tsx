@@ -15,12 +15,12 @@ interface Props {
   onOrderClick?: (order: Order) => void
 }
 
-const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'paid', 'preparing']
+const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'preparing']
 const REFRESH_INTERVAL = 15_000
 const WARN_MINUTES = 15
 const CRITICAL_MINUTES = 30
 
-type ActiveOrderKey = 'new' | 'preparing' | 'paid'
+type ActiveOrderKey = 'new' | 'preparing' | 'confirmed'
 
 interface StatusGroup {
   labelKey: ActiveOrderKey
@@ -37,16 +37,16 @@ const STATUS_GROUPS: StatusGroup[] = [
     badgeClass: 'bg-blue-100 text-blue-800',
   },
   {
-    labelKey: 'preparing',
-    status: 'preparing',
+    labelKey: 'confirmed',
+    status: 'confirmed',
     headerClass: 'text-yellow-700 bg-yellow-50',
     badgeClass: 'bg-yellow-100 text-yellow-800',
   },
   {
-    labelKey: 'paid',
-    status: 'paid',
-    headerClass: 'text-green-700 bg-green-50',
-    badgeClass: 'bg-green-100 text-green-800',
+    labelKey: 'preparing',
+    status: 'preparing',
+    headerClass: 'text-orange-700 bg-orange-50',
+    badgeClass: 'bg-orange-100 text-orange-800',
   },
 ]
 
