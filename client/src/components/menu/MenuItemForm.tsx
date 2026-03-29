@@ -333,42 +333,82 @@ function OptionsSection({
 
 /* ---------- Discount bar ---------- */
 
-const DISCOUNTS = [10, 25, 50] as const
-
 function DiscountBar({ price, originalPrice, updateField }: {
   price: number; originalPrice?: number
   updateField: (field: string, value: unknown) => void
 }) {
   const { t } = useT()
+  const [mode, setMode] = useState<'percent' | 'fixed'>('percent')
+  const [inputVal, setInputVal] = useState('')
   const basePrice = originalPrice ?? price
   const isDiscounted = price < basePrice
-  const discountPct = isDiscounted ? Math.round((1 - price / basePrice) * 100) : 0
+  const discountPct = isDiscounted && basePrice > 0 ? Math.round((1 - price / basePrice) * 100) : 0
+  const discountAmt = isDiscounted ? basePrice - price : 0
 
-  const applyDiscount = (pct: number) => {
-    const newPrice = Math.round(basePrice * (1 - pct / 100))
-    updateField('price', newPrice)
-    updateField('originalPrice', basePrice)
+  const applyDiscount = () => {
+    const num = parseFloat(inputVal)
+    if (!num || num <= 0) return
+    if (mode === 'percent') {
+      const clamped = Math.min(num, 100)
+      const newPrice = Math.round(basePrice * (1 - clamped / 100))
+      updateField('price', Math.max(0, newPrice))
+      updateField('originalPrice', basePrice)
+    } else {
+      // Fixed amount discount (in yuan → convert to cents)
+      const cents = Math.round(num * 100)
+      const clamped = Math.min(cents, basePrice)
+      updateField('price', basePrice - clamped)
+      updateField('originalPrice', basePrice)
+    }
+    setInputVal('')
   }
+
   const applyFree = () => { updateField('price', 0); updateField('originalPrice', basePrice) }
-  const resetPrice = () => { updateField('price', basePrice); updateField('originalPrice', undefined) }
+  const resetPrice = () => { updateField('price', basePrice); updateField('originalPrice', undefined); setInputVal('') }
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {DISCOUNTS.map(d => (
-        <button key={d} onClick={() => applyDiscount(d)} type="button"
-          className="border border-gray-300 rounded-lg px-3 py-1 text-xs hover:bg-background transition-colors">
-          -{d}%
+    <div className="space-y-2">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Mode toggle */}
+        <div className="flex rounded-lg border overflow-hidden text-xs">
+          <button type="button" onClick={() => setMode('percent')}
+            className={`px-2.5 py-1 transition-colors ${mode === 'percent' ? 'bg-primary text-white' : 'hover:bg-muted'}`}>
+            %
+          </button>
+          <button type="button" onClick={() => setMode('fixed')}
+            className={`px-2.5 py-1 transition-colors ${mode === 'fixed' ? 'bg-primary text-white' : 'hover:bg-muted'}`}>
+            $
+          </button>
+        </div>
+        {/* Input */}
+        <input
+          type="number" min={0} max={mode === 'percent' ? 100 : basePrice / 100}
+          step={mode === 'percent' ? 1 : 0.01}
+          value={inputVal}
+          onChange={e => setInputVal(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyDiscount() } }}
+          placeholder={mode === 'percent' ? '1-100' : '0.00'}
+          className="w-20 h-7 border rounded-lg px-2 text-xs text-center"
+        />
+        <button type="button" onClick={applyDiscount}
+          className="border rounded-lg px-3 py-1 text-xs hover:bg-muted transition-colors">
+          {t.common?.confirm || 'Apply'}
         </button>
-      ))}
-      <button onClick={applyFree} type="button"
-        className="rounded-lg px-3 py-1 text-xs text-white bg-primary hover:bg-primary/90">
-        {t.menuManage.free}
-      </button>
+        <button type="button" onClick={applyFree}
+          className="rounded-lg px-3 py-1 text-xs text-white bg-primary hover:bg-primary/90">
+          {t.menuManage.free}
+        </button>
+        {isDiscounted && (
+          <button type="button" onClick={resetPrice} className="text-xs text-blue-600 hover:underline">{t.menuManage.reset}</button>
+        )}
+      </div>
       {isDiscounted && (
-        <>
-          <Badge className="bg-red-100 text-red-700 border-0 text-xs">{discountPct}{t.menuManage.off}</Badge>
-          <button onClick={resetPrice} type="button" className="text-xs text-blue-600 hover:underline">{t.menuManage.reset}</button>
-        </>
+        <div className="flex items-center gap-2 text-xs">
+          <Badge className="bg-red-100 text-red-700 border-0">{discountPct}% {t.menuManage.off}</Badge>
+          <span className="text-muted-foreground line-through">${(basePrice / 100).toFixed(2)}</span>
+          <span className="font-medium text-red-600">${(price / 100).toFixed(2)}</span>
+          <span className="text-muted-foreground">(-${(discountAmt / 100).toFixed(2)})</span>
+        </div>
       )}
     </div>
   )
