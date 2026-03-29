@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import type { Table } from '@qr-order/shared'
 import { FloorTableShape } from './FloorTableShape'
 
@@ -68,13 +68,21 @@ export function FloorCanvas({
     const touch = e.touches[0]
     startDrag(table, touch.clientX, touch.clientY)
   }
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!dragRef.current) return
-    e.preventDefault()           // prevent scroll while dragging
-    const touch = e.touches[0]
-    moveDrag(touch.clientX, touch.clientY)
-  }
   const handleTouchEnd = () => endDrag()
+
+  // Attach touchmove with { passive: false } so preventDefault works
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg || !editable) return
+    const onTouchMove = (e: TouchEvent) => {
+      if (!dragRef.current) return
+      e.preventDefault()
+      const touch = e.touches[0]
+      moveDrag(touch.clientX, touch.clientY)
+    }
+    svg.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => svg.removeEventListener('touchmove', onTouchMove)
+  }, [editable])
 
   /* --- Memoized grid lines (static, never changes) --- */
   const gridLines = useMemo(() => {
@@ -105,7 +113,6 @@ export function FloorCanvas({
       onMouseMove={editable ? handleMouseMove : undefined}
       onMouseUp={editable ? handleMouseUp : undefined}
       onMouseLeave={editable ? handleMouseUp : undefined}
-      onTouchMove={editable ? handleTouchMove : undefined}
       onTouchEnd={editable ? handleTouchEnd : undefined}
       onTouchCancel={editable ? handleTouchEnd : undefined}
     >
