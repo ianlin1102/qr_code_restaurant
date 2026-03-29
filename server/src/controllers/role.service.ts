@@ -58,18 +58,11 @@ export function ensureSystemRoles(storeId: string): void {
     }
   }
 
-  // Migrate existing system roles to new permission set
+  // Only migrate owner role (always has all permissions — not user-editable)
+  // Manager and waiter permissions are user-editable, do NOT overwrite.
   const ownerRole = existing.find(r => r.name === 'owner' && r.isSystem)
   if (ownerRole && ownerRole.permissions.length !== ALL_PERMISSIONS.length) {
     roleStore.update(ownerRole.id, { permissions: ALL_PERMISSIONS })
-  }
-  const managerRole = existing.find(r => r.name === 'manager' && r.isSystem)
-  if (managerRole && JSON.stringify(managerRole.permissions) !== JSON.stringify(MANAGER_PERMISSIONS)) {
-    roleStore.update(managerRole.id, { permissions: MANAGER_PERMISSIONS })
-  }
-  const waiterRole = existing.find(r => r.name === 'waiter' && r.isSystem)
-  if (waiterRole && JSON.stringify(waiterRole.permissions) !== JSON.stringify(WAITER_PERMISSIONS)) {
-    roleStore.update(waiterRole.id, { permissions: WAITER_PERMISSIONS })
   }
 }
 
