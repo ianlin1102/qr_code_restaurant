@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { Order, OrderItem, MenuItem, MenuResponse } from '@qr-order/shared'
+import type { Order, OrderItem, MenuItem } from '@qr-order/shared'
 
 function itemUnitPrice(item: OrderItem): number {
   return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
@@ -45,35 +45,24 @@ export default function OrderEditDialog({
 
   const [editItems, setEditItems] = useState<OrderItem[]>([])
   const [savingEdit, setSavingEdit] = useState(false)
-  const [menuData, setMenuData] = useState<MenuResponse | null>(null)
+  const [allMenuItems, setAllMenuItems] = useState<MenuItem[]>([])
   const [addItemId, setAddItemId] = useState<string>('')
-
-  const allMenuItems: MenuItem[] = menuData
-    ? menuData.categories.flatMap(c => c.items)
-    : []
+  const [customPrice, setCustomPrice] = useState<string>('')
 
   // Reset state when a new order is opened for editing
   useEffect(() => {
     if (order && open) {
       setEditItems(JSON.parse(JSON.stringify(order.items)))
       setAddItemId('')
+      setCustomPrice('')
     }
   }, [order, open])
 
-  // Load menu data once
-  const loadMenu = useCallback(async () => {
-    if (menuData) return
-    try {
-      const menu = await api.getMenu(storeId)
-      setMenuData(menu)
-    } catch (err) {
-      console.error('Failed to load menu:', err)
-    }
-  }, [storeId, menuData])
-
+  // Load ALL menu items (admin endpoint — includes staffOnly)
   useEffect(() => {
-    if (open) loadMenu()
-  }, [open, loadMenu])
+    if (!open || allMenuItems.length > 0) return
+    api.getMenuItems(storeId).then(setAllMenuItems).catch(() => {})
+  }, [open, storeId, allMenuItems.length])
 
   const handleQuantity = (idx: number, delta: number) => {
     setEditItems(prev => {
@@ -126,21 +115,26 @@ export default function OrderEditDialog({
     setEditItems(prev => prev.filter((_, i) => i !== idx))
   }
 
+  const selectedAddItem = allMenuItems.find(m => m.id === addItemId)
+
   const handleAddItem = () => {
-    if (!addItemId) return
-    const menuItem = allMenuItems.find(m => m.id === addItemId)
-    if (!menuItem) return
+    if (!addItemId || !selectedAddItem) return
+    const price = selectedAddItem.allowCustomPrice && customPrice
+      ? Math.round(parseFloat(customPrice) * 100)
+      : selectedAddItem.price
     setEditItems(prev => [
       ...prev,
       {
-        menuItemId: menuItem.id,
-        name: menuItem.name,
-        price: menuItem.price,
+        menuItemId: selectedAddItem.id,
+        name: selectedAddItem.name,
+        nameEn: selectedAddItem.nameEn,
+        price,
         quantity: 1,
         selectedOptions: undefined,
       },
     ])
     setAddItemId('')
+    setCustomPrice('')
   }
 
   const handleSave = async () => {
@@ -212,22 +206,44 @@ export default function OrderEditDialog({
             </div>
 
             {/* Add new item */}
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <Select value={addItemId} onValueChange={setAddItemId}>
-                <SelectTrigger className="flex-1 h-9 text-sm">
-                  <SelectValue placeholder={t.dashboard.addDishPlaceholder} />
-                </SelectTrigger>
-                <SelectContent>
-                  {allMenuItems.map(m => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {isOwner ? `${m.name} — ${formatPriceUSD(m.price)}` : m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button size="sm" variant="outline" onClick={handleAddItem} disabled={!addItemId}>
-                {t.dashboard.addDish}
-              </Button>
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center gap-2">
+                <Select value={addItemId} onValueChange={v => { setAddItemId(v); setCustomPrice('') }}>
+                  <SelectTrigger className="flex-1 h-9 text-sm">
+                    <SelectValue placeholder={t.dashboard.addDishPlaceholder} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allMenuItems.map(m => (
+                      <SelectItem key={m.id} value={m.id}>
+                        <span className="flex items-center gap-1.5">
+                          {m.name} — {formatPriceUSD(m.price)}
+                          {m.staffOnly && <span className="text-[9px] bg-purple-100 text-purple-700 px-1 rounded">Staff</span>}
+                          {m.allowCustomPrice && <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded">$?</span>}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" onClick={handleAddItem} disabled={!addItemId}>
+                  {t.dashboard.addDish}
+                </Button>
+              </div>
+              {/* Custom price input — shows when selected item allows it */}
+              {selectedAddItem?.allowCustomPrice && (
+                <div className="flex items-center gap-2 pl-1">
+                  <span className="text-xs text-muted-foreground">{t.menuManage?.customPrice || 'Custom Price'}:</span>
+                  <Input
+                    type="number" min={0} step={0.01}
+                    value={customPrice}
+                    onChange={e => setCustomPrice(e.target.value)}
+                    placeholder={`${(selectedAddItem.price / 100).toFixed(2)}`}
+                    className="w-24 h-7 text-xs"
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    {customPrice ? formatPriceUSD(Math.round(parseFloat(customPrice) * 100)) : formatPriceUSD(selectedAddItem.price)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <Separator />
