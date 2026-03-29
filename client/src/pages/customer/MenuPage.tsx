@@ -47,7 +47,8 @@ export default function MenuPage() {
   const totalItems = useCartStore(s => s.totalItems)
   const totalPrice = useCartStore(s => s.totalPrice)
 
-  const { tableId, tableName } = useSessionStore()
+  const { tableId, tableName, customerName } = useSessionStore()
+  const setCustomerName = useSessionStore(s => s.setCustomerName)
 
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
@@ -233,6 +234,27 @@ export default function MenuPage() {
                 <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                   {tableName}
+                </span>
+              )}
+              {!customerName ? (
+                <button
+                  onClick={() => {
+                    const name = prompt(t('menu.enterName') || 'Your name (optional):')
+                    if (name?.trim()) setCustomerName(name.trim())
+                  }}
+                  className="text-xs text-muted-foreground underline"
+                >
+                  {t('menu.setName') || '+ Name'}
+                </button>
+              ) : (
+                <span
+                  className="inline-flex items-center gap-1 bg-muted text-xs px-2 py-1 rounded-full cursor-pointer"
+                  onClick={() => {
+                    const name = prompt(t('menu.enterName') || 'Your name:', customerName)
+                    if (name !== null) setCustomerName(name.trim())
+                  }}
+                >
+                  👤 {customerName}
                 </span>
               )}
             </div>
