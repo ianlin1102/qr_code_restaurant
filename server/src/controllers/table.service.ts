@@ -50,8 +50,9 @@ export function getTables(storeId: string, includeDisabled = false): Table[] {
   migrateExistingTables(storeId)
   fillUpTables(storeId)
   const all = tableStore.getByField('storeId', storeId)
-  if (includeDisabled) return all
-  return all.filter(t => t.enabled !== false)
+  const filtered = includeDisabled ? all : all.filter(t => t.enabled !== false)
+  // Always sort by number — stable order regardless of ID or creation time
+  return filtered.sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
 }
 
 export function getTableById(tableId: string): Table | undefined {

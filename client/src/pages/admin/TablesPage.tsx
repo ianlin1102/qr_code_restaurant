@@ -40,6 +40,7 @@ export default function TablesPage() {
   const [menuItemMap, setMenuItemMap] = useState<Record<string, string>>({})
 
   const [showDisabled, setShowDisabled] = useState(false)
+  const [activeZone, setActiveZone] = useState<string>('__base__')
 
   const [transferOpen, setTransferOpen] = useState(false)
   const [splitOpen, setSplitOpen] = useState(false)
@@ -76,6 +77,13 @@ export default function TablesPage() {
     }).catch(() => {})
   }, [storeId])
 
+  // Zone grouping
+  const zones = useMemo(() => Array.from(new Set(tables.map(t => t.zone).filter(Boolean))) as string[], [tables])
+  const zoneTables = useMemo(() => {
+    if (activeZone === '__base__') return tables.filter(t => !t.zone)
+    return tables.filter(t => t.zone === activeZone)
+  }, [tables, activeZone])
+
   // Derived (memoized)
   const activeOrders = useMemo(() => selected
     ? orders.filter(o => o.tableId === selected.id && o.status !== 'closed' && o.status !== 'completed')
@@ -98,10 +106,10 @@ export default function TablesPage() {
     localStorage.setItem('qr-base-url', url)
   }
   const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-  const handlePrintQr = () => printQrCodes(selected ? [selected] : tables, baseUrl, 'Restaurant')
-  const handlePrintAllQr = async () => {
-    const allTables = await api.getTables(storeId!, true)
-    printQrCodes(allTables, baseUrl, 'Restaurant')
+  const handlePrintQr = () => printQrCodes(selected ? [selected] : zoneTables, baseUrl, 'Restaurant')
+  const handlePrintAllQr = () => {
+    // Print all tables in current zone (sorted by number)
+    printQrCodes(zoneTables, baseUrl, 'Restaurant')
   }
   const openAddTable = () => { setEditingTable(null); setCrudOpen(true) }
   const openEditTable = (tb: Table) => { setEditingTable(tb); setCrudOpen(true) }
@@ -115,8 +123,22 @@ export default function TablesPage() {
 
   return (
     <div className="flex flex-col md:flex-row h-full overflow-hidden bg-background">
-      {/* ── Mobile: Table Selector ── */}
-      <div className="md:hidden border-b bg-muted px-3 py-2">
+      {/* ── Mobile: Zone tabs + Table Selector ── */}
+      <div className="md:hidden border-b bg-muted px-3 py-2 space-y-2">
+        <div className="flex flex-wrap gap-1">
+          <button onClick={() => setActiveZone('__base__')}
+            className={cn('px-2 py-1 rounded text-xs font-medium',
+              activeZone === '__base__' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground')}>
+            {t.floorPlan?.allZone || 'Base'}
+          </button>
+          {zones.map(z => (
+            <button key={z} onClick={() => setActiveZone(z)}
+              className={cn('px-2 py-1 rounded text-xs font-medium',
+                activeZone === z ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground')}>
+              {z}
+            </button>
+          ))}
+        </div>
         <div className="relative">
           <button
             onClick={() => setMobileDropdown(v => !v)}
@@ -127,7 +149,7 @@ export default function TablesPage() {
           </button>
           {mobileDropdown && (
             <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-background border rounded shadow-lg max-h-60 overflow-y-auto">
-              {tables.map(tb => {
+              {zoneTables.map(tb => {
                 const { label, cls } = statusBadge(tb.status)
                 return (
                   <button key={tb.id} onClick={() => handleSelect(tb)}
@@ -165,7 +187,21 @@ export default function TablesPage() {
             <Plus className="size-3.5" />{t.tables.enableNew}
           </Button>
         </div>
-        <div className="px-3 pb-2">
+        <div className="px-3 pb-2 space-y-1.5">
+          <div className="flex flex-wrap gap-1">
+            <button onClick={() => setActiveZone('__base__')}
+              className={cn('px-2 py-0.5 rounded text-[10px] font-medium transition-colors',
+                activeZone === '__base__' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted')}>
+              {t.floorPlan?.allZone || 'Base'}
+            </button>
+            {zones.map(z => (
+              <button key={z} onClick={() => setActiveZone(z)}
+                className={cn('px-2 py-0.5 rounded text-[10px] font-medium transition-colors',
+                  activeZone === z ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted')}>
+                {z}
+              </button>
+            ))}
+          </div>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
             <input type="checkbox" checked={showDisabled}
               onChange={e => setShowDisabled(e.target.checked)}
@@ -174,7 +210,7 @@ export default function TablesPage() {
           </label>
         </div>
         <div className="flex-1 overflow-y-auto px-3 space-y-0.5">
-          {tables.map(tb => {
+          {zoneTables.map(tb => {
             const { label, cls } = statusBadge(tb.status)
             const isActive = selected?.id === tb.id
             return (
