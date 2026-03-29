@@ -33,5 +33,16 @@
     "active": true,
     "expiresAt": "2026-04-16T23:43:22.190Z",
     "createdAt": "2026-03-17T23:43:22.189Z"
+  },
+  {
+    "id": "7f8fe7d8-56fa-4eb0-a302-34683ffbeda9",
+    "storeId": "store-demo-001",
+    "code": "EMPLOYEE",
+    "discountType": "percentage",
+    "discountValue": 10,
+    "maxUses": 1,
+    "currentUses": 0,
+    "active": true,
+    "createdAt": "2026-03-29T05:10:20.423Z"
   }
 ]

@@ -116,7 +116,7 @@ function buildItems(): OrderItem[] {
 }
 
 function seedOrders(): void {
-  const pool: OrderStatus[] = ['completed', 'completed', 'completed', 'completed', 'paid', 'paid', 'preparing', 'closed']
+  const pool: OrderStatus[] = ['served', 'served', 'served', 'served', 'paid', 'paid', 'preparing', 'closed']
   const orders: Order[] = []
 
   for (let i = 0; i < 12; i++) {
@@ -126,7 +126,7 @@ function seedOrders(): void {
     const items = buildItems()
     const totalPrice = items.reduce((s, it) => s + it.price * it.quantity, 0)
     const status = pickRandom(pool)
-    const isPaid = ['completed', 'paid', 'closed'].includes(status)
+    const isPaid = ['served', 'paid', 'closed'].includes(status)
 
     orders.push({
       id: uuid(),

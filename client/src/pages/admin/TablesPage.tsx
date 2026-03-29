@@ -86,10 +86,10 @@ export default function TablesPage() {
 
   // Derived (memoized)
   const activeOrders = useMemo(() => selected
-    ? orders.filter(o => o.tableId === selected.id && o.status !== 'closed' && o.status !== 'completed')
+    ? orders.filter(o => o.tableId === selected.id && o.status !== 'closed' && o.status !== 'served')
     : [], [selected, orders])
   const historyOrders = useMemo(() => selected
-    ? orders.filter(o => o.tableId === selected.id && (o.status === 'closed' || o.status === 'completed'))
+    ? orders.filter(o => o.tableId === selected.id && (o.status === 'closed' || o.status === 'served'))
     : [], [selected, orders])
   const displayOrders = showHistory ? historyOrders : activeOrders
   const allItems = useMemo(() => activeOrders.flatMap(o => o.items), [activeOrders])

@@ -38,7 +38,7 @@ export const adminT = {
       saveChanges: '保存修改',
       remark: '备注...',
       status: {
-        pending: '待处理', preparing: '备餐中', completed: '已完成',
+        pending: '待处理', preparing: '备餐中', served: '已上菜',
         paid: '已付款', closed: '已关闭',
       },
     },
@@ -298,7 +298,7 @@ export const adminT = {
       saveChanges: 'Save changes',
       remark: 'Notes...',
       status: {
-        pending: 'Pending', preparing: 'Preparing', completed: 'Completed',
+        pending: 'Pending', preparing: 'Preparing', served: 'Served',
         paid: 'Paid', closed: 'Closed',
       },
     },

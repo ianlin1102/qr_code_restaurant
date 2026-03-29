@@ -11,7 +11,7 @@ export interface StaffPerformance {
   avgOrderValue: number
 }
 
-const COUNTABLE_STATUSES = new Set(['paid', 'preparing', 'completed'])
+const COUNTABLE_STATUSES = new Set(['paid', 'preparing', 'served'])
 
 function filterOrders(storeId: string, startDate?: string, endDate?: string): Order[] {
   const orders = orderStore.getByField('storeId', storeId)

@@ -174,7 +174,7 @@ export default function OrderDetailDialog({
           <Button variant="outline" size="sm" className="min-h-[44px]" onClick={handlePrint}>
             {t.orderDetail.printReceipt}
           </Button>
-          {order.status !== 'completed' && order.status !== 'closed' && onEdit && (
+          {order.status !== 'served' && order.status !== 'closed' && onEdit && (
             <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => onEdit(order)}>
               {t.orderDetail.editOrder}
             </Button>
@@ -194,7 +194,7 @@ export default function OrderDetailDialog({
               size="sm"
               className="min-h-[44px] bg-green-600 hover:bg-green-700 text-white"
               disabled={updating}
-              onClick={() => onStatusUpdate(order.id, 'completed')}
+              onClick={() => onStatusUpdate(order.id, 'served')}
             >
               {updating ? '...' : t.orderDetail.markComplete}
             </Button>

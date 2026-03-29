@@ -1,18 +1,5 @@
 [
   {
-    "id": "56228a9a-58ea-4d81-b26a-6399a6727983",
-    "storeId": "store-demo-001",
-    "name": "A1",
-    "status": "idle",
-    "number": 1,
-    "enabled": true,
-    "currentBillId": "37533730-8022-49de-b289-fd55e23c293c",
-    "x": 0,
-    "y": 0,
-    "width": 100,
-    "height": 80
-  },
-  {
     "id": "26edfc3e-b773-42d8-9816-8895f98ab267",
     "storeId": "store-demo-001",
     "name": "A2",
@@ -27,10 +14,11 @@
     "status": "idle",
     "number": 3,
     "enabled": true,
-    "x": 160,
-    "y": 180,
+    "x": 140,
+    "y": 120,
     "width": 100,
-    "height": 80
+    "height": 80,
+    "zone": "test"
   },
   {
     "id": "4f12ac19-21c6-4c5d-b74b-0883662db351",
@@ -48,13 +36,15 @@
     "id": "f9f6d503-faac-4f30-8fa6-2eae2587df67",
     "storeId": "store-demo-001",
     "name": "B2",
-    "status": "idle",
+    "status": "occupied",
     "number": 5,
     "enabled": true,
     "x": 440,
     "y": 20,
     "width": 100,
-    "height": 80
+    "height": 80,
+    "currentOrderId": "80cf3c9b-a509-48f3-871f-493bb2f8f531",
+    "currentBillId": "7c682909-12c1-47b1-8269-31368b5f5465"
   },
   {
     "id": "b3cd62fb-8b3c-49fa-84ce-4e503be3b0f7",
@@ -236,6 +226,19 @@
     "status": "idle",
     "x": 420,
     "y": 220,
+    "width": 100,
+    "height": 80
+  },
+  {
+    "id": "store-demo-001-t-2213edb1",
+    "storeId": "store-demo-001",
+    "name": "A1",
+    "status": "idle",
+    "number": 1,
+    "enabled": true,
+    "currentBillId": "37533730-8022-49de-b289-fd55e23c293c",
+    "x": 0,
+    "y": 0,
     "width": 100,
     "height": 80
   }

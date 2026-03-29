@@ -21,7 +21,7 @@ export default function DashboardPage() {
     { key: 'all', label: t.dashboard.all },
     { key: 'pending', label: t.dashboard.status.pending },
     { key: 'preparing', label: t.dashboard.status.preparing },
-    { key: 'completed', label: t.dashboard.status.completed },
+    { key: 'served', label: t.dashboard.status.served },
   ]
 
   const [orders, setOrders] = useState<Order[]>([])
@@ -117,13 +117,13 @@ export default function DashboardPage() {
           size="sm"
           className="bg-green-600 hover:bg-green-700 text-white min-h-[44px]"
           disabled={updatingOrderId === order.id}
-          onClick={e => { e.stopPropagation(); handleStatusUpdate(order.id, 'completed') }}
+          onClick={e => { e.stopPropagation(); handleStatusUpdate(order.id, 'served') }}
         >
           {updatingOrderId === order.id ? '...' : t.dashboard.markComplete}
         </Button>
       )
     }
-    if (order.status === 'completed') {
+    if (order.status === 'served') {
       return (
         <Button
           size="sm"

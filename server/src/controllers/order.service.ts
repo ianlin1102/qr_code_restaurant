@@ -150,9 +150,9 @@ export function updateOrderStatus(storeId: string, orderId: string, status: Orde
   })
 
   // Auto-release table if all orders are completed/closed
-  if (status === 'completed' || status === 'closed') {
+  if (status === 'served' || status === 'closed') {
     const tableOrders = orderStore.getByField('storeId', storeId)
-      .filter(o => o.tableId === order.tableId && o.status !== 'completed' && o.status !== 'closed' && o.id !== orderId)
+      .filter(o => o.tableId === order.tableId && o.status !== 'served' && o.status !== 'closed' && o.id !== orderId)
     if (tableOrders.length === 0) {
       tableStore.update(order.tableId, { status: 'idle', currentOrderId: undefined, currentBillId: undefined })
     }
@@ -166,7 +166,7 @@ export function transferOrder(storeId: string, orderId: string, targetTableId: s
   if (!order || order.storeId !== storeId) {
     return { error: 'Order not found' }
   }
-  if (order.status === 'completed' || order.status === 'closed') {
+  if (order.status === 'served' || order.status === 'closed') {
     return { error: 'Cannot transfer a completed or closed order' }
   }
 
@@ -190,7 +190,7 @@ export function transferOrder(storeId: string, orderId: string, targetTableId: s
   // If no other active orders remain on the source table, set it to idle
   const remainingActive = orderStore.getByField('storeId', storeId)
     .filter(o => o.tableId === sourceTableId && o.id !== orderId
-      && o.status !== 'completed' && o.status !== 'closed')
+      && o.status !== 'served' && o.status !== 'closed')
   if (remainingActive.length === 0) {
     tableStore.update(sourceTableId, { status: 'idle', currentOrderId: undefined })
   }
@@ -208,7 +208,7 @@ export async function updateOrderItems(storeId: string, orderId: string, items: 
   if (!order || order.storeId !== storeId) {
     return { error: 'Order not found' }
   }
-  if (order.status === 'completed' || order.status === 'closed') {
+  if (order.status === 'served' || order.status === 'closed') {
     return { error: 'Cannot modify a completed or closed order' }
   }
   if (!items || items.length === 0) {

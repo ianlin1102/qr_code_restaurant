@@ -42,7 +42,7 @@ export default function TableGrid({ tables, orders, onTableClick }: TableGridPro
       {tables.map(table => {
         const activeOrder = getActiveOrder(table, orders)
         const orderTotal = orders
-          .filter(o => o.tableId === table.id && o.status !== 'closed' && o.status !== 'completed')
+          .filter(o => o.tableId === table.id && o.status !== 'closed' && o.status !== 'served')
           .reduce((sum, o) => sum + o.totalPrice, 0)
 
         // Status config

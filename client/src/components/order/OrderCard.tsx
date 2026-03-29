@@ -106,7 +106,7 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
                 ? <span className="text-xs text-green-600">{t.dashboard.printed}</span>
                 : <Printer className="h-4 w-4" />}
             </Button>
-            {order.status !== 'completed' && order.status !== 'closed' && (
+            {order.status !== 'served' && order.status !== 'closed' && (
               <Button
                 variant="ghost"
                 size="sm"

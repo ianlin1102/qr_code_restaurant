@@ -63,7 +63,7 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
 
   const active = orders.find((o) => ACTIVE.includes(o.status))
   const past = orders
-    .filter((o) => o.status === 'completed' || o.status === 'closed')
+    .filter((o) => o.status === 'served' || o.status === 'closed')
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   const tabCls = (on: boolean) =>

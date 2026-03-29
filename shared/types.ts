@@ -131,7 +131,10 @@ export interface CartItem {
 }
 
 // ===== Orders =====
-export type OrderStatus = 'pending' | 'paid' | 'preparing' | 'completed' | 'closed'
+// pending → preparing → served (food on table) → closed (cancelled/void, abnormal only)
+// isPaid is orthogonal: true at any stage (pay-first: from start; pay-later: when customer pays)
+// 'paid' status = payment confirmed in pay-first mode, waiting for kitchen
+export type OrderStatus = 'pending' | 'paid' | 'preparing' | 'served' | 'closed'
 
 export interface OrderItem {
   menuItemId: string

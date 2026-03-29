@@ -194,11 +194,11 @@ export function settleTable(storeId: string, tableId: string): { settled: number
   }
 
   const orders = orderStore.getByField('storeId', storeId)
-    .filter(o => o.tableId === tableId && o.status !== 'completed' && o.status !== 'closed')
+    .filter(o => o.tableId === tableId && o.status !== 'served' && o.status !== 'closed')
 
   const now = new Date().toISOString()
   for (const order of orders) {
-    orderStore.update(order.id, { status: 'completed', updatedAt: now })
+    orderStore.update(order.id, { status: 'served', updatedAt: now })
   }
 
   tableStore.update(tableId, { status: 'idle', currentOrderId: undefined })
