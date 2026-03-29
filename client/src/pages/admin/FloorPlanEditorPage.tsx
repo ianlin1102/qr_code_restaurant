@@ -95,6 +95,7 @@ export default function FloorPlanEditorPage() {
         capacity: tb.capacity, x: tb.x, y: tb.y, width: tb.width, height: tb.height,
       })))
       setDirty(false)
+      navigate('/admin/floor-plan')
     } finally { setSaving(false) }
   }, [storeId, tables])
 
