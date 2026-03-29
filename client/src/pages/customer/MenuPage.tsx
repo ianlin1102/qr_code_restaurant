@@ -33,6 +33,15 @@ function sanitizeHtml(html: string): string {
   return div.innerHTML
 }
 
+/** Simple string hash — works with any Unicode including Chinese */
+function simpleHash(s: string): string {
+  let h = 0
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0
+  }
+  return Math.abs(h).toString(36)
+}
+
 export default function MenuPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const navigate = useNavigate()
@@ -92,7 +101,7 @@ export default function MenuPage() {
         }
         // Show announcement popup if content changed since last dismissal
         if (data.store.announcement) {
-          const hash = btoa(data.store.announcement).slice(0, 8)
+          const hash = simpleHash(data.store.announcement).slice(0, 8)
           const storedHash = localStorage.getItem(`announcement-hash-${data.store.id}`)
           if (storedHash !== hash) {
             setShowAnnouncement(true)
@@ -155,7 +164,7 @@ export default function MenuPage() {
 
   const dismissAnnouncement = () => {
     if (menu?.store.announcement) {
-      const hash = btoa(menu.store.announcement).slice(0, 8)
+      const hash = simpleHash(menu.store.announcement).slice(0, 8)
       localStorage.setItem(`announcement-hash-${menu.store.id}`, hash)
     }
     setShowAnnouncement(false)
