@@ -41,6 +41,7 @@ export default function CouponManagePage() {
   const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState(EMPTY)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const fetchCoupons = useCallback(async () => {
@@ -57,7 +58,20 @@ export default function CouponManagePage() {
 
   useEffect(() => { fetchCoupons() }, [fetchCoupons])
 
-  const openCreate = () => { setForm(EMPTY); setDialogOpen(true) }
+  const openCreate = () => { setEditingId(null); setForm(EMPTY); setDialogOpen(true) }
+  const openEdit = (c: Coupon) => {
+    setEditingId(c.id)
+    setForm({
+      code: c.code,
+      discountType: c.discountType,
+      discountValue: c.discountType === 'bogo' ? '' : String(c.discountValue),
+      minOrderAmount: c.minOrderAmount ? String(c.minOrderAmount) : '',
+      maxUses: c.maxUses ? String(c.maxUses) : '',
+      expiresAt: c.expiresAt ? c.expiresAt.split('T')[0] : '',
+      active: c.active,
+    })
+    setDialogOpen(true)
+  }
   const errMsg = (err: unknown) => err instanceof Error ? err.message : 'Operation failed'
 
   const handleSave = async () => {
@@ -65,7 +79,7 @@ export default function CouponManagePage() {
     setSaving(true)
     try {
       const value = form.discountType === 'bogo' ? 0 : Number(form.discountValue)
-      await api.createCoupon(storeId, {
+      const data = {
         code: form.code.trim().toUpperCase(),
         discountType: form.discountType,
         discountValue: value,
@@ -73,7 +87,12 @@ export default function CouponManagePage() {
         ...(form.minOrderAmount ? { minOrderAmount: Number(form.minOrderAmount) } : {}),
         ...(form.maxUses ? { maxUses: Number(form.maxUses) } : {}),
         ...(form.expiresAt ? { expiresAt: new Date(form.expiresAt).toISOString() } : {}),
-      })
+      }
+      if (editingId) {
+        await api.updateCoupon(storeId, editingId, data)
+      } else {
+        await api.createCoupon(storeId, data)
+      }
       setDialogOpen(false)
       await fetchCoupons()
     } catch (err) { setError(errMsg(err))
@@ -161,6 +180,9 @@ export default function CouponManagePage() {
                       <TableCell>{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-'}</TableCell>
                       <TableCell className="flex gap-2">
                         <Switch checked={c.active} onCheckedChange={() => toggleActive(c)} />
+                        <Button variant="outline" size="sm" onClick={() => openEdit(c)}>
+                          {t.common.edit}
+                        </Button>
                         <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(c)}>
                           {t.common.delete}
                         </Button>
@@ -181,11 +203,10 @@ export default function CouponManagePage() {
                     <span className="text-muted-foreground">{fmtDiscount(c.discountType, c.discountValue)}</span>
                     <span className="text-muted-foreground">{c.currentUses}{c.maxUses ? `/${c.maxUses}` : ''}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <Switch checked={c.active} onCheckedChange={() => toggleActive(c)} />
-                    <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(c)}>
-                      {t.common.delete}
-                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => openEdit(c)}>{t.common.edit}</Button>
+                    <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(c)}>{t.common.delete}</Button>
                   </div>
                 </div>
               ))}
@@ -197,7 +218,7 @@ export default function CouponManagePage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md w-[calc(100vw-2rem)]">
           <DialogHeader>
-            <DialogTitle>{t.coupons.createTitle}</DialogTitle>
+            <DialogTitle>{editingId ? t.common.edit : t.coupons.createTitle}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <Field label={t.coupons.code}>
