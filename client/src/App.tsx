@@ -1,5 +1,25 @@
+import { Component, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useSessionStore } from './stores/session-store'
+
+/** Global error boundary — prevents white screen on crash */
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  render() {
+    if (this.state.error) return (
+      <div style={{ padding: 32, textAlign: 'center', fontFamily: 'system-ui' }}>
+        <h2 style={{ marginBottom: 8 }}>Something went wrong</h2>
+        <p style={{ color: '#888', fontSize: 14, marginBottom: 16 }}>{this.state.error.message}</p>
+        <button onClick={() => { localStorage.clear(); window.location.href = '/' }}
+          style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #ddd', cursor: 'pointer' }}>
+          Clear Data &amp; Restart
+        </button>
+      </div>
+    )
+    return this.props.children
+  }
+}
 import ScanPage from './pages/customer/ScanPage'
 import LangSelectPage from './pages/customer/LangSelectPage'
 import MenuPage from './pages/customer/MenuPage'
@@ -29,6 +49,7 @@ function FallbackRedirect() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <Routes>
         {/* Customer routes */}
@@ -68,5 +89,6 @@ export default function App() {
         <Route path="*" element={<FallbackRedirect />} />
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }

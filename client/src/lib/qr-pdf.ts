@@ -21,6 +21,7 @@ function buildQrBlockHtml(table: Table, baseUrl: string, storeId: string): strin
     <div class="qr-block">
       <div class="qr-svg">${svg}</div>
       <p class="table-name">${label}</p>
+      <p class="scan-url">${scanUrl}</p>
       <p class="scan-text">Scan to Order</p>
     </div>`
 }
@@ -46,6 +47,7 @@ function buildPageHtml(tables: Table[], baseUrl: string, storeName: string): str
   }
   .qr-svg svg { width: 48mm; height: 48mm; }
   .table-name { font-size: 14pt; font-weight: bold; margin-top: 3mm; }
+  .scan-url { font-size: 7pt; color: #999; margin-top: 1mm; word-break: break-all; text-align: center; max-width: 48mm; }
   .scan-text { font-size: 10pt; color: #555; margin-top: 1mm; }
   @media print {
     body { padding: 10mm; }
