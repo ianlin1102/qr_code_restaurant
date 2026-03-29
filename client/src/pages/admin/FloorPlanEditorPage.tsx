@@ -132,6 +132,15 @@ export default function FloorPlanEditorPage() {
             }
             setZones(prev => prev.filter(x => x !== z))
             if (activeZone === z) setActiveZone('__base__')
+          }}
+          onRenameZone={(oldName) => {
+            const newName = prompt(`Rename "${oldName}" to:`, oldName)
+            if (!newName?.trim() || newName.trim() === oldName) return
+            const trimmed = newName.trim()
+            setZones(prev => prev.map(z => z === oldName ? trimmed : z))
+            setTables(prev => prev.map(tb => tb.zone === oldName ? { ...tb, zone: trimmed } : tb))
+            if (activeZone === oldName) setActiveZone(trimmed)
+            setDirty(true)
           }} />
         <div className="flex-1 overflow-auto p-2">
           <FloorCanvas
@@ -170,11 +179,11 @@ export default function FloorPlanEditorPage() {
 }
 
 /* ---- Editor Toolbar ---- */
-function EditorToolbar({ addTable, saveLayout, saving, dirty, t, zones, activeZone, setActiveZone, onAddZone, onDeleteZone, onBack }: {
+function EditorToolbar({ addTable, saveLayout, saving, dirty, t, zones, activeZone, setActiveZone, onAddZone, onDeleteZone, onRenameZone, onBack }: {
   addTable: () => void; saveLayout: () => void; saving: boolean; dirty: boolean
   t: ReturnType<typeof useT>['t']
   zones: string[]; activeZone: string; setActiveZone: (z: string) => void
-  onAddZone: () => void; onDeleteZone: (z: string) => void; onBack: () => void
+  onAddZone: () => void; onDeleteZone: (z: string) => void; onRenameZone: (z: string) => void; onBack: () => void
 }) {
   return (
     <div className="border-b">
@@ -197,7 +206,9 @@ function EditorToolbar({ addTable, saveLayout, saving, dirty, t, zones, activeZo
         </Button>
         {zones.map(z => (
           <div key={z} className="relative group inline-flex">
-            <Button size="sm" variant={activeZone === z ? 'default' : 'outline'} onClick={() => setActiveZone(z)}>
+            <Button size="sm" variant={activeZone === z ? 'default' : 'outline'}
+              onClick={() => setActiveZone(z)}
+              onDoubleClick={() => onRenameZone(z)}>
               {z}
             </Button>
             <button
