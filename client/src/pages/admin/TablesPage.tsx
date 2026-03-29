@@ -433,7 +433,8 @@ export default function TablesPage() {
         />
       )}
       <TableCrudDialog table={editingTable} storeId={storeId} open={crudOpen}
-        onClose={() => setCrudOpen(false)} onSaved={() => { fetchData(); setCrudOpen(false) }} />
+        onClose={() => setCrudOpen(false)} onSaved={() => { fetchData(); setCrudOpen(false) }}
+        activeZone={activeZone} zones={zones} />
       {selected && (
         <OrderingSheet
           open={orderingOpen}

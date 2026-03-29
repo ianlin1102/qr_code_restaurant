@@ -12,12 +12,15 @@ interface Props {
   open: boolean
   onClose: () => void
   onSaved: () => void
+  activeZone?: string     // current zone tab — new tables inherit this
+  zones?: string[]        // available zones for dropdown
 }
 
-export default function TableCrudDialog({ table, storeId, open, onClose, onSaved }: Props) {
+export default function TableCrudDialog({ table, storeId, open, onClose, onSaved, activeZone, zones = [] }: Props) {
   const { t } = useT()
   const isNew = !table
   const [name, setName] = useState('')
+  const [zone, setZone] = useState('')
   const [tableNumber, setTableNumber] = useState<number>(1)
   const [allFull, setAllFull] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -26,6 +29,7 @@ export default function TableCrudDialog({ table, storeId, open, onClose, onSaved
   useEffect(() => {
     if (!open) return
     setName(table?.name ?? '')
+    setZone(table?.zone ?? (activeZone !== '__base__' ? activeZone ?? '' : ''))
     setError(null)
     setAllFull(false)
     if (isNew) {
@@ -34,16 +38,18 @@ export default function TableCrudDialog({ table, storeId, open, onClose, onSaved
         setAllFull(r.allFull)
       }).catch(() => {})
     }
-  }, [open, table, isNew, storeId])
+  }, [open, table, isNew, storeId, activeZone])
 
   const handleSave = async () => {
     setSaving(true)
     setError(null)
     try {
       if (isNew) {
-        await api.enableTable(storeId, tableNumber, name.trim() || undefined)
+        const created = await api.enableTable(storeId, tableNumber, name.trim() || undefined)
+        // Assign zone after creation
+        if (zone) await api.updateTable(storeId, created.id, { zone })
       } else {
-        await api.updateTable(storeId, table.id, { name: name.trim() })
+        await api.updateTable(storeId, table.id, { name: name.trim(), zone: zone || undefined })
       }
       onSaved()
       onClose()
@@ -80,6 +86,16 @@ export default function TableCrudDialog({ table, storeId, open, onClose, onSaved
             <Input value={name} onChange={e => setName(e.target.value)}
               placeholder={t.tables.displayNamePlaceholder} autoFocus />
           </div>
+          {zones.length > 0 && (
+            <div>
+              <label className="text-sm font-medium">Zone</label>
+              <select value={zone} onChange={e => setZone(e.target.value)}
+                className="w-full mt-1 h-9 rounded-xl bg-muted border-0 px-3 text-sm">
+                <option value="">— {t.floorPlan?.allZone || 'Base'} —</option>
+                {zones.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+          )}
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>{t.common.cancel}</Button>

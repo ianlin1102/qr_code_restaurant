@@ -160,7 +160,7 @@ export const api = {
       headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ''}` },
     }),
 
-  updateTable: (storeId: string, tableId: string, data: { name?: string; nameEn?: string }) =>
+  updateTable: (storeId: string, tableId: string, data: Partial<Pick<Table, 'name' | 'nameEn' | 'zone' | 'shape' | 'capacity' | 'x' | 'y' | 'width' | 'height'>>) =>
     fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
