@@ -85,6 +85,8 @@ export interface MenuItem {
   originalPrice?: number
   image?: string
   available: boolean
+  staffOnly?: boolean            // visible to admin only, hidden from customer menu
+  allowCustomPrice?: boolean     // admin can override price when ordering (ad-hoc item)
   sortOrder: number
   options?: MenuItemOption[]
 }

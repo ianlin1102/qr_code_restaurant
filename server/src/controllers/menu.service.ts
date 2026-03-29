@@ -19,7 +19,7 @@ export function getMenu(storeId: string): MenuResponse | null {
 
   const allItems = menuItemStore
     .getByField('storeId', storeId)
-    .filter(item => item.available)
+    .filter(item => item.available && !item.staffOnly)
 
   const categoriesWithItems = categories.map(cat => ({
     ...cat,

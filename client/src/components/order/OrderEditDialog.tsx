@@ -182,7 +182,7 @@ export default function OrderEditDialog({
       <DialogContent className="max-w-lg w-[calc(100vw-2rem)] md:w-auto max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {t.dashboard.editOrderTitle} #{order?.orderNumber}
+            {t.dashboard.editOrderTitle.replace('{{number}}', order?.orderNumber ?? '')}
             <span className="text-sm font-normal text-muted-foreground ml-2">
               {order?.tableName}
             </span>

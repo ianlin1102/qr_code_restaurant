@@ -214,7 +214,10 @@ function DesktopTable({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Switch checked={item.available} onCheckedChange={() => onToggleAvailable(item)} />
+                        <div className="flex items-center gap-1.5">
+                          <Switch checked={item.available} onCheckedChange={() => onToggleAvailable(item)} />
+                          {item.staffOnly && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">Staff</span>}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">

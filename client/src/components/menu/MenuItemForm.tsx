@@ -31,6 +31,8 @@ export function blankItem(categoryId: string): Omit<MenuItem, 'id' | 'storeId'> 
     description: '',
     price: 0,
     available: true,
+    staffOnly: false,
+    allowCustomPrice: false,
     sortOrder: 0,
     options: [],
   }
@@ -95,6 +97,8 @@ export default function MenuItemForm({
           image: editingItem.image,
           originalPrice: editingItem.originalPrice,
           available: editingItem.available ?? true,
+          staffOnly: editingItem.staffOnly ?? false,
+          allowCustomPrice: editingItem.allowCustomPrice ?? false,
           sortOrder: editingItem.sortOrder ?? 0,
           options: editingItem.options,
         })
@@ -262,9 +266,19 @@ function BasicFields({
           <label className="text-sm font-medium">{t.menuManage.sortOrder}</label>
           <Input type="number" value={item.sortOrder ?? 0} onChange={e => updateField('sortOrder', parseInt(e.target.value || '0'))} className="text-base" />
         </div>
-        <div className="flex items-end gap-2 pb-1">
-          <Switch checked={item.available ?? true} onCheckedChange={v => updateField('available', v)} />
-          <label className="text-sm">{item.available ? t.menuManage.listed : t.menuManage.delisted}</label>
+        <div className="space-y-2 pb-1">
+          <div className="flex items-center gap-2">
+            <Switch checked={item.available ?? true} onCheckedChange={v => updateField('available', v)} />
+            <label className="text-sm">{item.available ? t.menuManage.listed : t.menuManage.delisted}</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={item.staffOnly ?? false} onCheckedChange={v => updateField('staffOnly', v)} />
+            <label className="text-sm">{item.staffOnly ? (t.menuManage.staffOnly || 'Staff Only') : (t.menuManage.customerVisible || 'Customer Visible')}</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={item.allowCustomPrice ?? false} onCheckedChange={v => updateField('allowCustomPrice', v)} />
+            <label className="text-sm">{t.menuManage.customPrice || 'Allow Custom Price'}</label>
+          </div>
         </div>
       </div>
     </div>
