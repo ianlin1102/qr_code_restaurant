@@ -79,9 +79,10 @@ export default function MenuPage() {
     if (!storeId || !tableId) return
     const fetchUnpaid = () => {
       api.getTableOrders(storeId, tableId).then(orders => {
-        const unpaid = orders.filter(o => !o.isPaid && o.status !== 'closed' && o.status !== 'completed')
+        // Unpaid = not paid AND not closed (completed but unpaid still needs payment in pay-later mode)
+        const unpaid = orders.filter(o => !o.isPaid && o.status !== 'closed')
         setUnpaidOrders(unpaid)
-        const history = orders.filter(o => o.isPaid || o.status === 'completed')
+        const history = orders.filter(o => o.isPaid || o.status === 'closed')
         setSessionOrders(history)
       }).catch(() => {})
     }

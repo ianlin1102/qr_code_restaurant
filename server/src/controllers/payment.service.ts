@@ -111,8 +111,9 @@ export async function createPaymentIntentForOrders(req: CheckoutOrdersRequest) {
     if (order.isPaid) {
       return { error: `Order ${order.orderNumber} is already paid`, status: 400 }
     }
-    if (order.status === 'completed' || order.status === 'closed') {
-      return { error: `Order ${order.orderNumber} is ${order.status}`, status: 400 }
+    // closed = cancelled/archived, cannot pay. completed = food served, can still pay (pay-later mode)
+    if (order.status === 'closed') {
+      return { error: `Order ${order.orderNumber} is closed`, status: 400 }
     }
   }
 
