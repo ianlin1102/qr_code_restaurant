@@ -76,8 +76,8 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
       onClick={onClick}
     >
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg font-bold">
               #{order.orderNumber}
             </span>
@@ -89,12 +89,15 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
                 {t.dashboard.status.paid}
               </Badge>
             )}
+            <span className={`text-sm font-medium ${timeColor(order.createdAt)}`}>
+              {timeAgo(order.createdAt)}
+            </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
-              size="sm"
-              className="min-h-[44px] px-2 text-muted-foreground hover:text-foreground"
+              size="icon"
+              className="min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground"
               onClick={handleReprint}
               disabled={reprinting}
               title={t.dashboard.reprint}
@@ -113,9 +116,6 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
                 {t.dashboard.editOrder}
               </Button>
             )}
-            <span className={`text-sm font-medium ${timeColor(order.createdAt)}`}>
-              {timeAgo(order.createdAt)}
-            </span>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

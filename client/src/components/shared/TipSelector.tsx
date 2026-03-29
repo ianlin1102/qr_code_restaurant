@@ -20,7 +20,7 @@ export default function TipSelector({ baseAmount, tipPct, onSelect, loadingTip }
         {TIP_PRESETS.map(pct => (
           <button key={pct} onClick={() => onSelect(pct)}
             className={cn(
-              'rounded-xl py-2.5 text-center transition-colors',
+              'rounded-xl py-2.5 min-h-[48px] text-center transition-colors',
               tipPct === pct
                 ? 'bg-primary text-white font-medium'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -33,7 +33,7 @@ export default function TipSelector({ baseAmount, tipPct, onSelect, loadingTip }
         ))}
         <button onClick={() => onSelect(null)}
           className={cn(
-            'rounded-xl py-2.5 text-center transition-colors text-sm',
+            'rounded-xl py-2.5 min-h-[48px] text-center transition-colors text-sm',
             tipPct === null
               ? 'bg-primary text-white font-medium'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'

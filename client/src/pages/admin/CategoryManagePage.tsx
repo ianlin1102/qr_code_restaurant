@@ -229,16 +229,27 @@ export default function CategoryManagePage() {
       <main className="max-w-3xl mx-auto px-4 py-4">
         {/* Mobile card list */}
         <div className="md:hidden space-y-2">
-          {sorted.map(cat => (
+          {sorted.map((cat, idx) => (
             <div
               key={cat.id}
               draggable
               onDragStart={() => handleDragStart(cat.id)}
               onDragOver={(e) => handleDragOver(e, cat.id)}
               onDragEnd={handleDragEnd}
-              className={cn('p-3 rounded-lg border bg-card flex items-center justify-between gap-2', dragId === cat.id && 'opacity-30')}
+              className={cn('p-3 rounded-lg border bg-card flex items-center justify-between gap-2', dragId === cat.id && 'opacity-30', cat.active === false && 'opacity-50')}
             >
-              <GripVertical className="size-4 text-gray-300 shrink-0 cursor-grab active:cursor-grabbing" />
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <button
+                  onClick={() => handleMove(cat.id, 'up')}
+                  disabled={idx === 0}
+                  className="min-h-[32px] min-w-[32px] flex items-center justify-center text-xs hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                >▲</button>
+                <button
+                  onClick={() => handleMove(cat.id, 'down')}
+                  disabled={idx === sorted.length - 1}
+                  className="min-h-[32px] min-w-[32px] flex items-center justify-center text-xs hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                >▼</button>
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm">{cat.name}</p>
                 {cat.nameEn && <p className="text-xs text-muted-foreground">{cat.nameEn}</p>}
@@ -248,7 +259,20 @@ export default function CategoryManagePage() {
                   {t.categories.itemCount}: {itemCountForCategory(cat.id)}
                 </p>
               </div>
-              <div className="flex gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
+                <div onPointerDown={e => e.stopPropagation()} onDragStart={e => e.stopPropagation()}>
+                  <Switch
+                    checked={cat.active !== false}
+                    onCheckedChange={async (checked) => {
+                      try {
+                        await api.updateCategory(STORE_ID, cat.id, { active: checked })
+                        await fetchData()
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : 'Failed to update')
+                      }
+                    }}
+                  />
+                </div>
                 <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => openDialog(cat)}>
                   {t.common.edit}
                 </Button>

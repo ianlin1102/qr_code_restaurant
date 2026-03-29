@@ -313,7 +313,7 @@ export default function TablesPage() {
           </div>
 
           {/* ── Mobile: Action buttons (visible on small screens when right sidebar is hidden) ── */}
-          <div className="lg:hidden border-t bg-card p-3 space-y-2">
+          <div className="md:hidden border-t bg-card p-3 space-y-2">
             {activeOrders.length > 0 && (
               <div className="flex justify-between items-center text-sm px-1">
                 <span className="text-muted-foreground">{t.common.total}</span>
@@ -354,7 +354,7 @@ export default function TablesPage() {
 
       {/* ── Right: Actions (desktop) ── */}
       {selected && (
-        <aside className="w-64 shrink-0 border-l bg-card flex-col hidden lg:flex">
+        <aside className="w-64 shrink-0 border-l bg-card flex-col hidden md:flex">
           <div className="p-4 border-b">
             <p className="text-xs text-gray-400 font-semibold tracking-wide">{t.tables.orderActions}</p>
           </div>

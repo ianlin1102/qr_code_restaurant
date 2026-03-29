@@ -156,33 +156,39 @@ export default function StaffManagePage() {
             {staff.map(m => {
               const role = roleByName(m.role)
               return (
-                <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border">
-                  <span className={`inline-flex items-center justify-center w-9 h-9 rounded-full text-white text-xs font-bold bg-blue-500`}>
-                    {m.username.slice(0, 2).toUpperCase()}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">
-                      {m.username}
-                      {m.id === currentUserId && <Badge variant="outline" className="ml-2 text-[10px]">{t.staff.you}</Badge>}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {role ? `${role.nameEn || role.name} — ${role.permissions.length} permissions` : m.role}
-                    </p>
+                <div key={m.id} className="p-3 rounded-lg border space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full text-white text-xs font-bold bg-blue-500 shrink-0">
+                      {m.username.slice(0, 2).toUpperCase()}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">
+                        {m.username}
+                        {m.id === currentUserId && <Badge variant="outline" className="ml-2 text-[10px]">{t.staff.you}</Badge>}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {role ? `${role.nameEn || role.name} — ${role.permissions.length} permissions` : m.role}
+                      </p>
+                    </div>
                   </div>
-                  {m.id !== currentUserId && (
-                    <Select value={m.role} onValueChange={v => handleRoleChange(m.id, v)}>
-                      <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {roles.map(r => (
-                          <SelectItem key={r.name} value={r.name}>{r.nameEn || r.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {canDelete(m) && (
-                    <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(m)}>
-                      {t.common.delete}
-                    </Button>
+                  {(m.id !== currentUserId || canDelete(m)) && (
+                    <div className="flex items-center gap-2 pl-12">
+                      {m.id !== currentUserId && (
+                        <Select value={m.role} onValueChange={v => handleRoleChange(m.id, v)}>
+                          <SelectTrigger className="w-32 min-h-[44px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {roles.map(r => (
+                              <SelectItem key={r.name} value={r.name}>{r.nameEn || r.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {canDelete(m) && (
+                        <Button variant="outline" size="sm" className="text-red-600 min-h-[44px]" onClick={() => handleDelete(m)}>
+                          {t.common.delete}
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               )
@@ -296,7 +302,7 @@ export default function StaffManagePage() {
             <DialogTitle>{editingRole ? `${t.common.edit}: ${editingRole.nameEn || editingRole.name}` : t.roles.newRole}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium">{t.roles.roleName} (中文)</label>
                 <Input value={roleForm.name} onChange={e => setRoleForm(f => ({ ...f, name: e.target.value }))} />
@@ -308,7 +314,7 @@ export default function StaffManagePage() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">{t.roles.permissions}</label>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {ALL_PERMISSIONS.map(p => (
                   <label key={p} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted rounded px-2 py-1.5">
                     <input

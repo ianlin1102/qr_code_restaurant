@@ -9,6 +9,7 @@ import { formatPriceUSD } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import MenuItemForm, { blankItem } from '@/components/menu/MenuItemForm'
 import MenuItemTable from '@/components/menu/MenuItemTable'
 import { CsvImportDialog } from '@/components/menu/CsvImportDialog'
@@ -96,9 +97,9 @@ export default function MenuManagePage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Category slider + header */}
         <div className="border-b bg-card">
-          <div className="px-6 pt-4 pb-3 flex items-center justify-between">
+          <div className="px-4 sm:px-6 pt-4 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h2 className="text-2xl font-bold">{activeCat?.name ?? t.menu.title}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold">{activeCat?.name ?? t.menu.title}</h2>
               <p className="text-sm text-gray-500">
                 {activeCatId
                   ? `${filteredItems.length} / ${items.length} ${t.menu.itemCount}`
@@ -112,7 +113,7 @@ export default function MenuManagePage() {
               <Button variant="outline" size="sm" onClick={handleExport}>
                 {t.csv?.exportBtn || 'Export CSV'}
               </Button>
-              <Button className="bg-primary hover:bg-primary/90" onClick={handleAdd}>
+              <Button className="bg-primary hover:bg-primary/90" size="sm" onClick={handleAdd}>
                 <Plus className="size-4 mr-1" />{t.menu.newItem}
               </Button>
             </div>
@@ -123,14 +124,14 @@ export default function MenuManagePage() {
         </div>
 
         {/* Items grid */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className={cn('flex-1 overflow-y-auto p-4 sm:p-6', orderTableId && 'pb-20 lg:pb-6')}>
           <MenuItemTable items={filteredItems} categories={categories} viewMode="table"
             onEdit={handleEdit} onDelete={handleDelete}
             onToggleAvailable={handleToggle} onInlineEdit={handleInline}
             onAddToOrder={handleAddToOrder} />
 
           {/* Insight stats */}
-          <div className="grid grid-cols-3 gap-3 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
             <div className="bg-card rounded-lg border p-3">
               <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">{t.menu.activeDiscounts}</p>
               <p className="text-2xl font-bold mt-1">{items.filter(i => i.originalPrice && i.originalPrice > i.price).length}</p>
@@ -149,8 +150,11 @@ export default function MenuManagePage() {
         </div>
       </div>
 
-      {/* ── Right: Order sidebar (only in ordering mode) ── */}
+      {/* ── Right: Order sidebar (only in ordering mode, desktop) ── */}
       {orderTableId && <OrderSidebar storeId={storeId} tableId={orderTableId} tableName={orderTableName} />}
+
+      {/* ── Mobile: floating cart bar (only in ordering mode) ── */}
+      {orderTableId && <MobileCartBar storeId={storeId} tableId={orderTableId} tableName={orderTableName} />}
 
       {/* Dialogs */}
       <MenuItemForm item={editingItem} categories={categories} storeId={storeId}
@@ -183,7 +187,7 @@ function CategorySlider({ categories, items, activeCatId, onSelect }: {
   }
   const countFor = (id: string) => items.filter(i => i.categoryId === id).length
   return (
-    <div className="relative px-6 pb-3">
+    <div className="relative px-4 sm:px-6 pb-3">
       {canScrollL && (
         <button onClick={() => scroll(-1)}
           className="absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-card/90 shadow rounded-full p-1">
@@ -227,6 +231,111 @@ function SliderChip({ active, icon, label, count, onClick }: {
         {count}
       </Badge>
     </button>
+  )
+}
+
+/* ── Mobile Cart Bar (floating bottom bar for ordering mode) ── */
+function MobileCartBar({ storeId, tableId, tableName }: { storeId: string; tableId?: string | null; tableName?: string | null }) {
+  const { t } = useT()
+  const cartItems = useCartStore(s => s.items)
+  const removeItem = useCartStore(s => s.removeItem)
+  const updateQuantity = useCartStore(s => s.updateQuantity)
+  const clearCart = useCartStore(s => s.clearCart)
+  const totalP = useCartStore(s => s.totalPrice)
+  const totalI = useCartStore(s => s.totalItems)
+  const [sending, setSending] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  const sub = totalP(), tax = Math.round(sub * 0.08), total = sub + tax
+  const count = totalI()
+
+  const handleSend = async () => {
+    if (!cartItems.length) return
+    setSending(true)
+    try {
+      await api.createOrder(storeId, {
+        tableId: tableId || 'admin-counter',
+        items: cartItems.map(ci => ({
+          menuItemId: ci.menuItemId, quantity: ci.quantity,
+          remark: ci.remark, selectedOptions: ci.selectedOptions,
+        })),
+      })
+      clearCart()
+      setSheetOpen(false)
+    } catch { /* error */ } finally { setSending(false) }
+  }
+
+  if (count === 0) return null
+
+  return (
+    <>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg px-4 py-3 flex items-center justify-between z-30">
+        <button onClick={() => setSheetOpen(true)} className="flex items-center gap-2 min-w-0">
+          <div className="relative">
+            <ShoppingBag className="size-5 text-primary" />
+            <span className="absolute -top-1.5 -right-1.5 bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              {count}
+            </span>
+          </div>
+          <span className="text-sm font-medium truncate">
+            {formatPriceUSD(total)}
+          </span>
+        </button>
+        <Button size="sm" disabled={sending} onClick={handleSend}>
+          {sending ? <Loader2 className="size-4 animate-spin mr-1" /> : <ArrowRight className="size-4 mr-1" />}
+          {sending ? t.menu.sending : t.menu.sendToKitchen}
+        </Button>
+      </div>
+
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[70vh] flex flex-col">
+          <SheetHeader>
+            <SheetTitle>
+              {tableId ? `${t.menu.orderFor}${decodeURIComponent(tableName || tableId)}` : t.menu.counterOrder}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto py-2">
+            {cartItems.map(ci => (
+              <div key={ci.cartKey} className="py-3 border-b last:border-0 flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{ci.name}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <button onClick={() => updateQuantity(ci.cartKey, ci.quantity - 1)}
+                      className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center hover:bg-background">
+                      <Minus className="size-3" />
+                    </button>
+                    <span className="w-6 text-center text-sm font-medium">{ci.quantity}</span>
+                    <button onClick={() => updateQuantity(ci.cartKey, ci.quantity + 1)}
+                      className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center hover:bg-background">
+                      <Plus className="size-3" />
+                    </button>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm text-gray-700">{formatPriceUSD(unitPrice(ci) * ci.quantity)}</p>
+                  <button onClick={() => removeItem(ci.cartKey)}
+                    className="text-xs text-gray-400 hover:text-red-500 mt-1">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t pt-3 space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">{t.common.subtotal}</span><span>{formatPriceUSD(sub)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">{t.menu.taxPercent}</span><span>{formatPriceUSD(tax)}</span></div>
+            <div className="flex justify-between text-lg font-bold"><span>{t.common.total}</span><span className="text-primary">{formatPriceUSD(total)}</span></div>
+            <Button className="w-full py-3 mt-2 bg-primary hover:bg-primary/90"
+              disabled={!cartItems.length || sending} onClick={handleSend}>
+              {sending ? <Loader2 className="size-4 animate-spin mr-2" /> : <ArrowRight className="size-4 mr-2" />}
+              {sending ? t.menu.sending : t.menu.sendToKitchen}
+            </Button>
+            <button onClick={() => { clearCart(); setSheetOpen(false) }}
+              className="w-full text-xs text-gray-400 hover:text-red-500 text-center mt-1">
+              {t.menu.clearOrder}
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
 

@@ -152,12 +152,13 @@ export default function DashboardPage() {
 
       {/* Tab filter bar */}
       <div className="sticky top-[60px] z-10 bg-card border-b">
-        <div className="max-w-4xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
+        <div className="max-w-4xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => (
             <Button
               key={tab.key}
               variant={activeTab === tab.key ? 'default' : 'outline'}
               size="sm"
+              className="shrink-0 min-h-[44px]"
               onClick={() => setActiveTab(tab.key)}
             >
               {tab.label}

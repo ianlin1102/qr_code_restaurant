@@ -170,7 +170,7 @@ export default function OrderDetailDialog({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 justify-end pt-2">
+        <div className="flex flex-wrap gap-2 justify-end pt-2">
           <Button variant="outline" size="sm" className="min-h-[44px]" onClick={handlePrint}>
             {t.orderDetail.printReceipt}
           </Button>

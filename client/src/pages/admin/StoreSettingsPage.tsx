@@ -94,14 +94,14 @@ export default function StoreSettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-xl md:text-2xl font-bold font-display">
           {t.settings.title}
           <span className="text-muted-foreground font-normal text-base ml-1.5">
             / {lang === 'zh' ? 'Store Settings' : '\u95E8\u5E97\u8BBE\u7F6E'}
           </span>
         </h1>
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" size="sm" className="self-start sm:self-auto min-h-[44px]" asChild>
           <a href={`/menu/${STORE_ID}`} target="_blank" rel="noopener noreferrer" className="gap-1.5">
             <ExternalLink className="h-4 w-4" />
             {t.settings.viewLiveStore}
@@ -145,12 +145,12 @@ export default function StoreSettingsPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between py-2">
-            <div>
+          <div className="flex items-start justify-between gap-4 py-2">
+            <div className="flex-1 min-w-0">
               <label className="text-sm font-medium">{t.settings.autoAccept}</label>
               <p className="text-xs text-muted-foreground">{t.settings.autoAcceptDesc}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 pt-0.5">
               <Switch checked={autoAccept} onCheckedChange={v => setAutoAccept(v)} />
               <span className="text-xs text-muted-foreground">
                 {autoAccept ? t.settings.enabled : t.settings.disabled}
@@ -158,12 +158,12 @@ export default function StoreSettingsPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between py-2">
-            <div>
+          <div className="flex items-start justify-between gap-4 py-2">
+            <div className="flex-1 min-w-0">
               <label className="text-sm font-medium">{t.settings.paymentMode || 'Payment Mode'}</label>
               <p className="text-xs text-muted-foreground">{t.settings.paymentModeDesc || 'Pay First: customer pays before ordering; Pay Later: customer orders first, settles at the end'}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 pt-0.5">
               <Switch checked={paymentMode === 'pay-later'} onCheckedChange={v => setPaymentMode(v ? 'pay-later' : 'pay-first')} />
               <span className="text-xs text-muted-foreground min-w-[60px]">
                 {paymentMode === 'pay-later' ? (t.settings.payLater || 'Pay Later') : (t.settings.payFirst || 'Pay First')}

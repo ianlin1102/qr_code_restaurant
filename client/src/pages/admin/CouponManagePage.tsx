@@ -203,10 +203,16 @@ export default function CouponManagePage() {
                     <span className="text-muted-foreground">{fmtDiscount(c.discountType, c.discountValue)}</span>
                     <span className="text-muted-foreground">{c.currentUses}{c.maxUses ? `/${c.maxUses}` : ''}</span>
                   </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                    {c.minOrderAmount ? <span>{t.coupons.minOrder}: {formatPriceUSD(c.minOrderAmount)}</span> : null}
+                    {c.expiresAt ? <span>{t.coupons.expiresAt}: {new Date(c.expiresAt).toLocaleDateString()}</span> : null}
+                  </div>
                   <div className="flex items-center justify-between gap-2">
                     <Switch checked={c.active} onCheckedChange={() => toggleActive(c)} />
-                    <Button variant="outline" size="sm" onClick={() => openEdit(c)}>{t.common.edit}</Button>
-                    <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(c)}>{t.common.delete}</Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => openEdit(c)}>{t.common.edit}</Button>
+                      <Button variant="outline" size="sm" className="min-h-[44px] text-red-600" onClick={() => handleDelete(c)}>{t.common.delete}</Button>
+                    </div>
                   </div>
                 </div>
               ))}
