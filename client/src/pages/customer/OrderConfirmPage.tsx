@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { CheckCircle2, Clock, Headset, Loader2, XCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -18,12 +18,22 @@ export default function OrderConfirmPage() {
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
 
+  const location = useLocation()
+  const stateOrder = (location.state as { order?: Order })?.order ?? null
+
   const redirectStatus = searchParams.get('redirect_status')
   const paymentSuccess = redirectStatus === 'succeeded'
   const paymentFailed = redirectStatus !== null && !paymentSuccess
+  // Pay-later flow: order passed via location.state (no Stripe redirect)
+  const isPayLater = !redirectStatus && !!stateOrder
 
-  const [paidOrder, setPaidOrder] = useState<Order | null>(null)
+  const [paidOrder, setPaidOrder] = useState<Order | null>(stateOrder)
   const [orderTimeout, setOrderTimeout] = useState(false)
+
+  // Pay-later: clear cart immediately
+  useEffect(() => {
+    if (isPayLater) clearCart()
+  }, [isPayLater, clearCart])
 
   // On successful payment: clear cart, poll for the paid order (webhook may be delayed)
   useEffect(() => {
@@ -185,7 +195,54 @@ export default function OrderConfirmPage() {
     )
   }
 
-  // No redirect_status — direct navigation (shouldn't happen in normal flow)
+  // Pay-later flow OR direct navigation
+  if (isPayLater || paidOrder) {
+    // Render the same success UI as paymentSuccess
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center px-4 pt-8 md:pt-12 pb-safe">
+        <div className="max-w-lg w-full space-y-6">
+          {tableName && (
+            <div className="flex justify-center">
+              <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                {tableName}
+              </span>
+            </div>
+          )}
+          <div className="flex flex-col items-center text-center space-y-3">
+            <CheckCircle2 className="h-16 w-16 text-green-500" />
+            <h1 className="text-2xl font-bold">
+              {lang === 'zh' ? '下单成功！' : 'Order Placed!'}
+            </h1>
+          </div>
+          {paidOrder && (
+            <div className="bg-card rounded-2xl p-5 shadow-sm space-y-3">
+              <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">
+                {lang === 'zh' ? '订单详情' : 'ORDER DETAILS'} — #{paidOrder.orderNumber}
+              </p>
+              <div className="space-y-2 border-t pt-3">
+                {paidOrder.items.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-sm">
+                    <span><span className="font-medium">{item.quantity}x</span> {item.name}</span>
+                    <span className="text-muted-foreground">{formatPriceUSD(item.price * item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t pt-3 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{lang === 'zh' ? '总金额' : 'Total'}</span>
+                <span className="text-xl font-bold text-primary">{formatPriceUSD(paidOrder.totalPrice)}</span>
+              </div>
+            </div>
+          )}
+          <Button className="w-full" size="lg" onClick={() => navigate(storeId ? `/menu/${storeId}` : '/')}>
+            {lang === 'zh' ? '继续点菜' : 'Continue Ordering'}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Unknown state
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <h2 className="text-lg font-semibold mb-2">{t('orderConfirm.notFound')}</h2>
