@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useT } from '@/i18n/useT'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ type TabFilter = 'all' | OrderStatus
 
 export default function DashboardPage() {
   const { t } = useT()
+  const navigate = useNavigate()
   const STORE_ID = useAuthStore(s => s.user!.storeId)
   const isOwner = useAuthStore(s => s.isOwner)
 
@@ -80,8 +82,8 @@ export default function DashboardPage() {
   }
 
   const openEditDialog = (order: Order) => {
-    setEditingOrder(order)
-    setEditDialogOpen(true)
+    // Navigate to TablesPage with the order's table selected
+    navigate(`/admin/tables?select=${order.tableId}`)
   }
 
   const openDetail = (order: Order) => {
