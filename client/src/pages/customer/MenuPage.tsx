@@ -170,6 +170,22 @@ export default function MenuPage() {
     setShowAnnouncement(false)
   }
 
+  const isSearching = searchQuery.trim().length > 0
+  const searchLower = searchQuery.trim().toLowerCase()
+
+  // Filtered categories for search mode (bilingual: items + category names)
+  const filteredCategories = useMemo(() => {
+    if (!menu) return []
+    if (!isSearching) return menu.categories
+    return menu.categories.map(cat => {
+      const catMatch = cat.name.toLowerCase().includes(searchLower) || cat.nameEn?.toLowerCase().includes(searchLower)
+      const matchItem = (item: MenuItem) =>
+        item.name.toLowerCase().includes(searchLower) || item.nameEn?.toLowerCase().includes(searchLower) ||
+        item.description?.toLowerCase().includes(searchLower) || item.descriptionEn?.toLowerCase().includes(searchLower)
+      return { ...cat, items: catMatch ? cat.items : cat.items.filter(matchItem) }
+    }).filter(cat => cat.items.length > 0)
+  }, [menu?.categories, isSearching, searchLower])
+
   if (loading) return (
     <div className="flex items-center justify-center h-screen">
       <p className="text-muted-foreground">{t('common:loading')}</p>
@@ -180,21 +196,6 @@ export default function MenuPage() {
       <p className="text-destructive">{error || 'Failed to load menu'}</p>
     </div>
   )
-
-  const isSearching = searchQuery.trim().length > 0
-  const searchLower = searchQuery.trim().toLowerCase()
-
-  // Filtered categories for search mode (bilingual: items + category names)
-  const filteredCategories = useMemo(() => {
-    if (!isSearching) return menu.categories
-    return menu.categories.map(cat => {
-      const catMatch = cat.name.toLowerCase().includes(searchLower) || cat.nameEn?.toLowerCase().includes(searchLower)
-      const matchItem = (item: MenuItem) =>
-        item.name.toLowerCase().includes(searchLower) || item.nameEn?.toLowerCase().includes(searchLower) ||
-        item.description?.toLowerCase().includes(searchLower) || item.descriptionEn?.toLowerCase().includes(searchLower)
-      return { ...cat, items: catMatch ? cat.items : cat.items.filter(matchItem) }
-    }).filter(cat => cat.items.length > 0)
-  }, [menu.categories, isSearching, searchLower])
 
   const itemCount = totalItems()
   const priceTotal = totalPrice()
