@@ -68,8 +68,6 @@ export function CsvImportDialog({ open, onClose, categories, onImported, t }: Pr
   const [importing, setImporting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  if (!open) return null
-
   const readFileWithEncoding = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader()
@@ -118,6 +116,8 @@ export function CsvImportDialog({ open, onClose, categories, onImported, t }: Pr
       return { name, nameEn, price, categoryId, description }
     })
   }, [rows, mapping, categories])
+
+  if (!open) return null
 
   const handleImport = async () => {
     if (!storeId) return

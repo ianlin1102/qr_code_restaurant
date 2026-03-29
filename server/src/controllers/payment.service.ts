@@ -250,12 +250,10 @@ export async function handleWebhookEvent(
       updatedAt: new Date().toISOString(),
     })
 
-    // Link order to existing bill (created at checkout time)
+    // Settle the bill (created at checkout time, order already linked by createOrder)
     const billId = paymentIntent.metadata.billId
     if (billId) {
-      const { addOrderToBill } = await import('./bill.service.js')
       const { billStore } = await import('../repositories/stores.js')
-      addOrderToBill(billId, result.id, result.totalPrice)
       billStore.update(billId, { status: 'settled', settledAt: new Date().toISOString() })
     }
 

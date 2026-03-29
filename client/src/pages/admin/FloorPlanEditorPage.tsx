@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Save, Trash2 } from 'lucide-react'
+import { Plus, Save, Trash2, ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { useT } from '@/i18n/useT'
@@ -28,6 +29,7 @@ function autoArrange(tables: Table[]): Table[] {
 type UpdateTableFn = (s: string, t: string, d: Partial<Table>) => Promise<Table>
 
 export default function FloorPlanEditorPage() {
+  const navigate = useNavigate()
   const storeId = useAuthStore(s => s.user?.storeId)
   const isOwner = useAuthStore(s => s.isOwner)
   const { t } = useT()
@@ -115,6 +117,7 @@ export default function FloorPlanEditorPage() {
     <div className="flex h-full">
       <div className="flex-1 flex flex-col min-w-0">
         <EditorToolbar addTable={addTable} saveLayout={saveLayout} saving={saving} dirty={dirty} t={t}
+          onBack={() => navigate('/admin/floor-plan')}
           zones={zones} activeZone={activeZone} setActiveZone={setActiveZone}
           onAddZone={() => {
             const name = prompt('New zone/floor name:')
@@ -166,15 +169,18 @@ export default function FloorPlanEditorPage() {
 }
 
 /* ---- Editor Toolbar ---- */
-function EditorToolbar({ addTable, saveLayout, saving, dirty, t, zones, activeZone, setActiveZone, onAddZone, onDeleteZone }: {
+function EditorToolbar({ addTable, saveLayout, saving, dirty, t, zones, activeZone, setActiveZone, onAddZone, onDeleteZone, onBack }: {
   addTable: () => void; saveLayout: () => void; saving: boolean; dirty: boolean
   t: ReturnType<typeof useT>['t']
   zones: string[]; activeZone: string; setActiveZone: (z: string) => void
-  onAddZone: () => void; onDeleteZone: (z: string) => void
+  onAddZone: () => void; onDeleteZone: (z: string) => void; onBack: () => void
 }) {
   return (
     <div className="border-b">
       <div className="flex items-center gap-2 p-3 flex-wrap">
+        <Button size="sm" variant="ghost" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <h1 className="text-lg font-bold mr-auto">{t.nav.floorPlan}</h1>
         <Button size="sm" variant="outline" onClick={addTable}>
           <Plus className="h-4 w-4 mr-1" />{t.tables.addTable}

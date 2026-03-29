@@ -5,19 +5,18 @@
     "name": "owner",
     "nameEn": "Owner",
     "permissions": [
-      "menu:read",
-      "menu:write",
       "orders:read",
       "orders:write",
+      "menu:read",
+      "menu:write",
       "tables:read",
       "tables:write",
+      "billing:read",
+      "billing:write",
       "analytics:read",
-      "coupons:read",
-      "coupons:write",
       "staff:manage",
-      "settings:write",
-      "floor-plan:write",
-      "bill:write"
+      "settings:read",
+      "settings:write"
     ],
     "isSystem": true,
     "createdAt": "2026-03-27T18:35:04.555Z"
@@ -28,18 +27,17 @@
     "name": "manager",
     "nameEn": "Manager",
     "permissions": [
-      "menu:read",
-      "menu:write",
       "orders:read",
       "orders:write",
+      "menu:read",
+      "menu:write",
       "tables:read",
       "tables:write",
+      "billing:read",
+      "billing:write",
       "analytics:read",
-      "coupons:read",
-      "coupons:write",
-      "settings:write",
-      "floor-plan:write",
-      "bill:write"
+      "settings:read",
+      "settings:write"
     ],
     "isSystem": true,
     "createdAt": "2026-03-27T18:35:04.555Z"
@@ -50,12 +48,11 @@
     "name": "waiter",
     "nameEn": "Waiter",
     "permissions": [
-      "menu:read",
       "orders:read",
       "orders:write",
+      "menu:read",
       "tables:read",
-      "tables:write",
-      "bill:write"
+      "tables:write"
     ],
     "isSystem": true,
     "createdAt": "2026-03-27T18:35:04.555Z"

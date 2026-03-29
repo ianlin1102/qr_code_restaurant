@@ -39,7 +39,7 @@ export default function FloorPlanPage() {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'orders' | 'waitlist'>('orders')
-  const [activeZone, setActiveZone] = useState('all')
+  const [activeZone, setActiveZone] = useState<string>('')
   const [lastUpdated, setLastUpdated] = useState(new Date())
   const [loading, setLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
@@ -61,8 +61,13 @@ export default function FloorPlanPage() {
   const idleCount = enabledTables.length - occupiedCount
   const occupancyPct = enabledTables.length ? Math.round(occupiedCount / enabledTables.length * 100) : 0
   const activeOrderCount = useMemo(() => orders.filter(o => o.status === 'pending' || o.status === 'preparing').length, [orders])
-  const zones = useMemo(() => ['all', ...Array.from(new Set(enabledTables.map(tb => tb.zone).filter(Boolean)))] as string[], [enabledTables])
-  const filteredTables = useMemo(() => activeZone === 'all' ? enabledTables : enabledTables.filter(tb => tb.zone === activeZone), [enabledTables, activeZone])
+  const zones = useMemo(() => Array.from(new Set(enabledTables.map(tb => tb.zone).filter(Boolean))) as string[], [enabledTables])
+  // Auto-select first zone if none selected
+  useEffect(() => { if (!activeZone && zones.length > 0) setActiveZone(zones[0]) }, [zones, activeZone])
+  const filteredTables = useMemo(() => {
+    if (!activeZone) return enabledTables // no zones defined yet → show all
+    return enabledTables.filter(tb => tb.zone === activeZone)
+  }, [enabledTables, activeZone])
 
   const handleTableClick = (table: Table) => { setSelectedTable(table); setDetailOpen(true) }
   const handleOrderClick = (order: Order) => {
@@ -188,7 +193,7 @@ function CenterTopBar({ zones, activeZone, setActiveZone, elapsed, t, occupancyP
           <Button key={z} size="sm" variant={activeZone === z ? 'default' : 'outline'}
             className={activeZone === z ? 'bg-primary hover:bg-primary/90' : ''}
             onClick={() => setActiveZone(z)}>
-            {z === 'all' ? t.floorPlan.allZone : z}
+            {z}
           </Button>
         ))}
         <div className="flex-1" />

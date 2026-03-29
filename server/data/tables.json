@@ -7,8 +7,8 @@
     "number": 1,
     "enabled": true,
     "currentBillId": "37533730-8022-49de-b289-fd55e23c293c",
-    "x": 20,
-    "y": 20,
+    "x": 0,
+    "y": 0,
     "width": 100,
     "height": 80
   },
@@ -103,7 +103,11 @@
     "name": "Table 7",
     "number": 7,
     "enabled": true,
-    "status": "idle"
+    "status": "idle",
+    "x": 20,
+    "y": 140,
+    "width": 100,
+    "height": 80
   },
   {
     "id": "store-demo-001-table-008",
@@ -111,7 +115,11 @@
     "name": "Table 8",
     "number": 8,
     "enabled": true,
-    "status": "idle"
+    "status": "idle",
+    "x": 200,
+    "y": 200,
+    "width": 100,
+    "height": 80
   },
   {
     "id": "store-demo-001-table-009",
@@ -119,15 +127,25 @@
     "name": "Table 9",
     "number": 9,
     "enabled": true,
-    "status": "idle"
+    "status": "idle",
+    "x": 300,
+    "y": 140,
+    "width": 100,
+    "height": 80
   },
   {
     "id": "store-demo-001-table-010",
     "storeId": "store-demo-001",
-    "name": "",
+    "name": "Table 10",
     "number": 10,
-    "enabled": false,
-    "status": "idle"
+    "enabled": true,
+    "status": "idle",
+    "zone": "test",
+    "x": 100,
+    "y": 20,
+    "width": 100,
+    "height": 80,
+    "shape": "long"
   },
   {
     "id": "store-demo-001-table-011",
@@ -216,8 +234,8 @@
     "number": 2,
     "enabled": true,
     "status": "idle",
-    "x": 340,
-    "y": 180,
+    "x": 420,
+    "y": 220,
     "width": 100,
     "height": 80
   }
