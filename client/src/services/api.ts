@@ -1,5 +1,7 @@
-import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Bill, Split, RoleDefinition } from '@qr-order/shared'
+import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Session, Payment, RoleDefinition } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
+
+type SessionSummary = Session & { orders: Order[]; payments: Payment[]; remaining: number; isPaid: boolean; netDue: number }
 
 const BASE = '/api'
 
@@ -14,10 +16,14 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${url}`, { ...options, headers })
 
   if (res.status === 401) {
-    const storeId = useAuthStore.getState().user?.storeId
-    useAuthStore.getState().logout()
-    window.location.href = storeId ? `/admin/login?store=${storeId}` : '/admin/login'
-    throw new Error('Session expired')
+    // Don't auto-redirect for login attempts — let the login page handle the error
+    const isLoginAttempt = url.includes('/auth/login')
+    if (!isLoginAttempt) {
+      const storeId = useAuthStore.getState().user?.storeId
+      useAuthStore.getState().logout()
+      window.location.href = storeId ? `/admin/login?store=${storeId}` : '/admin/login'
+      throw new Error('Session expired')
+    }
   }
 
   if (!res.ok) {
@@ -266,40 +272,33 @@ export const api = {
       method: 'POST',
     }),
 
-  // Bills
-  getActiveBill: (storeId: string, tableId: string) =>
-    fetchJSON<(Bill & { splits: Split[] }) | null>(`/stores/${storeId}/bills?tableId=${tableId}`),
+  // Sessions
+  getActiveSession: (storeId: string, tableId: string) =>
+    fetchJSON<SessionSummary | null>(`/stores/${storeId}/sessions?tableId=${tableId}`),
 
-  getBill: (storeId: string, billId: string) =>
-    fetchJSON<Bill & { splits: Split[] }>(`/stores/${storeId}/bills/${billId}`),
+  getSessionSummary: (storeId: string, sessionId: string) =>
+    fetchJSON<SessionSummary>(`/stores/${storeId}/sessions/${sessionId}/summary`),
 
-  createBillSplits: (storeId: string, billId: string, method: string, count?: number) =>
-    fetchJSON<Split[]>(`/stores/${storeId}/bills/${billId}/splits`, {
+  closeSession: (storeId: string, sessionId: string) =>
+    fetchJSON<Session>(`/stores/${storeId}/sessions/${sessionId}/close`, { method: 'PATCH' }),
+
+  reopenSession: (storeId: string, sessionId: string) =>
+    fetchJSON<Session>(`/stores/${storeId}/sessions/${sessionId}/reopen`, { method: 'PATCH' }),
+
+  addPayment: (storeId: string, sessionId: string, amount: number, paidBy?: string) =>
+    fetchJSON<{ session: Session; payment: Payment }>(`/stores/${storeId}/sessions/${sessionId}/payments`, {
       method: 'POST',
-      body: JSON.stringify({ method, count }),
+      body: JSON.stringify({ amount, paidBy }),
     }),
 
-  markSplitPaid: (storeId: string, billId: string, splitId: string) =>
-    fetchJSON<{ bill: Bill; split: Split }>(`/stores/${storeId}/bills/${billId}/splits/${splitId}`, {
-      method: 'PATCH',
-    }),
-
-  applyBillCoupon: (storeId: string, billId: string, couponId: string, couponCode: string, discountType: string, discountValue: number) =>
-    fetchJSON<Bill>(`/stores/${storeId}/bills/${billId}/apply-coupon`, {
+  applySessionCoupon: (storeId: string, sessionId: string, couponId: string, couponCode: string, discountType: string, discountValue: number) =>
+    fetchJSON<Session>(`/stores/${storeId}/sessions/${sessionId}/apply-coupon`, {
       method: 'POST',
       body: JSON.stringify({ couponId, couponCode, discountType, discountValue }),
     }),
 
-  removeBillCoupon: (storeId: string, billId: string) =>
-    fetchJSON<Bill>(`/stores/${storeId}/bills/${billId}/coupon`, {
-      method: 'DELETE',
-    }),
-
-  settleBill: (storeId: string, billId: string, paidBy?: string) =>
-    fetchJSON<Bill>(`/stores/${storeId}/bills/${billId}/settle`, {
-      method: 'POST',
-      body: JSON.stringify({ paidBy }),
-    }),
+  removeSessionCoupon: (storeId: string, sessionId: string) =>
+    fetchJSON<Session>(`/stores/${storeId}/sessions/${sessionId}/coupon`, { method: 'DELETE' }),
 
   // Roles
   getRoles: (storeId: string) =>
