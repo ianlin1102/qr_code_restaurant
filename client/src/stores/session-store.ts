@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { safeStorage } from '@/lib/safe-storage'
 
 interface SessionState {
   storeId: string | null
@@ -22,6 +23,9 @@ export const useSessionStore = create<SessionState>()(
       setCustomerName: (name) => set({ customerName: name }),
       clearSession: () => set({ storeId: null, tableId: null, tableName: null, customerName: undefined }),
     }),
-    { name: 'qr-order-session' }
+    {
+      name: 'qr-order-session',
+      storage: safeStorage,
+    }
   )
 )

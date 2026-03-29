@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { UtensilsCrossed, RefreshCw } from 'lucide-react'
+import { UtensilsCrossed, RefreshCw, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSessionStore } from '@/stores/session-store'
 import { useCartStore } from '@/stores/cart-store'
@@ -15,10 +15,27 @@ export default function ScanPage() {
   const { t } = useTranslation('customer')
   const [error, setError] = useState<string | null>(null)
   const [disabled, setDisabled] = useState(false)
-  // Name input removed from scan flow — collected on MenuPage instead
+
+  const goToMenu = () => navigate(`/menu/${storeId}`, { replace: true })
 
   useEffect(() => {
     if (!storeId || !tableId) return
+
+    // Fast path: same table, session exists → skip API, go straight to menu
+    const isSameSession = session.storeId === storeId && session.tableId === tableId
+    if (isSameSession) {
+      goToMenu()
+      return
+    }
+
+    // Ensure language is set
+    const hasLang = localStorage.getItem('i18n-lang')
+    if (!hasLang) {
+      navigate(`/lang-select/${storeId}/${tableId}`, { replace: true })
+      return
+    }
+
+    // New table — validate via API
     async function init() {
       try {
         const table = await api.getTable(storeId!, tableId!)
@@ -26,35 +43,31 @@ export default function ScanPage() {
           setDisabled(true)
           return
         }
-        const isSameSession = session.storeId === storeId && session.tableId === tableId
-        if (!isSameSession) clearCart()
-        const hasLang = localStorage.getItem('i18n-lang')
-        if (!hasLang) { navigate(`/lang-select/${storeId}/${tableId}`, { replace: true }); return }
+        clearCart()
         session.setSession(storeId!, tableId!, table.name)
-        // Go directly to menu — name input is optional, moved inline
-        navigate(`/menu/${storeId}`, { replace: true })
-      } catch { setError(t('scan.error')) }
+        goToMenu()
+      } catch {
+        // API failed but we can still set session and try
+        session.setSession(storeId!, tableId!, '')
+        setError(t('scan.error'))
+      }
     }
     init()
   }, [storeId, tableId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Decorative background circles */}
       <div className="absolute top-[-10%] left-[-5%] w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
       <div className="absolute bottom-[-10%] right-[-5%] w-80 h-80 rounded-full bg-primary/3 blur-3xl" />
 
-      {/* Center content */}
       <div className="relative z-10 flex flex-col items-center gap-8">
-        {/* Brand */}
         <div className="text-center">
           <h1 className="text-3xl font-extrabold text-primary tracking-tight">
-            Digital Maître D'
+            Digital Maître D&apos;
           </h1>
           <p className="text-xs text-muted-foreground tracking-[0.3em] mt-1">EST. 2024</p>
         </div>
 
-        {/* Spinner or Error */}
         {disabled ? (
           <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4">
             <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
@@ -70,14 +83,18 @@ export default function ScanPage() {
             </div>
             <p className="text-sm text-destructive text-center max-w-xs">{error}</p>
             <p className="text-xs text-muted-foreground text-center">{t('scan.retryDesc')}</p>
-            <Button onClick={() => window.location.reload()}
-              className="bg-primary hover:bg-primary/90 gap-2">
-              <RefreshCw className="w-4 h-4" />{t('scan.retry')}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => window.location.reload()}
+                variant="outline" className="gap-2">
+                <RefreshCw className="w-4 h-4" />{t('scan.retry')}
+              </Button>
+              <Button onClick={goToMenu} className="gap-2">
+                <ArrowRight className="w-4 h-4" />{t('scan.continue')}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-6">
-            {/* Custom spinner */}
             <div className="relative w-20 h-20">
               <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
               <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
@@ -85,7 +102,6 @@ export default function ScanPage() {
                 <UtensilsCrossed className="w-8 h-8 text-primary/60" />
               </div>
             </div>
-            {/* Bilingual loading text */}
             <div className="text-center">
               <p className="text-sm font-medium text-primary">{t('scan.loading')}</p>
               <p className="text-xs text-muted-foreground mt-1">{t('scan.loadingZh')}</p>
@@ -94,7 +110,6 @@ export default function ScanPage() {
         )}
       </div>
 
-      {/* Watermark */}
       <div className="absolute bottom-8 opacity-[0.03]">
         <UtensilsCrossed className="w-48 h-48 text-primary" />
       </div>

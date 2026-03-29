@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { safeStorage } from '@/lib/safe-storage'
 import type { Lang } from '@/i18n/admin'
 
 interface AdminLangStore {
@@ -15,6 +16,6 @@ export const useAdminLangStore = create<AdminLangStore>()(
       setLang: (lang) => set({ lang }),
       toggle: () => set({ lang: get().lang === 'zh' ? 'en' : 'zh' }),
     }),
-    { name: 'admin-lang' }
+    { name: 'admin-lang', storage: safeStorage }
   )
 )

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { safeStorage } from '@/lib/safe-storage'
 import type { AuthUser } from '@qr-order/shared'
 
 interface AuthState {
@@ -21,6 +22,6 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: () => !!get().token,
       isOwner: () => get().user?.role === 'owner',
     }),
-    { name: 'auth-storage' }
+    { name: 'auth-storage', storage: safeStorage }
   )
 )

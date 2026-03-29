@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { safeStorage } from '@/lib/safe-storage'
 import type { CartItem } from '@qr-order/shared'
 
 /** Calculate unit price (base + all option adjustments) */
@@ -84,6 +85,6 @@ export const useCartStore = create<CartState>()(
 
   totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
     }),
-    { name: 'qr-order-cart' }
+    { name: 'qr-order-cart', storage: safeStorage }
   )
 )
