@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { formatPriceUSD } from '@/lib/format'
 import { useT } from '@/i18n/useT'
+import { localized } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -53,7 +54,7 @@ export default function OrderDetailDialog({
   updating,
   storeName,
 }: Props) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const receiptRef = useRef<HTMLDivElement>(null)
 
   const STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
@@ -128,7 +129,7 @@ export default function OrderDetailDialog({
             <div key={idx} className="flex justify-between text-sm">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1">
-                  <span className="font-medium">{item.name}</span>
+                  <span className="font-medium">{localized(item, lang)}</span>
                   <span className="text-muted-foreground">x{item.quantity}</span>
                 </div>
                 {item.selectedOptions && item.selectedOptions.length > 0 && (

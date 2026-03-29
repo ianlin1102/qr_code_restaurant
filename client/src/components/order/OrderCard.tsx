@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Printer } from 'lucide-react'
 import { useT } from '@/i18n/useT'
+import { localized } from '@/lib/i18n-utils'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -45,7 +46,7 @@ interface Props {
 }
 
 export default function OrderCard({ order, storeId, onClick, onEdit, actionButton }: Props) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const [reprinting, setReprinting] = useState(false)
   const [reprintFeedback, setReprintFeedback] = useState(false)
 
@@ -131,7 +132,7 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
           {order.items.map((item, idx) => (
             <li key={idx} className="flex justify-between text-sm">
               <div>
-                <span>{item.name}</span>
+                <span>{localized(item, lang)}</span>
                 <span className="text-muted-foreground ml-1">
                   x{item.quantity}
                 </span>

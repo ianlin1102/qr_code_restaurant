@@ -40,7 +40,7 @@
     "code": "EMPLOYEE",
     "discountType": "percentage",
     "discountValue": 10,
-    "maxUses": 1,
+    "maxUses": 999,
     "currentUses": 0,
     "active": true,
     "createdAt": "2026-03-29T05:10:20.423Z"

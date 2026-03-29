@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useT } from '@/i18n/useT'
+import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { formatPriceUSD } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -144,12 +145,12 @@ function DesktopTable({
   onInlineEdit: (id: string, field: string, value: unknown) => void
   onAddToOrder?: (item: MenuItem) => void
 }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   return (
     <div className="hidden md:block space-y-6">
       {grouped.map(cat => (
         <div key={cat.id}>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{cat.name}</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{localized(cat, lang)}</h2>
           <div className="bg-card rounded-lg border">
             <Table>
               <TableHeader>
@@ -186,8 +187,8 @@ function DesktopTable({
                               onSave={val => onInlineEdit(item.id, 'name', val)}
                               className="font-medium"
                             />
-                            {item.description && (
-                              <span className="text-xs text-muted-foreground ml-2">{item.description}</span>
+                            {localizedDesc(item, lang) && (
+                              <span className="text-xs text-muted-foreground ml-2">{localizedDesc(item, lang)}</span>
                             )}
                           </div>
                         </div>
@@ -205,7 +206,7 @@ function DesktopTable({
                           <div className="flex flex-wrap gap-1">
                             {item.options.map(opt => (
                               <Badge key={opt.id} variant="secondary" className="text-xs">
-                                {opt.name}({opt.choices.length})
+                                {localized(opt, lang)}({opt.choices.length})
                               </Badge>
                             ))}
                           </div>
@@ -262,12 +263,12 @@ function MobileCards({
   onToggleAvailable: (item: MenuItem) => void
   onAddToOrder?: (item: MenuItem) => void
 }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   return (
     <div className="md:hidden space-y-4">
       {grouped.map(cat => (
         <div key={cat.id}>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{cat.name}</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{localized(cat, lang)}</h2>
           <div className="space-y-2">
             {cat.items.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">{t.menu.noItems}</p>
@@ -285,8 +286,7 @@ function MobileCards({
                         <div className="w-12 h-12 rounded bg-gray-100 shrink-0" />
                       )}
                       <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{item.name}</p>
-                        {item.nameEn && <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>}
+                        <p className="font-medium text-sm truncate">{localized(item, lang)}</p>
                       </div>
                     </div>
                     <span className="font-mono text-sm font-semibold shrink-0">{formatPriceUSD(item.price)}</span>
@@ -294,7 +294,7 @@ function MobileCards({
                   {item.options && item.options.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {item.options.map(opt => (
-                        <Badge key={opt.id} variant="secondary" className="text-xs">{opt.name}({opt.choices.length})</Badge>
+                        <Badge key={opt.id} variant="secondary" className="text-xs">{localized(opt, lang)}({opt.choices.length})</Badge>
                       ))}
                     </div>
                   )}

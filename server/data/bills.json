@@ -36,5 +36,20 @@
     "couponDiscountValue": 10,
     "splitMethod": "full",
     "settledAt": "2026-03-29T18:50:27.671Z"
+  },
+  {
+    "id": "2ac4cc00-4c8c-45ff-bc0e-6c4d4b21fc63",
+    "storeId": "store-demo-001",
+    "tableId": "store-demo-001-table-007",
+    "version": 2,
+    "status": "open",
+    "orderIds": [
+      "fd2ea361-5439-4f90-860c-2c7afe11b001"
+    ],
+    "subtotal": 3648,
+    "discountAmount": 0,
+    "totalDue": 3648,
+    "paidAmount": 0,
+    "createdAt": "2026-03-29T19:18:44.516Z"
   }
 ]

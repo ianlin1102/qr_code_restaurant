@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/i18n/useT'
+import { localized } from '@/lib/i18n-utils'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -41,7 +42,7 @@ export default function OrderEditDialog({
   onSaved,
   isOwner,
 }: Props) {
-  const { t } = useT()
+  const { t, lang } = useT()
 
   const [editItems, setEditItems] = useState<OrderItem[]>([])
   const [savingEdit, setSavingEdit] = useState(false)
@@ -216,7 +217,7 @@ export default function OrderEditDialog({
                     {allMenuItems.map(m => (
                       <SelectItem key={m.id} value={m.id}>
                         <span className="flex items-center gap-1.5">
-                          {m.name} — {formatPriceUSD(m.price)}
+                          {localized(m, lang)} — {formatPriceUSD(m.price)}
                           {m.staffOnly && <span className="text-[9px] bg-purple-100 text-purple-700 px-1 rounded">Staff</span>}
                           {m.allowCustomPrice && <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded">$?</span>}
                         </span>
@@ -254,7 +255,7 @@ export default function OrderEditDialog({
                 {t.dashboard.missingOptions}
                 {missingRequired.map((m, i) => (
                   <span key={i} className="font-medium ml-1">
-                    {editItems[m.idx]?.name}({m.optionName}){i < missingRequired.length - 1 ? ', ' : ''}
+                    {editItems[m.idx] ? localized(editItems[m.idx], lang) : ''}({m.optionName}){i < missingRequired.length - 1 ? ', ' : ''}
                   </span>
                 ))}
               </div>
@@ -307,14 +308,14 @@ function EditItemRow({
   onOption,
   onRemove,
 }: EditItemRowProps) {
-  const { t } = useT()
+  const { t, lang } = useT()
 
   return (
     <div className="border rounded-lg p-3 space-y-2">
       {/* Name + quantity + remove */}
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
-          <span className="font-medium text-sm">{item.name}</span>
+          <span className="font-medium text-sm">{localized(item, lang)}</span>
           {isOwner && (
             <span className="text-xs text-muted-foreground ml-2">
               {formatPriceUSD(itemUnitPrice(item))}
@@ -350,7 +351,7 @@ function EditItemRow({
                 <span className={`text-xs w-14 shrink-0 ${
                   option.required && !currentChoice ? 'text-red-600 font-semibold' : 'text-muted-foreground'
                 }`}>
-                  {option.name}{option.required ? '*' : ''}
+                  {localized(option, lang)}{option.required ? '*' : ''}
                 </span>
                 <div className="flex flex-wrap gap-1">
                   {option.choices.map(choice => (
@@ -363,7 +364,7 @@ function EditItemRow({
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      {choice.name}
+                      {localized(choice, lang)}
                       {isOwner && choice.priceAdjust > 0 && (
                         <span className="text-muted-foreground ml-0.5">+{formatPriceUSD(choice.priceAdjust)}</span>
                       )}

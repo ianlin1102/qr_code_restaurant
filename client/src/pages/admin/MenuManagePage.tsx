@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useT } from '@/i18n/useT'
 import { Plus, Loader2, Minus, ArrowRight, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react'
+import { localized } from '@/lib/i18n-utils'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { useCartStore, unitPrice } from '@/stores/cart-store'
@@ -27,7 +28,7 @@ function catIcon(name: string): string {
 }
 
 export default function MenuManagePage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const storeId = useAuthStore(s => s.user?.storeId) ?? ''
   const [searchParams] = useSearchParams()
   const orderTableId = searchParams.get('tableId')
@@ -99,7 +100,7 @@ export default function MenuManagePage() {
         <div className="border-b bg-card">
           <div className="px-4 sm:px-6 pt-4 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold">{activeCat?.name ?? t.menu.title}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold">{activeCat ? localized(activeCat, lang) : t.menu.title}</h2>
               <p className="text-sm text-gray-500">
                 {activeCatId
                   ? `${filteredItems.length} / ${items.length} ${t.menu.itemCount}`
@@ -143,7 +144,7 @@ export default function MenuManagePage() {
             <div className="bg-card rounded-lg border p-3">
               <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">{t.menu.topCategory}</p>
               <p className="text-lg font-bold mt-1 truncate">
-                {(() => { const counts = categories.map(c => ({ name: c.name, count: items.filter(i => i.categoryId === c.id).length })); return counts.sort((a, b) => b.count - a.count)[0]?.name ?? '-' })()}
+                {(() => { const counts = categories.map(c => ({ name: localized(c, lang), count: items.filter(i => i.categoryId === c.id).length })); return counts.sort((a, b) => b.count - a.count)[0]?.name ?? '-' })()}
               </p>
             </div>
           </div>
@@ -170,7 +171,7 @@ function CategorySlider({ categories, items, activeCatId, onSelect }: {
   categories: Category[]; items: MenuItem[]; activeCatId: string | null
   onSelect: (id: string | null) => void
 }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollL, setCanScrollL] = useState(false)
   const [canScrollR, setCanScrollR] = useState(false)
@@ -200,7 +201,7 @@ function CategorySlider({ categories, items, activeCatId, onSelect }: {
           count={items.length} onClick={() => onSelect(null)} />
         {categories.map(c => (
           <SliderChip key={c.id} active={activeCatId === c.id}
-            icon={catIcon(c.name)} label={c.name}
+            icon={catIcon(c.name)} label={localized(c, lang)}
             count={countFor(c.id)} onClick={() => onSelect(c.id)} />
         ))}
       </div>

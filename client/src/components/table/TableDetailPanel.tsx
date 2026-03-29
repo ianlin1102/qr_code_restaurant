@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/i18n/useT'
+import { localized } from '@/lib/i18n-utils'
 import type { Table, Order, OrderItem, OrderStatus } from '@qr-order/shared'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
@@ -189,12 +190,12 @@ function CurrentTab({ order, storeId, onRefresh }: {
 }
 
 function ItemRow({ item }: { item: OrderItem }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   return (
     <div className="flex justify-between text-sm">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1">
-          <span className="font-medium">{item.name}</span>
+          <span className="font-medium">{localized(item, lang)}</span>
           <span className="text-muted-foreground">x{item.quantity}</span>
         </div>
         {item.selectedOptions?.length ? (

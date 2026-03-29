@@ -9,10 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { Category, MenuItem } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
+import { localized } from '@/lib/i18n-utils'
 import { cn } from '@/lib/utils'
 
 export default function CategoryManagePage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const STORE_ID = useAuthStore(s => s.user!.storeId)
   const [categories, setCategories] = useState<Category[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
@@ -94,10 +95,10 @@ export default function CategoryManagePage() {
   const handleDelete = async (cat: Category) => {
     const count = itemCountForCategory(cat.id)
     if (count > 0) {
-      alert(`Cannot delete "${cat.name}": it has ${count} dishes. Please move or delete them first.`)
+      alert(`Cannot delete "${localized(cat, lang)}": it has ${count} dishes. Please move or delete them first.`)
       return
     }
-    if (!confirm(`Delete category "${cat.name}"?`)) return
+    if (!confirm(`Delete category "${localized(cat, lang)}"?`)) return
     try {
       await api.deleteCategory(STORE_ID, cat.id)
       await fetchData()
@@ -251,8 +252,7 @@ export default function CategoryManagePage() {
                 >▼</button>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm">{cat.name}</p>
-                {cat.nameEn && <p className="text-xs text-muted-foreground">{cat.nameEn}</p>}
+                <p className="font-medium text-sm">{localized(cat, lang)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {t.categories.sortOrder}: {cat.sortOrder}
                   {' · '}
@@ -346,7 +346,7 @@ export default function CategoryManagePage() {
                           className="border rounded px-2 py-1 text-sm w-full max-w-[200px] outline-none focus:ring-1 focus:ring-blue-500" autoFocus />
                       ) : (
                         <span onClick={() => startInlineEdit(cat)} title={t.menu.clickToEdit}
-                          className="cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 -mx-1 rounded transition-colors font-medium">{cat.name}</span>
+                          className="cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-1 -mx-1 rounded transition-colors font-medium">{localized(cat, lang)}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-center w-[80px]">

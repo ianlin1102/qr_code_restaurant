@@ -8,6 +8,7 @@ import {
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { formatPriceUSD } from '@/lib/format'
+import { localized } from '@/lib/i18n-utils'
 import { printQrCodes } from '@/lib/qr-pdf'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,7 +32,7 @@ function itemPrice(it: OrderItem) {
 }
 
 export default function TablesPage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const [searchParams, setSearchParams] = useSearchParams()
   const storeId = useAuthStore(s => s.user?.storeId) ?? ''
 
@@ -287,13 +288,13 @@ export default function TablesPage() {
               <div key={`${o.id}-${i}`} className="bg-card rounded-xl p-3 sm:p-4 mb-2 sm:mb-3 shadow-sm hover:shadow-md transition-shadow flex gap-3">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
                   {menuItemMap[it.menuItemId] ? (
-                    <img src={menuItemMap[it.menuItemId]} alt={it.name} className="w-full h-full object-cover" />
+                    <img src={menuItemMap[it.menuItemId]} alt={localized(it, lang)} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-2xl text-muted-foreground">{it.name.charAt(0)}</span>
+                    <span className="text-2xl text-muted-foreground">{localized(it, lang).charAt(0)}</span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold">{it.name}</p>
+                  <p className="font-semibold">{localized(it, lang)}</p>
                   {it.selectedOptions && it.selectedOptions.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-0.5">
                       {it.selectedOptions.map((o, idx) => (

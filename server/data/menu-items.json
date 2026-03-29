@@ -495,5 +495,18 @@
     "available": true,
     "sortOrder": 2,
     "image": "https://qr-restaurant-images.s3.us-east-1.amazonaws.com/menu-images/herbal-tea.jpg"
+  },
+  {
+    "id": "c7909beb-c829-49b9-a4ab-8a8c890e0544",
+    "storeId": "store-demo-001",
+    "categoryId": "1616ffd9-2ecd-445a-8a39-f34c02e79072",
+    "name": "自定义菜单",
+    "nameEn": "Custom Item",
+    "description": "",
+    "price": 0,
+    "available": true,
+    "sortOrder": 0,
+    "options": [],
+    "staffOnly": true
   }
 ]

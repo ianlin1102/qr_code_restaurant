@@ -58,5 +58,12 @@
     "nameEn": "Beverages",
     "sortOrder": 1,
     "active": true
+  },
+  {
+    "id": "1616ffd9-2ecd-445a-8a39-f34c02e79072",
+    "storeId": "store-demo-001",
+    "name": "特殊",
+    "nameEn": "Specialties",
+    "sortOrder": 5
   }
 ]

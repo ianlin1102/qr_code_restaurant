@@ -20,7 +20,7 @@
     "storeId": "store-demo-001",
     "username": "ian",
     "password": "$2b$10$qiD1K63D67C8MPXATLGIyu6CCZXCNRWHhaRvX/unR9r1kZNbCfmGa",
-    "role": "waiter",
+    "role": "manager",
     "createdAt": "2026-03-27T18:41:21.055Z"
   }
 ]
