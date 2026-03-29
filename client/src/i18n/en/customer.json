@@ -17,7 +17,9 @@
     "viewOrders": "View orders",
     "itemsSoldOut": "Some items in your cart are now sold out and have been removed: {{names}}",
     "announcement": "Announcement",
-    "gotIt": "Got it"
+    "gotIt": "Got it",
+    "setName": "+ Name",
+    "enterName": "Your name (optional):"
   },
   "cart": {
     "title": "My Orders",
