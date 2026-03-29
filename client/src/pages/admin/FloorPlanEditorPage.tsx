@@ -39,7 +39,7 @@ export default function FloorPlanEditorPage() {
   const [loading, setLoading] = useState(true)
   const [dirty, setDirty] = useState(false)
   const [zones, setZones] = useState<string[]>(DEFAULT_ZONES)
-  const [activeZone, setActiveZone] = useState<string>('all')
+  const [activeZone, setActiveZone] = useState<string>('__base__')
   const selected = tables.find(tb => tb.id === selectedId) ?? null
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function FloorPlanEditorPage() {
     if (!storeId) return
     const { number } = await api.getNextTableNumber(storeId)
     const created = await api.enableTable(storeId, number, `Table ${tables.length + 1}`)
-    const zone = activeZone !== 'all' ? activeZone : zones[0] || undefined
+    const zone = activeZone !== '__base__' ? activeZone : zones[0] || undefined
     setTables(prev => [...prev, { ...created, x: 20, y: 20, width: DEFAULT_W, height: DEFAULT_H, zone }])
     setSelectedId(created.id)
   }, [storeId, tables.length, activeZone, zones])
@@ -130,11 +130,11 @@ export default function FloorPlanEditorPage() {
               return
             }
             setZones(prev => prev.filter(x => x !== z))
-            if (activeZone === z) setActiveZone('all')
+            if (activeZone === z) setActiveZone('__base__')
           }} />
         <div className="flex-1 overflow-auto p-2">
           <FloorCanvas
-            tables={activeZone === 'all' ? tables : tables.filter(tb => tb.zone === activeZone)}
+            tables={activeZone === '__base__' ? tables.filter(tb => !tb.zone) : tables.filter(tb => tb.zone === activeZone)}
             editable
             selectedTableId={selectedId}
             onTableClick={handleTableClick}
@@ -191,7 +191,7 @@ function EditorToolbar({ addTable, saveLayout, saving, dirty, t, zones, activeZo
         </Button>
       </div>
       <div className="flex items-center gap-1 px-3 pb-2 flex-wrap">
-        <Button size="sm" variant={activeZone === 'all' ? 'default' : 'outline'} onClick={() => setActiveZone('all')}>
+        <Button size="sm" variant={activeZone === '__base__' ? 'default' : 'outline'} onClick={() => setActiveZone('__base__')}>
           {t.floorPlan.allZone}
         </Button>
         {zones.map(z => (

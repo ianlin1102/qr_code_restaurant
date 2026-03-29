@@ -39,7 +39,7 @@ export default function FloorPlanPage() {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'orders' | 'waitlist'>('orders')
-  const [activeZone, setActiveZone] = useState<string>('')
+  const [activeZone, setActiveZone] = useState<string>('__base__')
   const [lastUpdated, setLastUpdated] = useState(new Date())
   const [loading, setLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
@@ -62,10 +62,9 @@ export default function FloorPlanPage() {
   const occupancyPct = enabledTables.length ? Math.round(occupiedCount / enabledTables.length * 100) : 0
   const activeOrderCount = useMemo(() => orders.filter(o => o.status === 'pending' || o.status === 'preparing').length, [orders])
   const zones = useMemo(() => Array.from(new Set(enabledTables.map(tb => tb.zone).filter(Boolean))) as string[], [enabledTables])
-  // Auto-select first zone if none selected
-  useEffect(() => { if (!activeZone && zones.length > 0) setActiveZone(zones[0]) }, [zones, activeZone])
   const filteredTables = useMemo(() => {
-    if (!activeZone) return enabledTables // no zones defined yet → show all
+    // __base__ = tables with no zone assigned (base layer)
+    if (activeZone === '__base__') return enabledTables.filter(tb => !tb.zone)
     return enabledTables.filter(tb => tb.zone === activeZone)
   }, [enabledTables, activeZone])
 
@@ -187,8 +186,13 @@ function CenterTopBar({ zones, activeZone, setActiveZone, elapsed, t, occupancyP
           {t.floorPlan.secondsAgo.replace('{{s}}', String(elapsed))}
         </div>
       </div>
-      {/* Zone filters row */}
+      {/* Zone filters row — each tab is one layer, no overlap */}
       <div className="flex items-center gap-2 px-4 pb-3">
+        <Button size="sm" variant={activeZone === '__base__' ? 'default' : 'outline'}
+          className={activeZone === '__base__' ? 'bg-primary hover:bg-primary/90' : ''}
+          onClick={() => setActiveZone('__base__')}>
+          {t.floorPlan.allZone}
+        </Button>
         {zones.map(z => (
           <Button key={z} size="sm" variant={activeZone === z ? 'default' : 'outline'}
             className={activeZone === z ? 'bg-primary hover:bg-primary/90' : ''}
