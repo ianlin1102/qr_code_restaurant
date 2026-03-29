@@ -11,13 +11,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import OrderEditMode from '@/components/order/OrderEditMode'
 import TransferTableDialog from '@/components/table/TransferTableDialog'
 import SplitBillDialog from '@/components/table/SplitBillDialog'
-import { Pencil, ArrowRightLeft, Split } from 'lucide-react'
+import { Pencil, ArrowRightLeft, Split, ExternalLink } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const STATUS_STYLE: Record<OrderStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   paid: 'bg-blue-100 text-blue-800 border-blue-200',
   preparing: 'bg-orange-100 text-orange-800 border-orange-200',
-  completed: 'bg-green-100 text-green-800 border-green-200',
+  served: 'bg-green-100 text-green-800 border-green-200',
   closed: 'bg-gray-100 text-gray-800 border-gray-200',
 }
 const ACTIVE: OrderStatus[] = ['pending', 'paid', 'preparing']
@@ -34,6 +35,7 @@ interface Props { table: Table | null; storeId: string; open: boolean; onClose: 
 
 export default function TableDetailPanel({ table, storeId, open, onClose }: Props) {
   const { t } = useT()
+  const nav = useNavigate()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<'current' | 'history'>('current')
@@ -75,7 +77,15 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="flex flex-col p-0 w-full sm:w-[380px] sm:max-w-[380px]">
         <SheetHeader className="px-4 pt-4 pb-2">
-          <SheetTitle>{table?.name ?? t.tables.tableDetail}</SheetTitle>
+          <div className="flex items-center justify-between">
+            <SheetTitle>{table ? `#${table.number} ${table.name || ''}` : t.tables.tableDetail}</SheetTitle>
+            {table && (
+              <Button variant="outline" size="sm" className="gap-1 text-xs"
+                onClick={() => { onClose(); nav(`/admin/tables?select=${table.id}`) }}>
+                <ExternalLink className="size-3" />{t.tables.tableDetail}
+              </Button>
+            )}
+          </div>
           {table && (
             <p className="text-sm text-muted-foreground">
               {table.status === 'occupied' ? t.tableDetail.occupied : t.tableDetail.idle}

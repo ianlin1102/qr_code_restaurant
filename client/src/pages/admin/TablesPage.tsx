@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useT } from '@/i18n/useT'
 import {
   Armchair, Plus, Printer, ArrowLeftRight, Split,
@@ -31,6 +32,7 @@ function itemPrice(it: OrderItem) {
 
 export default function TablesPage() {
   const { t } = useT()
+  const [searchParams, setSearchParams] = useSearchParams()
   const storeId = useAuthStore(s => s.user?.storeId) ?? ''
 
   const [tables, setTables] = useState<Table[]>([])
@@ -65,6 +67,21 @@ export default function TablesPage() {
   }, [storeId, showDisabled])
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL); return () => clearInterval(id) }, [fetchData, showDisabled])
+
+  // Auto-select table from ?select= query param (from floor plan → table link)
+  useEffect(() => {
+    const selectId = searchParams.get('select')
+    if (selectId && tables.length > 0) {
+      const target = tables.find(t => t.id === selectId)
+      if (target) {
+        setSelected(target)
+        // Switch to the table's zone
+        if (target.zone) setActiveZone(target.zone)
+        else setActiveZone('__base__')
+      }
+      setSearchParams({}, { replace: true }) // clean up URL
+    }
+  }, [tables, searchParams, setSearchParams])
 
   useEffect(() => {
     if (!storeId) return
