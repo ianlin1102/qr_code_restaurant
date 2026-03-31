@@ -7,6 +7,7 @@ import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
 import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { cn } from '@/lib/utils'
+import { getDeviceId } from '@/lib/device-id'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -77,31 +78,35 @@ export default function MenuPage() {
   const menuScrollRef = useRef<HTMLDivElement | null>(null)
 
   // Poll unpaid orders for this table
+  // Fetch/create session on mount (for shared cart + Pay Now)
   useEffect(() => {
     if (!storeId || !tableId) return
-    const fetchUnpaid = () => {
+    api.getActiveSession(storeId, tableId).then(async s => {
+      if (s) { setSessionRemaining(s.remaining); setActiveSessionId(s.id) }
+      else {
+        try { const created = await api.createSession(storeId, tableId); setActiveSessionId(created.id) }
+        catch { /* ignore */ }
+        setSessionRemaining(0)
+      }
+    }).catch(() => {})
+  }, [storeId, tableId])
+
+  // Poll orders + session every 10s
+  useEffect(() => {
+    if (!storeId || !tableId) return
+    const fetchData = () => {
       api.getTableOrders(storeId, tableId).then(allOrders => {
         const active = allOrders.filter(o => o.status !== 'served' && o.status !== 'closed')
         setUnpaidOrders(active)
         const history = allOrders.filter(o => o.status === 'served')
         setSessionOrders(history)
       }).catch(() => {})
-      // Fetch or create session for shared cart + "Pay Now" banner
-      api.getActiveSession(storeId, tableId).then(async s => {
-        if (s) {
-          setSessionRemaining(s.remaining); setActiveSessionId(s.id)
-        } else {
-          // No session yet — create one so shared cart works immediately
-          try {
-            const created = await api.createSession(storeId, tableId)
-            setActiveSessionId(created.id)
-          } catch { /* ignore — session will be created on first order */ }
-          setSessionRemaining(0)
-        }
+      api.getActiveSession(storeId, tableId).then(s => {
+        if (s) { setSessionRemaining(s.remaining); setActiveSessionId(s.id) }
       }).catch(() => {})
     }
-    fetchUnpaid()
-    const id = setInterval(fetchUnpaid, 15_000)
+    fetchData()
+    const id = setInterval(fetchData, 10_000)
     return () => clearInterval(id)
   }, [storeId, tableId])
 
@@ -148,52 +153,61 @@ export default function MenuPage() {
     return () => clearInterval(id)
   }, [storeId, cleanupUnavailableCartItems])
 
-  // === Shared cart sync: push local changes to server (debounced 1s) ===
+  // === Shared cart sync ===
+  // Push: send only MY items to server (don't overwrite other devices)
+  // Poll: fetch ALL items from server, replace local "other devices" items
+  const myDeviceId = useMemo(() => getDeviceId(), [])
+
+  // Push my items to server when they change (debounced 1s)
   useEffect(() => {
     if (!storeId || !activeSessionId) return
     const timer = setTimeout(() => {
-      // Strip cartKey before sending — server stores CartItem, not CartEntry
-      const plain: CartItem[] = cartItems.map(({ menuItemId, name, price, quantity, remark, selectedOptions, addedBy, addedByDevice }) => ({
-        menuItemId, name, price, quantity,
-        ...(remark ? { remark } : {}),
-        ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
-        ...(addedBy ? { addedBy } : {}),
-        ...(addedByDevice ? { addedByDevice } : {}),
-      }))
-      api.updateSessionCart(storeId, activeSessionId, plain).catch(() => {})
+      // Get current server cart, replace my items, keep others
+      api.getSessionCart(storeId, activeSessionId).then(serverItems => {
+        const othersItems = serverItems.filter(i => i.addedByDevice && i.addedByDevice !== myDeviceId)
+        const myLocal = useCartStore.getState().items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
+        const plain: CartItem[] = myLocal.map(({ menuItemId, name, price, quantity, remark, selectedOptions, addedBy, addedByDevice }) => ({
+          menuItemId, name, price, quantity,
+          ...(remark ? { remark } : {}),
+          ...(selectedOptions?.length ? { selectedOptions } : {}),
+          ...(addedBy ? { addedBy } : {}),
+          ...(addedByDevice ? { addedByDevice } : {}),
+        }))
+        api.updateSessionCart(storeId, activeSessionId, [...othersItems, ...plain]).catch(() => {})
+      }).catch(() => {})
     }, 1000)
     return () => clearTimeout(timer)
-  }, [cartItems, storeId, activeSessionId])
+  }, [cartItems, storeId, activeSessionId, myDeviceId])
 
-  // === Shared cart sync: poll server every 5s and merge items from other devices ===
+  // Poll server every 5s — sync other devices' items into local cart
   useEffect(() => {
     if (!storeId || !activeSessionId) return
     const poll = () => {
       api.getSessionCart(storeId, activeSessionId).then(serverItems => {
-        const localItems = useCartStore.getState().items
-        const localKeys = new Set(localItems.map(i =>
-          i.menuItemId + JSON.stringify(
-            (i.selectedOptions ?? [])
-              .map(o => ({ optionId: o.optionId, choiceId: o.choiceId }))
-              .sort((a, b) => a.optionId.localeCompare(b.optionId)),
-          )
-        ))
-        const newItems = serverItems.filter(si => {
-          const key = si.menuItemId + JSON.stringify(
-            (si.selectedOptions ?? [])
-              .map(o => ({ optionId: o.optionId, choiceId: o.choiceId }))
-              .sort((a, b) => a.optionId.localeCompare(b.optionId)),
-          )
-          return !localKeys.has(key)
-        })
-        for (const item of newItems) {
-          useCartStore.getState().addItem(item)
+        const store = useCartStore.getState()
+        const othersFromServer = serverItems.filter(i => i.addedByDevice && i.addedByDevice !== myDeviceId)
+        // Remove old "other device" items from local, add fresh ones from server
+        const myLocal = store.items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
+        const currentOtherKeys = new Set(store.items.filter(i => i.addedByDevice && i.addedByDevice !== myDeviceId).map(i => i.addedByDevice + i.menuItemId))
+        const newOtherKeys = new Set(othersFromServer.map(i => i.addedByDevice + i.menuItemId))
+        // Only update if there's a difference
+        if (currentOtherKeys.size !== newOtherKeys.size || [...currentOtherKeys].some(k => !newOtherKeys.has(k))) {
+          // Remove all other-device items and re-add from server
+          for (const item of store.items) {
+            if (item.addedByDevice && item.addedByDevice !== myDeviceId) {
+              store.removeItem(item.cartKey)
+            }
+          }
+          for (const item of othersFromServer) {
+            store.addItem(item)
+          }
         }
       }).catch(() => {})
     }
+    poll() // Initial fetch immediately
     const id = setInterval(poll, 5000)
     return () => clearInterval(id)
-  }, [storeId, activeSessionId]) // Don't depend on cartItems to avoid loop
+  }, [storeId, activeSessionId, myDeviceId])
 
   // Stable scroll handler — useCallback avoids re-attaching on every menu poll
   const handleScroll = useCallback(() => {
