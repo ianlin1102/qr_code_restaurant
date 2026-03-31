@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createOrder, getOrders, updateOrderStatus, updateOrderItems, transferOrder } from '../controllers/order.service.js'
+import { createOrder, getOrders, updateOrderStatus, updateOrderItems, transferOrder, deleteOrder } from '../controllers/order.service.js'
 import { requireAuth, optionalAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
 import type { OrderStatus } from '@qr-order/shared'
@@ -51,6 +51,16 @@ router.post('/:orderId/transfer', requireAuth, requirePermission('orders:write')
     return
   }
   const result = transferOrder(req.params.storeId, req.params.orderId, targetTableId)
+  if ('error' in result) {
+    res.status(400).json(result)
+    return
+  }
+  res.json(result)
+})
+
+// DELETE /api/stores/:storeId/orders/:orderId (admin only)
+router.delete('/:orderId', requireAuth, requirePermission('orders:write'), (req, res) => {
+  const result = deleteOrder(req.params.storeId, req.params.orderId)
   if ('error' in result) {
     res.status(400).json(result)
     return

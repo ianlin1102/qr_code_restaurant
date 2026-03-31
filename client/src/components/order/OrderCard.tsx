@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Printer } from 'lucide-react'
+import { Printer, Trash2 } from 'lucide-react'
 import { useT } from '@/i18n/useT'
 import { localized } from '@/lib/i18n-utils'
 import { api } from '@/services/api'
@@ -42,17 +42,32 @@ interface Props {
   storeId: string
   onClick: () => void
   onEdit: () => void
+  onDelete?: (orderId: string) => void
   actionButton: React.ReactNode
 }
 
-export default function OrderCard({ order, storeId, onClick, onEdit, actionButton }: Props) {
+export default function OrderCard({ order, storeId, onClick, onEdit, onDelete, actionButton }: Props) {
   const { t, lang } = useT()
   const [reprinting, setReprinting] = useState(false)
   const [reprintFeedback, setReprintFeedback] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const config = {
     label: t.dashboard.status[order.status],
     color: STATUS_COLORS[order.status],
+  }
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (deleting || !onDelete) return
+    const confirmed = window.confirm(t.dashboard.deleteOrderConfirm)
+    if (!confirmed) return
+    setDeleting(true)
+    try {
+      onDelete(order.id)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const handleReprint = async (e: React.MouseEvent) => {
@@ -109,6 +124,18 @@ export default function OrderCard({ order, storeId, onClick, onEdit, actionButto
                 onClick={e => { e.stopPropagation(); onEdit() }}
               >
                 {t.dashboard.editOrder}
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="min-h-[44px] min-w-[44px] text-red-500 hover:text-red-700 hover:bg-red-50"
+                onClick={handleDelete}
+                disabled={deleting}
+                title={t.dashboard.deleteOrder}
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>

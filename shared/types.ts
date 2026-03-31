@@ -131,6 +131,8 @@ export interface CartItem {
   quantity: number
   remark?: string
   selectedOptions?: SelectedOption[]
+  addedBy?: string      // device display name ("Alice" or "Guest 1")
+  addedByDevice?: string // device ID for dedup
 }
 
 // ===== Orders =====

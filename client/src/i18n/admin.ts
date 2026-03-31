@@ -37,6 +37,8 @@ export const adminT = {
       missingOptions: '以下菜品缺少必选规格：',
       saveChanges: '保存修改',
       remark: '备注...',
+      deleteOrder: '删除订单',
+      deleteOrderConfirm: '确定要删除这个订单吗？此操作不可撤销。',
       status: {
         pending: '待处理', confirmed: '已接单', preparing: '备餐中', served: '已上菜',
       },
@@ -303,6 +305,8 @@ export const adminT = {
       missingOptions: 'Missing required options:',
       saveChanges: 'Save changes',
       remark: 'Notes...',
+      deleteOrder: 'Delete order',
+      deleteOrderConfirm: 'Are you sure you want to delete this order? This cannot be undone.',
       status: {
         pending: 'Pending', confirmed: 'Confirmed', preparing: 'Preparing', served: 'Served',
       },

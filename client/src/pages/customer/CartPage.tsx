@@ -1,14 +1,91 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Info, Loader2, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { useCartStore, unitPrice } from '@/stores/cart-store'
+import { useCartStore, unitPrice, type CartEntry } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
+import { getDeviceId } from '@/lib/device-id'
 import { api } from '@/services/api'
+
+interface CartItemCardProps {
+  item: CartEntry
+  isOwn: boolean
+  updateQuantity: (cartKey: string, quantity: number) => void
+  updateRemark: (cartKey: string, remark: string) => void
+  t: (key: string, opts?: Record<string, unknown>) => string
+}
+
+function CartItemCard({ item, isOwn, updateQuantity, updateRemark, t }: CartItemCardProps) {
+  const price = unitPrice(item)
+  return (
+    <div className="bg-card rounded-xl p-3 md:p-4 space-y-3 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="w-10 h-10 rounded-full bg-muted/50 shrink-0 flex items-center justify-center text-lg">
+          {item.name.charAt(0)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">{item.name}</p>
+          {item.selectedOptions && item.selectedOptions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {item.selectedOptions.map(opt => (
+                <Badge key={opt.optionId} variant="outline" className="text-xs rounded-full bg-blue-50 border-blue-200 text-blue-700">
+                  {opt.optionName || opt.optionNameEn || ''}: {opt.choiceName || opt.choiceNameEn || ''}
+                  {opt.priceAdjust > 0 && ` +${formatPriceUSD(opt.priceAdjust)}`}
+                </Badge>
+              ))}
+            </div>
+          )}
+          <p className="text-sm text-muted-foreground mt-1">
+            {formatPriceUSD(price)} {t('cart.perServing')}
+          </p>
+        </div>
+        <p className="font-semibold whitespace-nowrap">
+          {formatPriceUSD(price * item.quantity)}
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-11 w-11"
+            onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
+            disabled={!isOwn}
+          >
+            {item.quantity === 1 ? (
+              <Trash2 className="h-4 w-4 text-destructive" />
+            ) : (
+              <Minus className="h-4 w-4" />
+            )}
+          </Button>
+          <span className="w-8 text-center font-medium">{item.quantity}</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-11 w-11"
+            onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
+            disabled={!isOwn}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <Input
+        placeholder={t('cart.remarkPlaceholder')}
+        value={item.remark ?? ''}
+        onChange={(e) => updateRemark(item.cartKey, e.target.value)}
+        className="text-base"
+        disabled={!isOwn}
+      />
+    </div>
+  )
+}
 
 export default function CartPage() {
   const navigate = useNavigate()
@@ -19,12 +96,49 @@ export default function CartPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [paymentMode, setPaymentMode] = useState<'pay-first' | 'pay-later'>('pay-first')
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+
+  const myDeviceId = useMemo(() => getDeviceId(), [])
+
+  // Group items by addedByDevice for per-person display
+  const groups = useMemo(() => {
+    const map = new Map<string, { name: string; items: CartEntry[] }>()
+    for (const item of items) {
+      const deviceKey = item.addedByDevice || myDeviceId
+      if (!map.has(deviceKey)) {
+        const isMe = deviceKey === myDeviceId
+        const name = item.addedBy || (isMe ? (customerName || (lang === 'zh' ? '我' : 'You')) : '')
+        map.set(deviceKey, { name, items: [] })
+      }
+      map.get(deviceKey)!.items.push(item)
+    }
+    // Assign "Guest N" to unnamed non-self devices
+    let guestNum = 1
+    for (const [key, group] of map) {
+      if (!group.name && key !== myDeviceId) {
+        group.name = lang === 'zh' ? `客人 ${guestNum}` : `Guest ${guestNum}`
+        guestNum++
+      }
+    }
+    // Put own items first
+    const entries = Array.from(map.entries())
+    entries.sort(([a], [b]) => {
+      if (a === myDeviceId) return -1
+      if (b === myDeviceId) return 1
+      return 0
+    })
+    return entries
+  }, [items, myDeviceId, customerName, lang])
 
   useEffect(() => {
     if (!storeId || !tableId) return
     api.getTable(storeId, tableId).then(table => {
       if (table.paymentMode === 'pay-later') setPaymentMode('pay-later')
     }).catch(() => { /* keep default pay-first */ })
+    // Fetch active session for shared cart clearing
+    api.getActiveSession(storeId, tableId).then(s => {
+      if (s) setActiveSessionId(s.id)
+    }).catch(() => {})
   }, [storeId, tableId])
 
   if (!storeId || !tableId) return (
@@ -61,6 +175,10 @@ export default function CartPage() {
         // Pay-later: create order directly without payment
         const order = await api.createOrder(storeId, { tableId, items: cartItems, customerName })
         clearCart()
+        // Clear shared cart on server so other devices see empty cart
+        if (activeSessionId) {
+          api.updateSessionCart(storeId, activeSessionId, []).catch(() => {})
+        }
         navigate('/order/confirm', { state: { order } })
         return
       }
@@ -107,71 +225,37 @@ export default function CartPage() {
       </div>
 
       <div className="max-w-lg mx-auto p-4">
-        <div className="space-y-3">
-          {items.map((item) => {
-            const price = unitPrice(item)
-            return (
-              <div key={item.cartKey} className="bg-card rounded-xl p-3 md:p-4 space-y-3 shadow-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="w-10 h-10 rounded-full bg-muted/50 shrink-0 flex items-center justify-center text-lg">
-                    {item.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{item.name}</p>
-                    {item.selectedOptions && item.selectedOptions.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {item.selectedOptions.map(opt => (
-                          <Badge key={opt.optionId} variant="outline" className="text-xs rounded-full bg-blue-50 border-blue-200 text-blue-700">
-                            {opt.optionName || opt.optionNameEn || ''}: {opt.choiceName || opt.choiceNameEn || ''}
-                            {opt.priceAdjust > 0 && ` +${formatPriceUSD(opt.priceAdjust)}`}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {formatPriceUSD(price)} {t('cart.perServing')}
-                    </p>
-                  </div>
-                  <p className="font-semibold whitespace-nowrap">
-                    {formatPriceUSD(price * item.quantity)}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-11 w-11"
-                      onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
-                    >
-                      {item.quantity === 1 ? (
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      ) : (
-                        <Minus className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <span className="w-8 text-center font-medium">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-11 w-11"
-                      onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <Input
-                  placeholder={t('cart.remarkPlaceholder')}
-                  value={item.remark ?? ''}
-                  onChange={(e) => updateRemark(item.cartKey, e.target.value)}
-                  className="text-base"
-                />
+        <div className="space-y-1">
+          {groups.map(([deviceKey, group]) => (
+            <div key={deviceKey}>
+              {/* Person divider */}
+              <div className="flex items-center gap-2 py-2">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground px-2">
+                  {group.name}
+                  {deviceKey === myDeviceId && (
+                    <span className="ml-1">
+                      ({lang === 'zh' ? '我' : 'You'})
+                    </span>
+                  )}
+                </span>
+                <div className="flex-1 h-px bg-border" />
               </div>
-            )
-          })}
+              {/* Items for this person */}
+              <div className="space-y-3">
+                {group.items.map((item) => (
+                  <CartItemCard
+                    key={item.cartKey}
+                    item={item}
+                    isOwn={deviceKey === myDeviceId}
+                    updateQuantity={updateQuantity}
+                    updateRemark={updateRemark}
+                    t={t}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

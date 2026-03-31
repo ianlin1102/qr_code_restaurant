@@ -193,6 +193,35 @@ export function transferOrder(storeId: string, orderId: string, targetTableId: s
   return updated
 }
 
+export function deleteOrder(storeId: string, orderId: string): { success: true } | { error: string } {
+  const order = orderStore.getById(orderId)
+  if (!order || order.storeId !== storeId) return { error: 'Order not found' }
+
+  // Remove from session and recalculate totals
+  if (order.sessionId) {
+    const session = sessionStore.getById(order.sessionId)
+    if (session) {
+      const newOrderIds = session.orderIds.filter(id => id !== orderId)
+      const newTotal = newOrderIds
+        .map(id => orderStore.getById(id))
+        .filter(Boolean)
+        .reduce((sum, o) => sum + (o?.totalPrice ?? 0), 0)
+      sessionStore.update(session.id, { orderIds: newOrderIds, totalAmount: newTotal })
+    }
+  }
+
+  // If table has no more active orders, release it
+  const remaining = orderStore.getByField('storeId', storeId)
+    .filter(o => o.tableId === order.tableId && o.id !== orderId && o.status !== 'closed')
+  if (remaining.length === 0) {
+    tableStore.update(order.tableId, { status: 'idle', currentSessionId: undefined })
+  }
+
+  orderStore.delete(orderId)
+  logger.info({ storeId, orderId, orderNumber: order.orderNumber }, 'order deleted')
+  return { success: true }
+}
+
 export async function updateOrderItems(storeId: string, orderId: string, items: OrderItem[]): Promise<Order | { error: string }> {
   const order = orderStore.getById(orderId)
   if (!order || order.storeId !== storeId) {

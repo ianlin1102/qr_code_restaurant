@@ -41,14 +41,16 @@
     "id": "2ac4cc00-4c8c-45ff-bc0e-6c4d4b21fc63",
     "storeId": "store-demo-001",
     "tableId": "store-demo-001-table-007",
-    "version": 2,
+    "version": 4,
     "status": "open",
     "orderIds": [
-      "fd2ea361-5439-4f90-860c-2c7afe11b001"
+      "fd2ea361-5439-4f90-860c-2c7afe11b001",
+      "f9b71009-d6ff-4a19-bafd-b0c2ae10e223",
+      "2023d802-b42f-4e00-b817-8afd9beeb9ea"
     ],
-    "subtotal": 3648,
+    "subtotal": 6846,
     "discountAmount": 0,
-    "totalDue": 3648,
+    "totalDue": 6846,
     "paidAmount": 0,
     "createdAt": "2026-03-29T19:18:44.516Z"
   }

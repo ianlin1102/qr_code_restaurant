@@ -30,15 +30,25 @@ export default function OrderConfirmPage() {
   const [paidOrder, setPaidOrder] = useState<Order | null>(stateOrder)
   const [orderTimeout, setOrderTimeout] = useState(false)
 
-  // Pay-later: clear cart immediately
+  // Pay-later: clear cart immediately (local + server)
   useEffect(() => {
-    if (isPayLater) clearCart()
-  }, [isPayLater, clearCart])
+    if (!isPayLater) return
+    clearCart()
+    if (storeId && tableId) {
+      api.getActiveSession(storeId, tableId).then(s => {
+        if (s) api.updateSessionCart(storeId, s.id, []).catch(() => {})
+      }).catch(() => {})
+    }
+  }, [isPayLater, clearCart, storeId, tableId])
 
-  // On successful payment: clear cart, poll for the paid order (webhook may be delayed)
+  // On successful payment: clear cart (local + server), poll for the paid order (webhook may be delayed)
   useEffect(() => {
     if (!paymentSuccess || !storeId || !tableId) return
     clearCart()
+    // Clear shared cart on server
+    api.getActiveSession(storeId, tableId).then(s => {
+      if (s) api.updateSessionCart(storeId, s.id, []).catch(() => {})
+    }).catch(() => {})
     let attempts = 0
     const maxAttempts = 5
     const poll = () => {

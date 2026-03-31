@@ -187,6 +187,9 @@ export default function DashboardPage() {
               storeId={STORE_ID}
               onClick={() => openDetail(order)}
               onEdit={() => openEditDialog(order)}
+              onDelete={(orderId) => {
+                api.deleteOrder(STORE_ID, orderId).then(() => fetchOrders())
+              }}
               actionButton={getActionButton(order)}
             />
           ))

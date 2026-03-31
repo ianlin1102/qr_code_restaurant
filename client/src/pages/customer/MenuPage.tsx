@@ -145,10 +145,12 @@ export default function MenuPage() {
     if (!storeId || !activeSessionId) return
     const timer = setTimeout(() => {
       // Strip cartKey before sending — server stores CartItem, not CartEntry
-      const plain: CartItem[] = cartItems.map(({ menuItemId, name, price, quantity, remark, selectedOptions }) => ({
+      const plain: CartItem[] = cartItems.map(({ menuItemId, name, price, quantity, remark, selectedOptions, addedBy, addedByDevice }) => ({
         menuItemId, name, price, quantity,
         ...(remark ? { remark } : {}),
         ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
+        ...(addedBy ? { addedBy } : {}),
+        ...(addedByDevice ? { addedByDevice } : {}),
       }))
       api.updateSessionCart(storeId, activeSessionId, plain).catch(() => {})
     }, 1000)

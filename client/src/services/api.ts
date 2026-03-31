@@ -88,6 +88,11 @@ export const api = {
       body: JSON.stringify({ items }),
     }),
 
+  deleteOrder: (storeId: string, orderId: string) =>
+    fetchJSON<{ success: boolean }>(`/stores/${storeId}/orders/${orderId}`, {
+      method: 'DELETE',
+    }),
+
   // Admin: Menu Items
   getMenuItems: (storeId: string) =>
     fetchJSON<MenuItem[]>(`/stores/${storeId}/menu/items`),

@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { safeStorage } from '@/lib/safe-storage'
+import { getDeviceId } from '@/lib/device-id'
+import { useSessionStore } from './session-store'
 import type { CartItem } from '@qr-order/shared'
 
 /** Calculate unit price (base + all option adjustments) */
@@ -53,8 +55,16 @@ export const useCartStore = create<CartState>()(
     const key = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    const deviceId = getDeviceId()
+    const displayName = useSessionStore.getState().customerName || undefined
     return {
-      items: [...state.items, { ...item, quantity: item.quantity ?? 1, cartKey: key }],
+      items: [...state.items, {
+        ...item,
+        quantity: item.quantity ?? 1,
+        cartKey: key,
+        addedBy: item.addedBy ?? displayName,
+        addedByDevice: item.addedByDevice ?? deviceId,
+      }],
     }
   }),
 
