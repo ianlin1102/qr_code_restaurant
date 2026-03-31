@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { sessionStore, paymentStore, orderStore, tableStore } from '../repositories/stores.js'
-import type { Session, Payment, DiscountType } from '@qr-order/shared'
+import type { Session, Payment, DiscountType, CartItem } from '@qr-order/shared'
 import logger from '../lib/logger.js'
 
 // ===== Session CRUD =====
@@ -181,6 +181,26 @@ export function removeCoupon(
     couponDiscountType: undefined, couponDiscountValue: undefined,
     discountAmount: 0,
   })!
+}
+
+// ===== Shared Cart (syncs across devices for same table) =====
+
+export function getSessionCart(sessionId: string): CartItem[] {
+  const session = sessionStore.getById(sessionId)
+  if (!session) return []
+  return session.pendingCart ?? []
+}
+
+export function updateSessionCart(sessionId: string, items: CartItem[]): void {
+  const session = sessionStore.getById(sessionId)
+  if (!session || session.status === 'closed') return
+  sessionStore.update(sessionId, { pendingCart: items })
+}
+
+export function clearSessionCart(sessionId: string): void {
+  const session = sessionStore.getById(sessionId)
+  if (!session) return
+  sessionStore.update(sessionId, { pendingCart: [] })
 }
 
 // ===== Recalculate (after order edit) =====

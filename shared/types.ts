@@ -181,6 +181,7 @@ export interface Session {
   couponDiscountType?: DiscountType
   couponDiscountValue?: number
   discountAmount: number
+  pendingCart?: CartItem[]      // shared cart synced across devices for same table
   createdAt: string
   closedAt?: string
 }

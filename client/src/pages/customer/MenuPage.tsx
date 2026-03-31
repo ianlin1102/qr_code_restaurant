@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
-import type { MenuResponse, MenuItem, Order } from '@qr-order/shared'
+import type { MenuResponse, MenuItem, Order, CartItem } from '@qr-order/shared'
 
 /** Strip dangerous HTML tags/attributes, keep safe formatting */
 function sanitizeHtml(html: string): string {
@@ -139,6 +139,51 @@ export default function MenuPage() {
     }, 30_000)
     return () => clearInterval(id)
   }, [storeId, cleanupUnavailableCartItems])
+
+  // === Shared cart sync: push local changes to server (debounced 1s) ===
+  useEffect(() => {
+    if (!storeId || !activeSessionId) return
+    const timer = setTimeout(() => {
+      // Strip cartKey before sending — server stores CartItem, not CartEntry
+      const plain: CartItem[] = cartItems.map(({ menuItemId, name, price, quantity, remark, selectedOptions }) => ({
+        menuItemId, name, price, quantity,
+        ...(remark ? { remark } : {}),
+        ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
+      }))
+      api.updateSessionCart(storeId, activeSessionId, plain).catch(() => {})
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [cartItems, storeId, activeSessionId])
+
+  // === Shared cart sync: poll server every 5s and merge items from other devices ===
+  useEffect(() => {
+    if (!storeId || !activeSessionId) return
+    const poll = () => {
+      api.getSessionCart(storeId, activeSessionId).then(serverItems => {
+        const localItems = useCartStore.getState().items
+        const localKeys = new Set(localItems.map(i =>
+          i.menuItemId + JSON.stringify(
+            (i.selectedOptions ?? [])
+              .map(o => ({ optionId: o.optionId, choiceId: o.choiceId }))
+              .sort((a, b) => a.optionId.localeCompare(b.optionId)),
+          )
+        ))
+        const newItems = serverItems.filter(si => {
+          const key = si.menuItemId + JSON.stringify(
+            (si.selectedOptions ?? [])
+              .map(o => ({ optionId: o.optionId, choiceId: o.choiceId }))
+              .sort((a, b) => a.optionId.localeCompare(b.optionId)),
+          )
+          return !localKeys.has(key)
+        })
+        for (const item of newItems) {
+          useCartStore.getState().addItem(item)
+        }
+      }).catch(() => {})
+    }
+    const id = setInterval(poll, 5000)
+    return () => clearInterval(id)
+  }, [storeId, activeSessionId]) // Don't depend on cartItems to avoid loop
 
   // Stable scroll handler — useCallback avoids re-attaching on every menu poll
   const handleScroll = useCallback(() => {

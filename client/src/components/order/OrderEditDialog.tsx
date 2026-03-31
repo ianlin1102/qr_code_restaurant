@@ -116,6 +116,14 @@ export default function OrderEditDialog({
     setEditItems(prev => prev.filter((_, i) => i !== idx))
   }
 
+  const handlePriceChange = (idx: number, newPrice: number) => {
+    setEditItems(prev => {
+      const items = [...prev]
+      items[idx] = { ...items[idx], price: newPrice }
+      return items
+    })
+  }
+
   const selectedAddItem = allMenuItems.find(m => m.id === addItemId)
 
   const handleAddItem = () => {
@@ -201,6 +209,7 @@ export default function OrderEditDialog({
                     onRemark={handleRemark}
                     onOption={handleOption}
                     onRemove={handleRemoveItem}
+                    onPriceChange={handlePriceChange}
                   />
                 )
               })}
@@ -296,6 +305,7 @@ interface EditItemRowProps {
   onRemark: (idx: number, remark: string) => void
   onOption: (idx: number, optionId: string, choiceId: string) => void
   onRemove: (idx: number) => void
+  onPriceChange: (idx: number, newPrice: number) => void
 }
 
 function EditItemRow({
@@ -307,6 +317,7 @@ function EditItemRow({
   onRemark,
   onOption,
   onRemove,
+  onPriceChange,
 }: EditItemRowProps) {
   const { t, lang } = useT()
 
@@ -317,9 +328,19 @@ function EditItemRow({
         <div className="flex-1 min-w-0">
           <span className="font-medium text-sm">{localized(item, lang)}</span>
           {isOwner && (
-            <span className="text-xs text-muted-foreground ml-2">
-              {formatPriceUSD(itemUnitPrice(item))}
-            </span>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground ml-2 hover:text-primary hover:underline"
+              onClick={() => {
+                const input = prompt('Price ($):', (item.price / 100).toFixed(2))
+                if (input !== null) {
+                  const cents = Math.round(parseFloat(input) * 100)
+                  if (cents >= 0) onPriceChange(idx, cents)
+                }
+              }}
+            >
+              {formatPriceUSD(itemUnitPrice(item))} ✎
+            </button>
           )}
         </div>
         <div className="flex items-center gap-1">

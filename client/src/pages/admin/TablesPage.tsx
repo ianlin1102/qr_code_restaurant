@@ -355,6 +355,10 @@ export default function TablesPage() {
               onClick={() => setSplitOpen(true)}>
               <Split className="size-4 mr-1" />{t.tables.splitBill}
             </Button>
+            <Button size="sm" className="flex-1 min-w-[120px]" variant="outline"
+              onClick={handlePrintQr}>
+              <QrCode className="size-4 mr-1" />{t.tables.printQr}
+            </Button>
             {selected?.currentSessionId && (
               <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
                 onClick={() => setSessionDialogOpen(true)}>

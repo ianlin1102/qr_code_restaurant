@@ -1,4 +1,4 @@
-import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Session, Payment, RoleDefinition } from '@qr-order/shared'
+import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Session, Payment, RoleDefinition, CartItem } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
 type SessionSummary = Session & { orders: Order[]; payments: Payment[]; remaining: number; isPaid: boolean; netDue: number }
@@ -299,6 +299,16 @@ export const api = {
 
   removeSessionCoupon: (storeId: string, sessionId: string) =>
     fetchJSON<Session>(`/stores/${storeId}/sessions/${sessionId}/coupon`, { method: 'DELETE' }),
+
+  // Shared cart (syncs across devices for same table)
+  getSessionCart: (storeId: string, sessionId: string) =>
+    fetchJSON<CartItem[]>(`/stores/${storeId}/sessions/${sessionId}/cart`),
+
+  updateSessionCart: (storeId: string, sessionId: string, items: CartItem[]) =>
+    fetchJSON<{ ok: boolean }>(`/stores/${storeId}/sessions/${sessionId}/cart`, {
+      method: 'PUT',
+      body: JSON.stringify({ items }),
+    }),
 
   // Roles
   getRoles: (storeId: string) =>

@@ -25,6 +25,20 @@ router.get('/:sessionId/summary', (req: Request, res: Response) => {
   res.json(summary)
 })
 
+// GET /sessions/:sessionId/cart — get shared cart items (unauthenticated, customers use this)
+router.get('/:sessionId/cart', (req: Request, res: Response) => {
+  const items = svc.getSessionCart(req.params.sessionId)
+  res.json(items)
+})
+
+// PUT /sessions/:sessionId/cart — update shared cart (unauthenticated, customers use this)
+router.put('/:sessionId/cart', (req: Request, res: Response) => {
+  const { items } = req.body
+  if (!Array.isArray(items)) { res.status(400).json({ error: 'items array required' }); return }
+  svc.updateSessionCart(req.params.sessionId, items)
+  res.json({ ok: true })
+})
+
 // PATCH /sessions/:sessionId/close
 router.patch(
   '/:sessionId/close',
