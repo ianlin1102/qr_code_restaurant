@@ -21,6 +21,7 @@ interface CartState {
   updateQuantity: (cartKey: string, quantity: number) => void
   updateRemark: (cartKey: string, remark: string) => void
   clearCart: () => void
+  clearMyItems: () => void      // remove only items added by this device
   totalPrice: () => number
   totalItems: () => number
 }
@@ -90,6 +91,9 @@ export const useCartStore = create<CartState>()(
   })),
 
   clearCart: () => set({ items: [] }),
+  clearMyItems: () => set(state => ({
+    items: state.items.filter(i => i.addedByDevice !== getDeviceId()),
+  })),
 
   totalPrice: () => get().items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0),
 

@@ -90,7 +90,7 @@ function CartItemCard({ item, isOwn, updateQuantity, updateRemark, t }: CartItem
 export default function CartPage() {
   const navigate = useNavigate()
   const { storeId, tableId, tableName, customerName } = useSessionStore()
-  const { items, updateQuantity, updateRemark, totalPrice, totalItems, clearCart } = useCartStore()
+  const { items, updateQuantity, updateRemark, totalPrice, totalItems, clearCart, clearMyItems } = useCartStore()
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
   const [submitting, setSubmitting] = useState(false)
@@ -99,6 +99,9 @@ export default function CartPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
 
   const myDeviceId = useMemo(() => getDeviceId(), [])
+  const myItems = useMemo(() => items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId), [items, myDeviceId])
+  const myTotal = useMemo(() => myItems.reduce((s, i) => s + (i.price + (i.selectedOptions ?? []).reduce((a, o) => a + o.priceAdjust, 0)) * i.quantity, 0), [myItems])
+  const myCount = useMemo(() => myItems.reduce((s, i) => s + i.quantity, 0), [myItems])
 
   // Group items by addedByDevice for per-person display
   const groups = useMemo(() => {
@@ -163,7 +166,10 @@ export default function CartPage() {
     setError(null)
     setSubmitting(true)
 
-    const cartItems = items.map(({ menuItemId, quantity, remark, selectedOptions }) => ({
+    // Only submit MY items (not other devices' items)
+    const myItems = items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
+    if (myItems.length === 0) { setSubmitting(false); return }
+    const cartItems = myItems.map(({ menuItemId, quantity, remark, selectedOptions }) => ({
       menuItemId,
       quantity,
       ...(remark ? { remark } : {}),
@@ -174,10 +180,11 @@ export default function CartPage() {
       if (paymentMode === 'pay-later') {
         // Pay-later: create order directly without payment
         const order = await api.createOrder(storeId, { tableId, items: cartItems, customerName })
-        clearCart()
-        // Clear shared cart on server so other devices see empty cart
+        clearMyItems()
+        // Update shared cart on server — remove my items, keep others'
         if (activeSessionId) {
-          api.updateSessionCart(storeId, activeSessionId, []).catch(() => {})
+          const othersItems = items.filter(i => (i.addedByDevice || myDeviceId) !== myDeviceId)
+          api.updateSessionCart(storeId, activeSessionId, othersItems).catch(() => {})
         }
         navigate('/order/confirm', { state: { order } })
         return
@@ -272,14 +279,14 @@ export default function CartPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">
-                {t('cart.itemCount', { count: totalItems() })}
+                {t('cart.itemCount', { count: myCount })}
               </p>
-              <p className="text-2xl font-bold">{formatPriceUSD(totalPrice())}</p>
+              <p className="text-2xl font-bold">{formatPriceUSD(myTotal)}</p>
             </div>
             <Button
               size="lg"
               onClick={handleCheckout}
-              disabled={submitting}
+              disabled={submitting || myCount === 0}
               className="min-w-[120px] sm:min-w-[160px] min-h-[48px] bg-primary hover:bg-primary/90"
             >
               {submitting ? (
