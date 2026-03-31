@@ -86,10 +86,18 @@ export default function MenuPage() {
         const history = allOrders.filter(o => o.status === 'served')
         setSessionOrders(history)
       }).catch(() => {})
-      // Fetch session remaining for "Pay Now" banner
-      api.getActiveSession(storeId, tableId).then(s => {
-        if (s) { setSessionRemaining(s.remaining); setActiveSessionId(s.id) }
-        else { setSessionRemaining(0); setActiveSessionId(null) }
+      // Fetch or create session for shared cart + "Pay Now" banner
+      api.getActiveSession(storeId, tableId).then(async s => {
+        if (s) {
+          setSessionRemaining(s.remaining); setActiveSessionId(s.id)
+        } else {
+          // No session yet — create one so shared cart works immediately
+          try {
+            const created = await api.createSession(storeId, tableId)
+            setActiveSessionId(created.id)
+          } catch { /* ignore — session will be created on first order */ }
+          setSessionRemaining(0)
+        }
       }).catch(() => {})
     }
     fetchUnpaid()

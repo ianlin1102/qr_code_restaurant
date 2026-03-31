@@ -6,6 +6,18 @@ import type { Request, Response } from 'express'
 
 const router = Router({ mergeParams: true })
 
+// POST /sessions — create session for table (idempotent: returns existing if active)
+router.post('/', (req: Request, res: Response) => {
+  const storeId = req.params.storeId as string
+  const { tableId } = req.body
+  if (!tableId) { res.status(400).json({ error: 'tableId required' }); return }
+  // Return existing active session if one exists (idempotent)
+  const existing = svc.getActiveSession(storeId, tableId)
+  if (existing) { res.json(existing); return }
+  const session = svc.createSession(storeId, tableId)
+  res.status(201).json(session)
+})
+
 // GET /sessions?tableId= — get active session for table
 router.get('/', (req: Request, res: Response) => {
   const storeId = req.params.storeId as string

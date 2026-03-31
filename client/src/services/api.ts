@@ -278,6 +278,11 @@ export const api = {
     }),
 
   // Sessions
+  createSession: (storeId: string, tableId: string) =>
+    fetchJSON<Session>(`/stores/${storeId}/sessions`, {
+      method: 'POST', body: JSON.stringify({ tableId }),
+    }),
+
   getActiveSession: (storeId: string, tableId: string) =>
     fetchJSON<SessionSummary | null>(`/stores/${storeId}/sessions?tableId=${tableId}`),
 
