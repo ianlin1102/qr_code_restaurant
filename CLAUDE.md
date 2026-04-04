@@ -149,18 +149,6 @@ find . -type f \( -name "*.ts" -o -name "*.tsx" \) \
 
 ---
 
-## 迁移路径备忘
-
-```
-现在：   JSON 文件存储（json-store.ts / repositories/）
-下一步：  SQLite + Prisma（只改 repositories/ 层，其他不动）
-上线：    PostgreSQL + Prisma + Row-Level Security
-```
-
-换数据库时只改 `repositories/`，`controllers/` 和 `routes/` 不需要动。
-
----
-
 ## 不熟悉的库 — 自动生成 Skill
 
 当你遇到项目中使用的库/框架，但你对其 API 或最佳实践不够熟悉时，用 `skill-seekers` 抓取官方文档生成知识：
@@ -597,123 +585,161 @@ createdAt       DateTime
 ### 架构 & 数据层
 - **Prisma 迁移未执行**: `schema.prisma` 只定义了 Store 和 StoreUser，Menu/Category/Table/Order/Bill/Split/Role 等核心模型仍用 JSON 文件存储，Prisma migration 待完成
 - **自定义 Hooks 不完整**: `client/src/hooks/` 目前仅有 `usePermission.ts`，数据获取逻辑仍直接写在页面组件中（违反架构原则，待提取为 `useMenu`/`useOrders` 等 hooks）
-- ~~**控制器命名不一致**~~: ✅ 已修复 — 所有控制器统一使用 `.service.ts` 命名（auth/bill/coupon/menu/order/payment/printer/role/staff/store/table/waitlist/analytics）
-- **`api.ts` 超过 200 行限制**: 当前 342 行（含 bills + roles API），需拆分（如按模块拆为 `api/menu.ts`、`api/orders.ts`、`api/bills.ts` 等）
-- **9 个文件严重超限（>300 行）**: `i18n/admin.ts`（523 行）、`MenuPage.tsx`（515 行）、`TablesPage.tsx`（425 行）、`CategoryManagePage.tsx`（423 行）、`MenuItemForm.tsx`（375 行）、`OrderEditDialog.tsx`（372 行）、`api.ts`（342 行）、`StaffManagePage.tsx`（336 行）、`FloorPlanEditorPage.tsx`（319 行）均远超 200 行限制，需优先拆分
-- **9 个文件轻微超限（200-300 行）**: `MenuManagePage.tsx`（319 行）、`AnalyticsPage.tsx`（317 行）、`MenuItemTable.tsx`（317 行）、`CsvImportDialog.tsx`（284 行）、`order.service.ts`（272 行）、`payment.service.ts`（267 行）、`BillSettleDialog.tsx`（262 行）、`MenuItemDetailSheet.tsx`（250 行）、`FloorPlanPage.tsx`（250 行）
-- ~~**AuthUser 类型重复**~~: ✅ 已修复 — `AuthUser` 已提取到 `shared/types.ts`，`auth-store.ts` 通过 import 引用
+- **`api.ts` 超过 200 行限制**: 当前 361 行（含 bills + roles API），需拆分（如按模块拆为 `api/menu.ts`、`api/orders.ts`、`api/bills.ts` 等）
+- **11 个文件严重超限（>300 行）**: `MenuPage.tsx`（623 行）、`i18n/admin.ts`（539 行）、`TablesPage.tsx`（484 行）、`CategoryManagePage.tsx`（447 行）、`MenuManagePage.tsx`（429 行）、`MenuItemForm.tsx`（429 行）、`OrderEditDialog.tsx`（410 行）、`api.ts`（361 行）、`StaffManagePage.tsx`（342 行）、`FloorPlanEditorPage.tsx`（337 行）、`MenuItemTable.tsx`（320 行）、`AnalyticsPage.tsx`（317 行）均远超 200 行限制，需优先拆分
+- **6 个文件轻微超限（200-300 行）**: `CsvImportDialog.tsx`（284 行）、`order.service.ts`（282 行）、`BillSettleDialog.tsx`（269 行）、`FloorPlanPage.tsx`（259 行）、`MenuItemDetailSheet.tsx`（250 行）、`payment.service.ts`（208 行）
 - **session-store 与 URL 双数据源**: `session-store` 持久化 storeId/tableId 到 localStorage，但 URL 参数中也包含这些值，存在状态不一致风险。未来应以 URL 为 source of truth
 
-### 安全 & 配置（来自 hardcode-audit 2026-03-20）
-- **CORS 未限制**: `app.ts` 使用 `cors()` 无 origin 限制，应通过 `CORS_ORIGIN` 环境变量配置
-- ~~**LoginPage 密码占位符**~~: ✅ 已修复 — placeholder 已改为 `t('login.passwordPlaceholder')` 带 defaultValue 回退
-- **LoginPage 用户名占位符**: `placeholder="admin"` 仍硬编码，应改为 `t('login.usernamePlaceholder')`
+### 安全 & 配置
 - **S3 bucket 硬编码**: fallback `'qr-restaurant-images'` 应改为必需环境变量
 - **S3 URL 硬编码**: `s3.ts` 中 `https://${bucket}.s3.${region}.amazonaws.com/` 需提取为 `CDN_BASE_URL` 环境变量支持 CloudFront
 - **货币硬编码**: `payment.service.ts` 中 Stripe 固定用 `'usd'`（出现两处），`format.ts` 中 `$` 符号硬编码，待提取为 `DEFAULT_CURRENCY` 配置
-- **JWT 过期硬编码**: `auth.service.ts` 中 `'7d'` 固定写死，待提取为环境变量
-- ~~**server.ts 调试日志**~~: ✅ 已修复 — "HELLO FROM IAN" debug 消息已清除
+- **无 Rate Limiting**: 登录、下单、支付创建等端点均无频率限制，上线前需加 `express-rate-limit`
+- **Session 端点无认证**: `GET/PUT /sessions/:sessionId/cart`、`pay-items`、`pay-percent` 等顾客端点无需认证，依赖 UUID 不可猜测性。上线前应加 session token 校验
 - **缺少根 `.env.example`**: 只有 `server/.env.example`，根目录缺少统一的环境变量文档
 
-### i18n（来自 i18n-audit 2026-03-20）
-- **staff 模块缺失翻译 key（~20 个）**: `StaffManagePage.tsx` 全部使用 `defaultValue` 回退（title/addStaff/username/role/actions/delete/addTitle/password/cancel/create/saving 等），i18n JSON 文件中无 `staff.*` 命名空间（仅有 `nav.staff`）
-- **splitBill 模块缺失翻译 key（~12 个）**: `SplitBillDialog.tsx` 全部使用 inline default 回退（title/desc/equal/byItem/generate/generating/numPeople/total/perPerson/assign/paid/unpaid 等），i18n JSON 文件中无 `splitBill.*` 命名空间
-- **orders.transfer 缺失翻译 key（~3 个）**: `TransferTableDialog.tsx` 和 `TableDetailPanel.tsx` 使用 `defaultValue` 回退（transferTitle/transferFrom/transferConfirm）
-- **analytics 散落 key（~2 个）**: `AnalyticsPage.tsx` 中 `analytics.staffPerformance`、`analytics.noStaff` 使用字面量 defaultValue
-- **dashboard 散落 key（~2 个）**: `OrderCard.tsx` 中 `dashboard.reprint`、`dashboard.printed` 使用 defaultValue
-- ~~**orderConfirm.loadingOrder 无 defaultValue**~~: ✅ 已修复 — key 已定义在 en/zh customer.json 中
-- **15+ 处硬编码英文字符串**: "Access restricted to store owners"（3 处：CouponManagePage/FloorPlanEditorPage/AnalyticsPage）、"Owner"/"Staff" 标签（StaffManagePage SelectItem + 角色显示共 3 处）、"Loading..."（FloorPlanEditorPage）、error catch fallback 等
-- ~~**ScanPage 硬编码中文错误**~~: ✅ 已修复 — 现使用 `t('scan.error')` 获取翻译
-- ~~**Store 缺 `announcementEn`**~~: ✅ 已修复 — `Store` 类型已添加 `announcementEn` 字段，`MenuResponse` 也已包含
-- **server 端硬编码中文错误消息**: `table.service.ts` 中 3 处中文错误返回（`桌台"${name}"已存在`、`该桌台正在使用中，无法删除`）
-- **login.passwordPlaceholder 缺 i18n 定义**: LoginPage 使用 `t('login.passwordPlaceholder', 'Enter password')` 但 key 未定义在任何 i18n JSON 文件中
+### 安全审计（2026-04-04）
 
-### 数据 & 类型（来自 type-chain / type-check audit）
-- ~~**OrderItem 缺 nameEn**~~: ✅ 已修复 — `order.service.ts` 创建订单项时已填充 `nameEn`
-- ~~**备注不可见**~~: ✅ 验证为误报 — `remark` 已在 OrderDetailDialog、OrderReceipt、DashboardPage 中显示
+#### 凭据泄漏（CRITICAL）
+- **AWS Access Key 明文存在仓库**: `.env`、`server/.env`、`Qr_code_manage_accessKeys.csv` 均含 AWS Key，需立即轮换并用 `git filter-repo` 从历史清除
+- **AWS SSH 私钥**: `aws_secret.pem` 在仓库根目录
+- **Stripe Secret Key + Webhook Secret**: `.env` 中明文，需轮换
+- **数据库密码明文**: `server/.env.example` 含 `qrorder123`
+- **JWT Secret 弱默认值**: `server/.env.example` 中 `dev-secret-change-in-production`
+- **硬编码测试账号**: `server/prisma/seed.ts`（`admin123`/`staff123`）、`server/src/scripts/test-payment-flow.ts`（`admin123`/`ian123`）
+- **bcrypt 哈希在版本控制中**: `server/data/staff.json` 含密码哈希
 
-### 死代码（来自 dead-code audit 2026-03-20）
+#### 输入校验缺失
+- **数值字段缺 typeof/isFinite 校验**: `session.routes.ts` 的 `amount`/`receivedAmount`、`order.service.ts` 的 `quantity`、`menu.service.ts` 的 `price` 均不检查 NaN/Infinity
+- **applyCoupon 参数完全无校验**: `session.routes.ts:153` 直接传 `req.body` 到 service
+- **coupon/role 创建无字段校验**: `coupon.routes.ts:18`、`role.routes.ts:15` 直接传 `req.body`
+- **字符串无长度限制**: `customerName`、`remark`、`name`、`description`、`announcement`、`phone`、`username`、`couponCode` 均无 maxLength
+- **express.json() 无 body size limit**: `app.ts` 未设 `{ limit: '1mb' }`
+- **Prototype Pollution 风险**: `json-store.ts:50` 展开用户输入 `{ ...data, ...updates }`，未过滤 `__proto__`/`constructor`/`id`/`storeId`
+- **update 操作无字段白名单**: table/menu/coupon service 的 update 直接接受 `req.body`
+
+#### JSON.parse 无 try-catch（会 crash webhook）
+- `payment.service.ts:162` — `JSON.parse(pi.metadata.itemKeys)`
+- `payment.service.ts:192` — `JSON.parse(cartDataRaw)`
+- `json-store.ts:22` — `JSON.parse(raw)` 加载数据文件
+
+#### 多租户隔离缺陷
+- **`getMenuItemById` 无 storeId 过滤**: `menu.service.ts:53`，被公开端点 order 创建调用，攻击者可用其他店的 menuItemId 下单
+- **`getSessionById` 无 storeId 参数**: `session.service.ts:24`，依赖调用方检查
+- **`getRoleById` 无 storeId 参数**: `role.service.ts:74`
+- **`optionalAuth` 允许 storeId 缺失跳过校验**: `auth.middleware.ts:38`
+
+#### RBAC 缺陷
+- **无权限变更审计日志**: `staff.service.ts:55-69`
+- **自定义角色可授予 `staff:manage` 造成提权**: 无限制哪些角色可以修改角色
+- **Legacy token 降级逻辑可能给出过期权限**: `permission.middleware.ts:11-20`
+- **JWT 无注销黑名单**: logout 后 token 仍有效至过期
+
+#### JsonStore 并发问题
+- **Race Condition**: `json-store.ts` 的 read-modify-write 非原子操作，并发请求可互相覆盖写入导致数据静默丢失
+
+### i18n
+- **i18n JSON 文件缺失多个模块**: `admin.ts`（TypeScript 内联定义）中有完整的 `staff`/`splitBill`/`transferTable`/`analytics`/`dashboard` 翻译 key，但 `en/admin.json` 和 `zh/admin.json` 缺失这些模块。管理端使用 `useT()` hook 读取 `admin.ts`，功能正常但 JSON 文件与 TS 定义不同步
+- **硬编码字符串**: FloorPlanEditorPage 中 prompt 对话框（"New zone/floor name:" 等）、StaffManagePage 中 tab 标签（`'Staff'`/`'Roles'`）、OrderCard 中时间文案（`'Just now'`/`'m ago'`）、AnalyticsPage 中 `"No data"` 等
+
+### 死代码
 - **未使用的 API 路由**: `GET /auth/me`（前端未调用）、`GET/PUT /printer/config`（前端无对应方法）
-- **`api.seatWaitlistEntry()` 与 `updateWaitlistEntry` 重复**: WaitlistPanel 同时使用两者（`seatWaitlistEntry` 调 POST `/seat`，`updateWaitlistEntry` 调 PATCH），功能可能重叠
-- **未使用的类型**: `StoreUser`（定义在 `shared/types.ts` 但仅被 types.ts 自身引用，前后端均未 import）
 
-### UX（来自 ux-audit 2026-03-20）
-- **OrderEditMode 按钮严重过小**: 数量/删除/折扣按钮仅 24px（`icon-xs`/`xs`），远低于 44px 最小触摸目标
+### UX
+- **OrderEditMode discount 按钮过小**: 主操作按钮已设 `min-h-[44px]`，但折扣按钮（`size="xs"`）仍低于 44px 触摸目标
 - **多处管理端按钮过小**: CategoryManagePage 排序箭头、CouponManagePage/StaffManagePage 表格行按钮（32px）、WaitlistPanel Seat/Remove 按钮（32px）
 - **表格不响应式**: CouponManagePage、StaffManagePage 无移动端卡片视图替代
 - **FloorPlanEditorPage 不响应式**: 属性面板始终可见（`w-64`），多处英文硬编码
-- ~~**CheckoutPage 缺 loading**~~: ✅ 已修复 — Stripe 元素初始化时已有 Loader2 spinner
-- ~~**CheckoutPage 部分未国际化**~~: ✅ 已修复 — 无 clientSecret 时的 fallback 文案已使用 `t('checkout.noSession')` 和 `t('checkout.noSessionDesc')`
-- ~~**TablesPage 无空状态**~~: ✅ 已修复 — 无桌台时已有空状态 UI（图标+提示+添加按钮）
-- ~~**ScanPage 无重试按钮**~~: ✅ 已修复 — 错误时显示 retry 按钮和描述文案
-- ~~**ScanPage loading 无动画**~~: ✅ 已修复 — 使用自定义 spinner 动画 + 双语加载文案
-- **FloorPlanEditorPage loading 无 spinner**: 使用纯文本 "Loading..." 无动画
 - **MenuPage 空分类无提示**: 非搜索模式下，无菜品的分类缺少空状态提示
 - **键盘无障碍缺失**: TableGrid 和 TransferTableDialog 的卡片缺少 `role="button"`/`tabIndex`/`onKeyDown`
+- **FloorPlan/Tables polling 延迟**: 10s 间隔，订单创建后最多等 10s 才更新状态
+- **部分管理端页面缺少 mobile 底部导航**
 
-### 其他
-- **购物车 localStorage 残留**: 购物车已持久化（persist，key `qr-order-cart`），但同一桌台旧购物车数据未清理，可能导致错误订单
-- **`/auth/me` 端点未使用**: auth.routes.ts 定义了 GET `/me`，但前端未调用
+### 运维 & 其他
+- **Call Waiter 无真实通知**: 顾客端按钮只有 3 秒本地反馈，无 WebSocket 通知管理端
+- **Stripe webhook 依赖 CLI**: 本地开发必须运行 `stripe listen --forward-to localhost:3001/api/webhook/stripe`
+- **Docker `.env` 陷阱**: `docker compose restart` 不会重读 `.env`，必须用 `docker compose up -d`
+- **Seed 后菜品 categoryId 失效**: seed 脚本重新生成分类 ID，导致旧 menu-items.json 的 categoryId 不匹配
+- **服务器内存缓存**: 直接修改 `server/data/*.json` 文件后必须重启服务器
+- **购物车 localStorage 残留**: 同一桌台旧购物车数据未清理，`clearCart()` 存在但换桌/换 session 时未自动调用
 
-### 2026-03-23 测试发现的问题（已修复）
-- ✅ **OrderConfirmPage 无限加载**: `o.status === 'paid'` 永远匹配不到（webhook 设 `isPaid: true` 但 status 保持 `pending`）→ 改为 `o.isPaid` 查找 + polling 5次 + 超时兜底
-- ✅ **Stripe metadata 超 500 字符**: 购物车 items+options JSON 超过 Stripe metadata 限制 → 精简为单字母 key + 自动分片
-- ✅ **Stripe webhook 400**: `STRIPE_WEBHOOK_SECRET` 未更新为 Stripe CLI 的临时密钥；`docker compose restart` 不会重新读取 `.env`（需要 `docker compose up -d`）
-- ✅ **分类 Switch 不工作**: TableRow `draggable` 属性拦截了 Switch 的点击事件 → 加 `onPointerDown/onDragStart stopPropagation`
-- ✅ **分类字体跳跃**: Switch 切换后 `hiddenDesc` 空字符串仍占位 → 条件渲染 + 固定列宽 + `tabular-nums`
-- ✅ **OrderCard/TableDetailPanel 规格不显示**: selectedOptions 只显示 choiceName → 改为 badge 样式 `optionName: choiceName`
-- ✅ **TablesPage 图片不显示**: 订单项用灰色占位符 → 改为首字母头像（OrderItem 无 image 字段）
-- ✅ **autoAcceptOrders 未保存**: `store.service.ts` 的 `updateStore` 漏了该字段
-- ✅ **MenuItemEditSheet 死代码**: 已删除（MenuItemForm 已接管全部编辑功能）
-- ✅ **POST /orders 泄露 paymentIntentId**: 加了 `stripSensitive`
-- ✅ **optionNameEn/choiceNameEn 未填充**: order.service.ts 从 menuItem 定义中查找并填充
-
-### 2026-03-23 已知但未修复的问题
-- **Call Waiter 无真实通知**: 顾客端按钮只有 3 秒本地反馈，无 WebSocket 通知管理端（需要后续实现）
-- **Stripe webhook 依赖 CLI**: 本地开发必须运行 `stripe listen --forward-to localhost:3001/api/webhook/stripe`，否则支付后订单不会创建
-- **Docker `.env` 陷阱**: `docker compose restart` 不会重读 `.env`，必须用 `docker compose up -d` 重新创建容器
-- **Seed 后菜品 categoryId 失效**: seed 脚本重新生成分类 ID，导致旧 menu-items.json 的 categoryId 不匹配 → 需要按菜名重新映射
-- **服务器内存缓存**: 直接修改 `server/data/*.json` 文件后必须重启服务器（JsonStore 在启动时加载到内存）
-- **Tax/Service 费率不一致**: TablesPage 用 10% service + 5% tax，MenuManagePage 用 8% tax（应统一提取为配置）
-
-### 2026-03-23 追加修复
-- ✅ **selectedOptions 中文名为空**: Stripe compact metadata 解压时 `optionName/choiceName` 设为空字符串 → `order.service.ts` enrichedOptions 现在从 menuItem 定义填充中文名
-- ✅ **前端规格显示空括号**: 所有 12 个显示 `choiceName` 的文件加了 fallback: `o.choiceName || o.choiceNameEn || ''`
-- ✅ **Cart 按钮 Submit/Submitting 跳动**: 移除双语嵌套 span，统一单行 i18n + Loader2 spinner + 固定 min-w
-- ✅ **MenuPage Header 不可折叠**: 添加滚动检测，下滑自动收起店名/按钮，只保留搜索栏
-- ✅ **TablesPage 不显示图片**: 添加 menuItemMap（按 menuItemId 查 image URL），有图显示图片，无图显示首字母
-- ✅ **11 个 i18n key 缺失**: closeConfirm/confirmCloseTitle/grandTotal/splitBill.*/transferTable.* 补全
-- ✅ **OrderingSheet/ItemCustomizeView 内容和 X 叠加**: 添加 `pr-12 pt-4` padding
-
-### 2026-03-24 追加修复
-- ✅ **桌台状态不更新（occupied/idle）**: JsonStore 多实例 bug — `order.service.ts` 和 `table.service.ts` 各自 `new JsonStore('tables.json')` 导致内存不同步 → 改为单例 export/import 共享
-- ✅ **stores.json 也有 3 个实例**: menu.service + order.service + store.service → 统一从 `repositories/stores.ts` 导出
-
-### 2026-03-27 新增功能
-- ✅ **RBAC 权限系统**: 新增 `Permission` 类型 + `RoleDefinition` 模型 + `permission.middleware.ts` + `role.service.ts` + `usePermission` hook，支持细粒度权限控制
-- ✅ **账单/分账系统**: 新增 `Bill` + `Split` 模型 + `bill.service.ts` + `bill.routes.ts`，替代旧的 `split-bill` 路由，支持乐观锁、优惠券应用、分账结账
-- ✅ **桌台 enable/disable 模型**: 替代旧的 create/delete，支持桌台号池管理 + QR 码重新生成
-- ✅ **组件目录重组**: 从扁平结构迁移到 `order/`、`table/`、`menu/`、`floor/`、`layout/`、`shared/` 子目录
-- ✅ **JsonStore 单例集中管理**: 所有 JsonStore 实例集中在 `repositories/stores.ts`
-- ✅ **Store 支持 announcementEn**: 公告双语支持已实现
-- ✅ **新增组件**: `BillSettleDialog`、`CsvImportDialog`、`FloorCanvas`、`FloorTableShape`
+### 共享购物车剩余问题
+- **Poll 间隔 5s**: A 加菜后 B 要等 5s 才看到，期间 cart 不同步（可考虑 WebSocket 替代）
+- **Session cart 无认证保护**: `GET/PUT /sessions/:sessionId/cart` 无需认证，知道 sessionId 即可读写
+- **localStorage 混合多设备数据**: poll 拉下的"别人的 items"持久化在本地，刷新后可能过时
 
 ### 待实现功能
-- **FloorPlan 交互式地图**: 将 FloorPlanPage 从卡片网格改为按 x/y 坐标渲染桌台（复用 FloorPlanEditorPage 的布局数据），让运营视图和编辑器视图一致
-- **Checkout Session 优化**: Stripe metadata 改为服务端存 checkout_session 表 + metadata 只存 session ID，彻底绕开 500 char 限制
-- **Apple Pay / Google Pay**: Stripe PaymentElement 会自动显示，但需要 HTTPS + 域名 + Stripe Dashboard 开启 Apple Pay domain verification + 网站根目录放 `.well-known/apple-developer-merchantid-domain-association` 文件。当前裸 IP + HTTP 不支持
+- **FloorPlan 交互式地图**: 将 FloorPlanPage 从卡片网格改为按 x/y 坐标渲染桌台
+- **Checkout Session 优化**: Stripe metadata 改为服务端存 checkout_session 表 + metadata 只存 session ID
+- **Apple Pay / Google Pay**: 需要 HTTPS + 域名 + Apple Pay domain verification
 
-### 当前仍未修复的问题
-- **Call Waiter 无真实通知**: 需要 WebSocket
-- **Stripe webhook 依赖 CLI**: 本地必须运行 `stripe listen`
-- **Docker `.env` 陷阱**: `docker compose restart` 不重读 `.env`
-- **Seed 后 categoryId 失效**: 需要按菜名重映射
-- **服务器内存缓存**: 改 JSON 文件后必须重启
-- **Tax/Service 费率不一致**: 应统一提取为配置
-- **购物车 localStorage 残留**: 同桌台旧购物车数据可能导致错误订单
-- **FloorPlan/Tables polling 延迟**: 10s 间隔，订单创建后最多等 10s 才更新状态
-- **`/auth/me` 端点未使用**
-- **部分管理端页面缺少 mobile 底部导航**
+---
+
+## TODO — 待修改项（按优先级）
+
+### P0 — 影响正确性
+- [ ] **S3 bucket/URL 硬编码** → bucket 改为必需环境变量（`AWS_S3_BUCKET`），URL 提取为 `CDN_BASE_URL` 支持 CloudFront
+- [ ] **货币硬编码 `'usd'` + `$`** → 提取为 `DEFAULT_CURRENCY` 配置（`payment.service.ts` 两处 + `format.ts`）
+- [ ] **购物车 localStorage 残留** → `ScanPage` 切桌时已调 `clearCart()`，但同桌 session 关闭后再扫不清理；MenuPage 检测到 session 已关闭时应 `clearCart()`
+
+### P1 — 影响开发体验
+- [ ] **缺少根 `.env.example`** → 汇总 client + server 所有环境变量，创建根目录 `.env.example`
+- [ ] **i18n JSON 与 admin.ts 不同步** → 将 `admin.ts` 中 `staff`/`splitBill`/`transferTable`/`analytics`/`dashboard` 完整模块同步到 JSON 文件
+- [ ] **硬编码英文字符串** → FloorPlanEditorPage prompt 对话框、StaffManagePage tab 标签、OrderCard 时间文案、AnalyticsPage "No data"
+- [ ] **未使用 API 路由清理** → 删除 `GET /auth/me`、`GET/PUT /printer/config`（或补前端调用）
+
+### P2 — 影响 UX
+- [ ] **管理端按钮过小** → OrderEditMode discount 按钮、CategoryManagePage 排序箭头、CouponManagePage/StaffManagePage/WaitlistPanel 表格行按钮（统一 ≥44px）
+- [ ] **表格不响应式** → CouponManagePage、StaffManagePage 添加移动端卡片视图
+- [ ] **FloorPlanEditorPage 不响应式** → 属性面板 `w-64` 固定宽度
+- [ ] **MenuPage 空分类无提示** → 非搜索模式下添加空状态 UI
+- [ ] **键盘无障碍** → TableGrid、TransferTableDialog 添加 `role="button"` + `tabIndex` + `onKeyDown`
+- [ ] **管理端 mobile 底部导航** → 部分页面缺少
+
+### P3 — 技术债
+- [ ] **自定义 Hooks 提取** → 将页面中数据获取逻辑提取为 `useMenu`/`useOrders`/`useTables` 等
+- [ ] **api.ts 拆分** → 361 行，按模块拆为 `api/menu.ts`、`api/orders.ts`、`api/bills.ts` 等
+- [ ] **12 个文件 >300 行** → 需拆分（详见架构 & 数据层）
+- [ ] **session-store 与 URL 双数据源** → 以 URL 为 source of truth
+
+### 结账系统重构（待实现）
+
+**目标**: 完善 pay-later 模式下的顾客结账 + 管理端收款流程。
+
+#### 数据层改动
+- `Store` 新增 `taxRate?: number`（百分比，如 8.875）、`serviceFeeRate?: number`（可选）
+- `Session` 新增 `settlementMode?: 'by-item' | 'by-percent'`（一旦有人选百分比，后续锁定为百分比）
+- `Session` 新增 `paidItemIds?: string[]`（已付菜品 ID，按菜品结账时标记）
+- `Payment` 新增 `method?: 'stripe' | 'cash'`（支付方式）
+
+#### 顾客端结账流程（pay-later）
+1. MenuPage "结账" 按钮 → 打开 `SettlementSheet`
+2. 分账模式选择（二选一）：
+   - **按菜品**: 勾选整桌任意未付菜品 → 计算小计
+   - **按百分比**: 滑块 1-100%，金额 = 剩余未付食物总价 × 百分比（不含小费）
+3. 规则：先选菜品的人可以继续按菜品 → 一旦有人选百分比 → 后续只能百分比
+4. 金额上限 = 剩余未付菜品总价（不含 tip）
+5. 税额 = 小计 × `store.taxRate / 100`，在结账时显示单独行
+6. 确认后 → Stripe 支付 → 支付完成后记录到 Session
+7. 全额支付后 Session 关闭 → 桌台 idle → 可开新 Session
+
+#### 管理端收款流程
+1. TablesPage 桌台 → "结账" → 弹出 `AdminSettleDialog`
+2. 显示账单明细（所有订单 + 税 + 已付/未付）
+3. 支付方式二选一：
+   - **刷卡** → 创建 Stripe PaymentIntent → 管理端完成支付
+   - **现金** → `CashPaymentPad` 数字键盘 → 输入收到金额 → 自动算找零 → 确认收款
+4. 记录 `Payment { method: 'cash' | 'stripe' }`
+5. 全额支付 → 关 Session → 桌台 idle
+
+#### API 新增/修改
+- `PATCH /sessions/:sessionId/start-settlement` — 设置 `settlementMode`
+- `POST /sessions/:sessionId/pay-items` — 按菜品结账（标记 `paidItemIds`，创建 PaymentIntent）
+- `POST /sessions/:sessionId/pay-percent` — 按百分比结账
+- `POST /sessions/:sessionId/cash-payment` — 现金收款（管理端，需 auth）
+- `GET /stores/:storeId` 返回 `taxRate`
+- `PUT /stores/:storeId` 支持更新 `taxRate`/`serviceFeeRate`
+- 设置页新增税率/服务费配置 UI
 
 ---
 
@@ -734,97 +760,119 @@ createdAt       DateTime
 
 ---
 
----
+## 改名 / 重构必须执行的检查清单
 
-## Bug 根因分析 — Phase 1-7 复盘
+> 以下规则来自本项目多次踩过的坑。每次涉及**重命名函数、变量、类型、API 签名**时，必须逐条检查。
 
-> 2026-03-29 总结。20 个 fix commit 的根因归类，用于指导后续开发规范。
+### 踩过的坑
 
-### 类型 A：并行 Agent 文件冲突（5 个 bug）
-
-多个 Agent 同时编辑不同文件，但这些文件有**隐式依赖**（共享类型、共享 import path、共享 API contract），导致一方改了另一方没跟上。
-
-| Bug | 原因 | 文件 |
+| Bug | 根因 | 影响 |
 |-----|------|------|
-| React hooks 顺序违规 (MenuPage) | Agent A 加了 `useMemo`，Agent B 加了 early return，两者位置冲突 | MenuPage.tsx |
-| React hooks 顺序违规 (CsvImportDialog) | 同上 — `useMemo` 在 `if (!open) return null` 之后 | CsvImportDialog.tsx |
-| 21 个 import 路径遗漏 | 组件目录重组后，主 Agent 改了部分 import，子 Agent 没改完 | 8 个文件 |
-| `ZONES` → `DEFAULT_ZONES` 改名遗漏 | 变量重命名只改了声明处，子组件引用没跟上 | FloorPlanEditorPage.tsx |
-| SplitBill 类型 import 断裂 | types.ts 删了旧类型，但 client 两个文件仍 import | api.ts, SplitBillDialog.tsx |
+| `ReferenceError: clearCart is not defined` | `clearCart` 改名为 `clearMyItems`，但 useEffect 依赖数组 `[..., clearCart]` 未同步更新 | OrderConfirmPage 白屏 |
+| `updateSessionCart` 调用参数不匹配 | 函数签名从 3 参数改为 4 参数（加了 `deviceId`），但 `OrderConfirmPage.tsx` 两处调用仍用旧的 3 参数 | 购物车同步失败 |
+| Session `totalAmount` 始终为 0 | 订单在 session 集成之前创建，缺少 `sessionId` 字段，session 不知道有哪些订单 | Pay Now banner 永远不显示 |
+| `served` 被错误等同于"已完成/已结账" | TablesPage 用 `status !== 'served'` 过滤 activeOrders → 菜上齐后 currentOrder 为 null → 结账按钮灰掉。MenuPage 同样把 served 归入"历史"并排除出 sessionOrders | 管理端：全部上菜后无法结账。顾客端：sessionOrders 只含 served，丢失 preparing/pending 的菜品 |
+| 菜品行价格不含规格加价 | 5 个文件用 `item.price * item.quantity` 显示价格，遗漏 `selectedOptions[].priceAdjust` | 麻婆豆腐+大份(+$3) 显示 $12.99 而非 $15.99。订单总价正确但行项明细错误 |
+| Ghost payment — 选菜品后未付款，items 被标记为 paid | `payByItems` 在计算时就执行了 `sessionStore.update(paidItemIds)`，用户放弃支付后状态无法回滚 | 选中的菜品卡在 "已付" 状态，无法再选，settlementMode 被锁定 |
+| Stripe 支付后 session 不关闭 | `addPayment` 自动关闭检查用 `netDue`（不含税），但支付金额含税 → 全额付清后 `totalPaid >= netDue` 虽然为 true，但 `allServed` 检查时 orders 可能未全部 served | 付完钱但 session 保持 active，桌台不回到 idle |
+| 管理端结账按钮打开 CloseTableDialog 而非 BillSettleDialog | 绿色"结账"按钮直接调 `closeTable()`（强制关 session 不管有没有付钱），蓝色"Session"按钮才是真正的结账入口但用户不知道 | 管理员点结账 → session 直接关闭 → 钱没收到 |
+| 管理端刷卡只创建 PaymentIntent 不处理 | BillSettleDialog "刷卡" 按钮调 `createCheckoutForSession` 创建 intent 后就 refresh，没有实际收款流程 | 点刷卡 → 看起来成功 → 但没有支付记录，session 不会关闭 |
+| 小费选择器在 pay-later 无效 | CheckoutPage `applyTip` 检查 `if (!state?.items) return`，pay-later 流程没有 items 只有 sessionId → 直接 return | 选小费后金额不变 |
+| Stripe 支付金额不含税 | `createPaymentIntentForSession` 用 `remaining = netDue - totalPaid`（不含税）做上限，`Math.min(含税amount, 不含税remaining)` 把税截掉 | 客户实际被收 $31.98 而非 $34.82（缺少 $2.84 税） |
+| 支付成功后显示错误订单金额 | OrderConfirmPage poll 取 `最近一笔订单` 而非 session 总支付，session 结账 $100 后显示单笔订单 $15.99 | 确认页显示金额与实际支付不符 |
+| TablesPage 价格客户端自算与 session 不一致 | 桌台管理底部用 `orders.reduce(totalPrice)` + 硬编码税率 `0.1`/`0.05` 独立计算，不读 session summary | 显示金额与 BillSettleDialog 不一致，不反映优惠券和已付金额 |
+| XSS via dangerouslySetInnerHTML | MenuPage 用自制 `sanitizeHtml()` 处理公告内容（不可靠），通过 `dangerouslySetInnerHTML` 渲染 | 恶意公告可执行 JS，窃取 localStorage token |
+| Session 关闭后桌台仍显示已付订单 | `sessionOrders` 在 `currentSessionId` 为空时 fallback 到全桌 `status !== 'closed'`，但已付订单的 status 是 `served` 不是 `closed` | 桌台已结账 idle，当前 tab 仍显示所有历史订单，金额看起来未付 |
+| Announcement 只显示中文 | MenuPage 弹窗始终用 `menu.store.announcement`，不检查 `lang` 和 `announcementEn` | 英文用户也看到中文公告 |
+| OrderingSheet 用顾客 API 看不到 staffOnly 菜品 | `api.getMenu()`（顾客接口）过滤掉 `staffOnly` 的特殊菜品，管理端添加菜品时应该用 `api.getMenuItems()` | 管理员在桌台管理添加菜品时看不到 staffOnly 的特殊订单 |
+| 小费无自定义金额输入 | TipSelector "Custom" 按钮 `onSelect(null)` → 小费归零，没有输入框 | 用户只能选 15%/18%/20%，无法输入自定义金额 |
+| 税率/服务费标签硬编码百分比 | `admin.ts` 中 `taxFee: '税费 (5%)'`, `serviceFee: '服务费 (10%)'` 固定写死 | 修改税率后标签仍显示旧百分比 |
+| 价格多处独立计算不一致 | TablesPage/SettlementSheet/BillSettleDialog 各自算税，和 server `getSessionSummary` 结果不同 | 同一笔账单在不同页面显示不同金额 |
 
-**防范规则：** 并行 Agent 完成后，必须跑一次 `tsc --noEmit`（client + server），0 error 才能 commit。
+### 必须执行的检查流程
 
-### 类型 B：新模式未覆盖全流程（3 个 bug）
+**显示菜品行价格时：**
+1. **永远不要用 `item.price * quantity`** — 必须加上 `selectedOptions` 的 `priceAdjust`
+2. 正确公式: `(item.price + Σ opt.priceAdjust) * item.quantity`
+3. `order.totalPrice` 是订单总价（已含 priceAdjust），但单品行需要自己算
 
-添加新的执行路径（如 pay-later），只改了入口页面，没改下游页面。
+**订单状态过滤时：**
+1. `served` = 菜已送到桌上 ≠ 已结账。结账相关逻辑不能排除 `served`
+2. `closed` = 已取消/已关闭。只有 `closed` 的订单才应该从结账流程中排除
+3. 前端和后端过滤条件必须语义一致——同一个"活跃订单"概念不能在不同页面用不同过滤
 
-| Bug | 原因 |
-|-----|------|
-| OrderConfirmPage 显示 "Not Found" | CartPage 后付款跳转到 confirm 页，但 confirm 页只处理 Stripe `redirect_status` |
-| 先付款模式下无法用优惠券 | Bill 只在 webhook 里创建，但优惠券必须在支付前应用 |
-| 桌台不自动回到空闲 | 只有 settle/close 操作释放桌台，单个订单完成不触发 |
+**重命名函数/变量时：**
+1. `grep -r "旧名字" client/ server/ shared/` — 找到所有引用，**包括 useEffect 依赖数组、回调参数名、解构名**
+2. 全部替换后，`tsc --noEmit`（client + server 都跑）
+3. 特别注意：React `useEffect` / `useCallback` / `useMemo` 的依赖数组中的变量名 — TypeScript 不会检查这些
 
-**防范规则：** 添加新模式时，必须画出完整流程图（入口 → 中间页 → 出口），每个节点都检查。
+**修改函数签名（加参数/改类型）时：**
+1. `grep -r "函数名" client/ server/` — 列出所有调用点
+2. 逐个检查参数是否匹配新签名
+3. `tsc --noEmit` 验证
 
-### 类型 C：非 ASCII / 国际化盲区（3 个 bug）
+**修改 shared/types.ts 字段时：**
+1. 改完类型后立即跑 `tsc --noEmit`（client + server）
+2. 如果是 optional → required，所有构造该类型的地方都需要补字段
+3. 如果是 required → 删除，grep 确认没有消费方还在读这个字段
 
-用了只支持 ASCII 的函数处理中文输入。
-
-| Bug | 原因 |
-|-----|------|
-| `btoa()` 崩溃 | 公告内容含中文 → `btoa()` 抛 InvalidCharacterError |
-| localStorage 损坏白屏 | Zustand persist 反序列化失败，无 try/catch |
-| i18n key 缺失显示原始 key | 新增 UI 文字只写了 fallback，没加到 JSON |
-
-**防范规则：** 任何处理用户输入或存储数据的函数，都要假设输入包含中文/emoji。`btoa/atob` 禁用，用 `TextEncoder` 或自定义 hash。
-
-### 类型 D：Agent 生成的代码缺乏业务上下文（4 个 bug）
-
-Agent 按指令实现了功能，但缺少对业务场景的理解。
-
-| Bug | 原因 |
-|-----|------|
-| Bill routes 缺 storeId 校验 | Agent 没有自动加多租户隔离（CLAUDE.md 要求的） |
-| QR 重新生成后 order/bill 引用断裂 | 只改了 table 记录，没意识到 order/bill 有外键 |
-| 桌台排序不稳定 | 没有按 `number` 排序，用了 JsonStore 默认插入顺序 |
-| 角色种子竞态 | 并发登录时 `ensureSystemRoles` 可能创建重复记录 |
-
-**防范规则：** Agent prompt 中必须包含：(1) 多租户规则 (2) 外键关系 (3) 并发场景。
-
-### 类型 E：UI 未在目标设备上验证（5 个 bug）
-
-功能实现了但在手机上不可用或不可见。
-
-| Bug | 原因 |
-|-----|------|
-| "启用新桌台" 是隐藏的小图标 | 只有一个 `+` icon，无文字，不明显 |
-| 支付模式、公告英文、maxTables 不在设置页 | 后端支持但前端没加 UI |
-| 角色只显示 owner/staff | 硬编码两个角色，没从 API 拉 |
-| 平面图 "全部" tab 叠加所有层 | "全部" 应该是"基础层"，不是"全部叠加" |
-| 编辑器保存后不返回 | 缺少 `navigate()` 跳转 |
-
-**防范规则：** 每个 feature 完成后，在**手机浏览器**上走一遍完整流程。
+**Agent / 并行修改后：**
+1. 必须跑 `cd client && ./node_modules/.bin/tsc --noEmit`
+2. 必须跑 `cd server && ./node_modules/.bin/tsc --noEmit`（过滤已知 Express 类型问题）
+3. 0 新增 error 才算完成
 
 ---
 
-## 给 Prompt 的最佳实践
+## 通用防御规则（General Preventative Measures）
 
-基于以上 bug 归类，以下规则可以减少返工：
+> 从本次 20+ 个 bug 中归纳的系统性规则。每次写新代码或修改现有代码时应用。
 
-### 用户（你）提供 instruction 时
+### 规则 1: 金额计算必须有唯一数据源
 
-1. **明确"全流程"** — 提 feature 时，把相关页面都列出来。例："添加后付款模式 → 影响 CartPage、OrderConfirmPage、MenuPage 的未付订单横幅"
-2. **标注目标设备** — "以手机为主" 这句话很关键，提前说
-3. **提到数据关系** — "QR 码重新生成后，订单和账单的 tableId 也要更新" 这类外键关系如果你知道就提
-4. **说明"不要什么"** — "不要叠加所有楼层" 比 "添加楼层 tab" 更精确
-5. **分批验证** — 与其一次提 7 个 Phase，不如每 2-3 个 Phase 做一次手机验证，及时捕获 btoa/hooks 之类的运行时错误
+**问题模式**: 前端自己算税/总价/remaining，和后端算的不一致。
+**规则**: 所有金额显示必须从 server session summary 读取，前端不得独立计算税/服务费/remaining。
+**唯一例外**: 用户交互中的即时预览（如 SettlementSheet 的 debounce 计算），但最终提交金额必须以 server 返回为准。
 
-### Claude（我）应该做的
+### 规则 2: 副作用必须在确认后执行
 
-1. **并行 Agent 后必须编译验证** — 每个 commit 前 `tsc --noEmit`
-2. **新模式 = 全流程检查** — 不只改入口，要跟踪到出口
-3. **中文优先** — 任何字符串处理都假设输入是中文
-4. **prompt 中包含约束** — 多租户、外键、hooks 规则写进 Agent prompt
-5. **生成代码后自审** — 检查 early return 位置 vs hooks 位置
+**问题模式**: `payByItems` 在用户点击时就标记 `paidItemIds`，用户放弃支付后无法回滚。
+**规则**: 任何改变数据状态的操作（标记已付、锁定模式、关闭 session）必须在支付/操作**确认成功后**才执行。计算和提交是两个独立步骤。
+**Stripe 场景**: 计算 → 创建 PaymentIntent（含 metadata）→ 用户支付 → Webhook 确认 → 才执行副作用。
 
-> Last updated: 2026-03-29 CST
+### 规则 3: Session 状态是桌台的 source of truth
+
+**问题模式**: `currentSessionId` 为空时 fallback 到全桌订单 → 显示已付完的历史订单。
+**规则**:
+- 有 `currentSessionId` → 当前 tab 只显示该 session 的订单
+- 无 `currentSessionId` → 当前 tab 为空，所有订单归入历史
+- 不要用 `order.status` 来判断是否属于当前用餐，用 `sessionId` 匹配
+
+### 规则 4: 同一概念在所有页面必须用同一过滤逻辑
+
+**问题模式**: TablesPage 用 `status !== 'served'` 过滤，MenuPage 用另一套过滤，两边"活跃订单"定义不同。
+**规则**: 提取为共享函数或常量。如果 A 页面改了过滤条件，B 页面必须同步。改一个地方时 `grep` 搜索所有使用同一概念的地方。
+
+### 规则 5: 前端显示的比较基准必须和后端一致
+
+**问题模式**: `addPayment` 用 `netDue`（不含税）判断是否付清，`getSessionSummary` 用 `totalWithTax`（含税）。
+**规则**: 同一个判断（"是否付清"、"剩余金额"、"可选金额上限"）在前后端所有出现的地方，必须用完全相同的公式。改一处时 grep 搜索所有 `remaining`/`netDue`/`isPaid` 的计算点。
+
+### 规则 6: i18n 不能硬编码动态值
+
+**问题模式**: `taxFee: '税费 (5%)'` — 税率改了但标签还是 5%。
+**规则**: i18n key 只放静态文案（"税费"、"服务费"），动态值（百分比、金额）在渲染时从数据拼接。
+
+### 规则 7: 管理端和顾客端用不同的 API 端点
+
+**问题模式**: OrderingSheet（管理端组件）用 `api.getMenu()`（顾客 API），看不到 `staffOnly` 菜品。
+**规则**: 管理端组件必须用带 auth 的管理 API（`getMenuItems`/`getCategories`），顾客端用公开 API（`getMenu`）。新建组件时先确认它属于哪一端。
+
+### 规则 8: 安全 — 不信任客户端，副作用在 server 执行
+
+**问题模式**: 前端传 `amount` 给 `createCheckoutForSession`，server 用 `Math.min(amount, remaining)` 截断但 remaining 算错。
+**规则**:
+- Server 必须独立验证所有金额，不能信任客户端传的数字
+- 状态变更（`paidItemIds`、`settlementMode`）只在 webhook 确认后由 server 执行
+- 前端的 `amount` 只是"请求金额"，server 有权拒绝或调整
+
+> Last updated: 2026-04-02 CST

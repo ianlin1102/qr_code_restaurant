@@ -54,16 +54,32 @@ export function getMenuItemById(id: string): MenuItem | undefined {
   return menuItemStore.getById(id)
 }
 
-export function createMenuItem(storeId: string, data: Omit<MenuItem, 'id' | 'storeId'>): MenuItem {
+function validateMenuItem(data: Partial<MenuItem>): string | null {
+  if (data.price != null && (typeof data.price !== 'number' || data.price < 0)) return 'Price must be >= 0'
+  if (data.options) {
+    for (const opt of data.options) {
+      for (const choice of opt.choices) {
+        if (typeof choice.priceAdjust !== 'number' || choice.priceAdjust < 0) {
+          return `Option choice "${choice.name}" priceAdjust must be >= 0`
+        }
+      }
+    }
+  }
+  return null
+}
+
+export function createMenuItem(storeId: string, data: Omit<MenuItem, 'id' | 'storeId'>): MenuItem | { error: string } {
+  const err = validateMenuItem(data)
+  if (err) return { error: err }
   const item: MenuItem = { id: uuid(), storeId, ...data }
   return menuItemStore.create(item)
 }
 
 export function updateMenuItem(storeId: string, id: string, updates: Partial<MenuItem>): MenuItem | { error: string } {
   const existing = menuItemStore.getById(id)
-  if (!existing || existing.storeId !== storeId) {
-    return { error: 'Item not found' }
-  }
+  if (!existing || existing.storeId !== storeId) return { error: 'Item not found' }
+  const err = validateMenuItem(updates)
+  if (err) return { error: err }
   const updated = menuItemStore.update(id, updates)
   if (!updated) return { error: 'Failed to update item' }
   return updated
@@ -131,6 +147,7 @@ export function batchImportMenuItems(
       categoryId: item.categoryId, description: item.description?.trim(),
       descriptionEn: item.descriptionEn?.trim(), available: true, sortOrder: created.length,
     })
+    if ('error' in menuItem) { skipped.push({ row: index + 1, reason: menuItem.error }); return }
     created.push(menuItem)
   })
 

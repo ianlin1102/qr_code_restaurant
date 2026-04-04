@@ -7,12 +7,13 @@ const router = Router({ mergeParams: true })
 router.post('/', async (req, res) => {
   try {
     const { storeId } = req.params as { storeId: string }
-    const { tableId, items, customerName, sessionId, amount, paidBy, tipAmount } = req.body
+    const { tableId, items, customerName, sessionId, amount, paidBy, tipAmount, settlementType, itemKeys, percent } = req.body
 
     // Pay for existing session (pay-later flow)
     if (sessionId) {
       const result = await createPaymentIntentForSession({
         storeId, sessionId, amount: amount ?? 0, paidBy, tipAmount,
+        settlementType, itemKeys, percent,
       })
       if ('error' in result) {
         res.status(result.status ?? 400).json({ error: result.error })

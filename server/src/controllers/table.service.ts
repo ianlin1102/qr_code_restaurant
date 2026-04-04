@@ -139,7 +139,7 @@ export function updateTable(storeId: string, tableId: string, updates: Partial<O
   if (updates.name != null) {
     const existing = tableStore.getByField('storeId', storeId)
     if (existing.some(t => t.id !== tableId && t.name === updates.name)) {
-      return { error: `桌台"${updates.name}"已存在` }
+      return { error: `Table "${updates.name}" already exists` }
     }
   }
   return tableStore.update(tableId, updates)!

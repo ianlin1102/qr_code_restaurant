@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { useSessionStore } from '@/stores/session-store'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
+import { getDeviceId } from '@/lib/device-id'
 import { api } from '@/services/api'
 import type { Order } from '@qr-order/shared'
 
@@ -14,7 +15,7 @@ export default function OrderConfirmPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { storeId, tableId, tableName } = useSessionStore()
-  const clearCart = useCartStore(s => s.clearCart)
+  const clearMyItems = useCartStore(s => s.clearMyItems)
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
 
@@ -29,45 +30,52 @@ export default function OrderConfirmPage() {
 
   const [paidOrder, setPaidOrder] = useState<Order | null>(stateOrder)
   const [orderTimeout, setOrderTimeout] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState<number | null>(null)
 
-  // Pay-later: clear cart immediately (local + server)
+  // Pay-later: clear own items (local + server device slice)
   useEffect(() => {
     if (!isPayLater) return
-    clearCart()
+    const deviceId = getDeviceId()
+    clearMyItems()
     if (storeId && tableId) {
       api.getActiveSession(storeId, tableId).then(s => {
-        if (s) api.updateSessionCart(storeId, s.id, []).catch(() => {})
+        if (s) api.updateSessionCart(storeId, s.id, deviceId, []).catch(() => {})
       }).catch(() => {})
     }
-  }, [isPayLater, clearCart, storeId, tableId])
+  }, [isPayLater, clearMyItems, storeId, tableId])
 
-  // On successful payment: clear cart (local + server), poll for the paid order (webhook may be delayed)
+  // On successful payment: clear cart, poll for this payment to appear in session
   useEffect(() => {
     if (!paymentSuccess || !storeId || !tableId) return
-    clearCart()
-    // Clear shared cart on server
+    const deviceId = getDeviceId()
+    const piId = searchParams.get('payment_intent')
+    clearMyItems()
     api.getActiveSession(storeId, tableId).then(s => {
-      if (s) api.updateSessionCart(storeId, s.id, []).catch(() => {})
+      if (s) api.updateSessionCart(storeId, s.id, deviceId, []).catch(() => {})
     }).catch(() => {})
+
+    // Poll until this payment appears (webhook may be delayed)
     let attempts = 0
-    const maxAttempts = 5
     const poll = () => {
-      api.getTableOrders(storeId, tableId).then((orders) => {
-        // In the new Session model, orders no longer carry isPaid.
-        // After payment, the most recent order is the one just placed.
-        const paid = orders
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
-        if (paid) {
-          setPaidOrder(paid)
-        } else if (++attempts < maxAttempts) {
-          setTimeout(poll, 2000)
-        } else {
-          setOrderTimeout(true) // Show fallback after timeout
-        }
-      }).catch(() => { if (++attempts < maxAttempts) setTimeout(poll, 2000); else setOrderTimeout(true) })
+      api.getActiveSession(storeId, tableId).then(s => {
+        if (!s) { if (++attempts < 8) setTimeout(poll, 1500); else setOrderTimeout(true); return }
+        // Find THIS specific payment by Stripe PaymentIntent ID
+        const thisPayment = piId
+          ? s.payments.find(p => p.stripePaymentIntentId === piId)
+          : null
+        if (!thisPayment && piId && ++attempts < 8) { setTimeout(poll, 1500); return }
+        // Show this payment's amount (or latest payment if no piId match)
+        const amount = thisPayment?.amount
+          ?? s.payments.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.amount
+          ?? s.totalPaid
+        setPaymentAmount(amount)
+        if (s.orders.length > 0) {
+          setPaidOrder({ ...s.orders[0], items: s.orders.flatMap(o => o.items), totalPrice: s.totalAmount })
+        } else { setOrderTimeout(true) }
+      }).catch(() => { if (++attempts < 8) setTimeout(poll, 1500); else setOrderTimeout(true) })
     }
     poll()
-  }, [paymentSuccess, storeId, tableId, clearCart])
+  }, [paymentSuccess, storeId, tableId, clearMyItems, searchParams])
 
   // Payment failed
   if (paymentFailed) {
@@ -101,13 +109,14 @@ export default function OrderConfirmPage() {
           <div className="flex flex-col items-center text-center space-y-3">
             <CheckCircle2 className="h-16 w-16 text-green-500" />
             <h1 className="text-2xl font-bold">
-              {lang === 'zh' ? '下单成功！' : 'Order Confirmed!'}
+              {paymentAmount != null
+                ? (lang === 'zh' ? '支付成功！' : 'Payment Successful!')
+                : (lang === 'zh' ? '下单成功！' : 'Order Confirmed!')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {lang === 'zh' ? '订单已确认' : 'Your order is being prepared'}
-              <span className="text-muted-foreground/60 ml-1">
-                / {lang === 'zh' ? 'Order Confirmed' : '订单已确认'}
-              </span>
+              {paymentAmount != null
+                ? (lang === 'zh' ? '感谢您的支付' : 'Thank you for your payment')
+                : (lang === 'zh' ? '订单已确认' : 'Your order is being prepared')}
             </p>
           </div>
 
@@ -134,16 +143,19 @@ export default function OrderConfirmPage() {
                         <p className="text-xs text-muted-foreground ml-5">{item.remark}</p>
                       )}
                     </div>
-                    <span className="text-muted-foreground">{formatPriceUSD(item.price * item.quantity)}</span>
+                    <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               <div className="border-t pt-3 flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  {lang === 'zh' ? '总金额' : 'Total Amount'}
-                  <span className="text-muted-foreground/60 ml-1">/ {lang === 'zh' ? 'Total' : '总金额'}</span>
+                  {paymentAmount != null
+                    ? (lang === 'zh' ? '已付金额' : 'Amount Paid')
+                    : (lang === 'zh' ? '总金额' : 'Total Amount')}
                 </span>
-                <span className="text-xl font-bold text-primary">{formatPriceUSD(paidOrder.totalPrice)}</span>
+                <span className="text-xl font-bold text-primary">
+                  {formatPriceUSD(paymentAmount ?? paidOrder.totalPrice)}
+                </span>
               </div>
             </div>
           ) : orderTimeout ? (
@@ -162,8 +174,8 @@ export default function OrderConfirmPage() {
             </div>
           )}
 
-          {/* Estimated wait time */}
-          {paidOrder && (
+          {/* Estimated wait time — only for new orders, not settlement payments */}
+          {paidOrder && paymentAmount == null && (
             <div className="bg-card rounded-2xl p-4 shadow-sm flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <Clock className="w-5 h-5 text-primary" />
@@ -235,7 +247,7 @@ export default function OrderConfirmPage() {
                 {paidOrder.items.map((item, idx) => (
                   <div key={idx} className="flex justify-between text-sm">
                     <span><span className="font-medium">{item.quantity}x</span> {item.name}</span>
-                    <span className="text-muted-foreground">{formatPriceUSD(item.price * item.quantity)}</span>
+                    <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
                   </div>
                 ))}
               </div>

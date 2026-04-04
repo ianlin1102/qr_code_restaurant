@@ -155,6 +155,8 @@
     "storeId": "Store ID",
     "username": "Username",
     "password": "Password",
+    "usernamePlaceholder": "Enter username",
+    "passwordPlaceholder": "Enter password",
     "submit": "Login",
     "submitting": "Logging in..."
   },

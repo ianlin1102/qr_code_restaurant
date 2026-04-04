@@ -202,17 +202,18 @@ function DesktopTable({
                         />
                       </TableCell>
                       <TableCell>
-                        {item.options && item.options.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {item.options.map(opt => (
+                        <button type="button" onClick={() => onEdit(item)}
+                          className="flex flex-wrap gap-1 hover:opacity-70 transition-opacity cursor-pointer text-left">
+                          {item.options && item.options.length > 0 ? (
+                            item.options.map(opt => (
                               <Badge key={opt.id} variant="secondary" className="text-xs">
                                 {localized(opt, lang)}({opt.choices.length})
                               </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">&mdash;</span>
-                        )}
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">&mdash;</span>
+                          )}
+                        </button>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5">
@@ -292,11 +293,12 @@ function MobileCards({
                     <span className="font-mono text-sm font-semibold shrink-0">{formatPriceUSD(item.price)}</span>
                   </div>
                   {item.options && item.options.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <button type="button" onClick={() => onEdit(item)}
+                      className="flex flex-wrap gap-1 mt-1 hover:opacity-70 transition-opacity">
                       {item.options.map(opt => (
                         <Badge key={opt.id} variant="secondary" className="text-xs">{localized(opt, lang)}({opt.choices.length})</Badge>
                       ))}
-                    </div>
+                    </button>
                   )}
                   <div className="flex items-center justify-between mt-2">
                     <Switch checked={item.available} onCheckedChange={() => onToggleAvailable(item)} />

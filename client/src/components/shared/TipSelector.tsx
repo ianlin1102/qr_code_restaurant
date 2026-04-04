@@ -1,27 +1,47 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
+export type TipSelection =
+  | { type: 'percent'; pct: number }
+  | { type: 'custom'; amount: number }
+
 const TIP_PRESETS = [15, 18, 20]
 
-export default function TipSelector({ baseAmount, tipPct, onSelect, loadingTip }: {
+export default function TipSelector({ baseAmount, selected, onSelect, loadingTip }: {
   baseAmount: number
-  tipPct: number | null
-  onSelect: (pct: number | null) => void
+  selected: TipSelection | null
+  onSelect: (tip: TipSelection | null) => void
   loadingTip: boolean
 }) {
   const { t } = useTranslation('customer')
+  const [customOpen, setCustomOpen] = useState(false)
+  const [customVal, setCustomVal] = useState('')
+
+  const isPreset = (pct: number) =>
+    selected?.type === 'percent' && selected.pct === pct
+
+  const handleCustomConfirm = () => {
+    const dollars = parseFloat(customVal)
+    if (!isNaN(dollars) && dollars > 0) {
+      onSelect({ type: 'custom', amount: Math.round(dollars * 100) })
+    } else {
+      onSelect(null)
+    }
+  }
+
   return (
     <div className="bg-card rounded-2xl p-4 shadow-sm mb-4 relative">
       <p className="text-sm font-semibold mb-3">{t('checkout.tip')}</p>
       {loadingTip && <Loader2 className="h-4 w-4 animate-spin absolute right-4 top-4" />}
       <div className="grid grid-cols-4 gap-2">
         {TIP_PRESETS.map(pct => (
-          <button key={pct} onClick={() => onSelect(pct)}
+          <button key={pct} onClick={() => { setCustomOpen(false); onSelect({ type: 'percent', pct }) }}
             className={cn(
               'rounded-xl py-2.5 min-h-[48px] text-center transition-colors',
-              tipPct === pct
+              isPreset(pct)
                 ? 'bg-primary text-white font-medium'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             )}>
@@ -31,16 +51,42 @@ export default function TipSelector({ baseAmount, tipPct, onSelect, loadingTip }
             </span>
           </button>
         ))}
-        <button onClick={() => onSelect(null)}
+        <button onClick={() => setCustomOpen(prev => !prev)}
           className={cn(
             'rounded-xl py-2.5 min-h-[48px] text-center transition-colors text-sm',
-            tipPct === null
+            selected?.type === 'custom'
               ? 'bg-primary text-white font-medium'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           )}>
-          {t('checkout.tipCustom')}
+          {selected?.type === 'custom'
+            ? formatPriceUSD(selected.amount)
+            : t('checkout.tipCustom')}
         </button>
       </div>
+
+      {customOpen && (
+        <div className="flex items-center gap-2 mt-3">
+          <span className="text-sm font-medium text-muted-foreground">$</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            value={customVal}
+            onChange={e => setCustomVal(e.target.value)}
+            placeholder="0.00"
+            className="flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={handleCustomConfirm}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+          >
+            {t('checkout.tipConfirm', 'OK')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

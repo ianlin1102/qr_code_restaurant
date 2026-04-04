@@ -7,18 +7,15 @@ import { useT } from '@/i18n/useT'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import type { Permission } from '@qr-order/shared'
 
-type NavKey = 'orders' | 'floorPlan' | 'menu' | 'categories' | 'tables' | 'coupons' | 'staff' | 'analytics' | 'settings'
+type NavKey = 'orders' | 'floorPlan' | 'menu' | 'categories' | 'tables' | 'coupons' | 'staff' | 'analytics' | 'settings' | 'more' | 'clock'
 
 const NAV_ITEMS: { to: string; navKey: NavKey; icon: string; perm?: Permission }[] = [
   { to: '/admin/dashboard', navKey: 'orders', icon: '📋', perm: 'orders:read' },
   { to: '/admin/floor-plan', navKey: 'floorPlan', icon: '🗺️', perm: 'tables:read' },
   { to: '/admin/menu', navKey: 'menu', icon: '🍜', perm: 'menu:read' },
-  { to: '/admin/categories', navKey: 'categories', icon: '📂', perm: 'menu:read' },
   { to: '/admin/tables', navKey: 'tables', icon: '🪑', perm: 'tables:read' },
-  { to: '/admin/coupons', navKey: 'coupons', icon: '🎟️', perm: 'billing:read' },
-  { to: '/admin/staff', navKey: 'staff', icon: '👥', perm: 'staff:manage' },
-  { to: '/admin/analytics', navKey: 'analytics', icon: '📊', perm: 'analytics:read' },
-  { to: '/admin/settings', navKey: 'settings', icon: '⚙️' },  // everyone can see settings
+  { to: '/admin/clock', navKey: 'clock', icon: '⏰' },
+  { to: '/admin/more', navKey: 'more', icon: '📦' },
 ]
 
 export default function AdminLayout() {
@@ -62,7 +59,7 @@ export default function AdminLayout() {
           <h1 className="text-base font-bold font-display">{t.nav.title}</h1>
         </div>
         <button onClick={toggle}
-          className="px-2.5 py-1 rounded-lg border border-border text-xs font-medium hover:bg-card transition-colors">
+          className="min-h-[44px] min-w-[44px] px-2.5 rounded-lg border border-border text-xs font-medium hover:bg-card transition-colors">
           {lang === 'zh' ? 'EN' : '中文'}
         </button>
       </div>
@@ -171,7 +168,7 @@ export default function AdminLayout() {
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-4 py-3 text-sm transition-colors',
+                    'flex items-center gap-3 px-4 py-3 text-sm transition-colors min-h-[44px]',
                     isActive
                       ? 'bg-card font-semibold text-primary'
                       : 'text-gray-600 hover:bg-card hover:text-gray-900'

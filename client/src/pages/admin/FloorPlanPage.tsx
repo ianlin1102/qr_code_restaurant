@@ -85,7 +85,7 @@ export default function FloorPlanPage() {
       <div className="md:hidden flex border-b bg-card">
         {(['map', 'orders'] as const).map(panel => (
           <button key={panel} onClick={() => setMobilePanel(panel)}
-            className={cn('flex-1 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors',
+            className={cn('flex-1 px-3 py-2.5 min-h-[44px] text-sm font-medium border-b-2 transition-colors',
               mobilePanel === panel ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
             {panel === 'map' ? t.floorPlan.allZone : t.activeOrders.title}
           </button>
@@ -98,7 +98,7 @@ export default function FloorPlanPage() {
           <div className="flex border-b bg-card">
             {(['orders', 'waitlist'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                className={cn('flex-1 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                className={cn('flex-1 px-3 py-2.5 min-h-[44px] text-sm font-medium border-b-2 transition-colors',
                   activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
                 {tab === 'orders' ? t.activeOrders.title : t.waitlist.title}
               </button>
@@ -136,7 +136,7 @@ export default function FloorPlanPage() {
         <div className="flex border-b">
           {(['orders', 'waitlist'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={cn('flex-1 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors',
+              className={cn('flex-1 px-3 py-2.5 min-h-[44px] text-sm font-medium border-b-2 transition-colors',
                 activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
               {tab === 'orders' ? t.activeOrders.title : t.waitlist.title}
             </button>

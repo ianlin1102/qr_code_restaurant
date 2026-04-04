@@ -129,11 +129,11 @@ export default function StaffManagePage() {
       {/* Tab switcher */}
       <div className="flex gap-1 border-b">
         <button onClick={() => setTab('staff')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'staff' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}>
+          className={`px-4 py-2 min-h-[44px] text-sm font-medium border-b-2 transition-colors ${tab === 'staff' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}>
           {t.staff.title}
         </button>
         <button onClick={() => setTab('roles')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'roles' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}>
+          className={`px-4 py-2 min-h-[44px] text-sm font-medium border-b-2 transition-colors ${tab === 'roles' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}>
           {t.roles.title}
         </button>
       </div>

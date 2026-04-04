@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useT } from '@/i18n/useT'
 import {
-  Armchair, Plus, Printer, ArrowLeftRight, Split,
+  Armchair, Plus, Printer, ArrowLeftRight,
   CheckCircle2, Loader2, QrCode, Pencil, ChevronDown,
 } from 'lucide-react'
-import { api } from '@/services/api'
+import { api, type SessionSummary } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { formatPriceUSD } from '@/lib/format'
 import { localized } from '@/lib/i18n-utils'
@@ -15,11 +15,10 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import CloseTableDialog from '@/components/table/CloseTableDialog'
 import TransferTableDialog from '@/components/table/TransferTableDialog'
-import SplitBillDialog from '@/components/table/SplitBillDialog'
 import BillSettleDialog from '@/components/table/BillSettleDialog'
 import TableCrudDialog from '@/components/table/TableCrudDialog'
 import OrderingSheet from '@/components/order/OrderingSheet'
-import type { Table, Order, OrderItem } from '@qr-order/shared'
+import type { Table, Order, OrderItem, Store } from '@qr-order/shared'
 
 const POLL = 10_000
 
@@ -46,9 +45,9 @@ export default function TablesPage() {
   const [activeZone, setActiveZone] = useState<string>('__base__')
 
   const [transferOpen, setTransferOpen] = useState(false)
-  const [splitOpen, setSplitOpen] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
+  const [store, setStore] = useState<Store | null>(null)
+  const [viewTab, setViewTab] = useState<'current' | 'history'>('current')
   const [crudOpen, setCrudOpen] = useState(false)
   const [baseUrl, setBaseUrl] = useState(() => {
     const saved = localStorage.getItem('qr-base-url')
@@ -58,6 +57,7 @@ export default function TablesPage() {
   const [mobileDropdown, setMobileDropdown] = useState(false)
   const [orderingOpen, setOrderingOpen] = useState(false)
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false)
+  const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!storeId) return
@@ -68,6 +68,16 @@ export default function TablesPage() {
   }, [storeId, showDisabled])
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL); return () => clearInterval(id) }, [fetchData, showDisabled])
+  useEffect(() => { if (storeId) api.getStore(storeId).then(setStore).catch(() => {}) }, [storeId])
+
+  // Fetch session summary when a table with active session is selected (or on poll)
+  const fetchSession = useCallback(() => {
+    if (!storeId || !selected?.currentSessionId) { setSessionSummary(null); return }
+    api.getSessionSummary(storeId, selected.currentSessionId).then(setSessionSummary).catch(() => setSessionSummary(null))
+  }, [storeId, selected?.currentSessionId])
+  useEffect(() => { fetchSession() }, [fetchSession])
+  // Also refresh session summary when orders change (poll picks up new orders)
+  useEffect(() => { if (selected?.currentSessionId) fetchSession() }, [orders, fetchSession, selected?.currentSessionId])
 
   // Auto-select table from ?select= query param (from floor plan → table link)
   useEffect(() => {
@@ -103,21 +113,37 @@ export default function TablesPage() {
   }, [tables, activeZone])
 
   // Derived (memoized)
-  const activeOrders = useMemo(() => selected
-    ? orders.filter(o => o.tableId === selected.id && o.status !== 'served')
-    : [], [selected, orders])
-  const historyOrders = useMemo(() => selected
-    ? orders.filter(o => o.tableId === selected.id && o.status === 'served')
-    : [], [selected, orders])
-  const displayOrders = showHistory ? historyOrders : activeOrders
-  const allItems = useMemo(() => activeOrders.flatMap(o => o.items), [activeOrders])
-  const subtotal = useMemo(() => activeOrders.reduce((s, o) => s + o.totalPrice, 0), [activeOrders])
-  const currentOrder = activeOrders[0] ?? null
-  const elapsedMs = activeOrders.length
-    ? Date.now() - new Date(activeOrders[activeOrders.length - 1].createdAt).getTime() : 0
+  // Current session: ONLY orders linked to the active session
+  const sessionOrders = useMemo(() => {
+    if (!selected?.currentSessionId) return [] // no active session → no current orders
+    return orders.filter(o =>
+      o.tableId === selected.id && o.sessionId === selected.currentSessionId && o.status !== 'closed',
+    )
+  }, [selected, orders])
+  // History: all other orders for this table
+  const pastOrders = useMemo(() => {
+    if (!selected) return []
+    const sid = selected.currentSessionId
+    return orders
+      .filter(o => o.tableId === selected.id && (!sid || o.sessionId !== sid))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }, [selected, orders])
+  const displayOrders = viewTab === 'history' ? pastOrders : sessionOrders
+  const allItems = useMemo(() => sessionOrders.flatMap(o => o.items), [sessionOrders])
+  const paidItemSet = useMemo(() => new Set(sessionSummary?.paidItemIds ?? []), [sessionSummary?.paidItemIds])
+  const currentOrder = sessionOrders[0] ?? null
+  // Prices from server session summary (single source of truth)
+  const subtotal = sessionSummary?.netDue ?? sessionOrders.reduce((s, o) => s + o.totalPrice, 0)
+  const tax = sessionSummary?.tax ?? 0
+  const serviceFee = sessionSummary?.serviceFee ?? 0
+  const totalWithTax = sessionSummary?.totalWithTax ?? subtotal
+  const totalPaid = sessionSummary?.totalPaid ?? 0
+  const remaining = sessionSummary?.remaining ?? totalWithTax
+  const elapsedMs = sessionOrders.length
+    ? Date.now() - new Date(sessionOrders[sessionOrders.length - 1].createdAt).getTime() : 0
 
-  const handleSelect = (tb: Table) => { setSelected(tb); setShowHistory(false); setMobileDropdown(false) }
-  const refresh = useCallback(() => { fetchData(); setCloseOpen(false); setTransferOpen(false); setSplitOpen(false) }, [fetchData])
+  const handleSelect = (tb: Table) => { setSelected(tb); setViewTab('current'); setMobileDropdown(false) }
+  const refresh = useCallback(() => { fetchData(); fetchSession(); setCloseOpen(false); setTransferOpen(false) }, [fetchData, fetchSession])
 
   const updateBaseUrl = (url: string) => {
     setBaseUrl(url)
@@ -272,55 +298,93 @@ export default function TablesPage() {
             <Input placeholder={t.tables.searchMenu} className="w-full sm:w-48" />
           </div>
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-400 font-semibold tracking-wide">
-                {showHistory ? t.tables.orderHistory : t.tables.currentItems}
-              </p>
-              <button onClick={() => setShowHistory(h => !h)} className="text-sm text-blue-600 hover:underline">
-                {showHistory ? t.tables.showCurrent : t.tables.showHistory}
+            <div className="flex gap-1 border-b mb-3">
+              <button onClick={() => setViewTab('current')}
+                className={`flex-1 py-2 text-xs font-medium border-b-2 transition-colors min-h-[44px] ${viewTab === 'current' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}>
+                {lang === 'zh' ? '当前' : 'Current'} ({sessionOrders.length})
+              </button>
+              <button onClick={() => setViewTab('history')}
+                className={`flex-1 py-2 text-xs font-medium border-b-2 transition-colors min-h-[44px] ${viewTab === 'history' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}>
+                {lang === 'zh' ? '历史' : 'History'} ({pastOrders.length})
               </button>
             </div>
             {displayOrders.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-12">
-                {showHistory ? t.tables.noPastOrders : t.tables.noActiveOrders}
+                {viewTab === 'history' ? t.tables.noPastOrders : t.tables.noActiveOrders}
               </p>
-            ) : displayOrders.flatMap(o => o.items.map((it, i) => (
-              <div key={`${o.id}-${i}`} className="bg-card rounded-xl p-3 sm:p-4 mb-2 sm:mb-3 shadow-sm hover:shadow-md transition-shadow flex gap-3">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
-                  {menuItemMap[it.menuItemId] ? (
-                    <img src={menuItemMap[it.menuItemId]} alt={localized(it, lang)} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-2xl text-muted-foreground">{localized(it, lang).charAt(0)}</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold">{localized(it, lang)}</p>
-                  {it.selectedOptions && it.selectedOptions.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {it.selectedOptions.map((o, idx) => (
-                        <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
-                          {(o.optionName || o.optionNameEn || "") || ''}{(o.optionName || o.optionNameEn || "") ? ': ' : ''}{(o.choiceName || o.choiceNameEn || "")}
-                        </span>
-                      ))}
+            ) : viewTab === 'history' ? (
+              // History: grouped by order with date
+              displayOrders.map(o => {
+                const oTax = Math.round(o.totalPrice * (store?.taxRate ?? 0) / 100)
+                const oFee = Math.round(o.totalPrice * (store?.serviceFeeRate ?? 0) / 100)
+                return (
+                  <div key={o.id} className="mb-3 border rounded-lg p-3">
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                      <span className="font-medium">#{o.orderNumber}</span>
+                      <span>{new Date(o.createdAt).toLocaleDateString(lang, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                  )}
-                  {it.remark && <p className="text-sm text-muted-foreground italic">{t.tables.note}: {it.remark}</p>}
-                  <p className="text-xs text-gray-400 mt-1">{t.tables.qty}: {it.quantity}</p>
+                    {o.items.map((it, i) => (
+                      <div key={i} className="flex justify-between text-sm py-0.5">
+                        <span>{it.quantity}x {localized(it, lang)}</span>
+                        <span className="text-muted-foreground">{formatPriceUSD((it.price + (it.selectedOptions ?? []).reduce((s, op) => s + op.priceAdjust, 0)) * it.quantity)}</span>
+                      </div>
+                    ))}
+                    <div className="border-t mt-1 pt-1 space-y-0.5 text-xs text-muted-foreground">
+                      {oTax > 0 && <div className="flex justify-between"><span>{t.tables.taxFee}</span><span>+{formatPriceUSD(oTax)}</span></div>}
+                      {oFee > 0 && <div className="flex justify-between"><span>{t.tables.serviceFee}</span><span>+{formatPriceUSD(oFee)}</span></div>}
+                      <div className="flex justify-between text-sm font-medium">
+                        <span>{t.common.total}</span>
+                        <span>{formatPriceUSD(o.totalPrice + oTax + oFee)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : displayOrders.flatMap(o => o.items.map((it, i) => {
+              const itemKey = `${o.id}:${i}`
+              // Check paid status: exact match or partial qty match (key format "orderId:idx" or "orderId:idx:qty")
+              const isPaid = paidItemSet.has(itemKey) || [...paidItemSet].some(k => k.startsWith(itemKey + ':'))
+              return (
+                <div key={`${o.id}-${i}`} className={`bg-card rounded-xl p-3 sm:p-4 mb-2 sm:mb-3 shadow-sm hover:shadow-md transition-shadow flex gap-3 ${isPaid ? 'opacity-40' : ''}`}>
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
+                    {menuItemMap[it.menuItemId] ? (
+                      <img src={menuItemMap[it.menuItemId]} alt={localized(it, lang)} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-2xl text-muted-foreground">{localized(it, lang).charAt(0)}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{localized(it, lang)}</p>
+                      {isPaid && <span className="text-[10px] bg-green-100 text-green-700 rounded px-1.5 py-0.5">{lang === 'zh' ? '已付' : 'Paid'}</span>}
+                    </div>
+                    {it.selectedOptions && it.selectedOptions.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {it.selectedOptions.map((opt, idx) => (
+                          <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
+                            {(opt.optionName || opt.optionNameEn || '')}{(opt.optionName || opt.optionNameEn) ? ': ' : ''}{(opt.choiceName || opt.choiceNameEn || '')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {it.remark && <p className="text-sm text-muted-foreground italic">{t.tables.note}: {it.remark}</p>}
+                    <p className="text-xs text-gray-400 mt-1">{t.tables.qty}: {it.quantity}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`font-semibold ${isPaid ? 'text-green-600 line-through' : 'text-primary'}`}>{formatPriceUSD(itemPrice(it))}</p>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="font-semibold text-primary">{formatPriceUSD(itemPrice(it))}</p>
-                </div>
-              </div>
-            )))}
-            {!showHistory && activeOrders.length > 0 && (
-              <div className="bg-card rounded-xl p-3 sm:p-4 mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
+              )
+            }))}
+            {viewTab === 'current' && sessionOrders.length > 0 && (
+              <div className="bg-card rounded-xl p-3 sm:p-4 mt-4 grid grid-cols-3 gap-3 sm:gap-4 text-center">
                 <div>
                   <p className="text-xs text-gray-400">{t.tables.totalItems}</p>
                   <p className="text-lg font-bold">{allItems.reduce((s, it) => s + it.quantity, 0)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">{t.common.subtotal}</p>
-                  <p className="text-lg font-bold">{formatPriceUSD(subtotal)}</p>
+                  <p className="text-xs text-gray-400">{lang === 'zh' ? '待付' : 'Due'}</p>
+                  <p className="text-lg font-bold text-primary">{formatPriceUSD(remaining)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">{t.tables.time}</p>
@@ -332,10 +396,18 @@ export default function TablesPage() {
 
           {/* ── Mobile: Action buttons (visible on small screens when right sidebar is hidden) ── */}
           <div className="md:hidden border-t bg-card p-3 space-y-2">
-            {activeOrders.length > 0 && (
-              <div className="flex justify-between items-center text-sm px-1">
-                <span className="text-muted-foreground">{t.common.total}</span>
-                <span className="font-bold text-primary text-lg">{formatPriceUSD(Math.round(subtotal * 1.15))}</span>
+            {sessionOrders.length > 0 && (
+              <div className="space-y-1 text-sm px-1">
+                {totalPaid > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{lang === 'zh' ? '已付' : 'Paid'}</span>
+                    <span className="text-green-600">−{formatPriceUSD(totalPaid)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{totalPaid > 0 ? (lang === 'zh' ? '待付' : 'Remaining') : t.common.total}</span>
+                  <span className="font-bold text-primary text-lg">{formatPriceUSD(remaining)}</span>
+                </div>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
@@ -344,6 +416,7 @@ export default function TablesPage() {
               <Plus className="size-4 mr-1" />{t.tables.addItems}
             </Button>
             <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
+              disabled={!currentOrder}
               onClick={() => currentOrder && api.reprintOrder(storeId, currentOrder.id)}>
               <Printer className="size-4 mr-1" />{t.tables.printBill}
             </Button>
@@ -351,22 +424,13 @@ export default function TablesPage() {
               onClick={() => setTransferOpen(true)}>
               <ArrowLeftRight className="size-4 mr-1" />{t.tables.transfer}
             </Button>
-            <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
-              onClick={() => setSplitOpen(true)}>
-              <Split className="size-4 mr-1" />{t.tables.splitBill}
-            </Button>
             <Button size="sm" className="flex-1 min-w-[120px]" variant="outline"
               onClick={handlePrintQr}>
               <QrCode className="size-4 mr-1" />{t.tables.printQr}
             </Button>
-            {selected?.currentSessionId && (
-              <Button size="sm" variant="outline" className="flex-1 min-w-[120px]"
-                onClick={() => setSessionDialogOpen(true)}>
-                <CheckCircle2 className="size-4 mr-1" />{t.session?.title || t.bill?.title || 'Session'}
-              </Button>
-            )}
             <Button size="sm" className="w-full bg-green-500 hover:bg-green-600"
-              disabled={!currentOrder} onClick={() => setCloseOpen(true)}>
+              disabled={!currentOrder}
+              onClick={() => selected?.currentSessionId ? setSessionDialogOpen(true) : setCloseOpen(true)}>
               <CheckCircle2 className="size-4 mr-1" />{t.tables.checkout}
             </Button>
             </div>
@@ -383,12 +447,8 @@ export default function TablesPage() {
           <div className="flex flex-col gap-3 p-4">
             <ActionBtn icon={Plus} label={t.tables.addItems} primary
               onClick={() => setOrderingOpen(true)} />
-            <ActionBtn icon={Printer} label={t.tables.printBill} onClick={() => currentOrder && api.reprintOrder(storeId, currentOrder.id)} />
+            <ActionBtn icon={Printer} label={t.tables.printBill} disabled={!currentOrder} onClick={() => currentOrder && api.reprintOrder(storeId, currentOrder.id)} />
             <ActionBtn icon={ArrowLeftRight} label={t.tables.transfer} onClick={() => setTransferOpen(true)} />
-            <ActionBtn icon={Split} label={t.tables.splitBill} onClick={() => setSplitOpen(true)} />
-            {selected?.currentSessionId && (
-              <ActionBtn icon={CheckCircle2} label={t.session?.title || t.bill?.title || 'Session'} onClick={() => setSessionDialogOpen(true)} />
-            )}
             <ActionBtn icon={QrCode} label={t.tables.printQr} onClick={handlePrintQr} />
             {selected?.status !== 'occupied' && (
               <Button variant="outline" size="sm"
@@ -400,7 +460,7 @@ export default function TablesPage() {
                     setSelected(updated)
                   } catch (e) { console.error(e) }
                 }}>
-                🔄 New QR
+                🔄 {lang === 'zh' ? '重新生成 QR' : 'New QR'}
               </Button>
             )}
             {selected?.enabled && selected.status !== 'occupied' && (
@@ -421,13 +481,22 @@ export default function TablesPage() {
           </div>
           <div className="flex-1" />
           <div className="border-t p-4 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-gray-500">{t.tables.serviceFee}</span><span>+{formatPriceUSD(Math.round(subtotal * 0.1))}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">{t.tables.taxFee}</span><span>+{formatPriceUSD(Math.round(subtotal * 0.05))}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">{t.common.subtotal}</span><span>{formatPriceUSD(subtotal)}</span></div>
+            {serviceFee > 0 && (
+              <div className="flex justify-between"><span className="text-gray-500">{t.tables.serviceFee}</span><span>+{formatPriceUSD(serviceFee)}</span></div>
+            )}
+            {tax > 0 && (
+              <div className="flex justify-between"><span className="text-gray-500">{t.tables.taxFee}</span><span>+{formatPriceUSD(tax)}</span></div>
+            )}
+            {totalPaid > 0 && (
+              <div className="flex justify-between"><span className="text-green-600">{lang === 'zh' ? '已付' : 'Paid'}</span><span className="text-green-600">−{formatPriceUSD(totalPaid)}</span></div>
+            )}
             <div className="flex justify-between text-xl font-bold">
-              <span>{t.common.total}</span><span className="text-primary">{formatPriceUSD(Math.round(subtotal * 1.15))}</span>
+              <span>{totalPaid > 0 ? (lang === 'zh' ? '待付' : 'Remaining') : t.common.total}</span><span className="text-primary">{formatPriceUSD(remaining)}</span>
             </div>
             <Button className="w-full py-4 text-lg font-bold bg-green-500 hover:bg-green-600 mt-3"
-              disabled={!currentOrder} onClick={() => setCloseOpen(true)}>
+              disabled={!currentOrder}
+              onClick={() => selected?.currentSessionId ? setSessionDialogOpen(true) : setCloseOpen(true)}>
               <CheckCircle2 className="size-5 mr-2" />{t.tables.checkout}
             </Button>
           </div>
@@ -438,12 +507,8 @@ export default function TablesPage() {
       <CloseTableDialog table={selected} storeId={storeId} open={closeOpen}
         onOpenChange={setCloseOpen} onClosed={() => { setSelected(null); refresh() }} />
       {currentOrder && (
-        <>
-          <TransferTableDialog open={transferOpen} onClose={() => setTransferOpen(false)}
-            order={currentOrder} storeId={storeId} onTransferred={refresh} />
-          <SplitBillDialog open={splitOpen} onClose={() => setSplitOpen(false)}
-            order={currentOrder} storeId={storeId} />
-        </>
+        <TransferTableDialog open={transferOpen} onClose={() => setTransferOpen(false)}
+          order={currentOrder} storeId={storeId} onTransferred={refresh} />
       )}
       {sessionDialogOpen && selected?.currentSessionId && storeId && (
         <BillSettleDialog
@@ -452,6 +517,7 @@ export default function TablesPage() {
           storeId={storeId}
           sessionId={selected.currentSessionId}
           t={t}
+          lang={lang}
         />
       )}
       <TableCrudDialog table={editingTable} storeId={storeId} open={crudOpen}
@@ -471,13 +537,14 @@ export default function TablesPage() {
   )
 }
 
-function ActionBtn({ icon: Icon, label, primary, onClick }: {
-  icon: typeof Plus; label: string; primary?: boolean; onClick?: () => void
+function ActionBtn({ icon: Icon, label, primary, disabled, onClick }: {
+  icon: typeof Plus; label: string; primary?: boolean; disabled?: boolean; onClick?: () => void
 }) {
   return (
-    <button onClick={onClick}
+    <button onClick={onClick} disabled={disabled}
       className={cn('w-full flex items-center gap-3 rounded-xl py-3 px-4 text-sm font-medium transition-colors',
-        primary ? 'bg-primary text-white hover:bg-primary/90' : 'border hover:bg-background')}>
+        primary ? 'bg-primary text-white hover:bg-primary/90' : 'border hover:bg-background',
+        disabled && 'opacity-40 cursor-not-allowed')}>
       <Icon className="size-4" />{label}
     </button>
   )

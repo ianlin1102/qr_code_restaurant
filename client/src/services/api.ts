@@ -1,7 +1,7 @@
-import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Session, Payment, RoleDefinition, CartItem } from '@qr-order/shared'
+import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Session, Payment, RoleDefinition, CartItem, TimeEntry } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
-type SessionSummary = Session & { orders: Order[]; payments: Payment[]; remaining: number; isPaid: boolean; netDue: number }
+export type SessionSummary = Session & { orders: Order[]; payments: Payment[]; remaining: number; isPaid: boolean; netDue: number; tax: number; serviceFee: number; totalWithTax: number }
 
 const BASE = '/api'
 
@@ -194,10 +194,18 @@ export const api = {
     ),
 
   // Checkout for session (pay-later: pay remaining balance)
-  createCheckoutForSession: (storeId: string, sessionId: string, amount: number, paidBy?: string) =>
+  createCheckoutForSession: (storeId: string, sessionId: string, amount: number, settlement?: {
+    type: 'by-item'; itemKeys: string[]
+  } | {
+    type: 'by-percent'; percent: number
+  }) =>
     fetchJSON<{ clientSecret: string; amount: number }>(
       `/stores/${storeId}/checkout`,
-      { method: 'POST', body: JSON.stringify({ sessionId, amount, paidBy }) },
+      { method: 'POST', body: JSON.stringify({
+        sessionId, amount,
+        ...(settlement?.type === 'by-item' ? { settlementType: 'by-item', itemKeys: settlement.itemKeys } : {}),
+        ...(settlement?.type === 'by-percent' ? { settlementType: 'by-percent', percent: settlement.percent } : {}),
+      }) },
     ),
 
   // Analytics
@@ -254,7 +262,30 @@ export const api = {
   getStaff: (storeId: string) =>
     fetchJSON<AuthUser[]>(`/stores/${storeId}/staff`),
 
-  createStaff: (storeId: string, data: { username: string; password: string; role: string }) =>
+  // Clock In/Out
+  verifyClockPin: (storeId: string, pin: string) =>
+    fetchJSON<{ user: { id: string; username: string }; clockedIn: boolean; currentEntry?: TimeEntry }>(
+      `/stores/${storeId}/clock/pin`, { method: 'POST', body: JSON.stringify({ pin }) },
+    ),
+
+  clockIn: (storeId: string, pin: string) =>
+    fetchJSON<TimeEntry>(`/stores/${storeId}/clock/in`, {
+      method: 'POST', body: JSON.stringify({ pin }),
+    }),
+
+  clockOut: (storeId: string, pin: string) =>
+    fetchJSON<TimeEntry>(`/stores/${storeId}/clock/out`, {
+      method: 'POST', body: JSON.stringify({ pin }),
+    }),
+
+  getTimeEntries: (storeId: string, params?: { userId?: string; startDate?: string; endDate?: string }) => {
+    const qs = params ? new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v))
+    ).toString() : ''
+    return fetchJSON<TimeEntry[]>(`/stores/${storeId}/clock/entries${qs ? '?' + qs : ''}`)
+  },
+
+  createStaff: (storeId: string, data: { username: string; password: string; role: string; clockPin?: string }) =>
     fetchJSON<AuthUser>(`/stores/${storeId}/staff`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -312,13 +343,45 @@ export const api = {
 
   // Shared cart (syncs across devices for same table)
   getSessionCart: (storeId: string, sessionId: string) =>
-    fetchJSON<CartItem[]>(`/stores/${storeId}/sessions/${sessionId}/cart`),
+    fetchJSON<{ items: CartItem[]; cartVersion: number; lastCartSubmitAt: string | null }>(
+      `/stores/${storeId}/sessions/${sessionId}/cart`,
+    ),
 
-  updateSessionCart: (storeId: string, sessionId: string, items: CartItem[]) =>
+  updateSessionCart: (storeId: string, sessionId: string, deviceId: string, items: CartItem[]) =>
     fetchJSON<{ ok: boolean }>(`/stores/${storeId}/sessions/${sessionId}/cart`, {
       method: 'PUT',
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ deviceId, items }),
     }),
+
+  submitSessionCart: (storeId: string, sessionId: string, cartVersion: number, customerName?: string) =>
+    fetchJSON<{ order?: Order; items?: CartItem[]; paymentMode: string; tableId?: string }>(
+      `/stores/${storeId}/sessions/${sessionId}/submit-cart`,
+      { method: 'POST', body: JSON.stringify({ cartVersion, customerName }) },
+    ),
+
+  // Settlement
+  startSettlement: (storeId: string, sessionId: string, mode: 'by-item' | 'by-percent') =>
+    fetchJSON<Session>(`/stores/${storeId}/sessions/${sessionId}/start-settlement`, {
+      method: 'PATCH', body: JSON.stringify({ mode }),
+    }),
+
+  payByItems: (storeId: string, sessionId: string, itemKeys: string[]) =>
+    fetchJSON<{ amount: number; tax: number; serviceFee: number }>(
+      `/stores/${storeId}/sessions/${sessionId}/pay-items`,
+      { method: 'POST', body: JSON.stringify({ itemKeys }) },
+    ),
+
+  payByPercent: (storeId: string, sessionId: string, percent: number) =>
+    fetchJSON<{ amount: number; tax: number; serviceFee: number }>(
+      `/stores/${storeId}/sessions/${sessionId}/pay-percent`,
+      { method: 'POST', body: JSON.stringify({ percent }) },
+    ),
+
+  recordCashPayment: (storeId: string, sessionId: string, amount: number, receivedAmount: number) =>
+    fetchJSON<{ session: Session; payment: Payment; change: number }>(
+      `/stores/${storeId}/sessions/${sessionId}/cash-payment`,
+      { method: 'POST', body: JSON.stringify({ amount, receivedAmount }) },
+    ),
 
   // Roles
   getRoles: (storeId: string) =>

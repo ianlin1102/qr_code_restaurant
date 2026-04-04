@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid'
-import { sessionStore, paymentStore, orderStore, tableStore } from '../repositories/stores.js'
+import { sessionStore, paymentStore, orderStore, tableStore, storeStore } from '../repositories/stores.js'
 import type { Session, Payment, DiscountType, CartItem } from '@qr-order/shared'
 import logger from '../lib/logger.js'
 
@@ -95,15 +95,18 @@ export function addPayment(
 
   const newTotalPaid = session.totalPaid + amount
   const netDue = session.totalAmount - session.discountAmount
+  const tax = calcTax(storeId, netDue)
+  const fee = calcServiceFee(storeId, netDue)
+  const totalWithTax = netDue + tax + fee
   sessionStore.update(sessionId, { totalPaid: newTotalPaid })
 
   logger.info(
-    { sessionId, amount, totalPaid: newTotalPaid, netDue, paidBy },
+    { sessionId, amount, totalPaid: newTotalPaid, totalWithTax, paidBy },
     'payment recorded',
   )
 
   // Auto-close if fully paid and all orders served
-  if (newTotalPaid >= netDue) {
+  if (newTotalPaid >= totalWithTax) {
     const orders = session.orderIds
       .map(id => orderStore.getById(id)).filter(Boolean)
     const allServed = orders.every(o => o!.status === 'served')
@@ -125,14 +128,51 @@ export function getSessionSummary(storeId: string, sessionId: string) {
   const session = sessionStore.getById(sessionId)
   if (!session || session.storeId !== storeId) return null
 
-  const orders = session.orderIds
+  adoptOrphanedOrders(session)
+
+  const freshSession = sessionStore.getById(sessionId)!
+  const orders = freshSession.orderIds
     .map(id => orderStore.getById(id)).filter(Boolean)
   const payments = getPayments(sessionId)
-  const netDue = session.totalAmount - session.discountAmount
-  const remaining = Math.max(0, netDue - session.totalPaid)
-  const isPaid = session.totalPaid >= netDue && netDue > 0
+  const netDue = freshSession.totalAmount - freshSession.discountAmount
+  const tax = calcTax(storeId, netDue)
+  const serviceFee = calcServiceFee(storeId, netDue)
+  const totalWithTax = netDue + tax + serviceFee
+  const remaining = Math.max(0, totalWithTax - freshSession.totalPaid)
+  const isPaid = freshSession.totalPaid >= totalWithTax && totalWithTax > 0
 
-  return { ...session, orders, payments, remaining, isPaid, netDue }
+  return {
+    ...freshSession, orders, payments, remaining, isPaid,
+    netDue, tax, serviceFee, totalWithTax,
+  }
+}
+
+/** Link orders that belong to this table but have no sessionId */
+function adoptOrphanedOrders(session: Session): void {
+  const tableOrders = orderStore.getByField('tableId', session.tableId)
+  const orphans = tableOrders.filter(o =>
+    o.storeId === session.storeId && !o.sessionId &&
+    o.status !== 'closed',
+  )
+  if (orphans.length === 0) return
+
+  const newOrderIds = [...session.orderIds]
+  let addedTotal = 0
+  for (const o of orphans) {
+    orderStore.update(o.id, { sessionId: session.id })
+    if (!newOrderIds.includes(o.id)) {
+      newOrderIds.push(o.id)
+      addedTotal += o.totalPrice
+    }
+  }
+  sessionStore.update(session.id, {
+    orderIds: newOrderIds,
+    totalAmount: session.totalAmount + addedTotal,
+  })
+  logger.info(
+    { sessionId: session.id, adopted: orphans.length, addedTotal },
+    'adopted orphaned orders into session',
+  )
 }
 
 // ===== Coupon =====
@@ -183,24 +223,67 @@ export function removeCoupon(
   })!
 }
 
-// ===== Shared Cart (syncs across devices for same table) =====
+// ===== Shared Cart (per-device storage, syncs across devices for same table) =====
 
 export function getSessionCart(sessionId: string): CartItem[] {
   const session = sessionStore.getById(sessionId)
-  if (!session) return []
-  return session.pendingCart ?? []
+  if (!session || !session.pendingCart) return []
+  const cart = session.pendingCart
+  // Legacy migration: old format was CartItem[], new is Record<string, CartItem[]>
+  if (Array.isArray(cart)) return cart as unknown as CartItem[]
+  return Object.values(cart).flat()
 }
 
-export function updateSessionCart(sessionId: string, items: CartItem[]): void {
+export function updateDeviceCart(sessionId: string, deviceId: string, items: CartItem[]): void {
   const session = sessionStore.getById(sessionId)
   if (!session || session.status === 'closed') return
-  sessionStore.update(sessionId, { pendingCart: items })
+  const raw = session.pendingCart
+  const cart: Record<string, CartItem[]> = (raw && !Array.isArray(raw)) ? { ...raw } : {}
+  if (items.length === 0) {
+    delete cart[deviceId]
+  } else {
+    cart[deviceId] = items
+  }
+  sessionStore.update(sessionId, { pendingCart: cart })
 }
 
 export function clearSessionCart(sessionId: string): void {
   const session = sessionStore.getById(sessionId)
   if (!session) return
-  sessionStore.update(sessionId, { pendingCart: [] })
+  sessionStore.update(sessionId, { pendingCart: {} })
+}
+
+/**
+ * Atomically submit the entire shared cart as an order.
+ * Uses cartVersion for optimistic locking to prevent duplicate submissions.
+ */
+export function submitSessionCart(
+  storeId: string, sessionId: string, expectedVersion: number,
+): { items: CartItem[]; paymentMode: 'pay-first' | 'pay-later'; tableId: string } | { error: string; status?: number } {
+  const session = sessionStore.getById(sessionId)
+  if (!session || session.storeId !== storeId) return { error: 'Session not found', status: 404 }
+  if (session.status === 'closed') return { error: 'Session is closed', status: 400 }
+
+  if ((session.cartVersion ?? 0) !== expectedVersion) {
+    return { error: 'Cart already submitted', status: 409 }
+  }
+
+  const cart = session.pendingCart ?? {}
+  const allItems = Array.isArray(cart) ? cart as unknown as CartItem[] : Object.values(cart).flat()
+  if (allItems.length === 0) return { error: 'Cart is empty', status: 400 }
+
+  const table = tableStore.getById(session.tableId)
+  const store = storeStore.getById(storeId)
+  const paymentMode = (table?.paymentMode ?? store?.paymentMode ?? 'pay-first') as 'pay-first' | 'pay-later'
+
+  sessionStore.update(sessionId, {
+    pendingCart: {},
+    cartVersion: (session.cartVersion ?? 0) + 1,
+    lastCartSubmitAt: new Date().toISOString(),
+  })
+
+  logger.info({ sessionId, storeId, itemCount: allItems.length, paymentMode }, 'session cart submitted')
+  return { items: allItems, paymentMode, tableId: session.tableId }
 }
 
 // ===== Recalculate (after order edit) =====
@@ -213,4 +296,142 @@ export function recalcSessionTotal(sessionId: string): void {
   const totalAmount = orders.reduce((sum, o) => sum + (o?.totalPrice ?? 0), 0)
   const discountAmount = recalcDiscount(totalAmount, session)
   sessionStore.update(sessionId, { totalAmount, discountAmount })
+}
+
+// ===== Tax & Service Fee =====
+
+export function calcTax(storeId: string, subtotal: number): number {
+  const store = storeStore.getById(storeId)
+  const rate = store?.taxRate ?? 0
+  return Math.round(subtotal * rate / 100)
+}
+
+export function calcServiceFee(storeId: string, subtotal: number): number {
+  const store = storeStore.getById(storeId)
+  const rate = store?.serviceFeeRate ?? 0
+  return Math.round(subtotal * rate / 100)
+}
+
+// ===== Settlement =====
+
+export function startSettlement(
+  storeId: string, sessionId: string, mode: 'by-item' | 'by-percent',
+): Session | { error: string } {
+  const session = sessionStore.getById(sessionId)
+  if (!session || session.storeId !== storeId) return { error: 'Session not found' }
+  if (session.status === 'closed') return { error: 'Session is closed' }
+  if (session.settlementMode === 'by-percent' && mode === 'by-item') {
+    return { error: 'Cannot switch from by-percent to by-item' }
+  }
+  return sessionStore.update(sessionId, { settlementMode: mode })!
+}
+
+/** Pure calculator — validates items and returns amount. NO side effects. */
+export function payByItems(
+  storeId: string, sessionId: string, itemKeys: string[],
+): { amount: number; tax: number; serviceFee: number } | { error: string } {
+  const session = sessionStore.getById(sessionId)
+  if (!session || session.storeId !== storeId) return { error: 'Session not found' }
+  if (session.settlementMode === 'by-percent') {
+    return { error: 'Session is in by-percent mode' }
+  }
+
+  adoptOrphanedOrders(session)
+  const fresh = sessionStore.getById(sessionId)!
+  const orders = fresh.orderIds
+    .map(id => orderStore.getById(id)).filter(Boolean)
+  const paidSet = new Set(fresh.paidItemIds ?? [])
+
+  // Parse paid quantities from paidItemIds (format: "orderId:idx:qty")
+  const paidQtyMap = new Map<string, number>()
+  for (const pid of fresh.paidItemIds ?? []) {
+    const parts = pid.split(':')
+    const baseKey = `${parts[0]}:${parts[1]}`
+    const qty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity // old format = fully paid
+    paidQtyMap.set(baseKey, (paidQtyMap.get(baseKey) ?? 0) + qty)
+  }
+
+  let subtotal = 0
+  for (const key of itemKeys) {
+    // key format: "orderId:idx:qtyToPay"
+    const parts = key.split(':')
+    const orderId = parts[0]
+    const idx = parseInt(parts[1], 10)
+    const qtyToPay = parts.length >= 3 ? parseInt(parts[2], 10) : undefined
+
+    const order = orders.find(o => o!.id === orderId)
+    if (!order) return { error: `Order ${orderId} not found` }
+    const item = order.items[idx]
+    if (!item) return { error: `Item index ${idx} not found` }
+
+    const alreadyPaid = paidQtyMap.get(`${orderId}:${idx}`) ?? 0
+    const remaining = item.quantity - Math.min(alreadyPaid, item.quantity)
+    const qty = qtyToPay != null ? Math.min(qtyToPay, remaining) : remaining
+    if (qty <= 0) return { error: `Item ${orderId}:${idx} already fully paid` }
+
+    const unitPrice = item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+    subtotal += unitPrice * qty
+  }
+
+  const tax = calcTax(storeId, subtotal)
+  const serviceFee = calcServiceFee(storeId, subtotal)
+  return { amount: subtotal + tax + serviceFee, tax, serviceFee }
+}
+
+/** Pure calculator — validates percent and returns amount. NO side effects. */
+export function payByPercent(
+  storeId: string, sessionId: string, percent: number,
+): { amount: number; tax: number; serviceFee: number } | { error: string } {
+  const session = sessionStore.getById(sessionId)
+  if (!session || session.storeId !== storeId) return { error: 'Session not found' }
+  if (percent < 1 || percent > 100) return { error: 'Percent must be 1-100' }
+
+  adoptOrphanedOrders(session)
+  const fresh = sessionStore.getById(sessionId)!
+  const netDue = fresh.totalAmount - fresh.discountAmount
+  const totalTax = calcTax(storeId, netDue)
+  const totalFee = calcServiceFee(storeId, netDue)
+  const totalWithTax = netDue + totalTax + totalFee
+  const remaining = Math.max(0, totalWithTax - fresh.totalPaid)
+  const subtotal = Math.round(remaining * percent / 100)
+
+  return { amount: subtotal, tax: calcTax(storeId, subtotal), serviceFee: calcServiceFee(storeId, subtotal) }
+}
+
+/** Called by webhook AFTER payment confirmed — marks items as paid */
+export function confirmItemPayment(sessionId: string, itemKeys: string[]): void {
+  const session = sessionStore.getById(sessionId)
+  if (!session) return
+  sessionStore.update(sessionId, {
+    settlementMode: 'by-item',
+    paidItemIds: [...(session.paidItemIds ?? []), ...itemKeys],
+  })
+  logger.info({ sessionId, itemKeys }, 'items marked as paid after payment confirmation')
+}
+
+/** Called by webhook AFTER payment confirmed — locks to percent mode */
+export function confirmPercentPayment(sessionId: string): void {
+  const session = sessionStore.getById(sessionId)
+  if (!session) return
+  sessionStore.update(sessionId, { settlementMode: 'by-percent' })
+  logger.info({ sessionId }, 'settlement mode locked to by-percent after payment confirmation')
+}
+
+export function recordCashPayment(
+  storeId: string, sessionId: string,
+  amount: number, receivedAmount: number,
+): { session: Session; payment: Payment; change: number } | { error: string } {
+  if (receivedAmount < amount) return { error: 'Received amount less than due' }
+
+  const result = addPayment(storeId, sessionId, amount, 'waiter')
+  if ('error' in result) return result
+
+  paymentStore.update(result.payment.id, { method: 'cash' as const })
+  const payment = paymentStore.getById(result.payment.id)!
+
+  return {
+    session: result.session,
+    payment,
+    change: receivedAmount - amount,
+  }
 }

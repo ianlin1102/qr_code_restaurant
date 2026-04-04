@@ -16,7 +16,9 @@ export async function uploadToS3(
   filename: string,
   mimetype: string,
 ): Promise<string> {
-  const key = `menu-images/${Date.now()}-${filename}`
+  // Sanitize filename — strip path traversal and special chars
+  const safe = filename.replace(/[/\\:*?"<>|]/g, '-').replace(/\.\./g, '').slice(0, 100)
+  const key = `menu-images/${Date.now()}-${safe}`
 
   await s3.send(
     new PutObjectCommand({

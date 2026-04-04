@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
 import type { Table } from '@qr-order/shared'
 import { FloorTableShape } from './FloorTableShape'
 
@@ -12,16 +12,40 @@ interface Props {
 }
 
 const GRID_SIZE = 20
-const CANVAS_W = 800
-const CANVAS_H = 600
+const CANVAS_W = 1200
+const CANVAS_H = 900
+const ZOOM_MIN = 0.4
+const ZOOM_MAX = 2.0
+const ZOOM_STEP = 0.15
 
 export function FloorCanvas({
   tables, editable, selectedTableId, onTableClick, onTableMove, className,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const [zoom, setZoom] = useState(1)
   const dragRef = useRef<{
     id: string; startX: number; startY: number; origX: number; origY: number
   } | null>(null)
+
+  /* --- Zoom helpers --- */
+  const zoomIn = useCallback(() => setZoom(z => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2))), [])
+  const zoomOut = useCallback(() => setZoom(z => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2))), [])
+
+  // Wheel zoom
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      setZoom(z => {
+        const next = z - e.deltaY * 0.002
+        return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +next.toFixed(2)))
+      })
+    }
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    return () => svg.removeEventListener('wheel', onWheel)
+  }, [])
 
   /* --- Shared helpers for mouse & touch --- */
   const toSvgPoint = (clientX: number, clientY: number) => {
@@ -84,7 +108,7 @@ export function FloorCanvas({
     return () => svg.removeEventListener('touchmove', onTouchMove)
   }, [editable])
 
-  /* --- Memoized grid lines (static, never changes) --- */
+  /* --- Memoized grid lines --- */
   const gridLines = useMemo(() => {
     const lines: React.ReactElement[] = []
     for (let x = 0; x <= CANVAS_W; x += GRID_SIZE) {
@@ -104,33 +128,46 @@ export function FloorCanvas({
 
   const placedTables = tables.filter(t => t.x != null && t.y != null)
 
+  // Visible area based on zoom (zoom in = smaller viewBox = see less but bigger)
+  const vbW = CANVAS_W / zoom
+  const vbH = CANVAS_H / zoom
+
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
-      className={`w-full border rounded-lg bg-white ${className || ''}`}
-      style={{ minHeight: 300 }}
-      onMouseMove={editable ? handleMouseMove : undefined}
-      onMouseUp={editable ? handleMouseUp : undefined}
-      onMouseLeave={editable ? handleMouseUp : undefined}
-      onTouchEnd={editable ? handleTouchEnd : undefined}
-      onTouchCancel={editable ? handleTouchEnd : undefined}
-    >
-      {gridLines}
-      {placedTables.map(table => (
-        <g
-          key={table.id}
-          onMouseDown={editable ? (e) => handleMouseDown(table, e) : undefined}
-          onTouchStart={editable ? (e) => handleTouchStart(table, e) : undefined}
-        >
-          <FloorTableShape
-            table={table}
-            selected={selectedTableId === table.id}
-            editable={editable}
-            onClick={() => onTableClick?.(table)}
-          />
-        </g>
-      ))}
-    </svg>
+    <div className="relative">
+      {/* Zoom controls */}
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-white/90 backdrop-blur border rounded-lg px-1 py-0.5 shadow-sm">
+        <button onClick={zoomOut} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-base font-mono hover:bg-gray-100 rounded" title="Zoom out">−</button>
+        <span className="text-xs font-mono w-10 text-center select-none">{Math.round(zoom * 100)}%</span>
+        <button onClick={zoomIn} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-base font-mono hover:bg-gray-100 rounded" title="Zoom in">+</button>
+      </div>
+
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${vbW} ${vbH}`}
+        className={`w-full border rounded-lg bg-white ${className || ''}`}
+        style={{ minHeight: 400 }}
+        onMouseMove={editable ? handleMouseMove : undefined}
+        onMouseUp={editable ? handleMouseUp : undefined}
+        onMouseLeave={editable ? handleMouseUp : undefined}
+        onTouchEnd={editable ? handleTouchEnd : undefined}
+        onTouchCancel={editable ? handleTouchEnd : undefined}
+      >
+        {gridLines}
+        {placedTables.map(table => (
+          <g
+            key={table.id}
+            onMouseDown={editable ? (e) => handleMouseDown(table, e) : undefined}
+            onTouchStart={editable ? (e) => handleTouchStart(table, e) : undefined}
+          >
+            <FloorTableShape
+              table={table}
+              selected={selectedTableId === table.id}
+              editable={editable}
+              onClick={() => onTableClick?.(table)}
+            />
+          </g>
+        ))}
+      </svg>
+    </div>
   )
 }

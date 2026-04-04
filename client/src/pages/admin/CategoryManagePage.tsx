@@ -243,12 +243,12 @@ export default function CategoryManagePage() {
                 <button
                   onClick={() => handleMove(cat.id, 'up')}
                   disabled={idx === 0}
-                  className="min-h-[32px] min-w-[32px] flex items-center justify-center text-xs hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-xs hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
                 >▲</button>
                 <button
                   onClick={() => handleMove(cat.id, 'down')}
                   disabled={idx === sorted.length - 1}
-                  className="min-h-[32px] min-w-[32px] flex items-center justify-center text-xs hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-xs hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
                 >▼</button>
               </div>
               <div className="min-w-0 flex-1">

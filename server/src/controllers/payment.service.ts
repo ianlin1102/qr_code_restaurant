@@ -1,6 +1,6 @@
 import { getStripe } from '../lib/stripe.js'
 import { createOrder } from './order.service.js'
-import { getActiveSession, addPayment } from './session.service.js'
+import { getActiveSession, addPayment, confirmItemPayment, confirmPercentPayment, calcTax, calcServiceFee } from './session.service.js'
 import { orderStore, sessionStore, paymentStore } from '../repositories/stores.js'
 import logger from '../lib/logger.js'
 import type { CreateOrderRequest } from '@qr-order/shared'
@@ -85,6 +85,9 @@ interface SessionCheckoutRequest {
   amount: number
   paidBy?: string
   tipAmount?: number
+  settlementType?: 'by-item' | 'by-percent'
+  itemKeys?: string[]
+  percent?: number
 }
 
 export async function createPaymentIntentForSession(req: SessionCheckoutRequest) {
@@ -97,7 +100,10 @@ export async function createPaymentIntentForSession(req: SessionCheckoutRequest)
   }
 
   const netDue = session.totalAmount - session.discountAmount
-  const remaining = netDue - session.totalPaid
+  const tax = calcTax(req.storeId, netDue)
+  const fee = calcServiceFee(req.storeId, netDue)
+  const totalWithTax = netDue + tax + fee
+  const remaining = totalWithTax - session.totalPaid
   const tip = req.tipAmount && req.tipAmount > 0 ? req.tipAmount : 0
   const chargeAmount = Math.min(req.amount, remaining) + tip
 
@@ -113,6 +119,9 @@ export async function createPaymentIntentForSession(req: SessionCheckoutRequest)
       sessionId: req.sessionId,
       type: 'session-payment',
       paidBy: req.paidBy ?? '',
+      ...(req.settlementType ? { settlementType: req.settlementType } : {}),
+      ...(req.itemKeys ? { itemKeys: JSON.stringify(req.itemKeys) } : {}),
+      ...(req.percent ? { percent: String(req.percent) } : {}),
     },
   })
 
@@ -147,8 +156,19 @@ export async function handleWebhookEvent(
       if ('error' in result) {
         logger.error({ error: result.error, paymentIntentId: pi.id }, 'webhook: failed to record session payment')
       } else {
+        // Apply settlement side effects ONLY after payment confirmed
+        const { settlementType } = pi.metadata
+        if (settlementType === 'by-item' && pi.metadata.itemKeys) {
+          confirmItemPayment(sessionId, JSON.parse(pi.metadata.itemKeys))
+        } else if (settlementType === 'by-percent') {
+          confirmPercentPayment(sessionId)
+        }
+        // Tag as stripe payment
+        if (result.payment) {
+          paymentStore.update(result.payment.id, { method: 'stripe' })
+        }
         logger.info(
-          { storeId, sessionId, amount: pi.amount, paymentIntentId: pi.id },
+          { storeId, sessionId, amount: pi.amount, settlementType, paymentIntentId: pi.id },
           'session payment recorded via webhook',
         )
       }

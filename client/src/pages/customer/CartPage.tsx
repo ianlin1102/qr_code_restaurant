@@ -90,7 +90,7 @@ function CartItemCard({ item, isOwn, updateQuantity, updateRemark, t }: CartItem
 export default function CartPage() {
   const navigate = useNavigate()
   const { storeId, tableId, tableName, customerName } = useSessionStore()
-  const { items, updateQuantity, updateRemark, totalPrice, totalItems, clearCart, clearMyItems } = useCartStore()
+  const { items, updateQuantity, updateRemark, totalPrice, totalItems, clearCart, cartVersion } = useCartStore()
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
   const [submitting, setSubmitting] = useState(false)
@@ -99,9 +99,6 @@ export default function CartPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
 
   const myDeviceId = useMemo(() => getDeviceId(), [])
-  const myItems = useMemo(() => items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId), [items, myDeviceId])
-  const myTotal = useMemo(() => myItems.reduce((s, i) => s + (i.price + (i.selectedOptions ?? []).reduce((a, o) => a + o.priceAdjust, 0)) * i.quantity, 0), [myItems])
-  const myCount = useMemo(() => myItems.reduce((s, i) => s + i.quantity, 0), [myItems])
 
   // Group items by addedByDevice for per-person display
   const groups = useMemo(() => {
@@ -162,43 +159,42 @@ export default function CartPage() {
   )
 
   async function handleCheckout() {
-    if (!storeId || !tableId) return
+    if (!storeId || !tableId || !activeSessionId) return
+    if (items.length === 0) return
     setError(null)
     setSubmitting(true)
 
-    // Only submit MY items (not other devices' items)
-    const myItems = items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
-    if (myItems.length === 0) { setSubmitting(false); return }
-    const cartItems = myItems.map(({ menuItemId, quantity, remark, selectedOptions }) => ({
-      menuItemId,
-      quantity,
-      ...(remark ? { remark } : {}),
-      ...(selectedOptions && selectedOptions.length > 0 ? { selectedOptions } : {}),
-    }))
-
     try {
-      if (paymentMode === 'pay-later') {
-        // Pay-later: create order directly without payment
-        const order = await api.createOrder(storeId, { tableId, items: cartItems, customerName })
-        clearMyItems()
-        // Update shared cart on server — remove my items, keep others'
-        if (activeSessionId) {
-          const othersItems = items.filter(i => (i.addedByDevice || myDeviceId) !== myDeviceId)
-          api.updateSessionCart(storeId, activeSessionId, othersItems).catch(() => {})
-        }
-        navigate('/order/confirm', { state: { order } })
+      const result = await api.submitSessionCart(storeId, activeSessionId, cartVersion, customerName)
+
+      if (result.paymentMode === 'pay-later' && result.order) {
+        clearCart()
+        navigate('/order/confirm', { state: { order: result.order } })
         return
       }
 
-      // Pay-first: create Stripe PaymentIntent, no order yet
-      const { clientSecret, amount } = await api.createCheckout(storeId, {
-        tableId, items: cartItems, customerName,
-      })
-      navigate(`/store/${storeId}/checkout`, { state: {
-        clientSecret, amount, tableId, items: cartItems,
-      } })
+      if (result.paymentMode === 'pay-first' && result.items && result.tableId) {
+        clearCart()
+        const checkoutItems = result.items.map(i => ({
+          menuItemId: i.menuItemId, quantity: i.quantity,
+          ...(i.remark ? { remark: i.remark } : {}),
+          ...(i.selectedOptions?.length ? { selectedOptions: i.selectedOptions } : {}),
+        }))
+        const { clientSecret, amount } = await api.createCheckout(storeId, {
+          tableId: result.tableId, items: checkoutItems, customerName,
+        })
+        navigate(`/store/${storeId}/checkout`, { state: {
+          clientSecret, amount, tableId: result.tableId, items: checkoutItems,
+        } })
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start checkout')
+      const msg = err instanceof Error ? err.message : 'Failed to submit order'
+      if (msg.includes('Cart already submitted')) {
+        clearCart()
+        navigate('/order/confirm', { state: { alreadySubmitted: true } })
+        return
+      }
+      setError(msg)
     } finally {
       setSubmitting(false)
     }
@@ -279,14 +275,14 @@ export default function CartPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">
-                {t('cart.itemCount', { count: myCount })}
+                {t('cart.itemCount', { count: totalItems() })}
               </p>
-              <p className="text-2xl font-bold">{formatPriceUSD(myTotal)}</p>
+              <p className="text-2xl font-bold">{formatPriceUSD(totalPrice())}</p>
             </div>
             <Button
               size="lg"
               onClick={handleCheckout}
-              disabled={submitting || myCount === 0}
+              disabled={submitting || items.length === 0 || !activeSessionId}
               className="min-w-[120px] sm:min-w-[160px] min-h-[48px] bg-primary hover:bg-primary/90"
             >
               {submitting ? (

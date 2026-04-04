@@ -13,25 +13,15 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
+import SettlementSheet from '@/components/customer/SettlementSheet'
+import { usePaymentStore } from '@/stores/payment-store'
 import type { MenuResponse, MenuItem, Order, CartItem } from '@qr-order/shared'
 
-/** Strip dangerous HTML tags/attributes, keep safe formatting */
-function sanitizeHtml(html: string): string {
+/** Strip ALL HTML — render announcement as safe plain text with line breaks */
+function plainText(html: string): string {
   const div = document.createElement('div')
   div.innerHTML = html
-  // Remove script, iframe, object, embed, form tags
-  const dangerous = div.querySelectorAll('script,iframe,object,embed,form,style,link')
-  dangerous.forEach(el => el.remove())
-  // Remove event handler attributes from all elements
-  div.querySelectorAll('*').forEach(el => {
-    for (const attr of Array.from(el.attributes)) {
-      if (attr.name.startsWith('on') || attr.name === 'srcdoc' ||
-          (attr.name === 'href' && attr.value.trim().toLowerCase().startsWith('javascript:'))) {
-        el.removeAttribute(attr.name)
-      }
-    }
-  })
-  return div.innerHTML
+  return div.textContent || div.innerText || ''
 }
 
 /** Simple string hash — works with any Unicode including Chinese */
@@ -68,47 +58,25 @@ export default function MenuPage() {
   const [waiterCalled, setWaiterCalled] = useState(false)
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null)
-  const [unpaidOrders, setUnpaidOrders] = useState<Order[]>([])
-  const [sessionOrders, setSessionOrders] = useState<Order[]>([])
-  const [sessionRemaining, setSessionRemaining] = useState(0)
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [payingOrders, setPayingOrders] = useState(false)
+  const [settlementOpen, setSettlementOpen] = useState(false)
+  // Session payment state — centralized Zustand store
+  const sessionSummary = usePaymentStore(s => s.summary)
+  const activeSessionId = usePaymentStore(s => s.sessionId)
+  const initPayment = usePaymentStore(s => s.init)
+  const stopPayment = usePaymentStore(s => s.stop)
+  const sessionRemaining = sessionSummary?.remaining ?? 0
+  const sessionOrders = sessionSummary?.orders?.filter(o => o.status !== 'closed') ?? []
   const [headerCollapsed, setHeaderCollapsed] = useState(false)
   const lastScrollY = useRef(0)
   const menuScrollRef = useRef<HTMLDivElement | null>(null)
 
-  // Poll unpaid orders for this table
-  // Fetch/create session on mount (for shared cart + Pay Now)
+  // Initialize session payment store (handles polling + session creation)
   useEffect(() => {
     if (!storeId || !tableId) return
-    api.getActiveSession(storeId, tableId).then(async s => {
-      if (s) { setSessionRemaining(s.remaining); setActiveSessionId(s.id) }
-      else {
-        try { const created = await api.createSession(storeId, tableId); setActiveSessionId(created.id) }
-        catch { /* ignore */ }
-        setSessionRemaining(0)
-      }
-    }).catch(() => {})
-  }, [storeId, tableId])
-
-  // Poll orders + session every 10s
-  useEffect(() => {
-    if (!storeId || !tableId) return
-    const fetchData = () => {
-      api.getTableOrders(storeId, tableId).then(allOrders => {
-        const active = allOrders.filter(o => o.status !== 'served' && o.status !== 'closed')
-        setUnpaidOrders(active)
-        const history = allOrders.filter(o => o.status === 'served')
-        setSessionOrders(history)
-      }).catch(() => {})
-      api.getActiveSession(storeId, tableId).then(s => {
-        if (s) { setSessionRemaining(s.remaining); setActiveSessionId(s.id) }
-      }).catch(() => {})
-    }
-    fetchData()
-    const id = setInterval(fetchData, 10_000)
-    return () => clearInterval(id)
-  }, [storeId, tableId])
+    initPayment(storeId, tableId)
+    return () => stopPayment()
+  }, [storeId, tableId, initPayment, stopPayment])
 
   useEffect(() => {
     if (!storeId) return
@@ -120,8 +88,9 @@ export default function MenuPage() {
           setActiveCategory(data.categories[0].id)
         }
         // Show announcement popup if content changed since last dismissal
-        if (data.store.announcement) {
-          const hash = simpleHash(data.store.announcement).slice(0, 8)
+        const ann = lang === 'en' && data.store.announcementEn ? data.store.announcementEn : data.store.announcement
+        if (ann) {
+          const hash = simpleHash(ann).slice(0, 8)
           const storedHash = localStorage.getItem(`announcement-hash-${data.store.id}`)
           if (storedHash !== hash) {
             setShowAnnouncement(true)
@@ -157,42 +126,44 @@ export default function MenuPage() {
   // Push: send only MY items to server (don't overwrite other devices)
   // Poll: fetch ALL items from server, replace local "other devices" items
   const myDeviceId = useMemo(() => getDeviceId(), [])
+  const lastSubmitRef = useRef<string | null>(null)
 
   // Push my items to server when they change (debounced 1s)
+  // Per-device storage: only PUT own items, server merges by deviceId — no race condition
   useEffect(() => {
     if (!storeId || !activeSessionId) return
     const timer = setTimeout(() => {
-      // Get current server cart, replace my items, keep others
-      api.getSessionCart(storeId, activeSessionId).then(serverItems => {
-        const othersItems = serverItems.filter(i => i.addedByDevice && i.addedByDevice !== myDeviceId)
-        const myLocal = useCartStore.getState().items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
-        const plain: CartItem[] = myLocal.map(({ menuItemId, name, price, quantity, remark, selectedOptions, addedBy, addedByDevice }) => ({
-          menuItemId, name, price, quantity,
-          ...(remark ? { remark } : {}),
-          ...(selectedOptions?.length ? { selectedOptions } : {}),
-          ...(addedBy ? { addedBy } : {}),
-          ...(addedByDevice ? { addedByDevice } : {}),
-        }))
-        api.updateSessionCart(storeId, activeSessionId, [...othersItems, ...plain]).catch(() => {})
-      }).catch(() => {})
+      const myLocal = useCartStore.getState().items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
+      const plain: CartItem[] = myLocal.map(({ menuItemId, name, price, quantity, remark, selectedOptions, addedBy, addedByDevice }) => ({
+        menuItemId, name, price, quantity,
+        ...(remark ? { remark } : {}),
+        ...(selectedOptions?.length ? { selectedOptions } : {}),
+        ...(addedBy ? { addedBy } : {}),
+        ...(addedByDevice ? { addedByDevice } : {}),
+      }))
+      api.updateSessionCart(storeId, activeSessionId, myDeviceId, plain).catch(() => {})
     }, 1000)
     return () => clearTimeout(timer)
   }, [cartItems, storeId, activeSessionId, myDeviceId])
 
-  // Poll server every 5s — sync other devices' items into local cart
+  // Poll server every 5s — sync other devices' items + track cart version
   useEffect(() => {
     if (!storeId || !activeSessionId) return
     const poll = () => {
-      api.getSessionCart(storeId, activeSessionId).then(serverItems => {
+      api.getSessionCart(storeId, activeSessionId).then(({ items: serverItems, cartVersion, lastCartSubmitAt }) => {
         const store = useCartStore.getState()
+        store.setCartVersion(cartVersion)
+        // Detect remote cart submission
+        if (lastCartSubmitAt && lastCartSubmitAt !== lastSubmitRef.current && serverItems.length === 0 && store.items.length > 0) {
+          store.clearCart()
+          lastSubmitRef.current = lastCartSubmitAt
+          return
+        }
+        lastSubmitRef.current = lastCartSubmitAt
         const othersFromServer = serverItems.filter(i => i.addedByDevice && i.addedByDevice !== myDeviceId)
-        // Remove old "other device" items from local, add fresh ones from server
-        const myLocal = store.items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
         const currentOtherKeys = new Set(store.items.filter(i => i.addedByDevice && i.addedByDevice !== myDeviceId).map(i => i.addedByDevice + i.menuItemId))
         const newOtherKeys = new Set(othersFromServer.map(i => i.addedByDevice + i.menuItemId))
-        // Only update if there's a difference
         if (currentOtherKeys.size !== newOtherKeys.size || [...currentOtherKeys].some(k => !newOtherKeys.has(k))) {
-          // Remove all other-device items and re-add from server
           for (const item of store.items) {
             if (item.addedByDevice && item.addedByDevice !== myDeviceId) {
               store.removeItem(item.cartKey)
@@ -239,9 +210,10 @@ export default function MenuPage() {
   const handleAdd = (item: MenuItem) => { setSelectedMenuItem(item); setDetailSheetOpen(true) }
 
   const dismissAnnouncement = () => {
-    if (menu?.store.announcement) {
-      const hash = simpleHash(menu.store.announcement).slice(0, 8)
-      localStorage.setItem(`announcement-hash-${menu.store.id}`, hash)
+    const ann = lang === 'en' && menu?.store.announcementEn ? menu.store.announcementEn : menu?.store.announcement
+    if (ann) {
+      const hash = simpleHash(ann).slice(0, 8)
+      localStorage.setItem(`announcement-hash-${menu!.store.id}`, hash)
     }
     setShowAnnouncement(false)
   }
@@ -384,60 +356,49 @@ export default function MenuPage() {
             </div>
             <Button
               size="sm"
-              disabled={payingOrders}
               className="bg-orange-500 hover:bg-orange-600 text-white"
-              onClick={() => {
-                if (!storeId || !activeSessionId) return
-                setPayingOrders(true)
-                api.createCheckoutForSession(storeId, activeSessionId, sessionRemaining)
-                  .then(({ clientSecret, amount }) => {
-                    navigate(`/store/${storeId}/checkout`, {
-                      state: { clientSecret, amount, tableId },
-                    })
-                  })
-                  .catch(err => alert(err instanceof Error ? err.message : 'Failed'))
-                  .finally(() => setPayingOrders(false))
-              }}
+              onClick={() => setSettlementOpen(true)}
             >
-              {payingOrders
-                ? (lang === 'zh' ? '处理中...' : 'Loading...')
-                : (lang === 'zh' ? '去付款' : 'Pay Now')}
+              {lang === 'zh' ? '结账' : 'Settle'}
             </Button>
           </div>
         </div>
       )}
 
-      {/* Session order history (collapsible) */}
+      {/* Current session — merged item list */}
       {sessionOrders.length > 0 && (
         <details className="border-b">
           <summary className="px-4 py-2 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">
-            {lang === 'zh' ? '本次已点' : 'Session Orders'} ({sessionOrders.length})
+            {lang === 'zh' ? '本次已点' : 'Current Order'}
             <span className="ml-2 text-xs">
-              {formatPriceUSD(sessionOrders.reduce((s, o) => s + o.totalPrice, 0))}
+              {formatPriceUSD(sessionSummary?.totalWithTax ?? sessionOrders.reduce((s, o) => s + o.totalPrice, 0))}
+              {(sessionSummary?.tax ?? 0) > 0 && (
+                <span className="text-muted-foreground/60 ml-1">
+                  ({lang === 'zh' ? '含税' : 'incl. tax'} {formatPriceUSD(sessionSummary!.tax)})
+                </span>
+              )}
             </span>
           </summary>
-          <div className="px-4 pb-3 space-y-2 max-h-48 overflow-y-auto">
-            {sessionOrders.map(order => (
-              <div key={order.id} className="text-xs space-y-0.5">
-                <div className="flex justify-between font-medium">
-                  <span>#{order.orderNumber}</span>
-                  <span>{formatPriceUSD(order.totalPrice)}</span>
-                </div>
-                {order.items.map((item, i) => (
-                  <div key={i} className="flex justify-between text-muted-foreground">
-                    <span>
-                      {item.quantity}x {item.name}
-                      {item.selectedOptions && item.selectedOptions.length > 0 && (
-                        <span className="text-xs text-orange-600 ml-1">
-                          ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || "")).join(', ')})
-                        </span>
-                      )}
+          <div className="px-4 pb-3 space-y-1 max-h-48 overflow-y-auto">
+            {sessionOrders.flatMap(o => o.items).map((item, i) => (
+              <div key={i} className="flex justify-between text-xs text-muted-foreground">
+                <span>
+                  {item.quantity}x {localized(item, lang) || item.name}
+                  {item.selectedOptions && item.selectedOptions.length > 0 && (
+                    <span className="text-orange-600 ml-1">
+                      ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || '')).join(', ')})
                     </span>
-                    <span>{formatPriceUSD(item.price * item.quantity)}</span>
-                  </div>
-                ))}
+                  )}
+                </span>
+                <span>{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
               </div>
             ))}
+            {(sessionSummary?.totalPaid ?? 0) > 0 && (
+              <div className="flex justify-between text-xs font-medium text-green-600 pt-1 border-t mt-1">
+                <span>{lang === 'zh' ? '已付' : 'Paid'}</span>
+                <span>−{formatPriceUSD(sessionSummary!.totalPaid)}</span>
+              </div>
+            )}
           </div>
         </details>
       )}
@@ -600,15 +561,24 @@ export default function MenuPage() {
         onClose={() => { setDetailSheetOpen(false); setSelectedMenuItem(null) }}
       />
 
+      {/* Settlement Sheet */}
+      {sessionSummary && (
+        <SettlementSheet
+          open={settlementOpen}
+          onClose={() => setSettlementOpen(false)}
+          storeId={storeId!}
+          session={sessionSummary}
+        />
+      )}
+
       {/* Announcement Popup */}
-      {showAnnouncement && menu.store.announcement && (
+      {showAnnouncement && (menu.store.announcement || menu.store.announcementEn) && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full max-h-[60vh] overflow-y-auto">
             <h3 className="font-semibold mb-3">{t('menu.announcement')}</h3>
-            <div
-              className="prose prose-sm text-sm"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(menu.store.announcement) }}
-            />
+            <p className="text-sm whitespace-pre-wrap">
+              {plainText(lang === 'en' && menu.store.announcementEn ? menu.store.announcementEn : menu.store.announcement || '')}
+            </p>
             <button
               onClick={dismissAnnouncement}
               className="mt-4 w-full bg-primary text-primary-foreground rounded-md py-2 text-sm font-medium"

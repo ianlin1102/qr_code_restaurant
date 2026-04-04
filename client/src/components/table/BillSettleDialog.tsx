@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
-import { api } from '@/services/api'
-import type { Session, Payment, Coupon } from '@qr-order/shared'
+import { api, type SessionSummary } from '@/services/api'
+import type { Coupon, Payment } from '@qr-order/shared'
+import CashPaymentPad from './CashPaymentPad'
 
 interface Props {
   open: boolean
@@ -16,16 +17,15 @@ interface Props {
   storeId: string
   sessionId: string
   t: Record<string, Record<string, unknown>>
+  lang: string
 }
 
-type SessionSummary = Session & { payments: Payment[]; remaining: number; isPaid: boolean; netDue: number }
-
-export default function BillSettleDialog({ open, onClose, storeId, sessionId, t }: Props) {
+export default function BillSettleDialog({ open, onClose, storeId, sessionId, t, lang }: Props) {
   const [session, setSession] = useState<SessionSummary | null>(null)
   const [couponCode, setCouponCode] = useState('')
   const [coupons, setCoupons] = useState<Coupon[]>([])
-  const [payAmount, setPayAmount] = useState('')
-  const [paidBy, setPaidBy] = useState('')
+  const [payMethod, setPayMethod] = useState<'stripe' | 'cash' | null>(null)
+  const [paying, setPaying] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const ts = (t.session ?? t.bill ?? {}) as Record<string, string>
@@ -68,26 +68,6 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t 
     } catch (e) { console.error(e) }
   }
 
-  const handlePayFull = async () => {
-    setLoading(true)
-    try {
-      await api.addPayment(storeId, sessionId, session.remaining, 'waiter')
-      fetchSession()
-    } catch (e) { console.error(e) }
-    setLoading(false)
-  }
-
-  const handleAddPayment = async () => {
-    const amount = Math.round(parseFloat(payAmount) * 100)
-    if (!amount || amount <= 0) return
-    try {
-      await api.addPayment(storeId, sessionId, amount, paidBy || undefined)
-      setPayAmount('')
-      setPaidBy('')
-      fetchSession()
-    } catch (e) { console.error(e) }
-  }
-
   const handleCloseSession = async () => {
     setLoading(true)
     try {
@@ -111,7 +91,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t 
           <DialogTitle>{ts.title || 'Session'}</DialogTitle>
         </DialogHeader>
 
-        <SessionSummaryView session={session} ts={ts} />
+        <SessionSummaryView session={session} ts={ts} tc={tc} lang={lang} />
 
         <CouponSection
           session={session} couponCode={couponCode} setCouponCode={setCouponCode}
@@ -119,33 +99,12 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t 
         />
 
         {session.status !== 'closed' && session.remaining > 0 && (
-          <div className="space-y-3">
-            <Button className="w-full" onClick={handlePayFull} disabled={loading}>
-              {loading && <Loader2 className="size-4 mr-2 animate-spin" />}
-              {ts.payFull || 'Pay in Full'} ({formatPriceUSD(session.remaining)})
-            </Button>
-            <div className="border-t pt-3">
-              <p className="text-sm font-medium mb-2">{ts.addPayment || 'Add Payment'}</p>
-              <div className="flex gap-2 mb-2">
-                <Input
-                  type="number" step="0.01" min="0"
-                  value={payAmount}
-                  onChange={e => setPayAmount(e.target.value)}
-                  placeholder={ts.amount || 'Amount ($)'}
-                  className="flex-1 h-10 text-sm"
-                />
-                <Input
-                  value={paidBy}
-                  onChange={e => setPaidBy(e.target.value)}
-                  placeholder={ts.paidByLabel || 'Paid by (optional)'}
-                  className="flex-1 h-10 text-sm"
-                />
-              </div>
-              <Button variant="outline" className="w-full" onClick={handleAddPayment} disabled={!payAmount}>
-                {ts.addPayment || 'Add Payment'}
-              </Button>
-            </div>
-          </div>
+          <PaymentMethodSection
+            session={session} storeId={storeId} sessionId={sessionId}
+            payMethod={payMethod} setPayMethod={setPayMethod}
+            paying={paying} setPaying={setPaying}
+            fetchSession={fetchSession} ts={ts} lang={lang}
+          />
         )}
 
         {session.payments.length > 0 && (
@@ -179,7 +138,9 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t 
   )
 }
 
-function SessionSummaryView({ session, ts }: { session: SessionSummary; ts: Record<string, string> }) {
+function SessionSummaryView({ session, ts, tc, lang }: {
+  session: SessionSummary; ts: Record<string, string>; tc: Record<string, string>; lang: string
+}) {
   return (
     <div className="space-y-2 text-sm">
       <div className="flex justify-between">
@@ -190,6 +151,18 @@ function SessionSummaryView({ session, ts }: { session: SessionSummary; ts: Reco
         <div className="flex justify-between text-green-600">
           <span>{ts.discount || 'Discount'} ({session.couponCode})</span>
           <span>-{formatPriceUSD(session.discountAmount)}</span>
+        </div>
+      )}
+      {session.tax > 0 && (
+        <div className="flex justify-between">
+          <span>{tc.tax || 'Tax'}</span>
+          <span>{formatPriceUSD(session.tax)}</span>
+        </div>
+      )}
+      {session.serviceFee > 0 && (
+        <div className="flex justify-between">
+          <span>{lang === 'zh' ? '服务费' : 'Service Fee'}</span>
+          <span>{formatPriceUSD(session.serviceFee)}</span>
         </div>
       )}
       <div className="flex justify-between font-semibold border-t pt-2">
@@ -264,6 +237,75 @@ function PaymentList({ payments, ts }: {
           <Badge variant="default">{ts.paid || 'Paid'}</Badge>
         </div>
       ))}
+    </div>
+  )
+}
+
+function PaymentMethodSection({ session, storeId, sessionId, payMethod, setPayMethod, paying, setPaying, fetchSession, ts, lang }: {
+  session: SessionSummary; storeId: string; sessionId: string
+  payMethod: 'stripe' | 'cash' | null; setPayMethod: (v: 'stripe' | 'cash' | null) => void
+  paying: boolean; setPaying: (v: boolean) => void
+  fetchSession: () => void; ts: Record<string, string>; lang: string
+}) {
+  const zh = lang === 'zh'
+
+  const handleCardCharge = async () => {
+    setPaying(true)
+    try {
+      // Admin confirms card payment (terminal/external) — record directly like cash but tagged as stripe
+      await api.addPayment(storeId, sessionId, session.remaining, 'card')
+      setPayMethod(null)
+      fetchSession()
+    } catch (e) { console.error(e) }
+    setPaying(false)
+  }
+
+  const handleCashConfirm = async (receivedAmount: number) => {
+    setPaying(true)
+    try {
+      await api.recordCashPayment(storeId, sessionId, session.remaining, receivedAmount)
+      setPayMethod(null)
+      fetchSession()
+    } catch (e) { console.error(e) }
+    setPaying(false)
+  }
+
+  if (payMethod === 'cash') {
+    return (
+      <CashPaymentPad
+        totalDue={session.remaining} lang={lang}
+        loading={paying} onCancel={() => setPayMethod(null)}
+        onConfirm={handleCashConfirm}
+      />
+    )
+  }
+
+  if (payMethod === 'stripe') {
+    return (
+      <div className="space-y-3">
+        <Button className="w-full min-h-[44px]" onClick={handleCardCharge} disabled={paying}>
+          {paying && <Loader2 className="size-4 mr-2 animate-spin" />}
+          {zh ? '刷卡收款' : 'Charge'} {formatPriceUSD(session.remaining)}
+        </Button>
+        <button className="text-sm text-muted-foreground hover:underline w-full text-center"
+          onClick={() => setPayMethod(null)}>
+          {zh ? '返回' : 'Back'}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium">{ts.addPayment || 'Add Payment'}</p>
+      <div className="flex gap-2">
+        <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => setPayMethod('stripe')}>
+          {zh ? '刷卡' : 'Card'}
+        </Button>
+        <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => setPayMethod('cash')}>
+          {zh ? '现金' : 'Cash'}
+        </Button>
+      </div>
     </div>
   )
 }

@@ -16,12 +16,12 @@ router.get('/', requireAuth, requirePermission('staff:manage'), async (req, res)
 })
 
 router.post('/', requireAuth, requirePermission('staff:manage'), async (req, res) => {
-  const { username, password, role } = req.body
+  const { username, password, role, clockPin } = req.body
   if (!username || !password) {
     res.status(400).json({ error: 'Username and password are required' })
     return
   }
-  const result = await addStaff(req.params.storeId, username, password, role || 'staff')
+  const result = await addStaff(req.params.storeId, username, password, role || 'staff', clockPin)
   if ('error' in result) {
     res.status(result.status).json({ error: result.error })
     return

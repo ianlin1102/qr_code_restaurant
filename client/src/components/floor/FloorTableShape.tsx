@@ -21,10 +21,11 @@ export function FloorTableShape({ table, selected, onClick }: Props) {
   const h = table.height ?? 80
   const color = table.enabled ? (STATUS_COLORS[table.status] || '#94a3b8') : '#d1d5db'
   const opacity = table.enabled ? 1 : 0.4
-
   const shape = table.shape ?? 'square'
-  // Actual rendered height depends on shape
-  const renderH = shape === 'long' ? h * 0.6 : shape === 'round' ? h * 0.76 : h
+
+  // Round = ellipse filling full w×h; long = squashed rect
+  const renderH = shape === 'long' ? h * 0.6 : h
+  const cx = w / 2
   const cy = renderH / 2
 
   return (
@@ -35,7 +36,7 @@ export function FloorTableShape({ table, selected, onClick }: Props) {
     >
       {shape === 'round' ? (
         <ellipse
-          cx={w / 2} cy={cy} rx={w / 2} ry={renderH / 2}
+          cx={cx} cy={cy} rx={w / 2} ry={renderH / 2}
           fill={color} fillOpacity={0.2}
           stroke={selected ? '#2563eb' : color} strokeWidth={selected ? 2.5 : 1.5}
         />
@@ -48,7 +49,7 @@ export function FloorTableShape({ table, selected, onClick }: Props) {
         />
       )}
       <text
-        x={w / 2} y={cy - 4}
+        x={cx} y={cy - 4}
         textAnchor="middle" dominantBaseline="middle"
         fontSize={12} fontWeight={600} fill="#1f2937"
       >
@@ -56,7 +57,7 @@ export function FloorTableShape({ table, selected, onClick }: Props) {
       </text>
       {table.name && (
         <text
-          x={w / 2} y={cy + 10}
+          x={cx} y={cy + 10}
           textAnchor="middle" dominantBaseline="middle"
           fontSize={9} fill="#6b7280"
         >

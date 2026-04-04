@@ -69,6 +69,7 @@ router.post('/items', requireAuth, requirePermission('menu:write'), (req, res) =
     sortOrder: sortOrder ?? 0,
     options,
   })
+  if ('error' in item) { res.status(400).json(item); return }
   res.status(201).json(item)
 })
 

@@ -21,6 +21,8 @@ export function updateStore(storeId: string, data: UpdateStoreRequest): Store | 
     autoAcceptOrders: data.autoAcceptOrders ?? store.autoAcceptOrders,
     maxTables: data.maxTables ?? store.maxTables,
     paymentMode: data.paymentMode ?? store.paymentMode,
+    taxRate: data.taxRate ?? store.taxRate,
+    serviceFeeRate: data.serviceFeeRate ?? store.serviceFeeRate,
   })
 
   return updated!

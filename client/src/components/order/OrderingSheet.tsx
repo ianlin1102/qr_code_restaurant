@@ -34,8 +34,13 @@ export default function OrderingSheet({ open, onClose, storeId, tableId, tableNa
   useEffect(() => {
     if (!open || !storeId) return
     setLoading(true)
-    api.getMenu(storeId).then(data => {
-      setCategories(data.categories)
+    // Admin view: fetch ALL items (including staffOnly) + categories
+    Promise.all([api.getMenuItems(storeId), api.getCategories(storeId)]).then(([items, cats]) => {
+      const grouped = cats
+        .filter(c => c.active !== false)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(cat => ({ ...cat, items: items.filter(i => i.categoryId === cat.id && i.available) }))
+      setCategories(grouped)
       setSelectedCat(null); setCart([]); setCustomizingItem(null)
     }).catch(() => {}).finally(() => setLoading(false))
   }, [open, storeId])

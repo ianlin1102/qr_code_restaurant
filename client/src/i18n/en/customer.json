@@ -88,6 +88,8 @@
     "securePayment": "Secure encrypted payment via Stripe",
     "tip": "Add a Tip",
     "tipCustom": "Custom",
+    "tipConfirm": "OK",
+    "tipApply": "Apply",
     "orderSummary": "Order Summary"
   },
   "orderHistory": {

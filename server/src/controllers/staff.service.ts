@@ -11,6 +11,7 @@ interface StaffRecord {
   password: string
   role: string
   roleId?: string
+  clockPin?: string
   createdAt: string
 }
 
@@ -31,12 +32,19 @@ export async function addStaff(
   storeId: string,
   username: string,
   password: string,
-  role: string
+  role: string,
+  clockPin?: string,
 ): Promise<AuthUser | { error: string; status: number }> {
   const existing = staffStore.getByField('storeId', storeId)
     .find(u => u.username === username)
   if (existing) {
     return { error: 'Username already exists', status: 409 }
+  }
+
+  if (clockPin !== undefined) {
+    if (!/^\d{4}$/.test(clockPin)) return { error: 'Clock PIN must be exactly 4 digits', status: 400 }
+    const dup = staffStore.getByField('storeId', storeId).find(u => u.clockPin === clockPin)
+    if (dup) return { error: 'Clock PIN already in use', status: 409 }
   }
 
   const record: StaffRecord = {
@@ -45,6 +53,7 @@ export async function addStaff(
     username,
     password: await bcrypt.hash(password, 10),
     role,
+    ...(clockPin ? { clockPin } : {}),
     createdAt: new Date().toISOString(),
   }
   staffStore.create(record)

@@ -40,6 +40,8 @@ import AnalyticsPage from './pages/admin/AnalyticsPage'
 import CouponManagePage from './pages/admin/CouponManagePage'
 import FloorPlanEditorPage from './pages/admin/FloorPlanEditorPage'
 import StaffManagePage from './pages/admin/StaffManagePage'
+import ClockPage from './pages/admin/ClockPage'
+import MorePage from './pages/admin/MorePage'
 
 function FallbackRedirect() {
   const storeId = useSessionStore(s => s.storeId)
@@ -83,6 +85,8 @@ export default function App() {
           <Route path="coupons" element={<CouponManagePage />} />
           <Route path="floor-plan/editor" element={<FloorPlanEditorPage />} />
           <Route path="staff" element={<StaffManagePage />} />
+          <Route path="clock" element={<ClockPage />} />
+          <Route path="more" element={<MorePage />} />
           <Route index element={<Navigate to="dashboard" />} />
         </Route>
 

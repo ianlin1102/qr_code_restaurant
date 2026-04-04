@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Save, Trash2, ArrowLeft } from 'lucide-react'
+import { Plus, Save, Trash2, ArrowLeft, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
@@ -74,7 +74,14 @@ export default function FloorPlanEditorPage() {
   }, [storeId, tables.length, activeZone, zones])
 
   const updateField = useCallback((field: keyof Table, value: string | number) => {
-    setTables(prev => prev.map(tb => (tb.id === selectedId ? { ...tb, [field]: value } : tb)))
+    setTables(prev => prev.map(tb => {
+      if (tb.id !== selectedId) return tb
+      const updated = { ...tb, [field]: value }
+      // Enforce minimum 2×2 grid cells (40×40px) for all shapes
+      if (field === 'width' || field === 'shape') updated.width = Math.max(40, updated.width ?? 80)
+      if (field === 'height' || field === 'shape') updated.height = Math.max(40, updated.height ?? 80)
+      return updated
+    }))
     setDirty(true)
   }, [selectedId])
 
@@ -112,7 +119,12 @@ export default function FloorPlanEditorPage() {
     </div>
   )
   if (!storeId) return <p className="p-8 text-muted-foreground">{t.floorPlan.notAuth}</p>
-  if (loading) return <p className="p-8 text-muted-foreground">{t.floorPlan.loading}</p>
+  if (loading) return (
+    <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
+      <Loader2 className="h-5 w-5 animate-spin" />
+      <span>{t.floorPlan.loading}</span>
+    </div>
+  )
 
   return (
     <div className="flex h-full">
@@ -273,9 +285,24 @@ function PropertiesPanel({ selected, updateField, deleteSelected, t, zones }: {
             ))}
           </div>
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-xs text-muted-foreground">W (grids)</label>
+            <Input type="number" min={2} step={1}
+              value={Math.round((selected.width ?? 80) / 20)}
+              onChange={e => updateField('width', Math.max(40, Number(e.target.value) * 20))}
+              className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">H (grids)</label>
+            <Input type="number" min={2} step={1}
+              value={Math.round((selected.height ?? 80) / 20)}
+              onChange={e => updateField('height', Math.max(40, Number(e.target.value) * 20))}
+              className="mt-1" />
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
           <span>x: {selected.x}</span><span>y: {selected.y}</span>
-          <span>w: {selected.width}</span><span>h: {selected.height}</span>
         </div>
         <Button size="sm" variant="destructive" className="w-full" onClick={deleteSelected}>
           <Trash2 className="h-4 w-4 mr-1" />{t.common.delete}
@@ -296,41 +323,48 @@ function MobileBottomBar({ selected, updateField, deleteSelected, zones, t }: {
   t: ReturnType<typeof useT>['t']
 }) {
   return (
-    <div className="md:hidden fixed bottom-0 inset-x-0 bg-background border-t shadow-lg p-3 z-50">
-      <div className="flex items-center gap-2 max-w-screen-sm mx-auto">
-        <span className="text-sm font-medium truncate min-w-0">{selected.name}</span>
-
-        {/* Zone selector */}
+    <div className="md:hidden fixed bottom-0 inset-x-0 bg-background border-t shadow-lg px-3 py-2 z-50 space-y-2 pb-safe">
+      {/* Row 1: name + zone + delete */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium truncate min-w-0 flex-1">{selected.name}</span>
         <Select value={selected.zone ?? 'Main'} onValueChange={v => updateField('zone', v)}>
-          <SelectTrigger className="w-24 h-9 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-28 min-h-[44px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             {zones.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}
           </SelectContent>
         </Select>
-
-        {/* Shape buttons */}
+        <Button size="sm" variant="destructive" className="min-h-[44px] min-w-[44px]" onClick={deleteSelected}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      {/* Row 2: shape + size */}
+      <div className="flex items-center gap-2">
         <div className="flex gap-1">
           {SHAPES.map(s => (
-            <button
-              key={s}
-              onClick={() => updateField('shape', s)}
+            <button key={s} onClick={() => updateField('shape', s)}
               className={cn(
-                'px-2 py-1.5 text-xs rounded border transition-colors',
+                'min-h-[44px] min-w-[44px] text-xs rounded border transition-colors',
                 (selected.shape ?? 'square') === s
                   ? 'bg-blue-50 border-blue-400 text-blue-700 font-medium'
                   : 'border-gray-200'
-              )}
-            >
+              )}>
               {SHAPE_LABELS[s].charAt(0)}
             </button>
           ))}
         </div>
-
-        {/* Delete */}
-        <Button size="sm" variant="destructive" className="ml-auto shrink-0" onClick={deleteSelected}>
-          <Trash2 className="h-4 w-4" />
-          <span className="sr-only">{t.common.delete}</span>
-        </Button>
+        <div className="flex items-center gap-1 ml-auto text-xs">
+          <span className="text-muted-foreground">W</span>
+          <Input type="number" min={2} step={1}
+            value={Math.round((selected.width ?? 80) / 20)}
+            onChange={e => updateField('width', Math.max(40, Number(e.target.value) * 20))}
+            className="w-14 min-h-[44px] text-sm text-center px-1" />
+          <span className="text-muted-foreground">×</span>
+          <span className="text-muted-foreground">H</span>
+          <Input type="number" min={2} step={1}
+            value={Math.round((selected.height ?? 80) / 20)}
+            onChange={e => updateField('height', Math.max(40, Number(e.target.value) * 20))}
+            className="w-14 min-h-[44px] text-sm text-center px-1" />
+        </div>
       </div>
     </div>
   )

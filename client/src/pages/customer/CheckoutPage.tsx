@@ -14,13 +14,15 @@ import { useSessionStore } from '@/stores/session-store'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
 import { api } from '@/services/api'
-import TipSelector from '@/components/shared/TipSelector'
+import TipSelector, { type TipSelection } from '@/components/shared/TipSelector'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
+type Settlement = { type: 'by-item'; itemKeys: string[] } | { type: 'by-percent'; percent: number }
 type RouteState = {
   clientSecret?: string; amount?: number; tableId?: string
   items?: { menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]
+  sessionId?: string; settlement?: Settlement
 } | null
 
 function CheckoutForm({ amount, items }: { amount: number; items: { name: string; quantity: number; price: number; selectedOptions?: { choiceName: string; choiceNameEn?: string }[] }[] }) {
@@ -72,7 +74,7 @@ function CheckoutForm({ amount, items }: { amount: number; items: { name: string
                     </span>
                   )}
                 </span>
-                <span className="text-muted-foreground">{formatPriceUSD(item.price * item.quantity)}</span>
+                <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
               </div>
             ))}
           </div>
@@ -121,22 +123,32 @@ export default function CheckoutPage() {
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
 
-  const [tipPct, setTipPct] = useState<number | null>(null)
+  const [tipSelection, setTipSelection] = useState<TipSelection | null>(null)
   const [activeSecret, setActiveSecret] = useState(clientSecret)
   const [activeAmount, setActiveAmount] = useState(amount)
   const [loadingTip, setLoadingTip] = useState(false)
 
-  const applyTip = async (pct: number | null) => {
-    setTipPct(pct)
-    if (!state?.tableId || !state?.items) return
-    const tip = pct !== null ? Math.round(amount * pct / 100) : 0
+  const applyTip = async (sel: TipSelection | null) => {
+    setTipSelection(sel)
+    if (!storeId || !state?.tableId) return
+    let tip = 0
+    if (sel?.type === 'percent') {
+      tip = Math.round(amount * sel.pct / 100)
+    } else if (sel?.type === 'custom') {
+      tip = sel.amount
+    }
     setLoadingTip(true)
     try {
-      const result = await api.createCheckout(storeId ?? '', {
-        tableId: state.tableId,
-        items: state.items,
-        tipAmount: tip,
-      })
+      let result: { clientSecret: string; amount: number }
+      if (state.sessionId) {
+        // Pay-later: recreate session PaymentIntent with tip added to amount
+        result = await api.createCheckoutForSession(storeId, state.sessionId, amount + tip, state.settlement)
+      } else if (state.items) {
+        // Pay-first: recreate cart PaymentIntent with tipAmount
+        result = await api.createCheckout(storeId, {
+          tableId: state.tableId, items: state.items, tipAmount: tip,
+        })
+      } else return
       setActiveSecret(result.clientSecret)
       setActiveAmount(result.amount)
     } catch { /* keep original */ }
@@ -176,12 +188,12 @@ export default function CheckoutPage() {
 
         <TipSelector
           baseAmount={amount}
-          tipPct={tipPct}
+          selected={tipSelection}
           onSelect={applyTip}
           loadingTip={loadingTip}
         />
 
-        <Elements stripe={stripePromise} options={{ clientSecret: activeSecret! }} key={activeSecret}>
+        <Elements stripe={stripePromise} options={{ clientSecret: activeSecret!, locale: lang === 'zh' ? 'zh' : 'en' }} key={activeSecret}>
           <CheckoutForm amount={activeAmount} items={cartItems} />
         </Elements>
       </div>

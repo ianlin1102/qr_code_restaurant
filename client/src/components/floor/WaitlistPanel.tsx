@@ -88,6 +88,7 @@ export default function WaitlistPanel({ storeId }: Props) {
           value={name}
           onChange={e => setName(e.target.value)}
           required
+          className="min-h-[44px]"
         />
         <div className="flex gap-2">
           <Input
@@ -97,17 +98,17 @@ export default function WaitlistPanel({ storeId }: Props) {
             value={partySize}
             onChange={e => setPartySize(e.target.value)}
             required
-            className="flex-1"
+            className="flex-1 min-h-[44px]"
           />
           <Input
             placeholder={t.waitlist.phone}
             value={phone}
             onChange={e => setPhone(e.target.value)}
-            className="flex-1"
+            className="flex-1 min-h-[44px]"
           />
         </div>
         {error && <p className="text-xs text-destructive">{error}</p>}
-        <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90">
+        <Button type="submit" disabled={loading} className="w-full min-h-[44px]">
           {loading ? t.waitlist.adding : t.waitlist.addEntry}
         </Button>
       </form>
@@ -145,26 +146,27 @@ function WaitlistItem({ entry, position, onSeat, onRemove }: ItemProps) {
   const waited = minutesSince(entry.createdAt)
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md border p-3">
-      <div className="flex items-center gap-3 min-w-0">
-        <Badge variant="outline">#{position}</Badge>
-        <div className="min-w-0">
-          <p className="font-medium truncate">{entry.name}</p>
+    <li className="rounded-lg border p-3 space-y-2">
+      {/* Row 1: position + name + wait time */}
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="shrink-0">#{position}</Badge>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium truncate text-sm">{entry.name}</p>
           <p className="text-xs text-muted-foreground">
             {t.waitlist.partyOf.replace('{{count}}', String(entry.partySize))}
             {entry.phone && <span> &middot; {entry.phone}</span>}
           </p>
         </div>
+        <Badge variant="secondary" className="shrink-0 text-xs">
+          {t.waitlist.minutesWaited.replace('{{count}}', String(waited))}
+        </Badge>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <Badge variant="secondary">{t.waitlist.minutesWaited.replace('{{count}}', String(waited))}</Badge>
-        {entry.estimatedWait != null && (
-          <Badge variant="outline">{t.waitlist.estWait.replace('{{count}}', String(entry.estimatedWait))}</Badge>
-        )}
-        <Button size="sm" onClick={() => onSeat(entry.id)}>
+      {/* Row 2: action buttons */}
+      <div className="flex gap-2">
+        <Button size="sm" className="flex-1 min-h-[44px]" onClick={() => onSeat(entry.id)}>
           {t.waitlist.seat}
         </Button>
-        <Button size="sm" variant="destructive" onClick={() => onRemove(entry.id)}>
+        <Button size="sm" variant="destructive" className="flex-1 min-h-[44px]" onClick={() => onRemove(entry.id)}>
           {t.waitlist.remove}
         </Button>
       </div>

@@ -88,6 +88,8 @@
     "securePayment": "安全加密支付",
     "tip": "添加小费",
     "tipCustom": "自定义",
+    "tipConfirm": "确认",
+    "tipApply": "确认",
     "orderSummary": "订单详情"
   },
   "orderHistory": {

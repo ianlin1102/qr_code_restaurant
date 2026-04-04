@@ -16,12 +16,14 @@ export type CartEntry = CartItem & { cartKey: string }
 
 interface CartState {
   items: CartEntry[]
+  cartVersion: number            // synced from server on poll
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
   removeItem: (cartKey: string) => void
   updateQuantity: (cartKey: string, quantity: number) => void
   updateRemark: (cartKey: string, remark: string) => void
   clearCart: () => void
   clearMyItems: () => void      // remove only items added by this device
+  setCartVersion: (v: number) => void
   totalPrice: () => number
   totalItems: () => number
 }
@@ -30,6 +32,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
   items: [],
+  cartVersion: 0,
 
   addItem: (item) => set(state => {
     const optsKey = JSON.stringify(
@@ -94,6 +97,7 @@ export const useCartStore = create<CartState>()(
   clearMyItems: () => set(state => ({
     items: state.items.filter(i => i.addedByDevice !== getDeviceId()),
   })),
+  setCartVersion: (v) => set({ cartVersion: v }),
 
   totalPrice: () => get().items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0),
 

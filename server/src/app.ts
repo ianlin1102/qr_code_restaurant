@@ -15,13 +15,16 @@ import couponRoutes from './routes/coupon.routes.js'
 import waitlistRoutes from './routes/waitlist.routes.js'
 import printerRoutes from './routes/printer.routes.js'
 import staffRoutes from './routes/staff.routes.js'
+import clockRoutes from './routes/clock.routes.js'
 import sessionRoutes from './routes/session.routes.js'
 import roleRoutes from './routes/role.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
 
-app.use(cors())
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+}))
 
 // Stripe webhook needs raw body — must be before express.json()
 app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRoutes)
@@ -51,6 +54,7 @@ app.use('/api/stores/:storeId/coupons', couponRoutes)
 app.use('/api/stores/:storeId/waitlist', waitlistRoutes)
 app.use('/api/stores/:storeId/printer', printerRoutes)
 app.use('/api/stores/:storeId/staff', staffRoutes)
+app.use('/api/stores/:storeId/clock', clockRoutes)
 app.use('/api/stores/:storeId/roles', roleRoutes)
 app.use('/api', uploadRoutes)
 

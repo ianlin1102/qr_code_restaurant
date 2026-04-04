@@ -26,6 +26,8 @@ export default function StoreSettingsPage() {
   const [autoAccept, setAutoAccept] = useState(false)
   const [paymentMode, setPaymentMode] = useState<'pay-first' | 'pay-later'>('pay-first')
   const [announcementEn, setAnnouncementEn] = useState('')
+  const [taxRate, setTaxRate] = useState('')
+  const [serviceFeeRate, setServiceFeeRate] = useState('')
 
   useEffect(() => {
     loadStore()
@@ -42,6 +44,8 @@ export default function StoreSettingsPage() {
       setAutoAccept(data.autoAcceptOrders ?? false)
       setPaymentMode(data.paymentMode ?? 'pay-first')
       setAnnouncementEn(data.announcementEn ?? '')
+      setTaxRate(data.taxRate != null ? String(data.taxRate) : '')
+      setServiceFeeRate(data.serviceFeeRate != null ? String(data.serviceFeeRate) : '')
     } catch (err) {
       setMessage({ type: 'error', text: t.settings.loadFailed })
     } finally {
@@ -65,6 +69,8 @@ export default function StoreSettingsPage() {
         autoAcceptOrders: autoAccept,
         paymentMode,
         announcementEn: announcementEn.trim() || undefined,
+        taxRate: taxRate ? Number(taxRate) : undefined,
+        serviceFeeRate: serviceFeeRate ? Number(serviceFeeRate) : undefined,
       })
       setStore(updated)
       setMessage({ type: 'success', text: t.settings.saveSuccess })
@@ -169,6 +175,36 @@ export default function StoreSettingsPage() {
                 {paymentMode === 'pay-later' ? (t.settings.payLater || 'Pay Later') : (t.settings.payFirst || 'Pay First')}
               </span>
             </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">{t.settings.taxRate}</label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step={0.001}
+              value={taxRate}
+              onChange={e => setTaxRate(e.target.value)}
+              placeholder="8.875"
+              className="text-base mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">{t.settings.taxRateDesc}</p>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">{t.settings.serviceFeeRate}</label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              value={serviceFeeRate}
+              onChange={e => setServiceFeeRate(e.target.value)}
+              placeholder="15"
+              className="text-base mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">{t.settings.serviceFeeRateDesc}</p>
           </div>
 
           <div>

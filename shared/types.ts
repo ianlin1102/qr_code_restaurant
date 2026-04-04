@@ -14,9 +14,14 @@ export interface Store {
   updatedAt?: string
   maxTables?: number
   paymentMode?: 'pay-first' | 'pay-later'
+  taxRate?: number               // e.g. 8.875 means 8.875%
+  serviceFeeRate?: number        // e.g. 15 means 15%
 }
 
-export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store, 'description' | 'openingHours' | 'announcement' | 'announcementEn' | 'autoAcceptOrders' | 'maxTables' | 'paymentMode'>>
+export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store,
+  'description' | 'openingHours' | 'announcement' | 'announcementEn' |
+  'autoAcceptOrders' | 'maxTables' | 'paymentMode' | 'taxRate' | 'serviceFeeRate'
+>>
 
 // ===== User/Role =====
 export type Permission =
@@ -45,7 +50,18 @@ export interface StoreUser {
   password: string
   role: string              // legacy field, kept for backward compat
   roleId?: string           // new: references RoleDefinition.id
+  clockPin?: string         // 4-digit PIN for clock-in/out
   createdAt: string
+}
+
+// ===== Time Tracking =====
+export interface TimeEntry {
+  id: string
+  storeId: string
+  userId: string       // → StoreUser.id
+  clockIn: string      // ISO timestamp
+  clockOut?: string    // ISO timestamp, null = currently clocked in
+  duration?: number    // minutes, computed on clock-out
 }
 
 // ===== Menu =====
@@ -183,7 +199,11 @@ export interface Session {
   couponDiscountType?: DiscountType
   couponDiscountValue?: number
   discountAmount: number
-  pendingCart?: CartItem[]      // shared cart synced across devices for same table
+  settlementMode?: 'by-item' | 'by-percent'
+  paidItemIds?: string[]
+  pendingCart?: Record<string, CartItem[]>  // deviceId → items, per-device shared cart
+  cartVersion?: number           // incremented only on cart submission, for optimistic lock
+  lastCartSubmitAt?: string      // ISO timestamp, set when cart is submitted as order
   createdAt: string
   closedAt?: string
 }
@@ -196,6 +216,7 @@ export interface Payment {
   amount: number               // cents
   stripePaymentIntentId?: string
   paidBy?: string              // customer name or "waiter" for cash
+  method?: 'stripe' | 'cash'
   createdAt: string
 }
 
