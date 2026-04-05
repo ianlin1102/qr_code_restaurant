@@ -61,6 +61,22 @@ export async function addStaff(
   return toAuthUser(record)
 }
 
+export function updateClockPin(
+  storeId: string,
+  userId: string,
+  clockPin: string,
+): AuthUser | { error: string; status: number } {
+  if (!/^\d{4}$/.test(clockPin)) return { error: 'Clock PIN must be exactly 4 digits', status: 400 }
+  const all = staffStore.getByField('storeId', storeId)
+  const target = all.find(u => u.id === userId)
+  if (!target) return { error: 'User not found', status: 404 }
+  const dup = all.find(u => u.clockPin === clockPin && u.id !== userId)
+  if (dup) return { error: 'Clock PIN already in use', status: 409 }
+  staffStore.update(userId, { clockPin })
+  logger.info({ storeId, userId }, 'clock pin updated')
+  return toAuthUser(staffStore.getById(userId)!)
+}
+
 export function changeRole(
   storeId: string,
   userId: string,

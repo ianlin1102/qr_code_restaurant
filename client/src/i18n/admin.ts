@@ -267,7 +267,7 @@ export const adminT = {
     },
     clock: {
       title: '打卡', enterPin: '请输入密码',
-      welcomeBack: '欢迎回来，{name}！', hello: '你好，{name}',
+      welcomeBack: '欢迎回来，{name}！', hello: '准备好休息了吗，{name}？',
       clockIn: '上班打卡', clockOut: '下班打卡',
       clockedInAt: '打卡时间：{time}', duration: '工作时长：{duration}',
       successIn: '打卡成功', successOut: '下班打卡成功 — {duration}',
@@ -564,7 +564,7 @@ export const adminT = {
     },
     clock: {
       title: 'Clock In/Out', enterPin: 'Enter your PIN',
-      welcomeBack: 'Welcome back, {name}!', hello: 'Hello, {name}',
+      welcomeBack: 'Welcome back, {name}!', hello: 'Ready for a break, {name}?',
       clockIn: 'Clock In', clockOut: 'Clock Out',
       clockedInAt: 'Clocked in at {time}', duration: 'Duration: {duration}',
       successIn: 'Clocked in successfully', successOut: 'Clocked out — {duration}',

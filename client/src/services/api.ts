@@ -298,7 +298,7 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  updateStaff: (storeId: string, userId: string, data: { role?: string }) =>
+  updateStaff: (storeId: string, userId: string, data: { role?: string; clockPin?: string }) =>
     fetchJSON<AuthUser>(`/stores/${storeId}/staff/${userId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

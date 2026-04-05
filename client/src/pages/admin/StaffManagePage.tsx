@@ -220,6 +220,14 @@ export default function StaffManagePage() {
                           </SelectContent>
                         </Select>
                       )}
+                      <Button variant="outline" size="sm" className="min-h-[44px]" onClick={async () => {
+                        const pin = prompt(t.clock?.pinLabel || 'Clock PIN (4 digits)')
+                        if (!pin || !storeId) return
+                        try { await api.updateStaff(storeId, m.id, { clockPin: pin }); await fetchData() }
+                        catch (e) { setError(e instanceof Error ? e.message : 'Failed') }
+                      }}>
+                        {t.clock?.pinLabel || 'Set PIN'}
+                      </Button>
                       {canDelete(m) && (
                         <Button variant="outline" size="sm" className="text-red-600 min-h-[44px]" onClick={() => handleDelete(m)}>
                           {t.common.delete}

@@ -30,15 +30,21 @@ router.post('/', requireAuth, requirePermission('staff:manage'), async (req, res
 })
 
 router.patch('/:userId', requireAuth, requirePermission('staff:manage'), async (req, res) => {
-  const { role } = req.body
-  if (!role) {
-    res.status(400).json({ error: 'Role is required' })
+  const { role, clockPin } = req.body
+  if (!role && clockPin === undefined) {
+    res.status(400).json({ error: 'role or clockPin is required' })
     return
   }
-  const result = await changeRole(req.params.storeId, req.params.userId, role)
-  if ('error' in result) {
-    res.status(result.status).json({ error: result.error })
-    return
+  let result
+  if (role) {
+    result = await changeRole(req.params.storeId, req.params.userId, role)
+    if ('error' in result) { res.status(result.status).json({ error: result.error }); return }
+  }
+  if (clockPin !== undefined) {
+    const { updateClockPin } = await import('../controllers/staff.service.js')
+    const pinResult = updateClockPin(req.params.storeId, req.params.userId, clockPin)
+    if ('error' in pinResult) { res.status(pinResult.status).json({ error: pinResult.error }); return }
+    result = pinResult
   }
   res.json(result)
 })
