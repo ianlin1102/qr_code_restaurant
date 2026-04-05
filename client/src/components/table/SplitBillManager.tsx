@@ -148,10 +148,6 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
               onMerge={() => handleMerge(s.id)} />
           ))}
 
-          <Button variant="outline" className="w-full min-h-[44px]" onClick={() => setSheetOpen(true)}>
-            {ts.newSplit}
-          </Button>
-
           <div className="border-t pt-3 space-y-1 text-sm">
             <div className="flex justify-between"><span>{ts.sessionTotal}</span><span>{formatPriceUSD(session.totalWithTax)}</span></div>
             <div className="flex justify-between text-blue-600"><span>{ts.sessionPaid}</span><span>{formatPriceUSD(session.totalPaid)}</span></div>
