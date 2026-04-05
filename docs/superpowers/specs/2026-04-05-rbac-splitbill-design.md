@@ -368,6 +368,114 @@ If the admin has created SplitBills AND the customer also pays through Settlemen
 | `client/src/components/layout/AdminLayout.tsx` | Fix waitlist perm |
 | `client/src/pages/admin/MorePage.tsx` | Fix settings perm |
 
+### Waiter Card Payment: Manual Capture (Tip-on-Receipt)
+
+Two card payment flows depending on who holds the phone:
+
+**Flow A: Customer pays on phone (existing)**
+- Customer selects tip in TipSelector → PaymentIntent created with `amount = subtotal + tip`
+- One-step charge, `capture_method: 'automatic'` (default)
+
+**Flow B: Waiter takes card, customer writes tip on receipt**
+1. Waiter taps "Pay Card" on a sub-bill
+2. App creates PaymentIntent with `capture_method: 'manual'`, `amount = splitBill.total × 1.25` (25% buffer for tip)
+3. Customer taps/inserts card → Stripe authorizes (hold, no charge yet)
+4. Customer writes tip on receipt
+5. Waiter enters tip amount in the app
+6. App calls `stripe.paymentIntents.capture(piId, { amount_to_capture: splitBill.total + tipAmount })`
+7. Uncaptured portion auto-released to customer
+
+**API:**
+
+`POST /split-bills/:splitBillId/pay-card` request:
+```json
+{
+  "captureMethod": "manual",
+  "tipAmount": 0
+}
+```
+
+Response includes `clientSecret` for Stripe Elements / terminal.
+
+New endpoint for capture after tip:
+`POST /split-bills/:splitBillId/capture`
+```json
+{
+  "paymentIntentId": "pi_xxx",
+  "tipAmount": 500
+}
+```
+
+Server calls `stripe.paymentIntents.capture(piId, { amount_to_capture: splitBill.total + tipAmount })`.
+
+**Timeout:** Uncaptured PaymentIntents expire after 7 days (Stripe default). Admin UI should show "Pending capture" status and allow manual capture or void.
+
+**Implementation:** Add `captureMethod` param to `createPaymentIntentForSession`. If `'manual'`, multiply amount by 1.25 for authorization buffer. New `captureSplitBillPayment` service function.
+
+---
+
+### Void Items
+
+Waiters can **void** individual items on an order. Voiding sets the item's effective price to 0 and excludes it from revenue/analytics.
+
+**Data model change — OrderItem:**
+```typescript
+interface OrderItem {
+  // ... existing fields ...
+  voided?: boolean        // true = price treated as 0, excluded from sales
+  voidedAt?: string       // ISO timestamp
+  voidedBy?: string       // userId of waiter who voided
+  voidReason?: string     // optional reason
+}
+```
+
+**Behavior:**
+- Voided item stays on the order (visible in history with strikethrough)
+- `item.voided === true` → effective price = 0 in all calculations
+- Session `totalAmount` recalculated after void
+- Split bills containing voided items: recalculate amounts
+- Analytics: voided items excluded from revenue, counted separately as "voided"
+
+**API:**
+
+`PATCH /orders/:orderId/items/:itemIndex/void`
+```json
+{
+  "reason": "Customer complaint"
+}
+```
+
+Auth: `requireAuth` + `orders:write`
+
+Server logic:
+1. Set `order.items[itemIndex].voided = true`, `voidedAt`, `voidedBy`
+2. Recalculate `order.totalPrice` (exclude voided items)
+3. Call `recalcSessionTotal(sessionId)` to update session
+4. Recalculate any affected SplitBills
+
+**UI in TablesPage detail panel:**
+- Each order item shows a "Void" button (icon: slash/ban)
+- Voided items show with strikethrough text, $0.00 price, "VOIDED" badge
+- Optional: prompt for void reason
+
+**Analytics impact:**
+- `analytics.service.ts` should filter `voided` items from revenue calculations
+- Add "Voided Items" section to analytics: count + total value voided
+
+### Files for Void Feature
+
+| File | Change |
+|------|--------|
+| `shared/types.ts` | Add `voided`, `voidedAt`, `voidedBy`, `voidReason` to `OrderItem` |
+| `server/src/controllers/order.service.ts` | Add `voidItem()` function |
+| `server/src/routes/order.routes.ts` | Add `PATCH /:orderId/items/:itemIndex/void` |
+| `server/src/controllers/session.service.ts` | Update `recalcSessionTotal` to exclude voided items |
+| `server/src/controllers/analytics.service.ts` | Exclude voided from revenue |
+| `client/src/services/api.ts` | Add `voidItem()` method |
+| `client/src/pages/admin/TablesPage.tsx` | Add void button to order items |
+
+---
+
 ### i18n Keys
 
 ```
@@ -391,6 +499,13 @@ splitBill.total: "Total Due" / "应付金额"
 splitBill.sessionTotal: "Session Total" / "总金额"
 splitBill.sessionPaid: "Total Paid" / "已付总额"
 splitBill.sessionDue: "Remaining" / "待付余额"
+splitBill.pendingCapture: "Pending tip" / "等待小费"
+splitBill.enterTip: "Enter tip from receipt" / "输入小票上的小费"
+splitBill.capture: "Charge" / "确认扣款"
+void.button: "Void" / "作废"
+void.voided: "VOIDED" / "已作废"
+void.reason: "Reason (optional)" / "原因（可选）"
+void.confirm: "Void this item? Price will be set to $0." / "作废此菜品？价格将变为 $0。"
 ```
 
 ---
@@ -398,9 +513,10 @@ splitBill.sessionDue: "Remaining" / "待付余额"
 ## Implementation Order
 
 1. **RBAC fixes** — tiny, 2 files
-2. **SplitBill data model + server** — types, store, service, routes
-3. **SplitBillManager UI** — admin bill management dialog
-4. **CreateSplitSheet UI** — item selection for creating splits
-5. **Integration + TablesPage** — wire up to existing flow
+2. **Void items** — data model + API + UI (independent)
+3. **SplitBill data model + server** — types, store, service, routes (includes manual capture)
+4. **SplitBillManager UI** — admin bill management dialog (includes capture flow for tip-on-receipt)
+5. **CreateSplitSheet UI** — item selection for creating splits
+6. **Integration + TablesPage** — wire up to existing flow
 
-Items 1-2 are independent. 3-4 depend on 2. 5 depends on 3-4.
+Items 1-3 are independent and can run in parallel. 4-5 depend on 3. 6 depends on 4-5.
