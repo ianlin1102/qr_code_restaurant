@@ -103,6 +103,6 @@ export const useCartStore = create<CartState>()(
 
   totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
     }),
-    { name: 'qr-order-cart', storage: safeStorage }
+    { name: 'qr-order-cart', storage: safeStorage as any }
   )
 )

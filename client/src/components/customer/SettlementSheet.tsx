@@ -37,8 +37,6 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   const [percent, setPercent] = useState(50)
   const [loading, setLoading] = useState(false)
 
-  const paidSet = useMemo(() => new Set(session.paidItemIds ?? []), [session.paidItemIds])
-
   // Flatten all order items with keys
   const allItems = useMemo(() => {
     const result: { key: string; name: string; unitPrice: number; totalQty: number; paidQty: number; opts: { label: string; adjust: number }[] }[] = []
@@ -68,19 +66,9 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
     return result
   }, [session.orders, session.paidItemIds, lang])
 
-  // Local subtotal (for instant UI, before server confirms)
-  const localSubtotal = useMemo(() => {
-    let sum = 0
-    for (const item of allItems) {
-      const qty = selectedQty[item.key] ?? 0
-      sum += item.unitPrice * qty
-    }
-    return sum
-  }, [allItems, selectedQty])
-
   // Fetch server calculation (debounced)
   const [calc, setCalc] = useState({ subtotal: 0, tax: 0, svc: 0, total: 0 })
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
     clearTimeout(debounceRef.current)
     const keys = buildItemKeys(selectedQty)

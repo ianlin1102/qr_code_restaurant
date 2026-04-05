@@ -20,6 +20,8 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
   confirmed: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   preparing: 'bg-orange-100 text-orange-800 border-orange-200',
   served: 'bg-green-100 text-green-800 border-green-200',
+  paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  closed: 'bg-gray-100 text-gray-800 border-gray-200',
 }
 const ACTIVE: OrderStatus[] = ['pending', 'confirmed', 'preparing']
 

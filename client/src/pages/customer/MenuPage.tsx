@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
 import { usePaymentStore } from '@/stores/payment-store'
-import type { MenuResponse, MenuItem, Order, CartItem } from '@qr-order/shared'
+import type { MenuResponse, MenuItem, CartItem } from '@qr-order/shared'
 
 /** Strip ALL HTML — render announcement as safe plain text with line breaks */
 function plainText(html: string): string {
@@ -58,7 +58,6 @@ export default function MenuPage() {
   const [waiterCalled, setWaiterCalled] = useState(false)
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null)
-  const [payingOrders, setPayingOrders] = useState(false)
   const [settlementOpen, setSettlementOpen] = useState(false)
   // Session payment state — centralized Zustand store
   const sessionSummary = usePaymentStore(s => s.summary)

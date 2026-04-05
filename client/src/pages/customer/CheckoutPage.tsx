@@ -25,7 +25,7 @@ type RouteState = {
   sessionId?: string; settlement?: Settlement
 } | null
 
-function CheckoutForm({ amount, items }: { amount: number; items: { name: string; quantity: number; price: number; selectedOptions?: { choiceName: string; choiceNameEn?: string }[] }[] }) {
+function CheckoutForm({ amount, items }: { amount: number; items: { name: string; quantity: number; price: number; selectedOptions?: { choiceName?: string; choiceNameEn?: string; priceAdjust?: number }[] }[] }) {
   const stripe = useStripe()
   const elements = useElements()
   const { t } = useTranslation('customer')
@@ -74,7 +74,7 @@ function CheckoutForm({ amount, items }: { amount: number; items: { name: string
                     </span>
                   )}
                 </span>
-                <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
+                <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity)}</span>
               </div>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useT } from '@/i18n/useT'
 import { localized } from '@/lib/i18n-utils'
 import { api } from '@/services/api'

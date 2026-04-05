@@ -25,7 +25,7 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'qr-order-session',
-      storage: safeStorage,
+      storage: safeStorage as any,
     }
   )
 )

@@ -16,6 +16,6 @@ export const useAdminLangStore = create<AdminLangStore>()(
       setLang: (lang) => set({ lang }),
       toggle: () => set({ lang: get().lang === 'zh' ? 'en' : 'zh' }),
     }),
-    { name: 'admin-lang', storage: safeStorage }
+    { name: 'admin-lang', storage: safeStorage as any }
   )
 )

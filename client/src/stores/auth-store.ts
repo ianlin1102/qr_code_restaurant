@@ -22,6 +22,6 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: () => !!get().token,
       isOwner: () => get().user?.role === 'owner',
     }),
-    { name: 'auth-storage', storage: safeStorage }
+    { name: 'auth-storage', storage: safeStorage as any }
   )
 )

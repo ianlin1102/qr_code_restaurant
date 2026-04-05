@@ -19,6 +19,8 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   confirmed: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   preparing: 'bg-blue-100 text-blue-800 border-blue-200',
   served: 'bg-green-100 text-green-800 border-green-200',
+  paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  closed: 'bg-gray-100 text-gray-800 border-gray-200',
 }
 
 function itemUnitPrice(item: OrderItem): number {
@@ -62,6 +64,8 @@ export default function OrderDetailDialog({
     confirmed: { label: t.dashboard.status.confirmed || 'Confirmed', color: STATUS_COLORS.confirmed },
     preparing: { label: t.dashboard.status.preparing, color: STATUS_COLORS.preparing },
     served: { label: t.dashboard.status.served, color: STATUS_COLORS.served },
+    paid: { label: 'Paid', color: STATUS_COLORS.paid },
+    closed: { label: 'Closed', color: STATUS_COLORS.closed },
   }
 
   const handlePrint = useCallback(() => {

@@ -41,6 +41,7 @@ export const adminT = {
       deleteOrderConfirm: '确定要删除这个订单吗？此操作不可撤销。',
       status: {
         pending: '待处理', confirmed: '已接单', preparing: '备餐中', served: '已上菜',
+        paid: '已付款', closed: '已关闭',
       },
     },
     menu: {
@@ -224,6 +225,10 @@ export const adminT = {
       selectItems: '选择要拆分的菜品', choosePercent: '选择比例',
       createSplit: '创建分账', subtotal: '小计',
     },
+    voidItem: {
+      button: '作废', voided: '已作废', reason: '原因（可选）',
+      confirm: '作废此菜品？价格将变为 $0。',
+    },
     transferTable: {
       title: '转台', selectTarget: '选择目标桌台', confirm: '确认转台',
       currentTable: '当前桌台', noAvailable: '没有可用的空闲桌台',
@@ -333,6 +338,7 @@ export const adminT = {
       deleteOrderConfirm: 'Are you sure you want to delete this order? This cannot be undone.',
       status: {
         pending: 'Pending', confirmed: 'Confirmed', preparing: 'Preparing', served: 'Served',
+        paid: 'Paid', closed: 'Closed',
       },
     },
     menu: {
@@ -515,6 +521,10 @@ export const adminT = {
       byItems: 'By Items', byPercent: 'By Percent',
       selectItems: 'Select items to split', choosePercent: 'Choose percentage',
       createSplit: 'Create Split', subtotal: 'Subtotal',
+    },
+    voidItem: {
+      button: 'Void', voided: 'VOIDED', reason: 'Reason (optional)',
+      confirm: 'Void this item? Price will be set to $0.',
     },
     transferTable: {
       title: 'Transfer Table', selectTarget: 'Select Target Table', confirm: 'Confirm Transfer',

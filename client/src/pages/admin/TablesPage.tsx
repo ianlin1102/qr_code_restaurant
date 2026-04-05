@@ -127,7 +127,6 @@ export default function TablesPage() {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   }, [selected, orders])
   const displayOrders = viewTab === 'history' ? pastOrders : sessionOrders
-  const allItems = useMemo(() => sessionOrders.flatMap(o => o.items), [sessionOrders])
   const paidItemSet = useMemo(() => new Set(sessionSummary?.paidItemIds ?? []), [sessionSummary?.paidItemIds])
   const currentOrder = sessionOrders[0] ?? null
   // Prices from server session summary (single source of truth)

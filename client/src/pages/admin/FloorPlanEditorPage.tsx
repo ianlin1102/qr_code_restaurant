@@ -183,7 +183,6 @@ export default function FloorPlanEditorPage() {
           updateField={updateField}
           deleteSelected={deleteSelected}
           zones={zones}
-          t={t}
         />
       )}
     </div>
@@ -315,12 +314,11 @@ function PropertiesPanel({ selected, updateField, deleteSelected, t, zones }: {
 }
 
 /* ---- Mobile Bottom Bar (visible on small screens when a table is selected) ---- */
-function MobileBottomBar({ selected, updateField, deleteSelected, zones, t }: {
+function MobileBottomBar({ selected, updateField, deleteSelected, zones }: {
   selected: Table
   updateField: (field: keyof Table, value: string | number) => void
   deleteSelected: () => void
   zones: string[]
-  t: ReturnType<typeof useT>['t']
 }) {
   return (
     <div className="md:hidden fixed bottom-0 inset-x-0 bg-background border-t shadow-lg px-3 py-2 z-50 space-y-2 pb-safe">

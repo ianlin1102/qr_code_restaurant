@@ -93,6 +93,12 @@ export const api = {
       method: 'DELETE',
     }),
 
+  voidItem: (storeId: string, orderId: string, itemIndex: number, reason?: string) =>
+    fetchJSON<Order>(`/stores/${storeId}/orders/${orderId}/items/${itemIndex}/void`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    }),
+
   // Admin: Menu Items
   getMenuItems: (storeId: string) =>
     fetchJSON<MenuItem[]>(`/stores/${storeId}/menu/items`),

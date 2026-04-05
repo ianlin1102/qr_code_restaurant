@@ -30,14 +30,14 @@ let currentTableId: string | null = null
 async function fetchSession(storeId: string, tableId: string): Promise<SessionSummary | null> {
   let s = await api.getActiveSession(storeId, tableId)
   if (!s) {
-    const created = await api.createSession(storeId, tableId)
+    await api.createSession(storeId, tableId)
     s = await api.getActiveSession(storeId, tableId)
     if (!s) return null
   }
   return s
 }
 
-export const usePaymentStore = create<PaymentState>()((set, get) => ({
+export const usePaymentStore = create<PaymentState>()((set) => ({
   summary: null,
   sessionId: null,
   loading: false,
