@@ -49,6 +49,7 @@ function buildTopItems(orders: Order[]): TopItem[] {
 
   for (const order of orders) {
     for (const item of order.items) {
+      if (item.voided) continue
       const existing = map.get(item.menuItemId)
       const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
       const lineRevenue = (item.price + optAdjust) * item.quantity
@@ -79,7 +80,13 @@ export function getAnalytics(
 ): AnalyticsResponse {
   const orders = filterOrders(storeId, startDate, endDate)
   const totalOrders = orders.length
-  const totalRevenue = orders.reduce((sum, o) => sum + o.totalPrice, 0)
+  const totalRevenue = orders.reduce((sum, o) => {
+    return sum + o.items.reduce((s, it) => {
+      if (it.voided) return s
+      const optAdjust = (it.selectedOptions ?? []).reduce((a, opt) => a + opt.priceAdjust, 0)
+      return s + (it.price + optAdjust) * it.quantity
+    }, 0)
+  }, 0)
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0
 
   return {

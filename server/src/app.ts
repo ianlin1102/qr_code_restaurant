@@ -18,6 +18,7 @@ import staffRoutes from './routes/staff.routes.js'
 import clockRoutes from './routes/clock.routes.js'
 import sessionRoutes from './routes/session.routes.js'
 import roleRoutes from './routes/role.routes.js'
+import splitBillRoutes from './routes/split-bill.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
@@ -49,6 +50,7 @@ app.use('/api/stores/:storeId/orders', orderRoutes)
 app.use('/api/stores/:storeId/checkout', paymentRoutes)
 app.use('/api/stores/:storeId/tables', tableRoutes)
 app.use('/api/stores/:storeId/sessions', sessionRoutes)
+app.use('/api/stores/:storeId/sessions/:sessionId/split-bills', splitBillRoutes)
 app.use('/api/stores/:storeId/analytics', analyticsRoutes)
 app.use('/api/stores/:storeId/coupons', couponRoutes)
 app.use('/api/stores/:storeId/waitlist', waitlistRoutes)

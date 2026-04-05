@@ -1,4 +1,4 @@
-import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Session, Payment, RoleDefinition, CartItem, TimeEntry } from '@qr-order/shared'
+import type { MenuResponse, CreateOrderRequest, Order, OrderStatus, OrderItem, MenuItem, Category, Table, Store, UpdateStoreRequest, LoginResponse, AnalyticsResponse, Coupon, WaitlistEntry, AuthUser, Session, Payment, RoleDefinition, CartItem, TimeEntry, SplitBill } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 
 export type SessionSummary = Session & { orders: Order[]; payments: Payment[]; remaining: number; isPaid: boolean; netDue: number; tax: number; serviceFee: number; totalWithTax: number }
@@ -381,6 +381,40 @@ export const api = {
     fetchJSON<{ session: Session; payment: Payment; change: number }>(
       `/stores/${storeId}/sessions/${sessionId}/cash-payment`,
       { method: 'POST', body: JSON.stringify({ amount, receivedAmount }) },
+    ),
+
+  // Split Bills (admin)
+  getSplitBills: (storeId: string, sessionId: string) =>
+    fetchJSON<{ splits: SplitBill[]; mainBill: { subtotal: number; tax: number; serviceFee: number; total: number; itemCount: number } }>(
+      `/stores/${storeId}/sessions/${sessionId}/split-bills`,
+    ),
+
+  createSplitBill: (storeId: string, sessionId: string, data: { type: 'by-item' | 'by-percent'; itemKeys?: string[]; percent?: number; label?: string }) =>
+    fetchJSON<SplitBill>(`/stores/${storeId}/sessions/${sessionId}/split-bills`, {
+      method: 'POST', body: JSON.stringify(data),
+    }),
+
+  deleteSplitBill: (storeId: string, sessionId: string, splitBillId: string) =>
+    fetchJSON<{ ok: true }>(`/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}`, {
+      method: 'DELETE',
+    }),
+
+  paySplitBillCard: (storeId: string, sessionId: string, splitBillId: string, tipAmount?: number, captureMethod?: 'manual') =>
+    fetchJSON<{ splitBill?: SplitBill; sessionFullyPaid?: boolean; clientSecret?: string; paymentIntentId?: string; authorizedAmount?: number }>(
+      `/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}/pay-card`,
+      { method: 'POST', body: JSON.stringify({ tipAmount, captureMethod }) },
+    ),
+
+  paySplitBillCash: (storeId: string, sessionId: string, splitBillId: string, receivedAmount: number, tipAmount?: number) =>
+    fetchJSON<{ splitBill: SplitBill; change: number; sessionFullyPaid: boolean }>(
+      `/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}/pay-cash`,
+      { method: 'POST', body: JSON.stringify({ receivedAmount, tipAmount }) },
+    ),
+
+  captureSplitBill: (storeId: string, sessionId: string, splitBillId: string, tipAmount: number) =>
+    fetchJSON<{ splitBill: SplitBill; sessionFullyPaid: boolean }>(
+      `/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}/capture`,
+      { method: 'POST', body: JSON.stringify({ tipAmount }) },
     ),
 
   // Roles

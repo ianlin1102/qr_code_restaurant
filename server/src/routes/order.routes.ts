@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createOrder, getOrders, updateOrderStatus, updateOrderItems, transferOrder, deleteOrder } from '../controllers/order.service.js'
+import { createOrder, getOrders, updateOrderStatus, updateOrderItems, transferOrder, deleteOrder, voidItem } from '../controllers/order.service.js'
 import { requireAuth, optionalAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
 import type { OrderStatus } from '@qr-order/shared'
@@ -75,6 +75,21 @@ router.put('/:orderId/items', requireAuth, requirePermission('orders:write'), as
     res.status(400).json(result)
     return
   }
+  res.json(result)
+})
+
+// PATCH /api/stores/:storeId/orders/:orderId/items/:itemIndex/void (admin only)
+router.patch('/:orderId/items/:itemIndex/void', requireAuth, requirePermission('orders:write'), (req, res) => {
+  const itemIndex = parseInt(req.params.itemIndex, 10)
+  if (isNaN(itemIndex)) { res.status(400).json({ error: 'Invalid item index' }); return }
+  const result = voidItem(
+    req.params.storeId,
+    req.params.orderId,
+    itemIndex,
+    (req as any).user?.userId ?? 'unknown',
+    req.body.reason,
+  )
+  if ('error' in result) { res.status(400).json(result); return }
   res.json(result)
 })
 

@@ -6,7 +6,7 @@ import type { Permission } from '@qr-order/shared'
 type NavKey = 'categories' | 'coupons' | 'staff' | 'analytics' | 'settings'
 
 const ITEMS: { to: string; navKey: NavKey; icon: string; perm?: Permission }[] = [
-  { to: '/admin/settings', navKey: 'settings', icon: '⚙️' },
+  { to: '/admin/settings', navKey: 'settings', icon: '⚙️', perm: 'settings:read' },
   { to: '/admin/categories', navKey: 'categories', icon: '📂', perm: 'menu:read' },
   { to: '/admin/coupons', navKey: 'coupons', icon: '🎟️', perm: 'billing:read' },
   { to: '/admin/staff', navKey: 'staff', icon: '👥', perm: 'staff:manage' },

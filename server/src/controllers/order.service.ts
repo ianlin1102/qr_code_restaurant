@@ -222,6 +222,44 @@ export function deleteOrder(storeId: string, orderId: string): { success: true }
   return { success: true }
 }
 
+export function voidItem(
+  storeId: string,
+  orderId: string,
+  itemIndex: number,
+  userId: string,
+  reason?: string,
+): Order | { error: string } {
+  const order = orderStore.getById(orderId)
+  if (!order || order.storeId !== storeId) return { error: 'Order not found' }
+  if (itemIndex < 0 || itemIndex >= order.items.length) return { error: 'Item index out of range' }
+  if (order.items[itemIndex].voided) return { error: 'Item already voided' }
+
+  const items = [...order.items]
+  items[itemIndex] = {
+    ...items[itemIndex],
+    voided: true,
+    voidedAt: new Date().toISOString(),
+    voidedBy: userId,
+    ...(reason ? { voidReason: reason } : {}),
+  }
+
+  // Recalculate order total excluding voided items
+  const totalPrice = items.reduce((sum, it) => {
+    if (it.voided) return sum
+    const optAdjust = (it.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+    return sum + (it.price + optAdjust) * it.quantity
+  }, 0)
+
+  const updated = orderStore.update(orderId, { items, totalPrice, updatedAt: new Date().toISOString() })!
+
+  if (order.sessionId) {
+    recalcSessionTotal(order.sessionId)
+  }
+
+  logger.info({ storeId, orderId, itemIndex, userId, reason }, 'item voided')
+  return updated
+}
+
 export async function updateOrderItems(storeId: string, orderId: string, items: OrderItem[]): Promise<Order | { error: string }> {
   const order = orderStore.getById(orderId)
   if (!order || order.storeId !== storeId) {

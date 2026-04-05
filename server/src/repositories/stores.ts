@@ -1,5 +1,5 @@
 import { JsonStore } from './json-store.js'
-import type { Order, Table, Store, Session, Payment, RoleDefinition, TimeEntry } from '@qr-order/shared'
+import type { Order, Table, Store, Session, Payment, RoleDefinition, TimeEntry, SplitBill } from '@qr-order/shared'
 
 // All JsonStore singletons in one place — prevents circular dependencies
 // and enforces the one-instance-per-file rule.
@@ -12,7 +12,4 @@ export const paymentStore = new JsonStore<Payment>('payments.json')
 export const roleStore = new JsonStore<RoleDefinition>('roles.json')
 export const timeEntryStore = new JsonStore<TimeEntry>('time-entries.json')
 export const staffStore = new JsonStore<{ id: string; storeId: string; username: string; password: string; role: string; roleId?: string; clockPin?: string; createdAt: string }>('staff.json')
-
-// Legacy aliases — will be removed after full migration
-export const billStore = sessionStore as unknown as JsonStore<Session>
-export const splitStore = paymentStore as unknown as JsonStore<Payment>
+export const splitBillStore = new JsonStore<SplitBill>('split-bills.json')

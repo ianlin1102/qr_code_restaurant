@@ -165,6 +165,10 @@ export interface OrderItem {
   quantity: number
   remark?: string
   selectedOptions?: SelectedOption[]
+  voided?: boolean        // true = price treated as 0, excluded from sales
+  voidedAt?: string       // ISO timestamp
+  voidedBy?: string       // userId of waiter who voided
+  voidReason?: string     // optional reason
 }
 
 export interface Order {
@@ -216,6 +220,27 @@ export interface Payment {
   amount: number               // cents
   stripePaymentIntentId?: string
   paidBy?: string              // customer name or "waiter" for cash
+  method?: 'stripe' | 'cash'
+  createdAt: string
+}
+
+// ===== Split Bill (admin-created sub-bills for a session) =====
+export interface SplitBill {
+  id: string
+  sessionId: string
+  storeId: string
+  label: string               // "Bill 1", "Bill 2"
+  type: 'by-item' | 'by-percent'
+  itemKeys?: string[]         // "orderId:idx:qty" for by-item
+  percent?: number            // 1-100, for by-percent
+  subtotal: number            // cents
+  tax: number                 // cents
+  serviceFee: number          // cents
+  total: number               // subtotal + tax + serviceFee
+  status: 'unpaid' | 'paid' | 'pending-capture'
+  paymentId?: string          // → Payment.id
+  paymentIntentId?: string    // Stripe PI for manual capture
+  paidAt?: string
   method?: 'stripe' | 'cash'
   createdAt: string
 }

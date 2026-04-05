@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import CloseTableDialog from '@/components/table/CloseTableDialog'
 import TransferTableDialog from '@/components/table/TransferTableDialog'
-import BillSettleDialog from '@/components/table/BillSettleDialog'
+import SplitBillManager from '@/components/table/SplitBillManager'
 import TableCrudDialog from '@/components/table/TableCrudDialog'
 import OrderingSheet from '@/components/order/OrderingSheet'
 import type { Table, Order, OrderItem, Store } from '@qr-order/shared'
@@ -390,8 +390,28 @@ export default function TablesPage() {
                       {it.remark && <p className="text-sm text-muted-foreground italic">{t.tables.note}: {it.remark}</p>}
                       <p className="text-xs text-gray-400 mt-1">{t.tables.qty}: {it.quantity}</p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className={cn('font-semibold', isPaid ? 'text-green-600 line-through' : 'text-primary')}>{formatPriceUSD(itemPrice(it))}</p>
+                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                      {it.voided ? (
+                        <>
+                          <span className="text-[10px] bg-red-100 text-red-700 rounded px-1.5 py-0.5">{t.voidItem?.voided || 'VOIDED'}</span>
+                          <p className="text-sm text-muted-foreground line-through">{formatPriceUSD(itemPrice(it))}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className={cn('font-semibold', isPaid ? 'text-green-600 line-through' : 'text-primary')}>{formatPriceUSD(itemPrice(it))}</p>
+                          {!isPaid && (
+                            <button className="text-[10px] text-red-500 hover:text-red-700"
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                const reason = prompt(t.voidItem?.reason || 'Reason (optional)')
+                                if (reason === null) return
+                                try { await api.voidItem(storeId, o.id, i, reason || undefined); refresh() } catch {}
+                              }}>
+                              {t.voidItem?.button || 'Void'}
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 )
@@ -429,13 +449,11 @@ export default function TablesPage() {
           order={currentOrder} storeId={storeId} onTransferred={refresh} />
       )}
       {sessionDialogOpen && selected?.currentSessionId && storeId && (
-        <BillSettleDialog
+        <SplitBillManager
           open={sessionDialogOpen}
           onClose={() => { setSessionDialogOpen(false); fetchData() }}
           storeId={storeId}
           sessionId={selected.currentSessionId}
-          t={t}
-          lang={lang}
         />
       )}
       <TableCrudDialog table={editingTable} storeId={storeId} open={crudOpen}

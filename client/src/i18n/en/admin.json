@@ -295,5 +295,36 @@
     "noActiveOrders": "No active orders right now.",
     "itemCount": "{{count}} items",
     "ago": "ago"
+  },
+  "splitBill": {
+    "title": "Bill Management",
+    "mainBill": "Main Bill",
+    "remaining": "remaining",
+    "newSplit": "New Split Bill",
+    "split": "Split...",
+    "mergeBack": "Merge Back",
+    "payCard": "Pay Card",
+    "payCash": "Pay Cash",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "byItem": "By Items",
+    "byPercent": "By Percent",
+    "confirmMerge": "Merge this bill back? Items will return to the main bill.",
+    "cannotMergePaid": "Cannot merge a paid bill",
+    "tipOptional": "Tip (optional)",
+    "change": "Change",
+    "total": "Total Due",
+    "sessionTotal": "Session Total",
+    "sessionPaid": "Total Paid",
+    "sessionDue": "Remaining",
+    "pendingCapture": "Pending tip",
+    "enterTip": "Enter tip from receipt",
+    "capture": "Charge"
+  },
+  "voidItem": {
+    "button": "Void",
+    "voided": "VOIDED",
+    "reason": "Reason (optional)",
+    "confirm": "Void this item? Price will be set to $0."
   }
 }

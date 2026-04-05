@@ -295,5 +295,36 @@
     "noActiveOrders": "当前无活跃订单",
     "itemCount": "{{count}} 件",
     "ago": "前"
+  },
+  "splitBill": {
+    "title": "账单管理",
+    "mainBill": "主账单",
+    "remaining": "剩余",
+    "newSplit": "新建分账",
+    "split": "分账...",
+    "mergeBack": "合并回主账单",
+    "payCard": "刷卡",
+    "payCash": "现金",
+    "paid": "已付",
+    "unpaid": "未付",
+    "byItem": "按菜品",
+    "byPercent": "按比例",
+    "confirmMerge": "确认合并？菜品将返回主账单。",
+    "cannotMergePaid": "已付账单无法合并",
+    "tipOptional": "小费（可选）",
+    "change": "找零",
+    "total": "应付金额",
+    "sessionTotal": "总金额",
+    "sessionPaid": "已付总额",
+    "sessionDue": "待付余额",
+    "pendingCapture": "等待小费",
+    "enterTip": "输入小票上的小费",
+    "capture": "确认扣款"
+  },
+  "voidItem": {
+    "button": "作废",
+    "voided": "已作废",
+    "reason": "原因（可选）",
+    "confirm": "作废此菜品？价格将变为 $0。"
   }
 }
