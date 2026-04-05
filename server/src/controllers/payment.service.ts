@@ -122,6 +122,7 @@ export async function createPaymentIntentForSession(req: SessionCheckoutRequest)
       ...(req.settlementType ? { settlementType: req.settlementType } : {}),
       ...(req.itemKeys ? { itemKeys: JSON.stringify(req.itemKeys) } : {}),
       ...(req.percent ? { percent: String(req.percent) } : {}),
+      ...(tip > 0 ? { tipAmount: String(tip) } : {}),
     },
   })
 
@@ -163,9 +164,13 @@ export async function handleWebhookEvent(
         } else if (settlementType === 'by-percent') {
           confirmPercentPayment(sessionId)
         }
-        // Tag as stripe payment
+        // Tag as stripe payment + record tip
         if (result.payment) {
-          paymentStore.update(result.payment.id, { method: 'stripe' })
+          const tipAmt = pi.metadata.tipAmount ? parseInt(pi.metadata.tipAmount, 10) : undefined
+          paymentStore.update(result.payment.id, {
+            method: 'stripe',
+            ...(tipAmt ? { tipAmount: tipAmt } : {}),
+          })
         }
         logger.info(
           { storeId, sessionId, amount: pi.amount, settlementType, paymentIntentId: pi.id },

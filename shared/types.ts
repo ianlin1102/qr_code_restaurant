@@ -217,7 +217,8 @@ export interface Payment {
   id: string
   sessionId: string
   storeId: string
-  amount: number               // cents
+  amount: number               // cents (food + tax + tip)
+  tipAmount?: number           // cents, tip portion (excluded from bill settlement)
   stripePaymentIntentId?: string
   paidBy?: string              // customer name or "waiter" for cash
   method?: 'stripe' | 'cash'

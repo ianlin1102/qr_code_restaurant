@@ -364,67 +364,91 @@ export default function MenuPage() {
         </div>
       )}
 
-      {/* Current session — items + payment history */}
-      {sessionOrders.length > 0 && (
-        <details className="border-b">
-          <summary className="px-4 py-2 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">
-            {lang === 'zh' ? '本次已点' : 'Current Order'}
-            <span className="ml-2 text-xs">
-              {formatPriceUSD(sessionSummary?.totalWithTax ?? sessionOrders.reduce((s, o) => s + o.totalPrice, 0))}
-              {(sessionSummary?.tax ?? 0) > 0 && (
-                <span className="text-muted-foreground/60 ml-1">
-                  ({lang === 'zh' ? '含税' : 'incl. tax'} {formatPriceUSD(sessionSummary!.tax)})
-                </span>
-              )}
-            </span>
-          </summary>
-          <div className="px-4 pb-3 space-y-1 max-h-64 overflow-y-auto">
-            {/* Item list with paid indicators */}
-            {sessionOrders.flatMap((o, oi) => o.items.map((item, ii) => {
-              const itemKey = `${o.id}:${ii}`
-              const paidIds = sessionSummary?.paidItemIds ?? []
-              const isPaid = paidIds.some(k => k === itemKey || k.startsWith(itemKey + ':'))
-              const isVoided = !!(item as { voided?: boolean }).voided
-              return (
-                <div key={`${oi}-${ii}`} className={`flex justify-between text-xs ${isPaid ? 'text-green-600 line-through' : isVoided ? 'text-muted-foreground/40 line-through' : 'text-muted-foreground'}`}>
-                  <span>
-                    {item.quantity}x {localized(item, lang) || item.name}
-                    {item.selectedOptions && item.selectedOptions.length > 0 && (
-                      <span className="text-orange-600 ml-1">
-                        ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || '')).join(', ')})
-                      </span>
-                    )}
-                    {isPaid && <span className="ml-1 text-[10px] bg-green-100 text-green-700 rounded px-1 no-underline">{lang === 'zh' ? '已付' : 'Paid'}</span>}
-                    {isVoided && <span className="ml-1 text-[10px] bg-red-100 text-red-700 rounded px-1 no-underline">{lang === 'zh' ? '已作废' : 'Voided'}</span>}
-                  </span>
-                  <span>{isVoided ? '$0.00' : formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
-                </div>
-              )
-            }))}
-            {/* Payment history */}
-            {(sessionSummary?.payments?.length ?? 0) > 0 && (
-              <div className="pt-1.5 mt-1.5 border-t space-y-0.5">
-                {sessionSummary!.payments.map((p, pi) => (
-                  <div key={pi} className="flex justify-between text-xs font-medium text-green-600">
+      {/* Current session — items + tax + total + payments + remaining */}
+      {sessionOrders.length > 0 && (() => {
+        const ss = sessionSummary
+        const subtotal = ss?.netDue ?? sessionOrders.reduce((s, o) => s + o.totalPrice, 0)
+        const tax = ss?.tax ?? 0
+        const svcFee = ss?.serviceFee ?? 0
+        const total = ss?.totalWithTax ?? subtotal
+        const paidIds = ss?.paidItemIds ?? []
+        const payments = [...(ss?.payments ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+        return (
+          <details className="border-b">
+            <summary className="px-4 py-2 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">
+              {lang === 'zh' ? '本次已点' : 'Current Order'}
+              <span className="ml-2 text-xs">{formatPriceUSD(total)}</span>
+            </summary>
+            <div className="px-4 pb-3 space-y-0.5 max-h-72 overflow-y-auto">
+              {/* Items */}
+              {sessionOrders.flatMap((o, oi) => o.items.map((item, ii) => {
+                const itemKey = `${o.id}:${ii}`
+                const isPaid = paidIds.some(k => k === itemKey || k.startsWith(itemKey + ':'))
+                const isVoided = !!(item as { voided?: boolean }).voided
+                const price = isVoided ? 0 : (item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity
+                return (
+                  <div key={`${oi}-${ii}`} className={`flex justify-between text-xs ${isVoided ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>
                     <span>
-                      {p.paidBy || (lang === 'zh' ? '顾客' : 'Guest')}
-                      {p.method && <span className="text-[10px] text-muted-foreground ml-1">({p.method})</span>}
+                      {item.quantity}x {localized(item, lang) || item.name}
+                      {item.selectedOptions && item.selectedOptions.length > 0 && (
+                        <span className="text-orange-600 ml-1">
+                          ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || '')).join(', ')})
+                        </span>
+                      )}
+                      {isPaid && <span className="ml-1.5 text-[10px] text-green-600 font-medium">{lang === 'zh' ? '已付' : 'Paid'}</span>}
+                      {isVoided && <span className="ml-1.5 text-[10px] text-red-600 font-medium">{lang === 'zh' ? '已作废' : 'Voided'}</span>}
                     </span>
-                    <span>−{formatPriceUSD(p.amount)}</span>
+                    <span>{formatPriceUSD(price)}</span>
                   </div>
-                ))}
+                )
+              }))}
+              {/* Tax + Service Fee + Total */}
+              <div className="border-t mt-1.5 pt-1.5 space-y-0.5">
+                {tax > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{lang === 'zh' ? '税' : 'Tax'}</span>
+                    <span>{formatPriceUSD(tax)}</span>
+                  </div>
+                )}
+                {svcFee > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{lang === 'zh' ? '服务费' : 'Service Fee'}</span>
+                    <span>{formatPriceUSD(svcFee)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs font-semibold">
+                  <span>{lang === 'zh' ? '合计' : 'Total'}</span>
+                  <span>{formatPriceUSD(total)}</span>
+                </div>
               </div>
-            )}
-            {/* Remaining */}
-            {(sessionSummary?.remaining ?? 0) > 0 && (sessionSummary?.totalPaid ?? 0) > 0 && (
-              <div className="flex justify-between text-xs font-semibold pt-1 border-t mt-1">
-                <span>{lang === 'zh' ? '待付' : 'Remaining'}</span>
-                <span className="text-primary">{formatPriceUSD(sessionSummary!.remaining)}</span>
-              </div>
-            )}
-          </div>
-        </details>
-      )}
+              {/* Payment history (sorted by time, tip excluded from displayed amount) */}
+              {payments.length > 0 && (
+                <div className="border-t mt-1.5 pt-1.5 space-y-0.5">
+                  {payments.map((p, pi) => {
+                    const foodAmount = p.amount - (p.tipAmount ?? 0)
+                    return (
+                      <div key={pi} className="flex justify-between text-xs text-green-600">
+                        <span>
+                          {p.paidBy || (lang === 'zh' ? '顾客' : 'Guest')}
+                          {p.method && <span className="text-[10px] text-muted-foreground ml-1">({p.method})</span>}
+                        </span>
+                        <span>−{formatPriceUSD(foodAmount)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {/* Remaining */}
+              {(ss?.remaining ?? 0) > 0 && payments.length > 0 && (
+                <div className="flex justify-between text-xs font-semibold pt-1 border-t mt-1">
+                  <span>{lang === 'zh' ? '待付' : 'Remaining'}</span>
+                  <span className="text-primary">{formatPriceUSD(ss!.remaining)}</span>
+                </div>
+              )}
+            </div>
+          </details>
+        )
+      })()}
 
       {/* Main content: sidebar + items */}
       <div className="flex flex-1 overflow-hidden">

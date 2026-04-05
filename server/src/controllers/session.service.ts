@@ -386,6 +386,9 @@ export function payByPercent(
   if (!session || session.storeId !== storeId) return { error: 'Session not found' }
   if (percent < 1 || percent > 100) return { error: 'Percent must be 1-100' }
 
+  // Check minimum: both the split amount and the remaining after split must be >= $1 (100 cents)
+  // unless paying 100% (full remaining)
+
   adoptOrphanedOrders(session)
   const fresh = sessionStore.getById(sessionId)!
   const netDue = fresh.totalAmount - fresh.discountAmount
@@ -394,6 +397,13 @@ export function payByPercent(
   const totalWithTax = netDue + totalTax + totalFee
   const remaining = Math.max(0, totalWithTax - fresh.totalPaid)
   const subtotal = Math.round(remaining * percent / 100)
+
+  // Minimum $1 check: split amount and leftover must each be >= 100 cents (unless paying 100%)
+  if (percent < 100) {
+    const leftover = remaining - subtotal
+    if (subtotal < 100) return { error: 'Split amount must be at least $1.00' }
+    if (leftover < 100) return { error: 'Remaining balance after split must be at least $1.00' }
+  }
 
   return { amount: subtotal, tax: calcTax(storeId, subtotal), serviceFee: calcServiceFee(storeId, subtotal) }
 }
