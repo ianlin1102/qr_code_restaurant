@@ -18,7 +18,8 @@ export function paySplitBillCard(
   if ('error' in payResult) return payResult
 
   splitBillStore.update(splitBillId, {
-    status: 'paid', tipAmount, paymentId: payResult.payment.id,
+    status: 'paid', paymentId: payResult.payment.id,
+    paidAt: new Date().toISOString(), method: 'stripe',
   })
   return { splitBill: splitBillStore.getById(splitBillId)! }
 }
@@ -41,7 +42,8 @@ export function paySplitBillCash(
 
   paymentStore.update(payResult.payment.id, { method: 'cash' as const })
   splitBillStore.update(splitBillId, {
-    status: 'paid', tipAmount, paymentId: payResult.payment.id,
+    status: 'paid', paymentId: payResult.payment.id,
+    paidAt: new Date().toISOString(), method: 'cash',
   })
   return { splitBill: splitBillStore.getById(splitBillId)!, change: receivedAmount - total }
 }
@@ -56,7 +58,7 @@ export async function createManualCaptureIntent(
   if (sb.status !== 'unpaid') return { error: 'Already paid or pending' }
 
   const stripe = getStripe()
-  const holdAmount = Math.round(sb.total * 1.25) // 25% buffer for tip
+  const holdAmount = Math.round(sb.total * 1.25)
   const pi = await stripe.paymentIntents.create({
     amount: holdAmount, currency: 'usd',
     capture_method: 'manual',
@@ -89,7 +91,8 @@ export async function captureSplitBillPayment(
   if ('error' in payResult) return payResult
 
   splitBillStore.update(splitBillId, {
-    status: 'paid', tipAmount, paymentId: payResult.payment.id,
+    status: 'paid', paymentId: payResult.payment.id,
+    paidAt: new Date().toISOString(), method: 'stripe',
   })
   logger.info({ splitBillId, captureAmount }, 'split bill payment captured')
   return { splitBill: splitBillStore.getById(splitBillId)! }

@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid'
 import { splitBillStore, orderStore, sessionStore } from '../repositories/stores.js'
 import { calcTax, calcServiceFee } from './session.service.js'
 import logger from '../lib/logger.js'
-import type { SplitBill, SplitBillItem } from '@qr-order/shared'
+import type { SplitBill } from '@qr-order/shared'
 
 // ===== Queries =====
 
@@ -19,7 +19,6 @@ export function getMainBillSummary(sessionId: string, storeId: string) {
     .map(id => orderStore.getById(id)).filter(Boolean)
   const splits = getSplitBills(sessionId)
 
-  // Build map of assigned qty per orderId:itemIndex
   const assignedQty = buildAssignedQtyMap(splits)
 
   let subtotal = 0
@@ -28,7 +27,7 @@ export function getMainBillSummary(sessionId: string, storeId: string) {
     if (!order) continue
     for (let idx = 0; idx < order.items.length; idx++) {
       const item = order.items[idx]
-      if ((item as Record<string, unknown>).voided) continue
+      if (item.voided) continue
       const assigned = assignedQty.get(`${order.id}:${idx}`) ?? 0
       const remaining = Math.max(0, item.quantity - assigned)
       if (remaining <= 0) continue
@@ -41,7 +40,7 @@ export function getMainBillSummary(sessionId: string, storeId: string) {
 
   // Subtract percent-based split subtotals from unassigned total
   for (const sb of splits) {
-    if (sb.method === 'by-percent') subtotal -= sb.subtotal
+    if (sb.type === 'by-percent') subtotal -= sb.subtotal
   }
   subtotal = Math.max(0, subtotal)
 
@@ -54,14 +53,14 @@ export function getMainBillSummary(sessionId: string, storeId: string) {
 
 export function createSplitBill(
   storeId: string, sessionId: string,
-  data: { method: 'by-item' | 'by-percent'; items?: SplitBillItem[]; percent?: number; label?: string },
+  data: { type: 'by-item' | 'by-percent'; itemKeys?: string[]; percent?: number; label?: string },
 ): SplitBill | { error: string } {
   const session = sessionStore.getById(sessionId)
   if (!session || session.storeId !== storeId) return { error: 'Session not found' }
 
   let subtotal: number
-  if (data.method === 'by-item') {
-    const result = calcByItemSubtotal(session.orderIds, sessionId, data.items ?? [])
+  if (data.type === 'by-item') {
+    const result = calcByItemSubtotal(session.orderIds, sessionId, data.itemKeys ?? [])
     if ('error' in result) return result
     subtotal = result.subtotal
   } else {
@@ -74,16 +73,18 @@ export function createSplitBill(
 
   const tax = calcTax(storeId, subtotal)
   const serviceFee = calcServiceFee(storeId, subtotal)
+  const existing = getSplitBills(sessionId)
   const splitBill: SplitBill = {
-    id: uuid(), storeId, sessionId, label: data.label,
-    method: data.method,
-    items: data.method === 'by-item' ? data.items : undefined,
-    percent: data.method === 'by-percent' ? data.percent : undefined,
+    id: uuid(), storeId, sessionId,
+    label: data.label || `Bill ${existing.length + 1}`,
+    type: data.type,
+    itemKeys: data.type === 'by-item' ? data.itemKeys : undefined,
+    percent: data.type === 'by-percent' ? data.percent : undefined,
     subtotal, tax, serviceFee, total: subtotal + tax + serviceFee,
     status: 'unpaid', createdAt: new Date().toISOString(),
   }
   splitBillStore.create(splitBill)
-  logger.info({ splitBillId: splitBill.id, sessionId, method: data.method }, 'split bill created')
+  logger.info({ splitBillId: splitBill.id, sessionId, type: data.type }, 'split bill created')
   return splitBill
 }
 
@@ -105,10 +106,13 @@ export function deleteSplitBill(
 export function buildAssignedQtyMap(splits: SplitBill[]): Map<string, number> {
   const map = new Map<string, number>()
   for (const sb of splits) {
-    if (sb.method === 'by-item' && sb.items) {
-      for (const si of sb.items) {
-        const key = `${si.orderId}:${si.itemIndex}`
-        map.set(key, (map.get(key) ?? 0) + si.quantity)
+    if (sb.type === 'by-item' && sb.itemKeys) {
+      for (const key of sb.itemKeys) {
+        // key format: "orderId:idx:qty" or "orderId:idx"
+        const parts = key.split(':')
+        const baseKey = `${parts[0]}:${parts[1]}`
+        const qty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity
+        map.set(baseKey, (map.get(baseKey) ?? 0) + qty)
       }
     }
   }
@@ -116,28 +120,31 @@ export function buildAssignedQtyMap(splits: SplitBill[]): Map<string, number> {
 }
 
 function calcByItemSubtotal(
-  orderIds: string[], sessionId: string, items: SplitBillItem[],
+  orderIds: string[], sessionId: string, itemKeys: string[],
 ): { subtotal: number } | { error: string } {
   const assignedQty = buildAssignedQtyMap(getSplitBills(sessionId))
 
   let subtotal = 0
-  for (const si of items) {
-    const order = orderStore.getById(si.orderId)
-    if (!order || !orderIds.includes(si.orderId)) {
-      return { error: `Order ${si.orderId} not found` }
-    }
-    const item = order.items[si.itemIndex]
-    if (!item) return { error: `Item index ${si.itemIndex} not found in order ${si.orderId}` }
-    if ((item as Record<string, unknown>).voided) return { error: 'Cannot assign voided item' }
+  for (const key of itemKeys) {
+    const parts = key.split(':')
+    const orderId = parts[0]
+    const idx = parseInt(parts[1], 10)
+    const qty = parts.length >= 3 ? parseInt(parts[2], 10) : undefined
 
-    const key = `${si.orderId}:${si.itemIndex}`
-    const alreadyAssigned = assignedQty.get(key) ?? 0
-    if (alreadyAssigned + si.quantity > item.quantity) {
-      return { error: `Item ${key} over-assigned (available: ${item.quantity - alreadyAssigned})` }
-    }
-    const unitPrice = item.price +
-      (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
-    subtotal += unitPrice * si.quantity
+    const order = orderStore.getById(orderId)
+    if (!order || !orderIds.includes(orderId)) return { error: `Order ${orderId} not found` }
+    const item = order.items[idx]
+    if (!item) return { error: `Item index ${idx} not found` }
+    if (item.voided) return { error: 'Cannot assign voided item' }
+
+    const baseKey = `${orderId}:${idx}`
+    const alreadyAssigned = assignedQty.get(baseKey) ?? 0
+    const remaining = item.quantity - alreadyAssigned
+    const assignQty = qty != null ? Math.min(qty, remaining) : remaining
+    if (assignQty <= 0) return { error: `Item ${baseKey} already fully assigned` }
+
+    const unitPrice = item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+    subtotal += unitPrice * assignQty
   }
   return { subtotal }
 }
