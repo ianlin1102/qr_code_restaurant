@@ -64,13 +64,14 @@ export default function OrderConfirmPage() {
           ? s.payments.find(p => p.stripePaymentIntentId === piId)
           : null
         if (!thisPayment && piId && ++attempts < 8) { setTimeout(poll, 1500); return }
-        // Show this payment's amount (or latest payment if no piId match)
+        // Show THIS payment's amount only — never fall back to cumulative totals
         const amount = thisPayment?.amount
           ?? s.payments.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.amount
-          ?? s.totalPaid
+          ?? null
         setPaymentAmount(amount)
         if (s.orders.length > 0) {
-          setPaidOrder({ ...s.orders[0], items: s.orders.flatMap(o => o.items), totalPrice: s.totalAmount })
+          // Show all session items but use THIS payment's amount for the total
+          setPaidOrder({ ...s.orders[0], items: s.orders.flatMap(o => o.items), totalPrice: amount ?? s.totalPaid })
         } else { setOrderTimeout(true) }
       }).catch(() => { if (++attempts < 8) setTimeout(poll, 1500); else setOrderTimeout(true) })
     }

@@ -14,7 +14,7 @@ type ServiceError = { error: string; status: number }
 export function verifyPin(storeId: string, pin: string): VerifyResult | ServiceError {
   const staff = staffStore.getByField('storeId', storeId)
   const user = staff.find(u => (u as { clockPin?: string }).clockPin === pin)
-  if (!user) return { error: 'Invalid PIN', status: 401 }
+  if (!user) return { error: 'Invalid PIN', status: 400 }
 
   const entries = timeEntryStore.getByField('userId', user.id)
   const openEntry = entries.find(e => !e.clockOut && e.storeId === storeId)
