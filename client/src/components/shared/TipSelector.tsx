@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
@@ -23,18 +23,15 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
   const isPreset = (pct: number) =>
     selected?.type === 'percent' && selected.pct === pct
 
-  useEffect(() => {
-    if (!customOpen) return
-    const timer = setTimeout(() => {
-      const dollars = parseFloat(customVal)
-      if (!isNaN(dollars) && dollars > 0) {
-        onSelect({ type: 'custom', amount: Math.round(dollars * 100) })
-      } else {
-        onSelect(null)
-      }
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [customVal, customOpen, onSelect])
+  // Apply custom tip on blur (not on every keystroke — avoids PaymentIntent churn)
+  const applyCustom = () => {
+    const dollars = parseFloat(customVal)
+    if (!isNaN(dollars) && dollars > 0) {
+      onSelect({ type: 'custom', amount: Math.round(dollars * 100) })
+    } else {
+      onSelect(null)
+    }
+  }
 
   return (
     <div className="bg-card rounded-2xl p-4 shadow-sm mb-4 relative">
@@ -78,6 +75,8 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
             step="0.01"
             value={customVal}
             onChange={e => setCustomVal(e.target.value)}
+            onBlur={applyCustom}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCustom(); (e.target as HTMLInputElement).blur() } }}
             placeholder="0.00"
             className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             autoFocus
