@@ -37,8 +37,8 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
         api.getSplitBills(storeId, sessionId),
       ])
       setSession(summary)
-      setSplits(data.splits)
-      setMainBill(data.mainBill)
+      setSplits(data.splits ?? [])
+      setMainBill(data.mainBill ?? { total: 0, itemCount: 0 })
     } catch (e) { console.error(e) }
   }, [storeId, sessionId])
 
@@ -91,7 +91,8 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
     setLoading(false)
   }
 
-  if (!session || !mainBill) return null
+  if (!session) return null
+  const mb = mainBill ?? { total: 0, itemCount: 0 }
 
   if (payTarget?.method === 'cash') {
     return (
@@ -134,10 +135,10 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
         <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{ts.title}</DialogTitle></DialogHeader>
 
-          <MainBillCard label={ts.mainBill} badge={`${mainBill.itemCount} ${ts.items} ${ts.remaining}`}
-            total={mainBill.total} ts={ts}
-            onPayCard={() => setPay('main', mainBill.total, 'card')}
-            onPayCash={() => setPay('main', mainBill.total, 'cash')}
+          <MainBillCard label={ts.mainBill} badge={`${mb.itemCount} ${ts.items} ${ts.remaining}`}
+            total={mb.total} ts={ts}
+            onPayCard={() => setPay('main', mb.total, 'card')}
+            onPayCash={() => setPay('main', mb.total, 'cash')}
             onSplit={() => setSheetOpen(true)} />
 
           {splits.map(s => (
