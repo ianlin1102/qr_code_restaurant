@@ -14,7 +14,8 @@
     "owner": "店主",
     "staff": "员工",
     "logout": "退出",
-    "collapse": "收起"
+    "collapse": "收起",
+    "waitlist": "候位管理"
   },
   "dashboard": {
     "title": "订单管理",

@@ -14,7 +14,8 @@
     "owner": "Owner",
     "staff": "Staff",
     "logout": "Logout",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "waitlist": "Waitlist"
   },
   "dashboard": {
     "title": "Order Management",

@@ -41,6 +41,7 @@ import CouponManagePage from './pages/admin/CouponManagePage'
 import FloorPlanEditorPage from './pages/admin/FloorPlanEditorPage'
 import StaffManagePage from './pages/admin/StaffManagePage'
 import ClockPage from './pages/admin/ClockPage'
+import WaitlistPage from './pages/admin/WaitlistPage'
 import MorePage from './pages/admin/MorePage'
 
 function FallbackRedirect() {
@@ -86,6 +87,7 @@ export default function App() {
           <Route path="floor-plan/editor" element={<FloorPlanEditorPage />} />
           <Route path="staff" element={<StaffManagePage />} />
           <Route path="clock" element={<ClockPage />} />
+          <Route path="waitlist" element={<WaitlistPage />} />
           <Route path="more" element={<MorePage />} />
           <Route index element={<Navigate to="dashboard" />} />
         </Route>
