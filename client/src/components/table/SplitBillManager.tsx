@@ -50,7 +50,13 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
   const handlePayCard = async (splitId: string) => {
     setLoading(true)
     try {
-      await api.paySplitBillCard(storeId, sessionId, splitId, tipCents || undefined)
+      if (splitId === 'main') {
+        // Main bill: use session payment endpoint (not split-bill)
+        const amount = (mainBill?.total ?? 0) + tipCents
+        await api.addPayment(storeId, sessionId, amount, 'waiter')
+      } else {
+        await api.paySplitBillCard(storeId, sessionId, splitId, tipCents || undefined)
+      }
       resetPay()
       await refresh()
     } catch (e) { console.error(e) }
@@ -60,7 +66,12 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
   const handlePayCash = async (splitId: string, received: number) => {
     setLoading(true)
     try {
-      await api.paySplitBillCash(storeId, sessionId, splitId, received, tipCents || undefined)
+      if (splitId === 'main') {
+        const amount = (mainBill?.total ?? 0) + tipCents
+        await api.recordCashPayment(storeId, sessionId, amount, received)
+      } else {
+        await api.paySplitBillCash(storeId, sessionId, splitId, received, tipCents || undefined)
+      }
       resetPay()
       await refresh()
     } catch (e) { console.error(e) }
