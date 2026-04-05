@@ -204,11 +204,12 @@ export const api = {
     type: 'by-item'; itemKeys: string[]
   } | {
     type: 'by-percent'; percent: number
-  }) =>
+  }, tipAmount?: number) =>
     fetchJSON<{ clientSecret: string; amount: number }>(
       `/stores/${storeId}/checkout`,
       { method: 'POST', body: JSON.stringify({
         sessionId, amount,
+        ...(tipAmount ? { tipAmount } : {}),
         ...(settlement?.type === 'by-item' ? { settlementType: 'by-item', itemKeys: settlement.itemKeys } : {}),
         ...(settlement?.type === 'by-percent' ? { settlementType: 'by-percent', percent: settlement.percent } : {}),
       }) },

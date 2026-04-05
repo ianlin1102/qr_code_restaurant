@@ -141,8 +141,8 @@ export default function CheckoutPage() {
     try {
       let result: { clientSecret: string; amount: number }
       if (state.sessionId) {
-        // Pay-later: recreate session PaymentIntent with tip added to amount
-        result = await api.createCheckoutForSession(storeId, state.sessionId, amount + tip, state.settlement)
+        // Pay-later: send base amount + tip separately (server caps amount to remaining, adds tip on top)
+        result = await api.createCheckoutForSession(storeId, state.sessionId, amount, state.settlement, tip)
       } else if (state.items) {
         // Pay-first: recreate cart PaymentIntent with tipAmount
         result = await api.createCheckout(storeId, {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
-import { CheckCircle2, Clock, Headset, Loader2, XCircle } from 'lucide-react'
+import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,18 +21,20 @@ export default function OrderConfirmPage() {
 
   const location = useLocation()
   const stateOrder = (location.state as { order?: Order })?.order ?? null
+  const alreadySubmitted = (location.state as { alreadySubmitted?: boolean })?.alreadySubmitted ?? false
 
   const redirectStatus = searchParams.get('redirect_status')
   const paymentSuccess = redirectStatus === 'succeeded'
   const paymentFailed = redirectStatus !== null && !paymentSuccess
-  // Pay-later flow: order passed via location.state (no Stripe redirect)
   const isPayLater = !redirectStatus && !!stateOrder
 
   const [paidOrder, setPaidOrder] = useState<Order | null>(stateOrder)
   const [orderTimeout, setOrderTimeout] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState<number | null>(null)
+  // Track whether this is a settlement (partial) payment vs a new order payment
+  const [isSettlement, setIsSettlement] = useState(false)
 
-  // Pay-later: clear own items (local + server device slice)
+  // Pay-later: clear own items
   useEffect(() => {
     if (!isPayLater) return
     const deviceId = getDeviceId()
@@ -44,7 +46,7 @@ export default function OrderConfirmPage() {
     }
   }, [isPayLater, clearMyItems, storeId, tableId])
 
-  // On successful payment: clear cart, poll for this payment to appear in session
+  // On successful Stripe payment: poll for this payment to appear in session
   useEffect(() => {
     if (!paymentSuccess || !storeId || !tableId) return
     const deviceId = getDeviceId()
@@ -54,24 +56,32 @@ export default function OrderConfirmPage() {
       if (s) api.updateSessionCart(storeId, s.id, deviceId, []).catch(() => {})
     }).catch(() => {})
 
-    // Poll until this payment appears (webhook may be delayed)
     let attempts = 0
     const poll = () => {
       api.getActiveSession(storeId, tableId).then(s => {
         if (!s) { if (++attempts < 8) setTimeout(poll, 1500); else setOrderTimeout(true); return }
-        // Find THIS specific payment by Stripe PaymentIntent ID
+
         const thisPayment = piId
           ? s.payments.find(p => p.stripePaymentIntentId === piId)
           : null
         if (!thisPayment && piId && ++attempts < 8) { setTimeout(poll, 1500); return }
-        // Show THIS payment's amount only — never fall back to cumulative totals
-        const amount = thisPayment?.amount
-          ?? s.payments.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.amount
-          ?? null
+
+        const amount = thisPayment?.amount ?? null
         setPaymentAmount(amount)
+
+        // Detect if this was a settlement payment (session has settlementMode or paidItemIds)
+        const settlement = !!(s.settlementMode || (s.paidItemIds && s.paidItemIds.length > 0))
+        setIsSettlement(settlement)
+
         if (s.orders.length > 0) {
-          // Show all session items but use THIS payment's amount for the total
-          setPaidOrder({ ...s.orders[0], items: s.orders.flatMap(o => o.items), totalPrice: amount ?? s.totalPaid })
+          // For settlement: don't show item list (we paid specific items, not a new order)
+          // For new order: show the order items
+          if (settlement) {
+            // Use a minimal order object — just the amount, no misleading item list
+            setPaidOrder({ ...s.orders[0], items: [], totalPrice: amount ?? 0 })
+          } else {
+            setPaidOrder({ ...s.orders[0], items: s.orders.flatMap(o => o.items), totalPrice: amount ?? s.totalPaid })
+          }
         } else { setOrderTimeout(true) }
       }).catch(() => { if (++attempts < 8) setTimeout(poll, 1500); else setOrderTimeout(true) })
     }
@@ -84,9 +94,7 @@ export default function OrderConfirmPage() {
       <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-4">
         <XCircle className="h-16 w-16 text-destructive" />
         <h2 className="text-lg font-semibold">{t('orderConfirm.paymentFailed')}</h2>
-        <p className="text-muted-foreground text-center">
-          {t('orderConfirm.paymentFailedPrompt')}
-        </p>
+        <p className="text-muted-foreground text-center">{t('orderConfirm.paymentFailedPrompt')}</p>
         <Button onClick={() => navigate(storeId ? `/menu/${storeId}` : '/')}>
           {t('cart.backToMenu')}
         </Button>
@@ -94,7 +102,7 @@ export default function OrderConfirmPage() {
     )
   }
 
-  // Payment succeeded
+  // Payment succeeded (Stripe redirect)
   if (paymentSuccess) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center px-4 pt-8 md:pt-12 pb-safe">
@@ -110,54 +118,65 @@ export default function OrderConfirmPage() {
           <div className="flex flex-col items-center text-center space-y-3">
             <CheckCircle2 className="h-16 w-16 text-green-500" />
             <h1 className="text-2xl font-bold">
-              {paymentAmount != null
-                ? (lang === 'zh' ? '支付成功！' : 'Payment Successful!')
-                : (lang === 'zh' ? '下单成功！' : 'Order Confirmed!')}
+              {lang === 'zh' ? '支付成功！' : 'Payment Successful!'}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {paymentAmount != null
-                ? (lang === 'zh' ? '感谢您的支付' : 'Thank you for your payment')
-                : (lang === 'zh' ? '订单已确认' : 'Your order is being prepared')}
+              {lang === 'zh' ? '感谢您的支付' : 'Thank you for your payment'}
             </p>
           </div>
 
           {paidOrder ? (
             <div className="bg-card rounded-2xl p-5 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">
-                  {lang === 'zh' ? '订单详情' : 'RECEIPT SUMMARY'}
-                </p>
-                <Badge className="bg-green-100 text-green-700 border-0 text-xs">{t('common.kitchenNotified')}</Badge>
-              </div>
-              <div className="space-y-2 border-t pt-3">
-                {paidOrder.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between text-sm">
-                    <div>
-                      <span className="font-medium">{item.quantity}x</span>
-                      <span className="ml-1.5">{item.name}</span>
-                      {item.selectedOptions && item.selectedOptions.length > 0 && (
-                        <span className="text-xs text-orange-600 ml-1">
-                          ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || "")).join(', ')})
-                        </span>
-                      )}
-                      {item.remark && (
-                        <p className="text-xs text-muted-foreground ml-5">{item.remark}</p>
-                      )}
-                    </div>
-                    <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
+              {/* Settlement payment: show amount only, no item list */}
+              {isSettlement ? (
+                <>
+                  <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">
+                    {lang === 'zh' ? '支付详情' : 'PAYMENT DETAILS'}
+                  </p>
+                  <div className="border-t pt-3 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {lang === 'zh' ? '已付金额' : 'Amount Paid'}
+                    </span>
+                    <span className="text-xl font-bold text-primary">
+                      {formatPriceUSD(paymentAmount ?? paidOrder.totalPrice)}
+                    </span>
                   </div>
-                ))}
-              </div>
-              <div className="border-t pt-3 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {paymentAmount != null
-                    ? (lang === 'zh' ? '已付金额' : 'Amount Paid')
-                    : (lang === 'zh' ? '总金额' : 'Total Amount')}
-                </span>
-                <span className="text-xl font-bold text-primary">
-                  {formatPriceUSD(paymentAmount ?? paidOrder.totalPrice)}
-                </span>
-              </div>
+                </>
+              ) : (
+                /* New order / pay-first payment: show item list */
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-semibold text-muted-foreground tracking-wider">
+                      {lang === 'zh' ? '订单详情' : 'RECEIPT SUMMARY'}
+                    </p>
+                    <Badge className="bg-green-100 text-green-700 border-0 text-xs">{t('common.kitchenNotified')}</Badge>
+                  </div>
+                  <div className="space-y-2 border-t pt-3">
+                    {paidOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <div>
+                          <span className="font-medium">{item.quantity}x</span>
+                          <span className="ml-1.5">{item.name}</span>
+                          {item.selectedOptions && item.selectedOptions.length > 0 && (
+                            <span className="text-xs text-orange-600 ml-1">
+                              ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || "")).join(', ')})
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t pt-3 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {paymentAmount != null ? (lang === 'zh' ? '已付金额' : 'Amount Paid') : (lang === 'zh' ? '总金额' : 'Total Amount')}
+                    </span>
+                    <span className="text-xl font-bold text-primary">
+                      {formatPriceUSD(paymentAmount ?? paidOrder.totalPrice)}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           ) : orderTimeout ? (
             <div className="bg-card rounded-2xl p-5 shadow-sm text-center space-y-2">
@@ -175,53 +194,18 @@ export default function OrderConfirmPage() {
             </div>
           )}
 
-          {/* Estimated wait time — only for new orders, not settlement payments */}
-          {paidOrder && paymentAmount == null && (
-            <div className="bg-card rounded-2xl p-4 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Clock className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-muted-foreground tracking-wider uppercase">
-                  {t('orderConfirm.estimatedTime')}
-                </p>
-                <p className="text-lg font-bold text-primary">
-                  {(() => {
-                    const itemCount = paidOrder.items.reduce((s, i) => s + i.quantity, 0)
-                    const min = Math.max(10, itemCount * 3)
-                    const max = Math.min(30, min + 5)
-                    return t('orderConfirm.minutes', { min, max })
-                  })()}
-                </p>
-              </div>
-            </div>
-          )}
+          {/* No estimated time for settlement payments */}
 
           <Button className="w-full bg-primary hover:bg-primary/90" size="lg" onClick={() => navigate(storeId ? `/menu/${storeId}` : '/')}>
             {lang === 'zh' ? '继续点菜' : 'Continue Ordering'}
-            <span className="text-white/70 text-xs ml-1.5">
-              / {lang === 'zh' ? 'Continue Ordering' : '继续点菜'}
-            </span>
           </Button>
-
-          {/* Help bar */}
-          <div className="bg-card rounded-full shadow-sm px-4 py-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Headset className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{t('orderConfirm.needHelp')}</span>
-            </div>
-            <Button variant="outline" size="sm" className="rounded-full text-xs h-7 px-3 border-primary text-primary">
-              {t('orderConfirm.callStaff')}
-            </Button>
-          </div>
         </div>
       </div>
     )
   }
 
-  // Pay-later flow OR direct navigation
-  if (isPayLater || paidOrder) {
-    // Render the same success UI as paymentSuccess
+  // Pay-later flow OR cart submitted by another device
+  if (isPayLater || paidOrder || alreadySubmitted) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center px-4 pt-8 md:pt-12 pb-safe">
         <div className="max-w-lg w-full space-y-6">
@@ -236,7 +220,9 @@ export default function OrderConfirmPage() {
           <div className="flex flex-col items-center text-center space-y-3">
             <CheckCircle2 className="h-16 w-16 text-green-500" />
             <h1 className="text-2xl font-bold">
-              {lang === 'zh' ? '下单成功！' : 'Order Placed!'}
+              {alreadySubmitted
+                ? (lang === 'zh' ? '订单已提交！' : 'Order Already Submitted!')
+                : (lang === 'zh' ? '下单成功！' : 'Order Placed!')}
             </h1>
           </div>
           {paidOrder && (
