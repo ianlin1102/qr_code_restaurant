@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
@@ -23,14 +23,18 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
   const isPreset = (pct: number) =>
     selected?.type === 'percent' && selected.pct === pct
 
-  const handleCustomConfirm = () => {
-    const dollars = parseFloat(customVal)
-    if (!isNaN(dollars) && dollars > 0) {
-      onSelect({ type: 'custom', amount: Math.round(dollars * 100) })
-    } else {
-      onSelect(null)
-    }
-  }
+  useEffect(() => {
+    if (!customOpen) return
+    const timer = setTimeout(() => {
+      const dollars = parseFloat(customVal)
+      if (!isNaN(dollars) && dollars > 0) {
+        onSelect({ type: 'custom', amount: Math.round(dollars * 100) })
+      } else {
+        onSelect(null)
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [customVal, customOpen, onSelect])
 
   return (
     <div className="bg-card rounded-2xl p-4 shadow-sm mb-4 relative">
@@ -75,16 +79,9 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
             value={customVal}
             onChange={e => setCustomVal(e.target.value)}
             placeholder="0.00"
-            className="flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             autoFocus
           />
-          <button
-            type="button"
-            onClick={handleCustomConfirm}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
-          >
-            {t('checkout.tipConfirm', 'OK')}
-          </button>
         </div>
       )}
     </div>

@@ -3,7 +3,7 @@ import { useT } from '@/i18n/useT'
 import { usePermission } from '@/hooks/usePermission'
 import type { Permission } from '@qr-order/shared'
 
-type NavKey = 'categories' | 'coupons' | 'staff' | 'analytics' | 'settings'
+type NavKey = 'categories' | 'coupons' | 'staff' | 'analytics' | 'settings' | 'waitlist' | 'clock'
 
 const ITEMS: { to: string; navKey: NavKey; icon: string; perm?: Permission }[] = [
   { to: '/admin/settings', navKey: 'settings', icon: '⚙️', perm: 'settings:read' },
@@ -11,6 +11,8 @@ const ITEMS: { to: string; navKey: NavKey; icon: string; perm?: Permission }[] =
   { to: '/admin/coupons', navKey: 'coupons', icon: '🎟️', perm: 'billing:read' },
   { to: '/admin/staff', navKey: 'staff', icon: '👥', perm: 'staff:manage' },
   { to: '/admin/analytics', navKey: 'analytics', icon: '📊', perm: 'analytics:read' },
+  { to: '/admin/waitlist', navKey: 'waitlist', icon: '📋', perm: 'tables:read' },
+  { to: '/admin/clock', navKey: 'clock', icon: '⏰' },
 ]
 
 export default function MorePage() {

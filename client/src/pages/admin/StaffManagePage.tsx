@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { AuthUser, RoleDefinition, Permission } from '@qr-order/shared'
+import type { AuthUser, RoleDefinition, Permission, TimeEntry } from '@qr-order/shared'
 
 const ALL_PERMISSIONS: Permission[] = [
   'orders:read', 'orders:write',
@@ -38,6 +38,7 @@ export default function StaffManagePage() {
   const [editingRole, setEditingRole] = useState<RoleDefinition | null>(null)
   const [roleForm, setRoleForm] = useState({ name: '', nameEn: '', permissions: [] as Permission[] })
   const [tab, setTab] = useState<'staff' | 'roles'>('staff')
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
 
   const fetchData = useCallback(async () => {
     if (!storeId) return
@@ -49,6 +50,31 @@ export default function StaffManagePage() {
   }, [storeId])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  useEffect(() => {
+    if (!storeId) return
+    const today = new Date().toISOString().slice(0, 10)
+    api.getTimeEntries(storeId, { startDate: today }).then(setTimeEntries).catch(() => {})
+  }, [storeId])
+
+  function getUserHours(userId: string) {
+    const userEntries = timeEntries.filter(e => e.userId === userId)
+    let todayMinutes = 0
+    let clockedIn = false
+    let currentShiftMin = 0
+    for (const e of userEntries) {
+      if (e.clockOut && e.duration) {
+        todayMinutes += e.duration
+      } else if (!e.clockOut) {
+        clockedIn = true
+        currentShiftMin = Math.round((Date.now() - new Date(e.clockIn).getTime()) / 60000)
+        todayMinutes += currentShiftMin
+      }
+    }
+    return { todayMinutes, clockedIn, currentShiftMin }
+  }
+
+  const formatMinutes = (min: number) => `${Math.floor(min / 60)}h ${min % 60}m`
 
   const permLabel = (p: string) => {
     const labels = (t.roles as Record<string, unknown>)?.permLabels as Record<string, string> | undefined
@@ -155,6 +181,7 @@ export default function StaffManagePage() {
           <CardContent className="space-y-2">
             {staff.map(m => {
               const role = roleByName(m.role)
+              const hours = getUserHours(m.id)
               return (
                 <div key={m.id} className="p-3 rounded-lg border space-y-2">
                   <div className="flex items-center gap-3">
@@ -169,6 +196,16 @@ export default function StaffManagePage() {
                       <p className="text-xs text-muted-foreground">
                         {role ? `${role.nameEn || role.name} — ${role.permissions.length} permissions` : m.role}
                       </p>
+                      {hours.clockedIn ? (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
+                          Clocked in · {formatMinutes(hours.todayMinutes)}
+                        </p>
+                      ) : hours.todayMinutes > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Today: {formatMinutes(hours.todayMinutes)}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   {(m.id !== currentUserId || canDelete(m)) && (

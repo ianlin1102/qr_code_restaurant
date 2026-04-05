@@ -7,15 +7,13 @@ import { useT } from '@/i18n/useT'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import type { Permission } from '@qr-order/shared'
 
-type NavKey = 'orders' | 'floorPlan' | 'menu' | 'categories' | 'tables' | 'waitlist' | 'coupons' | 'staff' | 'analytics' | 'settings' | 'more' | 'clock'
+type NavKey = 'orders' | 'floorPlan' | 'menu' | 'categories' | 'tables' | 'coupons' | 'staff' | 'analytics' | 'settings' | 'more'
 
 const NAV_ITEMS: { to: string; navKey: NavKey; icon: string; perm?: Permission }[] = [
   { to: '/admin/dashboard', navKey: 'orders', icon: '📋', perm: 'orders:read' },
   { to: '/admin/floor-plan', navKey: 'floorPlan', icon: '🗺️', perm: 'tables:read' },
   { to: '/admin/menu', navKey: 'menu', icon: '🍜', perm: 'menu:read' },
   { to: '/admin/tables', navKey: 'tables', icon: '🪑', perm: 'tables:read' },
-  { to: '/admin/waitlist', navKey: 'waitlist', icon: '👥', perm: 'tables:read' },
-  { to: '/admin/clock', navKey: 'clock', icon: '⏰' },
   { to: '/admin/more', navKey: 'more', icon: '📦' },
 ]
 
