@@ -51,8 +51,8 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
     setLoading(true)
     try {
       if (splitId === 'main') {
-        // Main bill: use session payment endpoint (not split-bill)
-        const amount = (mainBill?.total ?? 0) + tipCents
+        // Main bill: use session payment endpoint — pay remaining balance
+        const amount = (session?.remaining ?? 0) + tipCents
         await api.addPayment(storeId, sessionId, amount, 'waiter')
       } else {
         await api.paySplitBillCard(storeId, sessionId, splitId, tipCents || undefined)
@@ -136,9 +136,9 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
           <DialogHeader><DialogTitle>{ts.title}</DialogTitle></DialogHeader>
 
           <MainBillCard label={ts.mainBill} badge={`${mb.itemCount} ${ts.items} ${ts.remaining}`}
-            total={mb.total} ts={ts}
-            onPayCard={() => setPay('main', mb.total, 'card')}
-            onPayCash={() => setPay('main', mb.total, 'cash')}
+            total={session.remaining} ts={ts}
+            onPayCard={() => setPay('main', session.remaining, 'card')}
+            onPayCash={() => setPay('main', session.remaining, 'cash')}
             onSplit={() => setSheetOpen(true)} />
 
           {splits.map(s => (
