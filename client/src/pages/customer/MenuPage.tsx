@@ -364,7 +364,7 @@ export default function MenuPage() {
         </div>
       )}
 
-      {/* Current session — merged item list */}
+      {/* Current session — items + payment history */}
       {sessionOrders.length > 0 && (
         <details className="border-b">
           <summary className="px-4 py-2 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">
@@ -378,24 +378,48 @@ export default function MenuPage() {
               )}
             </span>
           </summary>
-          <div className="px-4 pb-3 space-y-1 max-h-48 overflow-y-auto">
-            {sessionOrders.flatMap(o => o.items).map((item, i) => (
-              <div key={i} className="flex justify-between text-xs text-muted-foreground">
-                <span>
-                  {item.quantity}x {localized(item, lang) || item.name}
-                  {item.selectedOptions && item.selectedOptions.length > 0 && (
-                    <span className="text-orange-600 ml-1">
-                      ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || '')).join(', ')})
+          <div className="px-4 pb-3 space-y-1 max-h-64 overflow-y-auto">
+            {/* Item list with paid indicators */}
+            {sessionOrders.flatMap((o, oi) => o.items.map((item, ii) => {
+              const itemKey = `${o.id}:${ii}`
+              const paidIds = sessionSummary?.paidItemIds ?? []
+              const isPaid = paidIds.some(k => k === itemKey || k.startsWith(itemKey + ':'))
+              const isVoided = !!(item as { voided?: boolean }).voided
+              return (
+                <div key={`${oi}-${ii}`} className={`flex justify-between text-xs ${isPaid ? 'text-green-600 line-through' : isVoided ? 'text-muted-foreground/40 line-through' : 'text-muted-foreground'}`}>
+                  <span>
+                    {item.quantity}x {localized(item, lang) || item.name}
+                    {item.selectedOptions && item.selectedOptions.length > 0 && (
+                      <span className="text-orange-600 ml-1">
+                        ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || '')).join(', ')})
+                      </span>
+                    )}
+                    {isPaid && <span className="ml-1 text-[10px] bg-green-100 text-green-700 rounded px-1 no-underline">{lang === 'zh' ? '已付' : 'Paid'}</span>}
+                    {isVoided && <span className="ml-1 text-[10px] bg-red-100 text-red-700 rounded px-1 no-underline">{lang === 'zh' ? '已作废' : 'Voided'}</span>}
+                  </span>
+                  <span>{isVoided ? '$0.00' : formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
+                </div>
+              )
+            }))}
+            {/* Payment history */}
+            {(sessionSummary?.payments?.length ?? 0) > 0 && (
+              <div className="pt-1.5 mt-1.5 border-t space-y-0.5">
+                {sessionSummary!.payments.map((p, pi) => (
+                  <div key={pi} className="flex justify-between text-xs font-medium text-green-600">
+                    <span>
+                      {p.paidBy || (lang === 'zh' ? '顾客' : 'Guest')}
+                      {p.method && <span className="text-[10px] text-muted-foreground ml-1">({p.method})</span>}
                     </span>
-                  )}
-                </span>
-                <span>{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
+                    <span>−{formatPriceUSD(p.amount)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-            {(sessionSummary?.totalPaid ?? 0) > 0 && (
-              <div className="flex justify-between text-xs font-medium text-green-600 pt-1 border-t mt-1">
-                <span>{lang === 'zh' ? '已付' : 'Paid'}</span>
-                <span>−{formatPriceUSD(sessionSummary!.totalPaid)}</span>
+            )}
+            {/* Remaining */}
+            {(sessionSummary?.remaining ?? 0) > 0 && (sessionSummary?.totalPaid ?? 0) > 0 && (
+              <div className="flex justify-between text-xs font-semibold pt-1 border-t mt-1">
+                <span>{lang === 'zh' ? '待付' : 'Remaining'}</span>
+                <span className="text-primary">{formatPriceUSD(sessionSummary!.remaining)}</span>
               </div>
             )}
           </div>
