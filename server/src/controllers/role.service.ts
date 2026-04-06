@@ -2,21 +2,29 @@ import { v4 as uuid } from 'uuid'
 import type { RoleDefinition, Permission } from '@qr-order/shared'
 import logger from '../lib/logger.js'
 import { roleStore } from '../repositories/stores.js'
+import { getStoreModulePermissions } from '../lib/module-permissions.js'
 
 const ALL_PERMISSIONS: Permission[] = [
+  // core
   'orders:read', 'orders:write',
-  'menu:read', 'menu:write',
   'tables:read', 'tables:write',
-  'billing:read', 'billing:write',
-  'analytics:read',
-  'staff:manage',
+  'menu:read', 'menu:write',
   'settings:read', 'settings:write',
+  'billing:read', 'billing:write',
+  // optional modules
+  'analytics:read',
+  'coupons:read', 'coupons:write',
+  'waitlist:read', 'waitlist:write',
+  'staff:manage',
+  'printer:read', 'printer:write',
 ]
 
 const WAITER_PERMISSIONS: Permission[] = [
   'orders:read', 'orders:write',
   'menu:read',
   'tables:read', 'tables:write',
+  'waitlist:read',
+  'printer:write',
 ]
 
 const MANAGER_PERMISSIONS: Permission[] =
@@ -124,12 +132,24 @@ export function resolvePermissions(
   roleId?: string,
   legacyRole?: string
 ): Permission[] {
+  let rolePerms: Permission[]
+
   if (roleId) {
     const role = roleStore.getById(roleId)
-    if (role) return role.permissions
+    if (role) {
+      rolePerms = role.permissions
+    } else {
+      rolePerms = []
+    }
+  } else if (legacyRole === 'owner') {
+    rolePerms = ALL_PERMISSIONS
+  } else if (legacyRole === 'staff') {
+    rolePerms = WAITER_PERMISSIONS
+  } else {
+    rolePerms = []
   }
-  // Fallback for legacy JWT tokens
-  if (legacyRole === 'owner') return ALL_PERMISSIONS
-  if (legacyRole === 'staff') return WAITER_PERMISSIONS
-  return []
+
+  // Intersect with store's licensed module permissions
+  const modulePerms = getStoreModulePermissions(storeId)
+  return rolePerms.filter(p => modulePerms.includes(p))
 }
