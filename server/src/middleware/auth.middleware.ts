@@ -36,7 +36,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   if (header?.startsWith('Bearer ')) {
     const token = header.slice(7)
     const payload = verifyToken(token)
-    if (payload && (!req.params.storeId || payload.storeId === req.params.storeId)) {
+    if (payload && req.params.storeId && payload.storeId === req.params.storeId) {
       req.user = payload
     }
   }
