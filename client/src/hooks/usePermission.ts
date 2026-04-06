@@ -11,6 +11,7 @@ export function usePermission(perm: Permission): boolean {
         'orders:read', 'orders:write',
         'menu:read',
         'tables:read', 'tables:write',
+        'waitlist:read', 'printer:write',
       ]
       return staffPerms.includes(perm)
     }
