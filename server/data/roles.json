@@ -7,16 +7,22 @@
     "permissions": [
       "orders:read",
       "orders:write",
-      "menu:read",
-      "menu:write",
       "tables:read",
       "tables:write",
+      "menu:read",
+      "menu:write",
+      "settings:read",
+      "settings:write",
+      "billing:read",
+      "billing:write",
+      "analytics:read",
       "coupons:read",
       "coupons:write",
-      "analytics:read",
+      "waitlist:read",
+      "waitlist:write",
       "staff:manage",
-      "settings:read",
-      "settings:write"
+      "printer:read",
+      "printer:write"
     ],
     "isSystem": true,
     "createdAt": "2026-03-27T18:35:04.555Z"
@@ -33,11 +39,17 @@
       "menu:write",
       "tables:read",
       "tables:write",
+      "settings:read",
+      "settings:write",
+      "billing:read",
+      "billing:write",
+      "analytics:read",
       "coupons:read",
       "coupons:write",
-      "analytics:read",
-      "settings:read",
-      "settings:write"
+      "waitlist:read",
+      "waitlist:write",
+      "printer:read",
+      "printer:write"
     ],
     "isSystem": true,
     "createdAt": "2026-03-27T18:35:04.555Z"
@@ -52,7 +64,9 @@
       "orders:write",
       "menu:read",
       "tables:read",
-      "tables:write"
+      "tables:write",
+      "waitlist:read",
+      "printer:write"
     ],
     "isSystem": true,
     "createdAt": "2026-03-27T18:35:04.555Z"
