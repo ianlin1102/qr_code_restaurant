@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
-import { splitBillStore, orderStore, sessionStore } from '../repositories/stores.js'
-import { calcTax, calcServiceFee } from './session.service.js'
+import { splitBillStore, orderStore, sessionStore, storeStore } from '../repositories/stores.js'
+import { unitPrice as calcUnitPrice, calcTaxAndFees } from '@qr-order/shared/pricing'
 import logger from '../lib/logger.js'
 import type { SplitBill } from '@qr-order/shared'
 
@@ -31,9 +31,8 @@ export function getMainBillSummary(sessionId: string, storeId: string) {
       const assigned = assignedQty.get(`${order.id}:${idx}`) ?? 0
       const remaining = Math.max(0, item.quantity - assigned)
       if (remaining <= 0) continue
-      const unitPrice = item.price +
-        (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
-      subtotal += unitPrice * remaining
+      const up = calcUnitPrice({ price: item.price, quantity: 1, options: item.selectedOptions?.map(o => ({ priceAdjust: o.priceAdjust })) })
+      subtotal += up * remaining
       itemCount += remaining
     }
   }
@@ -44,9 +43,12 @@ export function getMainBillSummary(sessionId: string, storeId: string) {
   }
   subtotal = Math.max(0, subtotal)
 
-  const tax = calcTax(storeId, subtotal)
-  const serviceFee = calcServiceFee(storeId, subtotal)
-  return { subtotal, tax, serviceFee, total: subtotal + tax + serviceFee, itemCount }
+  const store = storeStore.getById(storeId)
+  const { tax, serviceFee, totalWithTax } = calcTaxAndFees(subtotal, {
+    taxRate: store?.taxRate ?? 0,
+    serviceFeeRate: store?.serviceFeeRate ?? 0,
+  })
+  return { subtotal, tax, serviceFee, total: totalWithTax, itemCount }
 }
 
 // ===== Create =====
@@ -71,8 +73,11 @@ export function createSplitBill(
     subtotal = Math.round(mainBill.subtotal * pct / 100)
   }
 
-  const tax = calcTax(storeId, subtotal)
-  const serviceFee = calcServiceFee(storeId, subtotal)
+  const store = storeStore.getById(storeId)
+  const { tax, serviceFee } = calcTaxAndFees(subtotal, {
+    taxRate: store?.taxRate ?? 0,
+    serviceFeeRate: store?.serviceFeeRate ?? 0,
+  })
   const existing = getSplitBills(sessionId)
   const splitBill: SplitBill = {
     id: uuid(), storeId, sessionId,
@@ -143,8 +148,8 @@ function calcByItemSubtotal(
     const assignQty = qty != null ? Math.min(qty, remaining) : remaining
     if (assignQty <= 0) return { error: `Item ${baseKey} already fully assigned` }
 
-    const unitPrice = item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
-    subtotal += unitPrice * assignQty
+    const up = calcUnitPrice({ price: item.price, quantity: 1, options: item.selectedOptions?.map(o => ({ priceAdjust: o.priceAdjust })) })
+    subtotal += up * assignQty
   }
   return { subtotal }
 }

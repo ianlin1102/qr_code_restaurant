@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { api, type SessionSummary } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
+import { calcSplitByPercent } from '@qr-order/shared/pricing'
 import { localized } from '@/lib/i18n-utils'
 import { useT } from '@/i18n/useT'
 
@@ -57,7 +58,7 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, on
     allItems.reduce((sum, item) => sum + item.unitPrice * (selectedQty[item.key] ?? 0), 0),
   [allItems, selectedQty])
 
-  const percentAmount = session ? Math.round(session.remaining * percent / 100) : 0
+  const percentAmount = session ? calcSplitByPercent(session.remaining, percent).splitAmount : 0
 
   const adjustQty = (key: string, delta: number, max: number) => {
     setSelectedQty(prev => {
@@ -160,7 +161,7 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, on
                     <span className="text-sm font-semibold">{pct}%</span>
                     {session && (
                       <span className="block text-[10px] mt-0.5 opacity-70">
-                        {formatPriceUSD(Math.round(session.remaining * pct / 100))}
+                        {formatPriceUSD(calcSplitByPercent(session.remaining, pct).splitAmount)}
                       </span>
                     )}
                   </button>

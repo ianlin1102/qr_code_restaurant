@@ -4,11 +4,15 @@ import { safeStorage } from '@/lib/safe-storage'
 import { getDeviceId } from '@/lib/device-id'
 import { useSessionStore } from './session-store'
 import type { CartItem } from '@qr-order/shared'
+import { unitPrice as calcUnitPrice } from '@qr-order/shared/pricing'
 
 /** Calculate unit price (base + all option adjustments) */
 export function unitPrice(item: CartItem): number {
-  const adjust = (item.selectedOptions ?? []).reduce((sum, o) => sum + o.priceAdjust, 0)
-  return item.price + adjust
+  return calcUnitPrice({
+    price: item.price,
+    quantity: item.quantity,
+    options: item.selectedOptions?.map(o => ({ priceAdjust: o.priceAdjust })),
+  })
 }
 
 // Extend CartItem with a cartKey for internal tracking

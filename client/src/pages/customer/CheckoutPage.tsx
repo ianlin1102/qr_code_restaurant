@@ -15,6 +15,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
 import { api } from '@/services/api'
 import TipSelector, { type TipSelection } from '@/components/shared/TipSelector'
+import { calcTip } from '@qr-order/shared/pricing'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
@@ -133,9 +134,9 @@ export default function CheckoutPage() {
     if (!storeId || !state?.tableId) return
     let tip = 0
     if (sel?.type === 'percent') {
-      tip = Math.round(amount * sel.pct / 100)
+      tip = calcTip(amount, 'percent', sel.pct)
     } else if (sel?.type === 'custom') {
-      tip = sel.amount
+      tip = calcTip(amount, 'fixed', sel.amount)
     }
     setLoadingTip(true)
     try {

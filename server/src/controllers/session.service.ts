@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import { sessionStore, paymentStore, orderStore, tableStore, storeStore } from '../repositories/stores.js'
 import type { Session, Payment, DiscountType, CartItem } from '@qr-order/shared'
+import { unitPrice as calcUnitPrice, calcTax as sharedCalcTax, calcServiceFee as sharedCalcServiceFee, calcBillSummary, calcTaxAndFees } from '@qr-order/shared/pricing'
 import logger from '../lib/logger.js'
 
 // ===== Session CRUD =====
@@ -134,16 +135,17 @@ export function getSessionSummary(storeId: string, sessionId: string) {
   const orders = freshSession.orderIds
     .map(id => orderStore.getById(id)).filter(Boolean)
   const payments = getPayments(sessionId)
-  const netDue = freshSession.totalAmount - freshSession.discountAmount
-  const tax = calcTax(storeId, netDue)
-  const serviceFee = calcServiceFee(storeId, netDue)
-  const totalWithTax = netDue + tax + serviceFee
-  const remaining = Math.max(0, totalWithTax - freshSession.totalPaid)
-  const isPaid = freshSession.totalPaid >= totalWithTax && totalWithTax > 0
+  const store = storeStore.getById(storeId)
+  const bill = calcBillSummary({
+    totalAmount: freshSession.totalAmount,
+    discountAmount: freshSession.discountAmount,
+    totalPaid: freshSession.totalPaid,
+    taxRate: store?.taxRate ?? 0,
+    serviceFeeRate: store?.serviceFeeRate ?? 0,
+  })
 
   return {
-    ...freshSession, orders, payments, remaining, isPaid,
-    netDue, tax, serviceFee, totalWithTax,
+    ...freshSession, orders, payments, ...bill,
   }
 }
 
@@ -302,14 +304,12 @@ export function recalcSessionTotal(sessionId: string): void {
 
 export function calcTax(storeId: string, subtotal: number): number {
   const store = storeStore.getById(storeId)
-  const rate = store?.taxRate ?? 0
-  return Math.round(subtotal * rate / 100)
+  return sharedCalcTax(subtotal, store?.taxRate ?? 0)
 }
 
 export function calcServiceFee(storeId: string, subtotal: number): number {
   const store = storeStore.getById(storeId)
-  const rate = store?.serviceFeeRate ?? 0
-  return Math.round(subtotal * rate / 100)
+  return sharedCalcServiceFee(subtotal, store?.serviceFeeRate ?? 0)
 }
 
 // ===== Settlement =====
@@ -369,8 +369,8 @@ export function payByItems(
     const qty = qtyToPay != null ? Math.min(qtyToPay, remaining) : remaining
     if (qty <= 0) return { error: `Item ${orderId}:${idx} already fully paid` }
 
-    const unitPrice = item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
-    subtotal += unitPrice * qty
+    const up = calcUnitPrice({ price: item.price, quantity: 1, options: item.selectedOptions?.map(o => ({ priceAdjust: o.priceAdjust })) })
+    subtotal += up * qty
   }
 
   const tax = calcTax(storeId, subtotal)
@@ -386,26 +386,30 @@ export function payByPercent(
   if (!session || session.storeId !== storeId) return { error: 'Session not found' }
   if (percent < 1 || percent > 100) return { error: 'Percent must be 1-100' }
 
-  // Check minimum: both the split amount and the remaining after split must be >= $1 (100 cents)
-  // unless paying 100% (full remaining)
+  const store = storeStore.getById(storeId)
+  const rates = { taxRate: store?.taxRate ?? 0, serviceFeeRate: store?.serviceFeeRate ?? 0 }
 
   adoptOrphanedOrders(session)
   const fresh = sessionStore.getById(sessionId)!
-  const netDue = fresh.totalAmount - fresh.discountAmount
-  const totalTax = calcTax(storeId, netDue)
-  const totalFee = calcServiceFee(storeId, netDue)
-  const totalWithTax = netDue + totalTax + totalFee
-  const remaining = Math.max(0, totalWithTax - fresh.totalPaid)
+
+  const bill = calcBillSummary({
+    totalAmount: fresh.totalAmount,
+    discountAmount: fresh.discountAmount,
+    totalPaid: fresh.totalPaid,
+    ...rates,
+  })
+  const remaining = bill.remaining
   const subtotal = Math.round(remaining * percent / 100)
 
-  // Minimum $1 check: split amount and leftover must each be >= 100 cents (unless paying 100%)
   if (percent < 100) {
     const leftover = remaining - subtotal
     if (subtotal < 100) return { error: 'Split amount must be at least $1.00' }
     if (leftover < 100) return { error: 'Remaining balance after split must be at least $1.00' }
   }
 
-  return { amount: subtotal, tax: calcTax(storeId, subtotal), serviceFee: calcServiceFee(storeId, subtotal) }
+  const tax = sharedCalcTax(subtotal, rates.taxRate)
+  const serviceFee = sharedCalcServiceFee(subtotal, rates.serviceFeeRate)
+  return { amount: subtotal, tax, serviceFee }
 }
 
 /** Called by webhook AFTER payment confirmed — marks items as paid */

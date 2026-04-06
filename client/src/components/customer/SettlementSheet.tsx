@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { api, type SessionSummary } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
+import { calcSplitByPercent } from '@qr-order/shared/pricing'
 import { localized } from '@/lib/i18n-utils'
 
 interface Props {
@@ -192,7 +193,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
                     }`}>
                     <span className="text-sm font-semibold">{pct}%</span>
                     <span className="block text-[10px] mt-0.5 opacity-70">
-                      {formatPriceUSD(Math.round(session.remaining * pct / 100))}
+                      {formatPriceUSD(calcSplitByPercent(session.remaining, pct).splitAmount)}
                     </span>
                   </button>
                 ))}
@@ -210,7 +211,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
                 <span className="text-lg font-bold w-16 text-right">{percent}%</span>
               </div>
               <p className="text-center text-sm text-muted-foreground">
-                {formatPriceUSD(Math.round(session.remaining * percent / 100))} / {formatPriceUSD(session.remaining)}
+                {formatPriceUSD(calcSplitByPercent(session.remaining, percent).splitAmount)} / {formatPriceUSD(session.remaining)}
               </p>
             </div>
           )}
