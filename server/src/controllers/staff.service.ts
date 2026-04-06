@@ -47,12 +47,18 @@ export async function addStaff(
     if (dup) return { error: 'Clock PIN already in use', status: 409 }
   }
 
+  // Auto-resolve roleId from role name
+  const { roleStore } = await import('../repositories/stores.js')
+  const matchingRole = roleStore.getByField('storeId', storeId)
+    .find(r => r.name === role)
+
   const record: StaffRecord = {
     id: uuid(),
     storeId,
     username,
     password: await bcrypt.hash(password, 10),
     role,
+    roleId: matchingRole?.id,
     ...(clockPin ? { clockPin } : {}),
     createdAt: new Date().toISOString(),
   }

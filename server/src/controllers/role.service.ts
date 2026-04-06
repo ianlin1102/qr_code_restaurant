@@ -143,10 +143,15 @@ export function resolvePermissions(
     }
   } else if (legacyRole === 'owner') {
     rolePerms = ALL_PERMISSIONS
-  } else if (legacyRole === 'staff') {
+  } else if (legacyRole === 'manager') {
+    rolePerms = MANAGER_PERMISSIONS
+  } else if (legacyRole === 'staff' || legacyRole === 'waiter') {
     rolePerms = WAITER_PERMISSIONS
   } else {
-    rolePerms = []
+    // Unknown role — try to find a matching system role by name
+    const systemRole = roleStore.getByField('storeId', storeId)
+      .find(r => r.name === legacyRole)
+    rolePerms = systemRole?.permissions ?? []
   }
 
   // Intersect with store's licensed module permissions
