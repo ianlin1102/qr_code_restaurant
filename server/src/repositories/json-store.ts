@@ -19,7 +19,8 @@ export class JsonStore<T extends { id: string }> {
   private load(): T[] {
     if (!existsSync(this.filePath)) return []
     const raw = readFileSync(this.filePath, 'utf-8')
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
   }
 
   private save(): void {
@@ -50,6 +51,18 @@ export class JsonStore<T extends { id: string }> {
     this.data[index] = { ...this.data[index], ...updates }
     this.save()
     return this.data[index]
+  }
+
+  upsert(id: string, data: Omit<T, 'id'>): T {
+    const index = this.data.findIndex(item => item.id === id)
+    const item = { id, ...data } as T
+    if (index === -1) {
+      this.data.push(item)
+    } else {
+      this.data[index] = item
+    }
+    this.save()
+    return item
   }
 
   delete(id: string): boolean {
