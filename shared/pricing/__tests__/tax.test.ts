@@ -78,3 +78,61 @@ describe('calcTaxAndFees', () => {
     expect(result.totalWithTax).toBe(2000)
   })
 })
+
+describe('calcTax — edge cases', () => {
+  it('handles zero subtotal', () => {
+    expect(calcTax(0, 8.875)).toBe(0)
+  })
+  it('handles fractional rate', () => {
+    // 1 cent * 8.875% = 0.08875 → rounds to 0
+    expect(calcTax(1, 8.875)).toBe(0)
+  })
+  it('handles 100% rate', () => {
+    expect(calcTax(1000, 100)).toBe(1000)
+  })
+  it('handles very high subtotal', () => {
+    // 10M * 8.875% = 887500
+    expect(calcTax(10_000_000, 8.875)).toBe(887500)
+  })
+})
+
+describe('calcServiceFee — edge cases', () => {
+  it('handles zero subtotal', () => {
+    expect(calcServiceFee(0, 15)).toBe(0)
+  })
+  it('handles 1 cent subtotal', () => {
+    // 1 * 15% = 0.15 → 0
+    expect(calcServiceFee(1, 15)).toBe(0)
+  })
+})
+
+describe('calcTip — edge cases', () => {
+  it('handles 0% tip', () => {
+    expect(calcTip(5000, 'percent', 0)).toBe(0)
+  })
+  it('handles 100% tip', () => {
+    expect(calcTip(5000, 'percent', 100)).toBe(5000)
+  })
+  it('handles very large percent (200%)', () => {
+    expect(calcTip(1000, 'percent', 200)).toBe(2000)
+  })
+  it('handles zero base amount', () => {
+    expect(calcTip(0, 'percent', 18)).toBe(0)
+    expect(calcTip(0, 'fixed', 0)).toBe(0)
+  })
+})
+
+describe('calcTaxAndFees — edge cases', () => {
+  it('handles zero subtotal', () => {
+    const result = calcTaxAndFees(0, { taxRate: 8.875, serviceFeeRate: 15 })
+    expect(result).toEqual({ tax: 0, serviceFee: 0, totalWithTax: 0 })
+  })
+  it('rounding: tax and fee rounded independently', () => {
+    // 999 * 8.875% = 88.61625 → 89
+    // 999 * 15% = 149.85 → 150
+    const result = calcTaxAndFees(999, { taxRate: 8.875, serviceFeeRate: 15 })
+    expect(result.tax).toBe(89)
+    expect(result.serviceFee).toBe(150)
+    expect(result.totalWithTax).toBe(999 + 89 + 150) // 1238
+  })
+})

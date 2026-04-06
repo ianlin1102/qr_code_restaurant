@@ -158,3 +158,93 @@ describe('validateSplit', () => {
     expect(result.valid).toBe(false)
   })
 })
+
+describe('calcBillSummary — edge cases', () => {
+  it('discount exceeding totalAmount results in netDue of negative, tax on negative', () => {
+    // Note: this shows current behavior — discount > total is a data issue
+    const result = calcBillSummary({
+      totalAmount: 1000, discountAmount: 2000, totalPaid: 0,
+      taxRate: 8.875, serviceFeeRate: 15,
+    })
+    expect(result.netDue).toBe(-1000) // negative netDue
+    // tax on negative: Math.round(-1000 * 8.875 / 100) = -89
+    expect(result.tax).toBe(-89)
+  })
+
+  it('large bill with many payments', () => {
+    const result = calcBillSummary({
+      totalAmount: 1_000_000, discountAmount: 0, totalPaid: 999_999,
+      taxRate: 8.875, serviceFeeRate: 15,
+    })
+    expect(result.remaining).toBeGreaterThan(0)
+    expect(result.isPaid).toBe(false)
+  })
+
+  it('exact payment equals totalWithTax', () => {
+    // Pre-calculate: 5000 + 444 + 750 = 6194
+    const result = calcBillSummary({
+      totalAmount: 5000, discountAmount: 0, totalPaid: 6194,
+      taxRate: 8.875, serviceFeeRate: 15,
+    })
+    expect(result.remaining).toBe(0)
+    expect(result.isPaid).toBe(true)
+  })
+
+  it('1 cent short of full payment', () => {
+    const result = calcBillSummary({
+      totalAmount: 5000, discountAmount: 0, totalPaid: 6193,
+      taxRate: 8.875, serviceFeeRate: 15,
+    })
+    expect(result.remaining).toBe(1)
+    expect(result.isPaid).toBe(false)
+  })
+})
+
+describe('validateSplit — limit tests', () => {
+  it('both sides exactly at $1.00 boundary', () => {
+    expect(validateSplit(100, 100, 50)).toEqual({ valid: true })
+  })
+  it('split at 99 cents — just under limit', () => {
+    expect(validateSplit(99, 101, 49).valid).toBe(false)
+  })
+  it('remaining at 99 cents — just under limit', () => {
+    expect(validateSplit(101, 99, 51).valid).toBe(false)
+  })
+  it('both sides at 99 cents — both fail', () => {
+    const result = validateSplit(99, 99, 50)
+    expect(result.valid).toBe(false)
+  })
+  it('100% with 1 cent total', () => {
+    expect(validateSplit(1, 0, 100)).toEqual({ valid: true })
+  })
+  it('100% with 0 total', () => {
+    expect(validateSplit(0, 0, 100)).toEqual({ valid: true })
+  })
+})
+
+describe('calcSplitByPercent — limit tests', () => {
+  it('50% of odd number rounds correctly', () => {
+    const result = calcSplitByPercent(1001, 50)
+    expect(result.splitAmount).toBe(501) // 500.5 rounds to 501
+    expect(result.leftover).toBe(500)
+    expect(result.splitAmount + result.leftover).toBe(1001)
+  })
+  it('33% + 33% + 34% covers the full amount', () => {
+    const total = 10000
+    const split1 = calcSplitByPercent(total, 33)
+    const split2 = calcSplitByPercent(total, 33)
+    const split3 = calcSplitByPercent(total, 34)
+    // Due to rounding, 3300 + 3300 + 3400 = 10000
+    expect(split1.splitAmount + split2.splitAmount + split3.splitAmount).toBe(10000)
+  })
+  it('1% of 100 cents = 1 cent', () => {
+    const result = calcSplitByPercent(100, 1)
+    expect(result.splitAmount).toBe(1)
+    expect(result.leftover).toBe(99)
+  })
+  it('1% of 99 cents = 1 cent (rounds up from 0.99)', () => {
+    const result = calcSplitByPercent(99, 1)
+    expect(result.splitAmount).toBe(1)
+    expect(result.leftover).toBe(98)
+  })
+})

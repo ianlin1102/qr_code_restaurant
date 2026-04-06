@@ -140,3 +140,89 @@ describe('topItems', () => {
     expect(result).toHaveLength(3) // only 3 items available, less than 10
   })
 })
+
+describe('buildDailySnapshot — edge cases', () => {
+  it('handles duplicate menuItemId with different options', () => {
+    const orders = [
+      makeOrder('o1', [
+        { menuItemId: 'a', name: 'Burger', price: 1000, quantity: 1 },
+        { menuItemId: 'a', name: 'Burger', price: 1000, quantity: 1, selectedOptions: [{ priceAdjust: 200 }] },
+      ], '2026-04-05T12:00:00Z'),
+    ]
+    const snap = buildDailySnapshot('s1', '2026-04-05', orders)
+    const burger = snap.items.find(i => i.itemId === 'a')!
+    expect(burger.count).toBe(2)
+    expect(burger.revenue).toBe(2200) // 1000 + 1200
+  })
+
+  it('handles very large order quantities', () => {
+    const orders = [
+      makeOrder('o1', [
+        { menuItemId: 'a', name: 'Water', price: 100, quantity: 9999 },
+      ], '2026-04-05T12:00:00Z'),
+    ]
+    const snap = buildDailySnapshot('s1', '2026-04-05', orders)
+    expect(snap.items[0].count).toBe(9999)
+    expect(snap.items[0].revenue).toBe(999900)
+    expect(snap.totalRevenue).toBe(999900)
+  })
+})
+
+describe('aggregateSnapshots — edge cases', () => {
+  it('single snapshot returns same data', () => {
+    const snap: DailySalesSnapshot = {
+      date: '2026-04-05', storeId: 's1', totalOrders: 5, totalRevenue: 2500,
+      items: [{ itemId: 'a', name: 'X', count: 5, revenue: 2500 }],
+    }
+    const result = aggregateSnapshots([snap])
+    expect(result.totalOrders).toBe(5)
+    expect(result.totalRevenue).toBe(2500)
+    expect(result.dateRange).toEqual({ from: '2026-04-05', to: '2026-04-05' })
+  })
+
+  it('30 days aggregation (month)', () => {
+    const snaps: DailySalesSnapshot[] = Array.from({ length: 30 }, (_, i) => ({
+      date: `2026-04-${String(i + 1).padStart(2, '0')}`,
+      storeId: 's1',
+      totalOrders: 10,
+      totalRevenue: 5000,
+      items: [{ itemId: 'a', name: 'X', count: 10, revenue: 5000 }],
+    }))
+    const result = aggregateSnapshots(snaps)
+    expect(result.totalOrders).toBe(300)
+    expect(result.totalRevenue).toBe(150000)
+    expect(result.items[0].count).toBe(300)
+  })
+})
+
+describe('topItems — edge cases', () => {
+  it('handles tie in count', () => {
+    const items: DailyItemStat[] = [
+      { itemId: 'a', name: 'A', count: 10, revenue: 1000 },
+      { itemId: 'b', name: 'B', count: 10, revenue: 2000 },
+    ]
+    const result = topItems(items, 'count', 2)
+    expect(result).toHaveLength(2) // both included, order may vary
+  })
+
+  it('limit 0 returns empty', () => {
+    const items: DailyItemStat[] = [
+      { itemId: 'a', name: 'A', count: 10, revenue: 1000 },
+    ]
+    expect(topItems(items, 'count', 0)).toEqual([])
+  })
+
+  it('limit 1 returns top only', () => {
+    const items: DailyItemStat[] = [
+      { itemId: 'a', name: 'A', count: 5, revenue: 500 },
+      { itemId: 'b', name: 'B', count: 10, revenue: 1000 },
+    ]
+    const result = topItems(items, 'count', 1)
+    expect(result).toHaveLength(1)
+    expect(result[0].itemId).toBe('b')
+  })
+
+  it('empty items returns empty', () => {
+    expect(topItems([], 'count')).toEqual([])
+  })
+})

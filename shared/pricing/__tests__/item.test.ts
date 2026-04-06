@@ -65,3 +65,38 @@ describe('subtotal', () => {
     expect(subtotal([{ price: 1500, quantity: 1 }])).toBe(1500)
   })
 })
+
+describe('unitPrice — edge cases', () => {
+  it('handles negative priceAdjust (discount option)', () => {
+    expect(unitPrice({ price: 1000, quantity: 1, options: [{ priceAdjust: -200 }] })).toBe(800)
+  })
+  it('handles all-zero options', () => {
+    expect(unitPrice({ price: 1000, quantity: 1, options: [{ priceAdjust: 0 }, { priceAdjust: 0 }] })).toBe(1000)
+  })
+  it('handles very large price', () => {
+    expect(unitPrice({ price: 99999999, quantity: 1 })).toBe(99999999)
+  })
+})
+
+describe('lineTotal — edge cases', () => {
+  it('handles very large quantity', () => {
+    expect(lineTotal({ price: 100, quantity: 99999 })).toBe(9999900)
+  })
+  it('handles price with options and large quantity', () => {
+    expect(lineTotal({ price: 1000, quantity: 100, options: [{ priceAdjust: 500 }] })).toBe(150000)
+  })
+})
+
+describe('subtotal — edge cases', () => {
+  it('handles many items', () => {
+    const items = Array.from({ length: 100 }, () => ({ price: 100, quantity: 1 }))
+    expect(subtotal(items)).toBe(10000)
+  })
+  it('handles mixed options across items', () => {
+    expect(subtotal([
+      { price: 1000, quantity: 1, options: [{ priceAdjust: 200 }] },
+      { price: 500, quantity: 2 },
+      { price: 800, quantity: 1, options: [{ priceAdjust: -100 }] },
+    ])).toBe(1200 + 1000 + 700) // 2900
+  })
+})
