@@ -5,7 +5,8 @@
   "main": "types.ts",
   "exports": {
     ".": "./types.ts",
-    "./pricing": "./pricing/index.ts"
+    "./pricing": "./pricing/index.ts",
+    "./modules": "./modules.ts"
   },
   "scripts": {
     "test": "vitest run",
