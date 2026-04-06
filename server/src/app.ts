@@ -24,14 +24,14 @@ import { errorHandler } from './middleware/error.middleware.js'
 const app = express()
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
 }))
 
 // Stripe webhook needs raw body — must be before express.json()
 app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRoutes)
 
 // Parse JSON for all other routes
-app.use(express.json())
+app.use(express.json({ limit: '1mb' }))
 app.use(morgan('dev', {
   stream: { write: (msg: string) => logger.info(msg.trimEnd()) },
 }))
