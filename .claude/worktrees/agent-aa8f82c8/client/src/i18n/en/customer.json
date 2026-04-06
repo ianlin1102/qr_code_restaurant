@@ -1,0 +1,93 @@
+{
+  "langSelect": {
+    "title": "请选择语言",
+    "subtitle": "Please select your language"
+  },
+  "menu": {
+    "searchPlaceholder": "Search dishes...",
+    "noResults": "No dishes found",
+    "selectSpec": "Options",
+    "from": "+",
+    "required": "Required",
+    "quickTags": "Quick tags",
+    "addToCart": "Add to cart",
+    "goOrder": "Place order",
+    "callWaiter": "Call Waiter",
+    "waiterCalled": "Staff has been notified!",
+    "viewOrders": "View orders",
+    "itemsSoldOut": "Some items in your cart are now sold out and have been removed: {{names}}"
+  },
+  "cart": {
+    "title": "My Orders",
+    "tableLabel": "Table",
+    "noTable": "No table found",
+    "scanPrompt": "Please scan the QR code on your table to start ordering",
+    "emptyCart": "Cart is empty",
+    "emptyPrompt": "Go check out the menu!",
+    "backToMenu": "Back to menu",
+    "previousOrders": "Previous orders ({{count}} total)",
+    "previousTotal": "Previous total",
+    "addMore": "Add more",
+    "currentCart": "Current cart",
+    "perServing": "/ each",
+    "remarkPlaceholder": "Add a note (optional)",
+    "itemCount": "{{count}} items",
+    "submitOrder": "Place order",
+    "submitAddMore": "Add to order",
+    "submitting": "Submitting...",
+    "continueOrder": "Order more"
+  },
+  "orderConfirm": {
+    "notFound": "Order not found",
+    "notFoundPrompt": "Please go back to the menu and try again",
+    "success": "Order placed!",
+    "successPrompt": "Your order has been submitted. Please wait.",
+    "orderNumber": "Order #",
+    "tableLabel": "Table",
+    "orderDetail": "Order details",
+    "continueOrder": "Order more",
+    "viewAllOrders": "View all orders",
+    "paymentFailed": "Payment Failed",
+    "paymentFailedPrompt": "Your payment was not completed. Please try again.",
+    "loadingOrder": "Loading order...",
+    "callStaff": "Call Staff",
+    "needHelp": "Need help with your order?",
+    "estimatedTime": "Estimated Ready In",
+    "minutes": "{{min}} - {{max}} Minutes"
+  },
+  "scan": {
+    "error": "Cannot connect to server. Please check your connection.",
+    "retry": "Retry",
+    "retryDesc": "Please check your internet connection and try again.",
+    "loading": "Checking table availability...",
+    "loadingZh": "正在确认桌位信息..."
+  },
+  "checkout": {
+    "title": "Checkout",
+    "amountDue": "Amount Due",
+    "payment": "Payment",
+    "processing": "Processing...",
+    "pay": "Pay {{amount}}",
+    "noSession": "No checkout session found.",
+    "noSessionDesc": "Please go back to your cart to start checkout.",
+    "paymentFailed": "Payment failed",
+    "backToMenu": "Back to menu",
+    "loadingPayment": "Loading payment form...",
+    "securePayment": "Secure encrypted payment via Stripe",
+    "tip": "Add a Tip",
+    "tipCustom": "Custom",
+    "orderSummary": "Order Summary"
+  },
+  "orderHistory": {
+    "title": "Order History",
+    "noOrders": "No orders yet",
+    "backToMenu": "Back to Menu",
+    "orderNumber": "Order #{{number}}",
+    "items": "{{count}} items"
+  },
+  "common": {
+    "allergyNotice": "Prices include service charge where applicable. Please notify staff of any severe allergies before submitting.",
+    "kitchenNotified": "Kitchen Notified",
+    "tableBadge": "TABLE {{name}}"
+  }
+}

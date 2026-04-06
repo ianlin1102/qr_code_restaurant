@@ -9,7 +9,10 @@
     "createdAt": "2026-03-23T08:38:13.228Z",
     "announcement": "新老顾客欢迎",
     "autoAcceptOrders": false,
-    "paymentMode": "pay-later"
+    "paymentMode": "pay-later",
+    "announcementEn": "Selectable Announcement English test",
+    "taxRate": 8.25,
+    "serviceFeeRate": 0
   },
   {
     "id": "store-demo-002",

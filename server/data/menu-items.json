@@ -507,6 +507,7 @@
     "available": true,
     "sortOrder": 0,
     "options": [],
-    "staffOnly": true
+    "staffOnly": true,
+    "allowCustomPrice": true
   }
 ]

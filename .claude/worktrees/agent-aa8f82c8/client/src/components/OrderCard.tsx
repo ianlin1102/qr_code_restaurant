@@ -1,0 +1,176 @@
+import { useState } from 'react'
+import { Printer } from 'lucide-react'
+import { useT } from '@/i18n/useT'
+import { api } from '@/services/api'
+import { formatPriceUSD } from '@/lib/format'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import type { Order, OrderItem, OrderStatus } from '@qr-order/shared'
+
+const STATUS_COLORS: Record<OrderStatus, string> = {
+  pending: 'bg-orange-100 text-orange-800 border-orange-200',
+  paid: 'bg-purple-100 text-purple-800 border-purple-200',
+  preparing: 'bg-blue-100 text-blue-800 border-blue-200',
+  completed: 'bg-green-100 text-green-800 border-green-200',
+  closed: 'bg-gray-100 text-gray-800 border-gray-200',
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  return `${hours}h ${minutes % 60}m ago`
+}
+
+function timeColor(dateStr: string): string {
+  const minutes = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000)
+  if (minutes < 15) return 'text-green-600'
+  if (minutes < 30) return 'text-orange-500'
+  return 'text-red-600'
+}
+
+function itemUnitPrice(item: OrderItem): number {
+  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+}
+
+interface Props {
+  order: Order
+  storeId: string
+  onClick: () => void
+  onEdit: () => void
+  actionButton: React.ReactNode
+}
+
+export default function OrderCard({ order, storeId, onClick, onEdit, actionButton }: Props) {
+  const { t } = useT()
+  const [reprinting, setReprinting] = useState(false)
+  const [reprintFeedback, setReprintFeedback] = useState(false)
+
+  const config = {
+    label: t.dashboard.status[order.status],
+    color: STATUS_COLORS[order.status],
+  }
+
+  const handleReprint = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (reprinting) return
+    setReprinting(true)
+    try {
+      await api.reprintOrder(storeId, order.id)
+      setReprintFeedback(true)
+      setTimeout(() => setReprintFeedback(false), 2000)
+    } catch (err) {
+      console.error('Failed to reprint order:', err)
+    } finally {
+      setReprinting(false)
+    }
+  }
+
+  return (
+    <Card
+      className="cursor-pointer hover:shadow-md transition-shadow"
+      onClick={onClick}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-bold">
+              #{order.orderNumber}
+            </span>
+            <Badge variant="outline" className={config.color}>
+              {config.label}
+            </Badge>
+            {order.isPaid && (
+              <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                {t.dashboard.status.paid}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="min-h-[44px] px-2 text-muted-foreground hover:text-foreground"
+              onClick={handleReprint}
+              disabled={reprinting}
+              title={t.dashboard.reprint}
+            >
+              {reprintFeedback
+                ? <span className="text-xs text-green-600">{t.dashboard.printed}</span>
+                : <Printer className="h-4 w-4" />}
+            </Button>
+            {order.status !== 'completed' && order.status !== 'closed' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="min-h-[44px] text-blue-600 hover:text-blue-700"
+                onClick={e => { e.stopPropagation(); onEdit() }}
+              >
+                {t.dashboard.editOrder}
+              </Button>
+            )}
+            <span className={`text-sm font-medium ${timeColor(order.createdAt)}`}>
+              {timeAgo(order.createdAt)}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>{order.tableName}</span>
+          {order.customerName && (
+            <>
+              <span>·</span>
+              <span>{order.customerName}</span>
+            </>
+          )}
+        </div>
+      </CardHeader>
+
+      <Separator />
+
+      <CardContent className="p-3 md:p-4 pt-3">
+        {/* Item list */}
+        <ul className="space-y-1 mb-3">
+          {order.items.map((item, idx) => (
+            <li key={idx} className="flex justify-between text-sm">
+              <div>
+                <span>{item.name}</span>
+                <span className="text-muted-foreground ml-1">
+                  x{item.quantity}
+                </span>
+                {item.selectedOptions && item.selectedOptions.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-0.5">
+                    {item.selectedOptions.map((o, idx) => (
+                      <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
+                        {(o.optionName || o.optionNameEn || "") ? `${(o.optionName || o.optionNameEn || "")}: ${(o.choiceName || o.choiceNameEn || "")}` : (o.choiceName || o.choiceNameEn || "")}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {item.remark && (
+                  <span className="text-xs text-orange-600 ml-2">
+                    ({item.remark})
+                  </span>
+                )}
+              </div>
+              <span className="text-muted-foreground">
+                {formatPriceUSD(itemUnitPrice(item) * item.quantity)}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        {/* Total and action */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <span className="font-semibold">
+            {t.common.total}: {formatPriceUSD(order.totalPrice)}
+          </span>
+          {actionButton}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

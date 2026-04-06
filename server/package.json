@@ -6,7 +6,9 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "seed": "tsx src/seed.ts",
-    "print-urls": "tsx src/scripts/print-table-urls.ts"
+    "print-urls": "tsx src/scripts/print-table-urls.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1008.0",
@@ -33,6 +35,7 @@
     "@types/uuid": "^10.0.0",
     "pino-pretty": "^13.1.3",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.2"
   }
 }

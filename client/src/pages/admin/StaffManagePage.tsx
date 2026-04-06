@@ -80,27 +80,27 @@ export default function StaffManagePage() {
   const formatMinutes = (min: number) => `${Math.floor(min / 60)}h ${min % 60}m`
 
   const permLabel = (p: string) => {
-    switch (p) {
-      case 'orders:read': return t('viewOrders', 'View Orders')
-      case 'orders:write': return t('manageOrders', 'Manage Orders')
-      case 'menu:read': return t('viewMenu', 'View Menu')
-      case 'menu:write': return t('manageMenu', 'Manage Menu')
-      case 'tables:read': return t('viewTables', 'View Tables')
-      case 'tables:write': return t('manageTables', 'Manage Tables')
-      case 'settings:read': return t('viewSettings', 'View Settings')
-      case 'settings:write': return t('manageSettings', 'Manage Settings')
-      case 'billing:read': return t('viewBilling', 'View Billing')
-      case 'billing:write': return t('manageBilling', 'Manage Billing')
-      case 'analytics:read': return t('viewAnalytics', 'View Analytics')
-      case 'coupons:read': return t('viewCoupons', 'View Coupons')
-      case 'coupons:write': return t('manageCoupons', 'Manage Coupons')
-      case 'waitlist:read': return t('viewWaitlist', 'View Waitlist')
-      case 'waitlist:write': return t('manageWaitlist', 'Manage Waitlist')
-      case 'staff:manage': return t('manageStaff', 'Manage Staff')
-      case 'printer:read': return t('viewPrinter', 'View Printer Config')
-      case 'printer:write': return t('managePrinter', 'Print & Manage Printer')
-      default: return p
+    const labels: Record<string, string> = {
+      'orders:read': 'View Orders',
+      'orders:write': 'Manage Orders',
+      'menu:read': 'View Menu',
+      'menu:write': 'Manage Menu',
+      'tables:read': 'View Tables',
+      'tables:write': 'Manage Tables',
+      'settings:read': 'View Settings',
+      'settings:write': 'Manage Settings',
+      'billing:read': 'View Billing',
+      'billing:write': 'Manage Billing',
+      'analytics:read': 'View Analytics',
+      'coupons:read': 'View Coupons',
+      'coupons:write': 'Manage Coupons',
+      'waitlist:read': 'View Waitlist',
+      'waitlist:write': 'Manage Waitlist',
+      'staff:manage': 'Manage Staff',
+      'printer:read': 'View Printer Config',
+      'printer:write': 'Print & Manage Printer',
     }
+    return labels[p] ?? p
   }
 
   // Staff handlers

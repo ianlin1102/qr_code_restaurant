@@ -1,0 +1,31 @@
+{
+  "loading": "Loading...",
+  "save": "Save",
+  "saving": "Saving...",
+  "cancel": "Cancel",
+  "edit": "Edit",
+  "delete": "Delete",
+  "confirm": "Confirm",
+  "add": "Add",
+  "back": "Back",
+  "total": "Total",
+  "status": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "preparing": "Preparing",
+    "completed": "Completed",
+    "closed": "Closed"
+  },
+  "soldOut": "Sold out",
+  "items": "items",
+  "langSwitch": "中",
+  "image": {
+    "label": "Image",
+    "clickToUpload": "Click to upload",
+    "hint": "JPEG / PNG, max 5MB",
+    "uploading": "Uploading...",
+    "change": "Change",
+    "remove": "Remove",
+    "uploadFailed": "Upload failed"
+  }
+}

@@ -1,0 +1,60 @@
+[
+  {
+    "id": "store-demo-001-role-owner",
+    "storeId": "store-demo-001",
+    "name": "owner",
+    "nameEn": "Owner",
+    "permissions": [
+      "orders:read",
+      "orders:write",
+      "menu:read",
+      "menu:write",
+      "tables:read",
+      "tables:write",
+      "billing:read",
+      "billing:write",
+      "analytics:read",
+      "staff:manage",
+      "settings:read",
+      "settings:write"
+    ],
+    "isSystem": true,
+    "createdAt": "2026-03-27T18:35:04.555Z"
+  },
+  {
+    "id": "store-demo-001-role-manager",
+    "storeId": "store-demo-001",
+    "name": "manager",
+    "nameEn": "Manager",
+    "permissions": [
+      "orders:read",
+      "orders:write",
+      "menu:read",
+      "menu:write",
+      "tables:read",
+      "tables:write",
+      "billing:read",
+      "billing:write",
+      "analytics:read",
+      "settings:read",
+      "settings:write"
+    ],
+    "isSystem": true,
+    "createdAt": "2026-03-27T18:35:04.555Z"
+  },
+  {
+    "id": "store-demo-001-role-waiter",
+    "storeId": "store-demo-001",
+    "name": "waiter",
+    "nameEn": "Waiter",
+    "permissions": [
+      "orders:read",
+      "orders:write",
+      "menu:read",
+      "tables:read",
+      "tables:write"
+    ],
+    "isSystem": true,
+    "createdAt": "2026-03-27T18:35:04.555Z"
+  }
+]

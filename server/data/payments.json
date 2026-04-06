@@ -1,1 +1,88 @@
-[]
+[
+  {
+    "id": "714390e8-47f8-4a81-88c4-ff8dc9c24bfd",
+    "sessionId": "a55dd221-9f92-405b-b815-d0a94ba880eb",
+    "storeId": "store-demo-001",
+    "amount": 10044,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3THacg3aHj6iWnyd14CaPYSo",
+    "createdAt": "2026-04-02T02:04:52.500Z",
+    "method": "stripe"
+  },
+  {
+    "id": "00237011-7d7a-4ee9-ad02-6fce911dd0e7",
+    "sessionId": "01368f8e-898e-4d7a-95ee-09622df81d11",
+    "storeId": "store-demo-001",
+    "amount": 4497,
+    "paidBy": "waiter",
+    "createdAt": "2026-04-02T02:11:22.015Z",
+    "method": "cash"
+  },
+  {
+    "id": "153978b5-d8c6-4eca-8491-f746f6f9d906",
+    "sessionId": "958adbf8-002d-435f-92d6-e29a108f8e50",
+    "storeId": "store-demo-001",
+    "amount": 4497,
+    "paidBy": "waiter",
+    "createdAt": "2026-04-02T02:12:17.625Z",
+    "method": "cash"
+  },
+  {
+    "id": "452ed0ec-cec9-4bfc-bc1d-1c8d70de651f",
+    "sessionId": "5829cacb-39dc-4e0b-a432-0caa8f89fcf6",
+    "storeId": "store-demo-001",
+    "amount": 4896,
+    "paidBy": "waiter",
+    "createdAt": "2026-04-02T02:29:53.899Z",
+    "method": "cash"
+  },
+  {
+    "id": "093a73df-f329-4faf-a22a-64834f772f3a",
+    "sessionId": "c49897d3-cf60-4590-b995-b60116206714",
+    "storeId": "store-demo-001",
+    "amount": 3082,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3THbGX3aHj6iWnyd0RKGSJth",
+    "createdAt": "2026-04-02T02:46:11.482Z",
+    "method": "stripe"
+  },
+  {
+    "id": "7e8cbd87-01c6-4a22-900d-ac32269129f9",
+    "sessionId": "c49897d3-cf60-4590-b995-b60116206714",
+    "storeId": "store-demo-001",
+    "amount": 2141,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3THbKH3aHj6iWnyd0uRTNX4Q",
+    "createdAt": "2026-04-02T02:50:01.236Z",
+    "method": "stripe"
+  },
+  {
+    "id": "271467e6-2a02-4ee8-82aa-204ae8d21803",
+    "sessionId": "1d4e0364-708d-4861-89fc-a55837fb798e",
+    "storeId": "store-demo-001",
+    "amount": 1295,
+    "paidBy": "waiter",
+    "createdAt": "2026-04-02T03:45:09.278Z",
+    "method": "cash"
+  },
+  {
+    "id": "42da8ef3-8e4d-4a81-a36b-daa789c889ea",
+    "sessionId": "97d5d5f2-9c9e-46d1-bda2-5d41ca7bd9ac",
+    "storeId": "store-demo-001",
+    "amount": 4652,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3THcm23aHj6iWnyd1IkMAcGF",
+    "createdAt": "2026-04-02T04:22:57.192Z",
+    "method": "stripe"
+  },
+  {
+    "id": "83270456-b9f6-4230-9ef3-d7e0b446f014",
+    "sessionId": "8c7bb9da-5d46-4ebc-a2fd-fc9daed106c8",
+    "storeId": "store-demo-001",
+    "amount": 4674,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TIzN63aHj6iWnyd0p5d4gKB",
+    "createdAt": "2026-04-05T22:42:40.769Z",
+    "method": "stripe"
+  }
+]

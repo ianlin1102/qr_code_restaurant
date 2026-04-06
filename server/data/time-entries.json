@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "id": "436114e3-8461-402e-88ab-468833911a87",
+    "storeId": "store-demo-001",
+    "userId": "2e6bceb9-883d-4fef-8285-c04fda175fab",
+    "clockIn": "2026-04-05T23:02:55.158Z",
+    "clockOut": "2026-04-06T02:30:10.480Z",
+    "duration": 207
+  }
+]

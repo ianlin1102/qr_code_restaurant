@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "87ee9df6-c9ec-4b70-81f5-a67fc90b295e",
+    "storeId": "store-demo-001",
+    "name": "大桌",
+    "partySize": 7,
+    "phone": "123 456 7890",
+    "estimatedWait": 0,
+    "status": "seated",
+    "createdAt": "2026-04-02T00:19:34.773Z"
+  }
+]
