@@ -8,6 +8,9 @@ server/data/orders.json
 bee/
 pic/
 
+.claude/worktrees/
+.pnpm-store/
+
 # AI agent cache directories
 server/.adal/
 server/.agent/
