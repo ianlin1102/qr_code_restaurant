@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import type { Permission } from '@qr-order/shared'
 import { resolvePermissions } from '../controllers/role.service.js'
+import { getStoreModulePermissions } from '../lib/module-permissions'
 
 export function requirePermission(...perms: Permission[]) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -18,6 +19,12 @@ export function requirePermission(...perms: Permission[]) {
         req.user.roleId,
         req.user.role
       )
+    }
+
+    // Module-level check: is this feature available for this store?
+    const modulePerms = getStoreModulePermissions(req.user.storeId)
+    if (!perms.every(p => modulePerms.includes(p))) {
+      return res.status(403).json({ error: 'Feature not available for this store' })
     }
 
     const hasAll = perms.every(p => userPerms!.includes(p))
