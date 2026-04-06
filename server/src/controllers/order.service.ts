@@ -50,12 +50,18 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
   let totalPrice = 0
 
   for (const item of req.items) {
+    if (typeof item.quantity !== 'number' || !Number.isFinite(item.quantity) || !Number.isInteger(item.quantity)) {
+      return { error: 'Item quantity must be a valid integer' }
+    }
+    if (item.quantity < 1) return { error: 'Quantity must be at least 1' }
+    if (item.quantity > 9999) return { error: 'Quantity exceeds maximum' }
+
     const menuItem = getMenuItemById(storeId, item.menuItemId)
     if (!menuItem || !menuItem.available) {
       return { error: `Menu item ${item.menuItemId} not available` }
     }
-    if (item.quantity < 1) {
-      return { error: 'Quantity must be at least 1' }
+    if (!Number.isFinite(menuItem.price)) {
+      return { error: `Menu item ${item.menuItemId} has invalid price` }
     }
     // Calculate price with option adjustments
     const optionsAdjust = (item.selectedOptions ?? []).reduce((sum, o) => sum + o.priceAdjust, 0)
