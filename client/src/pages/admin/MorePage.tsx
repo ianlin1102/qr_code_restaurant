@@ -12,7 +12,7 @@ const ITEMS: { to: string; navKey: NavKey; icon: string; perm?: Permission }[] =
   { to: '/admin/staff', navKey: 'staff', icon: '👥', perm: 'staff:manage' },
   { to: '/admin/analytics', navKey: 'analytics', icon: '📊', perm: 'analytics:read' },
   { to: '/admin/waitlist', navKey: 'waitlist', icon: '📋', perm: 'waitlist:read' },
-  { to: '/admin/clock', navKey: 'clock', icon: '⏰' },
+  { to: '/admin/clock', navKey: 'clock', icon: '⏰', perm: 'staff:manage' },
 ]
 
 export default function MorePage() {

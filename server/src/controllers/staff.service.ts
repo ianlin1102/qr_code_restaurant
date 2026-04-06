@@ -33,7 +33,6 @@ export async function addStaff(
   username: string,
   password: string,
   role: string,
-  clockPin?: string,
 ): Promise<AuthUser | { error: string; status: number }> {
   const existing = staffStore.getByField('storeId', storeId)
     .find(u => u.username === username)
@@ -41,11 +40,9 @@ export async function addStaff(
     return { error: 'Username already exists', status: 409 }
   }
 
-  if (clockPin !== undefined) {
-    if (!/^\d{4}$/.test(clockPin)) return { error: 'Clock PIN must be exactly 4 digits', status: 400 }
-    const dup = staffStore.getByField('storeId', storeId).find(u => u.clockPin === clockPin)
-    if (dup) return { error: 'Clock PIN already in use', status: 409 }
-  }
+  // 4-digit password doubles as clockPin — must be unique within store
+  const pinDup = staffStore.getByField('storeId', storeId).find(u => u.clockPin === password)
+  if (pinDup) return { error: 'This 4-digit code is already in use', status: 409 }
 
   // Auto-resolve roleId from role name
   const { roleStore } = await import('../repositories/stores.js')
@@ -59,7 +56,7 @@ export async function addStaff(
     password: await bcrypt.hash(password, 10),
     role,
     roleId: matchingRole?.id,
-    ...(clockPin ? { clockPin } : {}),
+    clockPin: password,
     createdAt: new Date().toISOString(),
   }
   staffStore.create(record)
