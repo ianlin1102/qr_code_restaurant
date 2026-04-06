@@ -184,7 +184,7 @@ router.post(
 // POST /sessions/:sessionId/apply-coupon
 router.post(
   '/:sessionId/apply-coupon',
-  requireAuth, requirePermission('billing:write'),
+  requireAuth, requirePermission('coupons:write'),
   (req: Request, res: Response) => {
     const { couponId, couponCode, discountType, discountValue } = req.body
     const result = svc.applyCoupon(
@@ -199,7 +199,7 @@ router.post(
 // DELETE /sessions/:sessionId/coupon
 router.delete(
   '/:sessionId/coupon',
-  requireAuth, requirePermission('billing:write'),
+  requireAuth, requirePermission('coupons:write'),
   (req: Request, res: Response) => {
     const result = svc.removeCoupon(req.params.storeId, req.params.sessionId)
     if ('error' in result) { res.status(400).json(result); return }

@@ -11,12 +11,12 @@ import { sanitizeString, requireFiniteNumber } from '../lib/sanitize.js'
 
 const router = Router({ mergeParams: true })
 
-router.get('/', requireAuth, requirePermission('billing:read'), (req, res) => {
+router.get('/', requireAuth, requirePermission('coupons:read'), (req, res) => {
   const coupons = getCoupons(req.params.storeId)
   res.json(coupons)
 })
 
-router.post('/', requireAuth, requirePermission('billing:write'), (req, res) => {
+router.post('/', requireAuth, requirePermission('coupons:write'), (req, res) => {
   const data = req.body
   if (data.code) data.code = sanitizeString(data.code, 30)
   if (data.discountValue != null) {
@@ -39,7 +39,7 @@ router.post('/', requireAuth, requirePermission('billing:write'), (req, res) => 
   res.status(201).json(coupon)
 })
 
-router.put('/:couponId', requireAuth, requirePermission('billing:write'), (req, res) => {
+router.put('/:couponId', requireAuth, requirePermission('coupons:write'), (req, res) => {
   const data = req.body
   if (data.code) data.code = sanitizeString(data.code, 30)
   if (data.discountValue != null) {
@@ -66,7 +66,7 @@ router.put('/:couponId', requireAuth, requirePermission('billing:write'), (req, 
   res.json(result)
 })
 
-router.delete('/:couponId', requireAuth, requirePermission('billing:write'), (req, res) => {
+router.delete('/:couponId', requireAuth, requirePermission('coupons:write'), (req, res) => {
   const result = deleteCoupon(req.params.storeId, req.params.couponId)
   if (typeof result === 'object' && 'error' in result) {
     res.status(404).json(result)
