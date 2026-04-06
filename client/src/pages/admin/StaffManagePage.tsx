@@ -14,10 +14,13 @@ const ALL_PERMISSIONS: Permission[] = [
   'orders:read', 'orders:write',
   'menu:read', 'menu:write',
   'tables:read', 'tables:write',
+  'settings:read', 'settings:write',
   'billing:read', 'billing:write',
   'analytics:read',
+  'coupons:read', 'coupons:write',
+  'waitlist:read', 'waitlist:write',
   'staff:manage',
-  'settings:read', 'settings:write',
+  'printer:read', 'printer:write',
 ]
 
 type Form = { username: string; password: string; role: string }
@@ -77,8 +80,27 @@ export default function StaffManagePage() {
   const formatMinutes = (min: number) => `${Math.floor(min / 60)}h ${min % 60}m`
 
   const permLabel = (p: string) => {
-    const labels = (t.roles as Record<string, unknown>)?.permLabels as Record<string, string> | undefined
-    return labels?.[p] ?? p
+    switch (p) {
+      case 'orders:read': return t('viewOrders', 'View Orders')
+      case 'orders:write': return t('manageOrders', 'Manage Orders')
+      case 'menu:read': return t('viewMenu', 'View Menu')
+      case 'menu:write': return t('manageMenu', 'Manage Menu')
+      case 'tables:read': return t('viewTables', 'View Tables')
+      case 'tables:write': return t('manageTables', 'Manage Tables')
+      case 'settings:read': return t('viewSettings', 'View Settings')
+      case 'settings:write': return t('manageSettings', 'Manage Settings')
+      case 'billing:read': return t('viewBilling', 'View Billing')
+      case 'billing:write': return t('manageBilling', 'Manage Billing')
+      case 'analytics:read': return t('viewAnalytics', 'View Analytics')
+      case 'coupons:read': return t('viewCoupons', 'View Coupons')
+      case 'coupons:write': return t('manageCoupons', 'Manage Coupons')
+      case 'waitlist:read': return t('viewWaitlist', 'View Waitlist')
+      case 'waitlist:write': return t('manageWaitlist', 'Manage Waitlist')
+      case 'staff:manage': return t('manageStaff', 'Manage Staff')
+      case 'printer:read': return t('viewPrinter', 'View Printer Config')
+      case 'printer:write': return t('managePrinter', 'Print & Manage Printer')
+      default: return p
+    }
   }
 
   // Staff handlers
