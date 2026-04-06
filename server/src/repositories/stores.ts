@@ -13,3 +13,8 @@ export const roleStore = new JsonStore<RoleDefinition>('roles.json')
 export const timeEntryStore = new JsonStore<TimeEntry>('time-entries.json')
 export const staffStore = new JsonStore<{ id: string; storeId: string; username: string; password: string; role: string; roleId?: string; clockPin?: string; createdAt: string }>('staff.json')
 export const splitBillStore = new JsonStore<SplitBill>('split-bills.json')
+export const moduleLicenseStore = new JsonStore<{
+  modules: string[]
+  grantedAt: string
+  note?: string
+}>('module-licenses.json')
