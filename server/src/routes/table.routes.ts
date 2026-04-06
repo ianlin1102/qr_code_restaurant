@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { getTables, getTablePublic, enableTable, disableTable, updateTable, settleTable, closeTable, getNextAvailableNumber, regenerateTableId } from '../controllers/table.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
+import { sanitizeString, requireFiniteNumber } from '../lib/sanitize.js'
 
 const router = Router({ mergeParams: true })
 
@@ -31,11 +32,12 @@ router.get('/:tableId', (req, res) => {
 // POST enable table (admin) — replaces POST / (create)
 router.post('/enable', requireAuth, requirePermission('tables:write'), (req, res) => {
   const { number, name, nameEn } = req.body
-  if (!number || typeof number !== 'number') {
-    res.status(400).json({ error: 'Table number is required' })
-    return
-  }
-  const result = enableTable(req.params.storeId, number, name, nameEn)
+  const numResult = requireFiniteNumber(number, 'number')
+  if ('error' in numResult) { res.status(400).json({ error: numResult.error }); return }
+  if (numResult.value < 1) { res.status(400).json({ error: 'Table number must be >= 1' }); return }
+  const safeName = name ? sanitizeString(name, 50) : undefined
+  const safeNameEn = nameEn ? sanitizeString(nameEn, 50) : undefined
+  const result = enableTable(req.params.storeId, numResult.value, safeName, safeNameEn)
   if ('error' in result) {
     res.status(400).json(result)
     return
