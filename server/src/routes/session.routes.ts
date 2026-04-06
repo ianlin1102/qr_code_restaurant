@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
 import * as svc from '../controllers/session.service.js'
 import { createOrder } from '../controllers/order.service.js'
+import { sanitizeAmount, sanitizeTip, sanitizePercent, sanitizeString } from '../lib/sanitize.js'
 import type { Request, Response } from 'express'
 
 const router = Router({ mergeParams: true })
@@ -60,8 +61,9 @@ router.put('/:sessionId/cart', (req: Request, res: Response) => {
     res.status(404).json({ error: 'Session not found' })
     return
   }
-  const { deviceId, items } = req.body
-  if (!deviceId || typeof deviceId !== 'string') { res.status(400).json({ error: 'deviceId required' }); return }
+  const { items } = req.body
+  const deviceId = sanitizeString(req.body.deviceId, 64)
+  if (!deviceId) { res.status(400).json({ error: 'deviceId required' }); return }
   if (!Array.isArray(items)) { res.status(400).json({ error: 'items array required' }); return }
   svc.updateDeviceCart(req.params.sessionId, deviceId, items)
   res.json({ ok: true })
@@ -116,11 +118,9 @@ router.post('/:sessionId/pay-items', (req: Request, res: Response) => {
 
 // POST /sessions/:sessionId/pay-percent — customer pays a percentage
 router.post('/:sessionId/pay-percent', (req: Request, res: Response) => {
-  const { percent } = req.body
-  if (typeof percent !== 'number' || percent < 1 || percent > 100) {
-    res.status(400).json({ error: 'percent must be 1-100' }); return
-  }
-  const result = svc.payByPercent(req.params.storeId, req.params.sessionId, percent)
+  const pctResult = sanitizePercent(req.body.percent)
+  if ('error' in pctResult) { res.status(400).json({ error: pctResult.error }); return }
+  const result = svc.payByPercent(req.params.storeId, req.params.sessionId, pctResult.value)
   if ('error' in result) { res.status(400).json(result); return }
   res.json(result)
 })
@@ -130,16 +130,15 @@ router.post(
   '/:sessionId/cash-payment',
   requireAuth, requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const { amount, receivedAmount } = req.body
-    if (!amount || amount <= 0) {
-      res.status(400).json({ error: 'amount required' }); return
+    const amtResult = sanitizeAmount(req.body.amount)
+    if ('error' in amtResult) { res.status(400).json({ error: amtResult.error }); return }
+    const rcvResult = sanitizeAmount(req.body.receivedAmount)
+    if ('error' in rcvResult) { res.status(400).json({ error: rcvResult.error }); return }
+    if (rcvResult.value < amtResult.value) {
+      res.status(400).json({ error: 'receivedAmount must be >= amount' })
+      return
     }
-    if (!receivedAmount || receivedAmount < amount) {
-      res.status(400).json({ error: 'receivedAmount must be >= amount' }); return
-    }
-    const result = svc.recordCashPayment(
-      req.params.storeId, req.params.sessionId, amount, receivedAmount,
-    )
+    const result = svc.recordCashPayment(req.params.storeId, req.params.sessionId, amtResult.value, rcvResult.value)
     if ('error' in result) { res.status(400).json(result); return }
     res.json(result)
   },
@@ -172,14 +171,11 @@ router.post(
   '/:sessionId/payments',
   requireAuth, requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const { amount, paidBy, stripePaymentIntentId } = req.body
-    if (!amount || amount <= 0) {
-      res.status(400).json({ error: 'amount required' }); return
-    }
-    const result = svc.addPayment(
-      req.params.storeId, req.params.sessionId,
-      amount, paidBy, stripePaymentIntentId,
-    )
+    const { paidBy, stripePaymentIntentId } = req.body
+    const amtResult = sanitizeAmount(req.body.amount)
+    if ('error' in amtResult) { res.status(400).json({ error: amtResult.error }); return }
+    const safePaidBy = paidBy ? sanitizeString(paidBy, 100) : undefined
+    const result = svc.addPayment(req.params.storeId, req.params.sessionId, amtResult.value, safePaidBy, stripePaymentIntentId)
     if ('error' in result) { res.status(400).json(result); return }
     res.json(result)
   },
