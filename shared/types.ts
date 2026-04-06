@@ -25,13 +25,22 @@ export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store,
 
 // ===== User/Role =====
 export type Permission =
+  // core
   | 'orders:read' | 'orders:write'
   | 'menu:read' | 'menu:write'
-  | 'tables:read' | 'tables:write'    // includes floor plan + bill operations
-  | 'billing:read' | 'billing:write'  // includes coupons
-  | 'analytics:read'
-  | 'staff:manage'
+  | 'tables:read' | 'tables:write'
   | 'settings:read' | 'settings:write'
+  | 'billing:read' | 'billing:write'
+  // analytics module
+  | 'analytics:read'
+  // coupons module
+  | 'coupons:read' | 'coupons:write'
+  // waitlist module
+  | 'waitlist:read' | 'waitlist:write'
+  // staff-management module
+  | 'staff:manage'
+  // printer module
+  | 'printer:read' | 'printer:write'
 
 export interface RoleDefinition {
   id: string
