@@ -69,17 +69,27 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
 
   // Fetch server calculation (debounced)
   const [calc, setCalc] = useState({ subtotal: 0, tax: 0, svc: 0, total: 0 })
+  const [calcError, setCalcError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
     clearTimeout(debounceRef.current)
     const keys = buildItemKeys(selectedQty)
-    if (tab === 'items' && keys.length === 0) { setCalc({ subtotal: 0, tax: 0, svc: 0, total: 0 }); return }
+    if (tab === 'items' && keys.length === 0) {
+      setCalc({ subtotal: 0, tax: 0, svc: 0, total: 0 })
+      setCalcError(null)
+      return
+    }
     debounceRef.current = setTimeout(() => {
       const req = tab === 'items'
         ? api.payByItems(storeId, session.id, keys)
         : api.payByPercent(storeId, session.id, percent)
-      req.then(r => setCalc({ subtotal: r.amount - r.tax - r.serviceFee, tax: r.tax, svc: r.serviceFee, total: r.amount }))
-        .catch(() => {})
+      req.then(r => {
+        setCalc({ subtotal: r.amount - r.tax - r.serviceFee, tax: r.tax, svc: r.serviceFee, total: r.amount })
+        setCalcError(null)
+      }).catch((err) => {
+        setCalc({ subtotal: 0, tax: 0, svc: 0, total: 0 })
+        setCalcError(err instanceof Error ? err.message : t('金额不满足最低要求', 'Amount does not meet minimum requirement'))
+      })
     }, 300)
     return () => clearTimeout(debounceRef.current)
   }, [tab, selectedQty, percent, storeId, session.id])
@@ -219,19 +229,25 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
 
         {/* Summary + Pay */}
         <div className="border-t px-4 pt-3 pb-4 space-y-2">
-          {[
-            { label: t('小计', 'Subtotal'), val: calc.subtotal, show: true, dim: false },
-            { label: t('税', 'Tax'), val: calc.tax, show: calc.tax > 0, dim: true },
-            { label: t('服务费', 'Service Fee'), val: calc.svc, show: calc.svc > 0, dim: true },
-          ].filter(r => r.show).map(r => (
-            <div key={r.label} className={`flex justify-between text-sm ${r.dim ? 'text-muted-foreground' : ''}`}>
-              <span>{r.label}</span><span>{formatPriceUSD(r.val)}</span>
-            </div>
-          ))}
-          <div className="flex justify-between font-semibold text-base pt-1 border-t">
-            <span>{t('合计', 'Total')}</span><span>{formatPriceUSD(calc.total)}</span>
-          </div>
-          <Button className="w-full min-h-[44px]" disabled={loading || calc.total <= 0} onClick={handlePay}>
+          {calcError ? (
+            <p className="text-sm text-destructive text-center py-2">{calcError}</p>
+          ) : (
+            <>
+              {[
+                { label: t('小计', 'Subtotal'), val: calc.subtotal, show: true, dim: false },
+                { label: t('税', 'Tax'), val: calc.tax, show: calc.tax > 0, dim: true },
+                { label: t('服务费', 'Service Fee'), val: calc.svc, show: calc.svc > 0, dim: true },
+              ].filter(r => r.show).map(r => (
+                <div key={r.label} className={`flex justify-between text-sm ${r.dim ? 'text-muted-foreground' : ''}`}>
+                  <span>{r.label}</span><span>{formatPriceUSD(r.val)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between font-semibold text-base pt-1 border-t">
+                <span>{t('合计', 'Total')}</span><span>{formatPriceUSD(calc.total)}</span>
+              </div>
+            </>
+          )}
+          <Button className="w-full min-h-[44px]" disabled={loading || calc.total <= 0 || !!calcError} onClick={handlePay}>
             {loading ? t('处理中...', 'Processing...') : t('去支付', 'Pay') + ` ${formatPriceUSD(calc.total)}`}
           </Button>
         </div>
