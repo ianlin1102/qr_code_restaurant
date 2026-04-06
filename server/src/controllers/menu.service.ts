@@ -50,17 +50,23 @@ export function getAllMenuItems(storeId: string): MenuItem[] {
     .sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
-export function getMenuItemById(id: string): MenuItem | undefined {
-  return menuItemStore.getById(id)
+export function getMenuItemById(storeId: string, id: string): MenuItem | undefined {
+  const item = menuItemStore.getById(id)
+  if (!item || item.storeId !== storeId) return undefined
+  return item
 }
 
 function validateMenuItem(data: Partial<MenuItem>): string | null {
-  if (data.price != null && (typeof data.price !== 'number' || data.price < 0)) return 'Price must be >= 0'
+  if (data.price != null) {
+    if (typeof data.price !== 'number' || !Number.isFinite(data.price) || data.price < 0) {
+      return 'Price must be a finite number >= 0'
+    }
+  }
   if (data.options) {
     for (const opt of data.options) {
       for (const choice of opt.choices) {
-        if (typeof choice.priceAdjust !== 'number' || choice.priceAdjust < 0) {
-          return `Option choice "${choice.name}" priceAdjust must be >= 0`
+        if (typeof choice.priceAdjust !== 'number' || !Number.isFinite(choice.priceAdjust) || choice.priceAdjust < 0) {
+          return `Option choice "${choice.name}" priceAdjust must be a finite number >= 0`
         }
       }
     }

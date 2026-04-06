@@ -50,8 +50,8 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
   let totalPrice = 0
 
   for (const item of req.items) {
-    const menuItem = getMenuItemById(item.menuItemId)
-    if (!menuItem || menuItem.storeId !== storeId || !menuItem.available) {
+    const menuItem = getMenuItemById(storeId, item.menuItemId)
+    if (!menuItem || !menuItem.available) {
       return { error: `Menu item ${item.menuItemId} not available` }
     }
     if (item.quantity < 1) {
@@ -274,7 +274,7 @@ export async function updateOrderItems(storeId: string, orderId: string, items: 
 
   // Enrich selectedOptions with English names from menu item definitions
   const enrichedItems = items.map(item => {
-    const menuItem = getMenuItemById(item.menuItemId)
+    const menuItem = getMenuItemById(storeId, item.menuItemId)
     if (menuItem && item.selectedOptions) {
       return {
         ...item,

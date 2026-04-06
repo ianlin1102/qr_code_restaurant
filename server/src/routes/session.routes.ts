@@ -41,6 +41,10 @@ router.get('/:sessionId/summary', (req: Request, res: Response) => {
 // GET /sessions/:sessionId/cart — get shared cart items + version (unauthenticated, customers use this)
 router.get('/:sessionId/cart', (req: Request, res: Response) => {
   const session = svc.getSessionById(req.params.sessionId)
+  if (!session || session.storeId !== req.params.storeId) {
+    res.status(404).json({ error: 'Session not found' })
+    return
+  }
   const items = svc.getSessionCart(req.params.sessionId)
   res.json({
     items,
@@ -51,6 +55,11 @@ router.get('/:sessionId/cart', (req: Request, res: Response) => {
 
 // PUT /sessions/:sessionId/cart — update this device's cart slice (unauthenticated, customers use this)
 router.put('/:sessionId/cart', (req: Request, res: Response) => {
+  const session = svc.getSessionById(req.params.sessionId)
+  if (!session || session.storeId !== req.params.storeId) {
+    res.status(404).json({ error: 'Session not found' })
+    return
+  }
   const { deviceId, items } = req.body
   if (!deviceId || typeof deviceId !== 'string') { res.status(400).json({ error: 'deviceId required' }); return }
   if (!Array.isArray(items)) { res.status(400).json({ error: 'items array required' }); return }

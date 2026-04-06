@@ -20,8 +20,8 @@ export async function createPaymentIntent(req: CheckoutRequest) {
 
   let totalPrice = 0
   for (const item of req.items) {
-    const menuItem = getMenuItemById(item.menuItemId)
-    if (!menuItem || menuItem.storeId !== req.storeId || !menuItem.available) {
+    const menuItem = getMenuItemById(req.storeId, item.menuItemId)
+    if (!menuItem || !menuItem.available) {
       return { error: `Menu item ${item.menuItemId} not available`, status: 400 }
     }
     const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
