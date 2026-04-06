@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { splitBillStore, orderStore, sessionStore, storeStore } from '../repositories/stores.js'
-import { unitPrice as calcUnitPrice, calcTaxAndFees } from '@qr-order/shared/pricing'
+import { unitPrice as calcUnitPrice, calcTaxAndFees, validateSplit } from '@qr-order/shared/pricing'
 import logger from '../lib/logger.js'
 import type { SplitBill } from '@qr-order/shared'
 
@@ -78,6 +78,17 @@ export function createSplitBill(
     taxRate: store?.taxRate ?? 0,
     serviceFeeRate: store?.serviceFeeRate ?? 0,
   })
+  const splitTotal = subtotal + tax + serviceFee
+
+  // Validate $1.00 minimum on both sides of the split
+  const mainBillAfter = getMainBillSummary(sessionId, storeId)
+  const remainingAfterSplit = (mainBillAfter?.total ?? 0) - splitTotal
+  const pct = data.type === 'by-percent' ? (data.percent ?? 0) : 0
+  const validation = validateSplit(splitTotal, remainingAfterSplit, pct)
+  if (!validation.valid) {
+    return { error: validation.reason ?? 'Split amount too small' }
+  }
+
   const existing = getSplitBills(sessionId)
   const splitBill: SplitBill = {
     id: uuid(), storeId, sessionId,

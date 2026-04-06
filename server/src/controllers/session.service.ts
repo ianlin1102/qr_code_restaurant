@@ -375,7 +375,21 @@ export function payByItems(
 
   const tax = calcTax(storeId, subtotal)
   const serviceFee = calcServiceFee(storeId, subtotal)
-  return { amount: subtotal + tax + serviceFee, tax, serviceFee }
+  const splitTotal = subtotal + tax + serviceFee
+
+  // Validate $1.00 minimum on both sides
+  const bill = calcBillSummary({
+    totalAmount: fresh.totalAmount,
+    discountAmount: fresh.discountAmount,
+    totalPaid: fresh.totalPaid,
+    taxRate: storeStore.getById(storeId)?.taxRate ?? 0,
+    serviceFeeRate: storeStore.getById(storeId)?.serviceFeeRate ?? 0,
+  })
+  const leftover = bill.remaining - splitTotal
+  if (splitTotal < 100) return { error: 'Split amount must be at least $1.00' }
+  if (leftover > 0 && leftover < 100) return { error: 'Remaining balance after split must be at least $1.00' }
+
+  return { amount: splitTotal, tax, serviceFee }
 }
 
 /** Pure calculator — validates percent and returns amount. NO side effects. */
