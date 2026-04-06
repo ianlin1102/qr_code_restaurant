@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
 import * as svc from '../controllers/split-bill.service.js'
 import * as pay from '../controllers/split-bill-payment.service.js'
+import { sanitizeAmount, sanitizeTip, sanitizePercent } from '../lib/sanitize.js'
 import type { Request, Response } from 'express'
 
 const router = Router({ mergeParams: true })
@@ -30,7 +31,13 @@ router.post(
     if (!method || !['by-item', 'by-percent'].includes(method)) {
       res.status(400).json({ error: 'method must be by-item or by-percent' }); return
     }
-    const result = svc.createSplitBill(storeId, sessionId, { method, items, percent, label })
+    let sanitizedPercent = percent
+    if (method === 'by-percent') {
+      const pctResult = sanitizePercent(percent)
+      if ('error' in pctResult) { res.status(400).json({ error: pctResult.error }); return }
+      sanitizedPercent = pctResult.value
+    }
+    const result = svc.createSplitBill(storeId, sessionId, { method, items, percent: sanitizedPercent, label })
     if ('error' in result) { res.status(400).json(result); return }
     res.status(201).json(result)
   },
@@ -59,7 +66,10 @@ router.post(
       res.json(result); return
     }
 
-    const result = pay.paySplitBillCard(storeId, splitBillId, tipAmount)
+    const tipResult = sanitizeTip(tipAmount)
+    if ('error' in tipResult) { res.status(400).json({ error: tipResult.error }); return }
+
+    const result = pay.paySplitBillCard(storeId, splitBillId, tipResult.value)
     if ('error' in result) { res.status(400).json(result); return }
     res.json(result)
   },
@@ -69,12 +79,12 @@ router.post(
 router.post(
   '/:splitBillId/pay-cash', requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const { receivedAmount, tipAmount } = req.body
-    if (typeof receivedAmount !== 'number' || receivedAmount <= 0) {
-      res.status(400).json({ error: 'receivedAmount required' }); return
-    }
+    const rcvResult = sanitizeAmount(req.body.receivedAmount)
+    if ('error' in rcvResult) { res.status(400).json({ error: rcvResult.error }); return }
+    const tipResult = sanitizeTip(req.body.tipAmount)
+    if ('error' in tipResult) { res.status(400).json({ error: tipResult.error }); return }
     const result = pay.paySplitBillCash(
-      req.params.storeId, req.params.splitBillId, receivedAmount, tipAmount,
+      req.params.storeId, req.params.splitBillId, rcvResult.value, tipResult.value,
     )
     if ('error' in result) { res.status(400).json(result); return }
     res.json(result)
@@ -85,12 +95,10 @@ router.post(
 router.post(
   '/:splitBillId/capture', requirePermission('tables:write'),
   async (req: Request, res: Response) => {
-    const { tipAmount } = req.body
-    if (typeof tipAmount !== 'number' || tipAmount < 0) {
-      res.status(400).json({ error: 'tipAmount required (>= 0)' }); return
-    }
+    const tipResult = sanitizeTip(req.body.tipAmount)
+    if ('error' in tipResult) { res.status(400).json({ error: tipResult.error }); return }
     const result = await pay.captureSplitBillPayment(
-      req.params.storeId, req.params.splitBillId, tipAmount,
+      req.params.storeId, req.params.splitBillId, tipResult.value,
     )
     if ('error' in result) { res.status(400).json(result); return }
     res.json(result)

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { createPaymentIntent, createPaymentIntentForSession } from '../controllers/payment.service.js'
+import { sanitizeAmount, sanitizeTip } from '../lib/sanitize.js'
 
 const router = Router({ mergeParams: true })
 
@@ -11,8 +12,12 @@ router.post('/', async (req, res) => {
 
     // Pay for existing session (pay-later flow)
     if (sessionId) {
+      const tipResult = sanitizeTip(tipAmount)
+      if ('error' in tipResult) { res.status(400).json({ error: tipResult.error }); return }
+      const sanitizedAmount = amount != null ? sanitizeAmount(amount) : null
+      if (sanitizedAmount && 'error' in sanitizedAmount) { res.status(400).json({ error: sanitizedAmount.error }); return }
       const result = await createPaymentIntentForSession({
-        storeId, sessionId, amount: amount ?? 0, paidBy, tipAmount,
+        storeId, sessionId, amount: sanitizedAmount ? sanitizedAmount.value : 0, paidBy, tipAmount: tipResult.value,
         settlementType, itemKeys, percent,
       })
       if ('error' in result) {
@@ -29,7 +34,10 @@ router.post('/', async (req, res) => {
       return
     }
 
-    const result = await createPaymentIntent({ storeId, tableId, items, customerName, tipAmount })
+    const cartTipResult = sanitizeTip(tipAmount)
+    if ('error' in cartTipResult) { res.status(400).json({ error: cartTipResult.error }); return }
+
+    const result = await createPaymentIntent({ storeId, tableId, items, customerName, tipAmount: cartTipResult.value })
     if ('error' in result) {
       res.status(result.status ?? 400).json({ error: result.error })
       return
