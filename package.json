@@ -4,7 +4,9 @@
   "scripts": {
     "dev": "pnpm --parallel -r run dev",
     "dev:client": "pnpm --filter client dev",
-    "dev:server": "pnpm --filter server dev"
+    "dev:server": "pnpm --filter server dev",
+    "test": "pnpm --filter @qr-order/shared test",
+    "test:watch": "pnpm --filter @qr-order/shared test:watch"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma"]

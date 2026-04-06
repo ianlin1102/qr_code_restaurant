@@ -2,5 +2,17 @@
   "name": "@qr-order/shared",
   "version": "0.0.1",
   "private": true,
-  "main": "types.ts"
+  "main": "types.ts",
+  "exports": {
+    ".": "./types.ts",
+    "./pricing": "./pricing/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
 }
