@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
+import { sanitizeString, sanitizeQuantity } from '../lib/sanitize.js'
 import {
   getWaitlist,
   addEntry,
@@ -17,12 +18,12 @@ router.get('/', requireAuth, requirePermission('tables:write'), (req, res) => {
 })
 
 router.post('/', requireAuth, requirePermission('tables:write'), (req, res) => {
-  const { name, partySize, phone } = req.body
-  if (!name || !partySize) {
-    res.status(400).json({ error: 'name and partySize are required' })
-    return
-  }
-  const entry = addEntry(req.params.storeId, { name, partySize, phone })
+  const safeName = sanitizeString(req.body.name, 50)
+  const sizeResult = sanitizeQuantity(req.body.partySize)
+  if (!safeName) { res.status(400).json({ error: 'name is required' }); return }
+  if ('error' in sizeResult) { res.status(400).json({ error: sizeResult.error }); return }
+  const phone = req.body.phone ? sanitizeString(req.body.phone, 20) : undefined
+  const entry = addEntry(req.params.storeId, { name: safeName, partySize: sizeResult.value, phone })
   res.status(201).json(entry)
 })
 

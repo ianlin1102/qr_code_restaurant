@@ -13,6 +13,7 @@ import {
 } from '../controllers/menu.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
+import { sanitizeString, sanitizeText } from '../lib/sanitize.js'
 
 const router = Router({ mergeParams: true })
 
@@ -53,16 +54,20 @@ router.get('/items', requireAuth, requirePermission('menu:read'), (req, res) => 
 router.post('/items', requireAuth, requirePermission('menu:write'), (req, res) => {
   const { storeId } = req.params
   const { categoryId, name, nameEn, description, descriptionEn, price, image, available, sortOrder, options } = req.body
-  if (!categoryId || !name || price == null) {
+  const safeName = sanitizeString(name, 100)
+  const safeNameEn = nameEn ? sanitizeString(nameEn, 100) : undefined
+  const safeDesc = description ? sanitizeText(description, 500) : undefined
+  const safeDescEn = descriptionEn ? sanitizeText(descriptionEn, 500) : undefined
+  if (!categoryId || !safeName || price == null) {
     res.status(400).json({ error: 'categoryId, name, and price are required' })
     return
   }
   const item = createMenuItem(storeId, {
     categoryId,
-    name,
-    nameEn,
-    description,
-    descriptionEn,
+    name: safeName,
+    nameEn: safeNameEn,
+    description: safeDesc,
+    descriptionEn: safeDescEn,
     price,
     image,
     available: available ?? true,
@@ -103,12 +108,13 @@ router.get('/categories', requireAuth, requirePermission('menu:read'), (req, res
 
 // POST /api/stores/:storeId/menu/categories
 router.post('/categories', requireAuth, requirePermission('menu:write'), (req, res) => {
-  const { name, nameEn, sortOrder } = req.body
-  if (!name) {
+  const { nameEn, sortOrder } = req.body
+  const safeName = sanitizeString(req.body.name, 100)
+  if (!safeName) {
     res.status(400).json({ error: 'name is required' })
     return
   }
-  const cat = createCategory(req.params.storeId, name, sortOrder ?? 0, nameEn)
+  const cat = createCategory(req.params.storeId, safeName, sortOrder ?? 0, nameEn)
   res.status(201).json(cat)
 })
 

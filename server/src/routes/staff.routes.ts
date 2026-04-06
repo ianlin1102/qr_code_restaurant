@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
+import { sanitizeString } from '../lib/sanitize.js'
 import {
   getStaff,
   addStaff,
@@ -21,7 +22,17 @@ router.post('/', requireAuth, requirePermission('staff:manage'), async (req, res
     res.status(400).json({ error: 'Username and password are required' })
     return
   }
-  const result = await addStaff(req.params.storeId, username, password, role || 'staff', clockPin)
+  const safeUsername = sanitizeString(username, 50)
+  if (!safeUsername) { res.status(400).json({ error: 'Username is required' }); return }
+  if (typeof password !== 'string' || password.length < 4) {
+    res.status(400).json({ error: 'Password must be at least 4 characters' })
+    return
+  }
+  if (password.length > 100) {
+    res.status(400).json({ error: 'Password too long' })
+    return
+  }
+  const result = await addStaff(req.params.storeId, safeUsername, password, role || 'staff', clockPin)
   if ('error' in result) {
     res.status(result.status).json({ error: result.error })
     return

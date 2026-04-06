@@ -2,12 +2,21 @@ import { Router } from 'express'
 import { createOrder, getOrders, updateOrderStatus, updateOrderItems, transferOrder, deleteOrder, voidItem } from '../controllers/order.service.js'
 import { requireAuth, optionalAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
+import { sanitizeString } from '../lib/sanitize.js'
 import type { OrderStatus } from '@qr-order/shared'
 
 const router = Router({ mergeParams: true })
 
 // POST /api/stores/:storeId/orders (public — customer creates order)
 router.post('/', (req, res) => {
+  if (req.body.items && Array.isArray(req.body.items)) {
+    for (const item of req.body.items) {
+      if (item.remark) item.remark = sanitizeString(item.remark, 200)
+    }
+  }
+  if (req.body.customerName) {
+    req.body.customerName = sanitizeString(req.body.customerName, 50)
+  }
   const result = createOrder(req.params.storeId, req.body)
   if ('error' in result) {
     res.status(400).json(result)
