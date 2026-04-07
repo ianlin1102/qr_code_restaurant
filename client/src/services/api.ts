@@ -3,6 +3,31 @@ import { useAuthStore } from '@/stores/auth-store'
 
 export type SessionSummary = Session & { orders: Order[]; payments: Payment[]; remaining: number; isPaid: boolean; netDue: number; tax: number; serviceFee: number; totalWithTax: number }
 
+export interface AllowedActions {
+  payByItems: boolean
+  payByPercent: boolean
+  cashPayment: boolean
+  createSplitByItem: boolean
+  createSplitByPercent: boolean
+  paySplit: boolean
+  deleteSplit: boolean
+  closeSession: boolean
+  reopenSession: boolean
+}
+
+export type SettlementResult = {
+  ok: true
+  data: Record<string, any>
+  sessionStatus: string
+  remaining: number
+  allowedActions: AllowedActions
+} | {
+  ok: false
+  code: string
+  message: string
+  allowedActions: AllowedActions
+}
+
 const BASE = '/api'
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
@@ -28,10 +53,32 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Network error' }))
-    throw new Error(err.error || `HTTP ${res.status}`)
+    throw new Error(err.error || err.message || `HTTP ${res.status}`)
   }
   if (res.status === 204) return undefined as T
   return res.json()
+}
+
+/**
+ * Fetch for settlement gateway endpoints.
+ * Returns unwrapped data (backward-compatible) with allowedActions attached.
+ * Throws with the gateway error message on failure.
+ */
+async function settlementFetch<T>(url: string, options?: RequestInit): Promise<T & { allowedActions: AllowedActions; remaining: number; sessionStatus: string }> {
+  const token = useAuthStore.getState().token
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch(`${BASE}${url}`, { ...options, headers })
+  const body = await res.json().catch(() => ({ ok: false, message: 'Network error' }))
+
+  if (body.ok === false) {
+    throw new Error(body.message || body.code || `HTTP ${res.status}`)
+  }
+  return { ...body.data, allowedActions: body.allowedActions, remaining: body.remaining, sessionStatus: body.sessionStatus }
 }
 
 export const api = {
@@ -328,15 +375,15 @@ export const api = {
     fetchJSON<SessionSummary>(`/stores/${storeId}/sessions/${sessionId}/summary`),
 
   closeSession: (storeId: string, sessionId: string) =>
-    fetchJSON<Session>(`/stores/${storeId}/sessions/${sessionId}/close`, { method: 'PATCH' }),
+    settlementFetch<{}>(`/stores/${storeId}/sessions/${sessionId}/close`, { method: 'PATCH' }),
 
   reopenSession: (storeId: string, sessionId: string) =>
-    fetchJSON<Session>(`/stores/${storeId}/sessions/${sessionId}/reopen`, { method: 'PATCH' }),
+    settlementFetch<{}>(`/stores/${storeId}/sessions/${sessionId}/reopen`, { method: 'PATCH' }),
 
-  addPayment: (storeId: string, sessionId: string, amount: number, paidBy?: string) =>
-    fetchJSON<{ session: Session; payment: Payment }>(`/stores/${storeId}/sessions/${sessionId}/payments`, {
+  addPayment: (storeId: string, sessionId: string, amount: number, paidBy?: string, tipAmount?: number) =>
+    settlementFetch<{ payment: Payment }>(`/stores/${storeId}/sessions/${sessionId}/payments`, {
       method: 'POST',
-      body: JSON.stringify({ amount, paidBy }),
+      body: JSON.stringify({ amount, paidBy, tipAmount }),
     }),
 
   applySessionCoupon: (storeId: string, sessionId: string, couponId: string, couponCode: string, discountType: string, discountValue: number) =>
@@ -373,19 +420,19 @@ export const api = {
     }),
 
   payByItems: (storeId: string, sessionId: string, itemKeys: string[]) =>
-    fetchJSON<{ amount: number; tax: number; serviceFee: number }>(
+    settlementFetch<{ amount: number; tax: number; serviceFee: number }>(
       `/stores/${storeId}/sessions/${sessionId}/pay-items`,
       { method: 'POST', body: JSON.stringify({ itemKeys }) },
     ),
 
   payByPercent: (storeId: string, sessionId: string, percent: number) =>
-    fetchJSON<{ amount: number; tax: number; serviceFee: number }>(
+    settlementFetch<{ amount: number; tax: number; serviceFee: number }>(
       `/stores/${storeId}/sessions/${sessionId}/pay-percent`,
       { method: 'POST', body: JSON.stringify({ percent }) },
     ),
 
   recordCashPayment: (storeId: string, sessionId: string, amount: number, receivedAmount: number) =>
-    fetchJSON<{ session: Session; payment: Payment; change: number }>(
+    settlementFetch<{ payment: Payment; change: number }>(
       `/stores/${storeId}/sessions/${sessionId}/cash-payment`,
       { method: 'POST', body: JSON.stringify({ amount, receivedAmount }) },
     ),
@@ -397,23 +444,31 @@ export const api = {
     ),
 
   createSplitBill: (storeId: string, sessionId: string, data: { type: 'by-item' | 'by-percent'; itemKeys?: string[]; percent?: number; label?: string }) =>
-    fetchJSON<SplitBill>(`/stores/${storeId}/sessions/${sessionId}/split-bills`, {
+    settlementFetch<{ splitBill: SplitBill }>(`/stores/${storeId}/sessions/${sessionId}/split-bills`, {
       method: 'POST', body: JSON.stringify(data),
     }),
 
   deleteSplitBill: (storeId: string, sessionId: string, splitBillId: string) =>
-    fetchJSON<{ ok: true }>(`/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}`, {
+    settlementFetch<{}>(`/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}`, {
       method: 'DELETE',
     }),
 
-  paySplitBillCard: (storeId: string, sessionId: string, splitBillId: string, tipAmount?: number, captureMethod?: 'manual') =>
-    fetchJSON<{ splitBill?: SplitBill; sessionFullyPaid?: boolean; clientSecret?: string; paymentIntentId?: string; authorizedAmount?: number }>(
+  paySplitBillCard: (storeId: string, sessionId: string, splitBillId: string, tipAmount?: number, captureMethod?: 'manual') => {
+    // Manual capture bypasses gateway (Stripe async flow)
+    if (captureMethod === 'manual') {
+      return fetchJSON<{ clientSecret: string; paymentIntentId: string; authorizedAmount: number }>(
+        `/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}/pay-card`,
+        { method: 'POST', body: JSON.stringify({ tipAmount, captureMethod }) },
+      )
+    }
+    return settlementFetch<{ splitBill: SplitBill }>(
       `/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}/pay-card`,
-      { method: 'POST', body: JSON.stringify({ tipAmount, captureMethod }) },
-    ),
+      { method: 'POST', body: JSON.stringify({ tipAmount }) },
+    )
+  },
 
   paySplitBillCash: (storeId: string, sessionId: string, splitBillId: string, receivedAmount: number, tipAmount?: number) =>
-    fetchJSON<{ splitBill: SplitBill; change: number; sessionFullyPaid: boolean }>(
+    settlementFetch<{ splitBill: SplitBill; change: number }>(
       `/stores/${storeId}/sessions/${sessionId}/split-bills/${splitBillId}/pay-cash`,
       { method: 'POST', body: JSON.stringify({ receivedAmount, tipAmount }) },
     ),
