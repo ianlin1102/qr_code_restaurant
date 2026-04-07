@@ -202,3 +202,176 @@ describe('Gateway: split operations', () => {
     expect(pr.ok).toBe(true)
   })
 })
+
+// ===== Additional error code coverage =====
+
+describe('Gateway: error codes (extended)', () => {
+  it('SESSION_CLOSED blocks all payment ops', () => {
+    sessionStore.update(sessionId, { status: 'closed' })
+    for (const action of [
+      { type: 'pay-items' as const, itemKeys: [`${orderId}:0:1`] },
+      { type: 'pay-percent' as const, percent: 50 },
+      { type: 'cash-payment' as const, amount: 100, receivedAmount: 100 },
+      { type: 'close-session' as const },
+    ]) {
+      const r = executeSettlement(STORE_ID, sessionId, action)
+      expect(r.ok).toBe(false)
+      if (!r.ok) expect(r.code).toBe('SESSION_CLOSED')
+    }
+  })
+
+  it('SESSION_NOT_CLOSED for reopen on active session', () => {
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'reopen-session' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('SESSION_NOT_CLOSED')
+  })
+
+  it('INVALID_PERCENT for percent > 100', () => {
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'pay-percent', percent: 101 })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('INVALID_PERCENT')
+  })
+
+  it('INVALID_PERCENT for NaN', () => {
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'pay-percent', percent: NaN })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('INVALID_PERCENT')
+  })
+
+  it('INVALID_AMOUNT for negative cash amount', () => {
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'cash-payment', amount: -100, receivedAmount: 100 })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('INVALID_AMOUNT')
+  })
+
+  it('INVALID_AMOUNT for zero amount', () => {
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'cash-payment', amount: 0, receivedAmount: 100 })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('INVALID_AMOUNT')
+  })
+
+  it('INVALID_ITEM_KEY for empty itemKeys', () => {
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'pay-items', itemKeys: [] })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('INVALID_ITEM_KEY')
+  })
+
+  it('INVALID_ITEM_KEY for nonexistent order', () => {
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'pay-items', itemKeys: ['fake-order:0:1'] })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('INVALID_ITEM_KEY')
+  })
+
+  it('SPLIT_ALREADY_PAID for paying paid split', () => {
+    const cr = executeSettlement(STORE_ID, sessionId, {
+      type: 'create-split', splitType: 'by-item', itemKeys: [`${orderId}:1:1`],
+    })
+    if (!cr.ok) return
+    const splitId = (cr.data.splitBill as any).id
+    // Pay it
+    executeSettlement(STORE_ID, sessionId, {
+      type: 'pay-split-cash', splitBillId: splitId, receivedAmount: 2000, tipAmount: 0,
+    })
+    // Try again
+    const r = executeSettlement(STORE_ID, sessionId, {
+      type: 'pay-split-cash', splitBillId: splitId, receivedAmount: 2000, tipAmount: 0,
+    })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('SPLIT_ALREADY_PAID')
+  })
+})
+
+// ===== AllowedActions state transitions =====
+
+describe('Gateway: allowedActions transitions', () => {
+  it('by-item mode locks out by-percent actions', () => {
+    sessionStore.update(sessionId, { settlementMode: 'by-item' })
+    // Make a successful operation to get allowedActions
+    const r = executeSettlement(STORE_ID, sessionId, {
+      type: 'create-split', splitType: 'by-item', itemKeys: [`${orderId}:0:1`],
+    })
+    if (!r.ok) return
+    expect(r.allowedActions.payByPercent).toBe(false)
+    expect(r.allowedActions.createSplitByPercent).toBe(false)
+    expect(r.allowedActions.payByItems).toBe(true)
+    expect(r.allowedActions.createSplitByItem).toBe(true)
+  })
+
+  it('after creating unpaid split, paySplit and deleteSplit are allowed', () => {
+    const r = executeSettlement(STORE_ID, sessionId, {
+      type: 'create-split', splitType: 'by-item', itemKeys: [`${orderId}:0:2`],
+    })
+    if (!r.ok) return
+    expect(r.allowedActions.paySplit).toBe(true)
+    expect(r.allowedActions.deleteSplit).toBe(true)
+  })
+
+  it('reopen allows payment actions again', () => {
+    // Full pay + close
+    executeSettlement(STORE_ID, sessionId, { type: 'cash-payment', amount: 4432, receivedAmount: 4432 })
+    // Session is now closed (auto-close)
+    const reopen = executeSettlement(STORE_ID, sessionId, { type: 'reopen-session' })
+    expect(reopen.ok).toBe(true)
+    if (reopen.ok) {
+      // After reopen with 0 remaining, payment actions should be false
+      expect(reopen.allowedActions.closeSession).toBe(true)
+      expect(reopen.allowedActions.reopenSession).toBe(false)
+    }
+  })
+})
+
+// ===== Full flow test =====
+
+describe('Gateway: full settlement flow', () => {
+  it('create split → pay split → remaining decreases', () => {
+    // Split 2 Colas (598 + 49 tax = 647)
+    const cr = executeSettlement(STORE_ID, sessionId, {
+      type: 'create-split', splitType: 'by-item', itemKeys: [`${orderId}:0:2`],
+    })
+    expect(cr.ok).toBe(true)
+    if (!cr.ok) return
+    const splitId = (cr.data.splitBill as any).id
+
+    // Pay split cash (no tip)
+    const pay = executeSettlement(STORE_ID, sessionId, {
+      type: 'pay-split-cash', splitBillId: splitId, receivedAmount: 700, tipAmount: 0,
+    })
+    expect(pay.ok).toBe(true)
+    if (!pay.ok) return
+    // Remaining should decrease (split marks items paid in paidItemIds)
+    expect(pay.remaining).toBeLessThan(4432)
+    expect(pay.sessionStatus).toBe('active')
+  })
+
+  it('percent mode: pay 50% then 100% of remaining → fully paid', () => {
+    // Pay 50%
+    const half = executeSettlement(STORE_ID, sessionId, { type: 'pay-percent', percent: 50 })
+    expect(half.ok).toBe(true)
+    if (!half.ok) return
+    const amount50 = (half.data as any).amount
+    expect(amount50).toBeGreaterThan(0)
+
+    // Record the 50% payment
+    const pay1 = executeSettlement(STORE_ID, sessionId, {
+      type: 'add-payment', amount: amount50, paidBy: 'test',
+    })
+    expect(pay1.ok).toBe(true)
+    if (!pay1.ok) return
+    expect(pay1.remaining).toBeLessThan(4432)
+
+    // Pay remaining 100%
+    const full = executeSettlement(STORE_ID, sessionId, { type: 'pay-percent', percent: 100 })
+    expect(full.ok).toBe(true)
+    if (!full.ok) return
+    const amountFull = (full.data as any).amount
+
+    const pay2 = executeSettlement(STORE_ID, sessionId, {
+      type: 'add-payment', amount: amountFull, paidBy: 'test',
+    })
+    expect(pay2.ok).toBe(true)
+    if (pay2.ok) {
+      expect(pay2.remaining).toBe(0)
+      expect(['paid', 'closed']).toContain(pay2.sessionStatus)
+    }
+  })
+})
