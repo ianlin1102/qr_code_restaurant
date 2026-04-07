@@ -76,18 +76,18 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="menu" element={<MenuManagePage />} />
-          <Route path="categories" element={<CategoryManagePage />} />
-          <Route path="tables" element={<TablesPage />} />
-          <Route path="settings" element={<StoreSettingsPage />} />
-          <Route path="floor-plan" element={<FloorPlanPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="coupons" element={<CouponManagePage />} />
-          <Route path="floor-plan/editor" element={<FloorPlanEditorPage />} />
-          <Route path="staff" element={<StaffManagePage />} />
-          <Route path="clock" element={<ClockPage />} />
-          <Route path="waitlist" element={<WaitlistPage />} />
+          <Route path="dashboard" element={<ProtectedRoute perm="orders:read"><DashboardPage /></ProtectedRoute>} />
+          <Route path="menu" element={<ProtectedRoute perm="menu:read"><MenuManagePage /></ProtectedRoute>} />
+          <Route path="categories" element={<ProtectedRoute perm="menu:read"><CategoryManagePage /></ProtectedRoute>} />
+          <Route path="tables" element={<ProtectedRoute perm="tables:read"><TablesPage /></ProtectedRoute>} />
+          <Route path="settings" element={<ProtectedRoute perm="settings:read"><StoreSettingsPage /></ProtectedRoute>} />
+          <Route path="floor-plan" element={<ProtectedRoute perm="tables:read"><FloorPlanPage /></ProtectedRoute>} />
+          <Route path="analytics" element={<ProtectedRoute perm="analytics:read"><AnalyticsPage /></ProtectedRoute>} />
+          <Route path="coupons" element={<ProtectedRoute perm="coupons:read"><CouponManagePage /></ProtectedRoute>} />
+          <Route path="floor-plan/editor" element={<ProtectedRoute perm="tables:write"><FloorPlanEditorPage /></ProtectedRoute>} />
+          <Route path="staff" element={<ProtectedRoute perm="staff:manage"><StaffManagePage /></ProtectedRoute>} />
+          <Route path="clock" element={<ProtectedRoute perm="staff:manage"><ClockPage /></ProtectedRoute>} />
+          <Route path="waitlist" element={<ProtectedRoute perm="waitlist:read"><WaitlistPage /></ProtectedRoute>} />
           <Route path="more" element={<MorePage />} />
           <Route index element={<Navigate to="dashboard" />} />
         </Route>

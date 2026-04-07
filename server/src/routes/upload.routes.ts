@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import multer from 'multer'
 import { requireAuth } from '../middleware/auth.middleware.js'
+import { requirePermission } from '../middleware/permission.middleware.js'
 import { uploadToS3 } from '../lib/s3.js'
 
 const router = Router()
@@ -22,6 +23,7 @@ const upload = multer({
 router.post(
   '/upload',
   requireAuth,
+  requirePermission('menu:write'),
   upload.single('file'),
   async (req, res, next) => {
     try {

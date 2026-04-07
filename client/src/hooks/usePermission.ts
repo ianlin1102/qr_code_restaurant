@@ -6,7 +6,21 @@ export function usePermission(perm: Permission): boolean {
   if (!user?.permissions) {
     // Fallback for legacy tokens
     if (user?.role === 'owner') return true
-    if (user?.role === 'staff') {
+    if (user?.role === 'manager') {
+      const mgrPerms: Permission[] = [
+        'orders:read', 'orders:write',
+        'menu:read', 'menu:write',
+        'tables:read', 'tables:write',
+        'settings:read', 'settings:write',
+        'billing:read', 'billing:write',
+        'analytics:read',
+        'coupons:read', 'coupons:write',
+        'waitlist:read', 'waitlist:write',
+        'printer:read', 'printer:write',
+      ]
+      return mgrPerms.includes(perm)
+    }
+    if (user?.role === 'staff' || user?.role === 'waiter') {
       const staffPerms: Permission[] = [
         'orders:read', 'orders:write',
         'menu:read',
