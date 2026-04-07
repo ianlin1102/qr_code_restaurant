@@ -67,7 +67,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
     setLoading(true)
     try {
       if (splitId === 'main') {
-        const amount = (mainBill?.total ?? 0) + tipCents
+        const amount = (session?.remaining ?? 0) + tipCents
         await api.recordCashPayment(storeId, sessionId, amount, received)
       } else {
         await api.paySplitBillCash(storeId, sessionId, splitId, received, tipCents || undefined)
