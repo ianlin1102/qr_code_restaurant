@@ -27,17 +27,19 @@ router.post(
   '/', requirePermission('tables:write'),
   (req: Request, res: Response) => {
     const { storeId, sessionId } = req.params
-    const { method, items, percent, label } = req.body
-    if (!method || !['by-item', 'by-percent'].includes(method)) {
-      res.status(400).json({ error: 'method must be by-item or by-percent' }); return
+    const { method, type, items, itemKeys, percent, label } = req.body
+    const splitType = type || method
+    const splitItemKeys = itemKeys || items
+    if (!splitType || !['by-item', 'by-percent'].includes(splitType)) {
+      res.status(400).json({ error: 'type must be by-item or by-percent' }); return
     }
     let sanitizedPercent = percent
-    if (method === 'by-percent') {
+    if (splitType === 'by-percent') {
       const pctResult = sanitizePercent(percent)
       if ('error' in pctResult) { res.status(400).json({ error: pctResult.error }); return }
       sanitizedPercent = pctResult.value
     }
-    const result = svc.createSplitBill(storeId, sessionId, { method, items, percent: sanitizedPercent, label })
+    const result = svc.createSplitBill(storeId, sessionId, { type: splitType, itemKeys: splitItemKeys, percent: sanitizedPercent, label })
     if ('error' in result) { res.status(400).json(result); return }
     res.status(201).json(result)
   },
