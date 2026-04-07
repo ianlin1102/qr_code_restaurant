@@ -44,6 +44,7 @@ export function addOrderToSession(
 
 // ===== Close / Reopen =====
 
+/** @internal Called by settlement gateway. */
 export function closeSession(
   storeId: string, sessionId: string,
 ): Session | { error: string } {
@@ -61,6 +62,7 @@ export function closeSession(
   return updated
 }
 
+/** @internal Called by settlement gateway. */
 export function reopenSession(
   storeId: string, sessionId: string,
 ): Session | { error: string } {
@@ -80,6 +82,7 @@ export function reopenSession(
 
 // ===== Payments =====
 
+/** @internal Called by settlement gateway. */
 export function addPayment(
   storeId: string, sessionId: string,
   amount: number, paidBy?: string, stripePaymentIntentId?: string,
@@ -360,7 +363,7 @@ export function startSettlement(
   return sessionStore.update(sessionId, { settlementMode: mode })!
 }
 
-/** Pure calculator — validates items and returns amount. NO side effects. */
+/** @internal Called by settlement gateway. Pure calculator — returns amount. */
 export function payByItems(
   storeId: string, sessionId: string, itemKeys: string[],
 ): { amount: number; tax: number; serviceFee: number } | { error: string } {
@@ -426,7 +429,7 @@ export function payByItems(
   return { amount: splitTotal, tax, serviceFee }
 }
 
-/** Pure calculator — validates percent and returns amount. NO side effects. */
+/** @internal Called by settlement gateway. Pure calculator — returns amount. */
 export function payByPercent(
   storeId: string, sessionId: string, percent: number,
 ): { amount: number; tax: number; serviceFee: number } | { error: string } {
@@ -485,6 +488,7 @@ export function confirmPercentPayment(sessionId: string): void {
   logger.info({ sessionId }, 'settlement mode locked to by-percent after payment confirmation')
 }
 
+/** @internal Called by settlement gateway. */
 export function recordCashPayment(
   storeId: string, sessionId: string,
   amount: number, receivedAmount: number,

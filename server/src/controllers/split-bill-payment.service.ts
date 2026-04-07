@@ -18,6 +18,7 @@ function markSplitItemsPaid(sb: SplitBill) {
 
 // ===== Pay Card (MVP simple — marks paid immediately) =====
 
+/** @internal Called by settlement gateway. */
 export function paySplitBillCard(
   storeId: string, splitBillId: string, tipAmount?: number,
 ): { splitBill: SplitBill } | { error: string } {
@@ -40,6 +41,7 @@ export function paySplitBillCard(
 
 // ===== Pay Cash =====
 
+/** @internal Called by settlement gateway. */
 export function paySplitBillCash(
   storeId: string, splitBillId: string,
   receivedAmount: number, tipAmount?: number,

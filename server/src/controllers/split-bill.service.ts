@@ -104,6 +104,7 @@ export function getMainBillSummary(sessionId: string, storeId: string) {
 
 // ===== Create =====
 
+/** @internal Called by settlement gateway. */
 export function createSplitBill(
   storeId: string, sessionId: string,
   data: { type: 'by-item' | 'by-percent'; itemKeys?: string[]; percent?: number; label?: string },
@@ -189,6 +190,7 @@ export function createSplitBill(
 
 // ===== Delete =====
 
+/** @internal Called by settlement gateway. */
 export function deleteSplitBill(
   storeId: string, splitBillId: string,
 ): { ok: true } | { error: string } {
