@@ -4,6 +4,7 @@ import { requirePermission } from '../middleware/permission.middleware.js'
 import * as svc from '../controllers/session.service.js'
 import { createOrder } from '../controllers/order.service.js'
 import { sanitizeAmount, sanitizeTip, sanitizePercent, sanitizeString } from '../lib/sanitize.js'
+import { executeSettlement, httpStatus } from '../settlement/gateway.js'
 import type { Request, Response } from 'express'
 
 const router = Router({ mergeParams: true })
@@ -107,22 +108,18 @@ router.patch('/:sessionId/start-settlement', (req: Request, res: Response) => {
 
 // POST /sessions/:sessionId/pay-items — customer pays specific items
 router.post('/:sessionId/pay-items', (req: Request, res: Response) => {
-  const { itemKeys } = req.body
-  if (!Array.isArray(itemKeys) || itemKeys.length === 0) {
-    res.status(400).json({ error: 'itemKeys array required' }); return
-  }
-  const result = svc.payByItems(req.params.storeId, req.params.sessionId, itemKeys)
-  if ('error' in result) { res.status(400).json(result); return }
-  res.json(result)
+  const result = executeSettlement(req.params.storeId, req.params.sessionId, {
+    type: 'pay-items', itemKeys: req.body.itemKeys,
+  })
+  res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
 })
 
 // POST /sessions/:sessionId/pay-percent — customer pays a percentage
 router.post('/:sessionId/pay-percent', (req: Request, res: Response) => {
-  const pctResult = sanitizePercent(req.body.percent)
-  if ('error' in pctResult) { res.status(400).json({ error: pctResult.error }); return }
-  const result = svc.payByPercent(req.params.storeId, req.params.sessionId, pctResult.value)
-  if ('error' in result) { res.status(400).json(result); return }
-  res.json(result)
+  const result = executeSettlement(req.params.storeId, req.params.sessionId, {
+    type: 'pay-percent', percent: req.body.percent,
+  })
+  res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
 })
 
 // POST /sessions/:sessionId/cash-payment — admin records cash payment
@@ -130,17 +127,10 @@ router.post(
   '/:sessionId/cash-payment',
   requireAuth, requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const amtResult = sanitizeAmount(req.body.amount)
-    if ('error' in amtResult) { res.status(400).json({ error: amtResult.error }); return }
-    const rcvResult = sanitizeAmount(req.body.receivedAmount)
-    if ('error' in rcvResult) { res.status(400).json({ error: rcvResult.error }); return }
-    if (rcvResult.value < amtResult.value) {
-      res.status(400).json({ error: 'receivedAmount must be >= amount' })
-      return
-    }
-    const result = svc.recordCashPayment(req.params.storeId, req.params.sessionId, amtResult.value, rcvResult.value)
-    if ('error' in result) { res.status(400).json(result); return }
-    res.json(result)
+    const result = executeSettlement(req.params.storeId, req.params.sessionId, {
+      type: 'cash-payment', amount: req.body.amount, receivedAmount: req.body.receivedAmount,
+    })
+    res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
   },
 )
 
@@ -149,9 +139,10 @@ router.patch(
   '/:sessionId/close',
   requireAuth, requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const result = svc.closeSession(req.params.storeId, req.params.sessionId)
-    if ('error' in result) { res.status(400).json(result); return }
-    res.json(result)
+    const result = executeSettlement(req.params.storeId, req.params.sessionId, {
+      type: 'close-session',
+    })
+    res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
   },
 )
 
@@ -160,9 +151,10 @@ router.patch(
   '/:sessionId/reopen',
   requireAuth, requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const result = svc.reopenSession(req.params.storeId, req.params.sessionId)
-    if ('error' in result) { res.status(400).json(result); return }
-    res.json(result)
+    const result = executeSettlement(req.params.storeId, req.params.sessionId, {
+      type: 'reopen-session',
+    })
+    res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
   },
 )
 
@@ -171,13 +163,14 @@ router.post(
   '/:sessionId/payments',
   requireAuth, requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const { paidBy, stripePaymentIntentId } = req.body
-    const amtResult = sanitizeAmount(req.body.amount)
-    if ('error' in amtResult) { res.status(400).json({ error: amtResult.error }); return }
-    const safePaidBy = paidBy ? sanitizeString(paidBy, 100) : undefined
-    const result = svc.addPayment(req.params.storeId, req.params.sessionId, amtResult.value, safePaidBy, stripePaymentIntentId)
-    if ('error' in result) { res.status(400).json(result); return }
-    res.json(result)
+    const result = executeSettlement(req.params.storeId, req.params.sessionId, {
+      type: 'add-payment',
+      amount: req.body.amount,
+      paidBy: req.body.paidBy || 'customer',
+      tipAmount: req.body.tipAmount,
+      stripePaymentIntentId: req.body.stripePaymentIntentId,
+    })
+    res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
   },
 )
 

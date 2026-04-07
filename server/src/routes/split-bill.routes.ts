@@ -4,6 +4,7 @@ import { requirePermission } from '../middleware/permission.middleware.js'
 import * as svc from '../controllers/split-bill.service.js'
 import * as pay from '../controllers/split-bill-payment.service.js'
 import { sanitizeAmount, sanitizeTip, sanitizePercent } from '../lib/sanitize.js'
+import { executeSettlement, httpStatus } from '../settlement/gateway.js'
 import type { Request, Response } from 'express'
 
 const router = Router({ mergeParams: true })
@@ -30,18 +31,10 @@ router.post(
     const { method, type, items, itemKeys, percent, label } = req.body
     const splitType = type || method
     const splitItemKeys = itemKeys || items
-    if (!splitType || !['by-item', 'by-percent'].includes(splitType)) {
-      res.status(400).json({ error: 'type must be by-item or by-percent' }); return
-    }
-    let sanitizedPercent = percent
-    if (splitType === 'by-percent') {
-      const pctResult = sanitizePercent(percent)
-      if ('error' in pctResult) { res.status(400).json({ error: pctResult.error }); return }
-      sanitizedPercent = pctResult.value
-    }
-    const result = svc.createSplitBill(storeId, sessionId, { type: splitType, itemKeys: splitItemKeys, percent: sanitizedPercent, label })
-    if ('error' in result) { res.status(400).json(result); return }
-    res.status(201).json(result)
+    const result = executeSettlement(storeId, sessionId, {
+      type: 'create-split', splitType, itemKeys: splitItemKeys, percent, label,
+    })
+    res.status(result.ok ? 201 : httpStatus((result as any).code)).json(result)
   },
 )
 
@@ -49,9 +42,10 @@ router.post(
 router.delete(
   '/:splitBillId', requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const result = svc.deleteSplitBill(req.params.storeId, req.params.splitBillId)
-    if ('error' in result) { res.status(400).json(result); return }
-    res.json(result)
+    const result = executeSettlement(req.params.storeId, req.params.sessionId, {
+      type: 'delete-split', splitBillId: req.params.splitBillId,
+    })
+    res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
   },
 )
 
@@ -59,21 +53,20 @@ router.delete(
 router.post(
   '/:splitBillId/pay-card', requirePermission('tables:write'),
   async (req: Request, res: Response) => {
-    const { storeId, splitBillId } = req.params
+    const { storeId, splitBillId, sessionId } = req.params
     const { tipAmount, captureMethod } = req.body
 
+    // Manual capture bypasses gateway (Stripe async flow)
     if (captureMethod === 'manual') {
       const result = await pay.createManualCaptureIntent(storeId, splitBillId)
       if ('error' in result) { res.status(400).json(result); return }
       res.json(result); return
     }
 
-    const tipResult = sanitizeTip(tipAmount)
-    if ('error' in tipResult) { res.status(400).json({ error: tipResult.error }); return }
-
-    const result = pay.paySplitBillCard(storeId, splitBillId, tipResult.value)
-    if ('error' in result) { res.status(400).json(result); return }
-    res.json(result)
+    const result = executeSettlement(storeId, sessionId, {
+      type: 'pay-split-card', splitBillId, tipAmount,
+    })
+    res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
   },
 )
 
@@ -81,15 +74,13 @@ router.post(
 router.post(
   '/:splitBillId/pay-cash', requirePermission('tables:write'),
   (req: Request, res: Response) => {
-    const rcvResult = sanitizeAmount(req.body.receivedAmount)
-    if ('error' in rcvResult) { res.status(400).json({ error: rcvResult.error }); return }
-    const tipResult = sanitizeTip(req.body.tipAmount)
-    if ('error' in tipResult) { res.status(400).json({ error: tipResult.error }); return }
-    const result = pay.paySplitBillCash(
-      req.params.storeId, req.params.splitBillId, rcvResult.value, tipResult.value,
-    )
-    if ('error' in result) { res.status(400).json(result); return }
-    res.json(result)
+    const result = executeSettlement(req.params.storeId, req.params.sessionId, {
+      type: 'pay-split-cash',
+      splitBillId: req.params.splitBillId,
+      receivedAmount: req.body.receivedAmount,
+      tipAmount: req.body.tipAmount,
+    })
+    res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
   },
 )
 
