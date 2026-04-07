@@ -58,26 +58,16 @@ export function SplitCard({ split, ts, onPayCard, onPayCash, onMerge }: {
         </div>
       </div>
       <p className="text-lg font-bold">{formatPriceUSD(split.total)}</p>
-      {split.stale && (
-        <p className="text-xs text-destructive font-medium">
-          {split.staleReason || 'This split is outdated'}
-        </p>
-      )}
       {split.status === 'paid' && (
         <p className="text-xs text-muted-foreground">
           {split.method} {split.paidAt ? new Date(split.paidAt).toLocaleTimeString() : ''}
         </p>
       )}
-      {split.status === 'unpaid' && !split.stale && (
+      {split.status === 'unpaid' && (
         <div className="flex gap-2">
           <Button size="sm" className="flex-1 min-h-[44px]" onClick={onPayCard}>{ts.payCard}</Button>
           <Button size="sm" variant="outline" className="flex-1 min-h-[44px]" onClick={onPayCash}>{ts.payCash}</Button>
           <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={onMerge}>{ts.mergeBack}</Button>
-        </div>
-      )}
-      {split.status === 'unpaid' && split.stale && (
-        <div className="flex gap-2">
-          <Button size="sm" variant="destructive" className="flex-1 min-h-[44px]" onClick={onMerge}>{ts.mergeBack}</Button>
         </div>
       )}
       {split.status === 'pending-capture' && (

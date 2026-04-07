@@ -1,17 +1,8 @@
 import { splitBillStore, paymentStore } from '../repositories/stores.js'
 import { addPayment } from './session.service.js'
-import { getSplitBillsValidated } from './split-bill.service.js'
 import { getStripe } from '../lib/stripe.js'
 import logger from '../lib/logger.js'
 import type { SplitBill } from '@qr-order/shared'
-
-function checkStale(storeId: string, splitBillId: string): string | null {
-  const sb = splitBillStore.getById(splitBillId)
-  if (!sb) return null
-  const validated = getSplitBillsValidated(sb.sessionId, storeId)
-  const found = validated.find(s => s.id === splitBillId)
-  return found?.stale ? (found.staleReason ?? 'Split bill is stale') : null
-}
 
 // ===== Pay Card (MVP simple — marks paid immediately) =====
 
@@ -21,8 +12,6 @@ export function paySplitBillCard(
   const sb = splitBillStore.getById(splitBillId)
   if (!sb || sb.storeId !== storeId) return { error: 'Split bill not found' }
   if (sb.status !== 'unpaid') return { error: 'Already paid or pending' }
-  const staleMsg = checkStale(storeId, splitBillId)
-  if (staleMsg) return { error: staleMsg }
 
   const total = sb.total + (tipAmount ?? 0)
   const payResult = addPayment(storeId, sb.sessionId, total, 'waiter')
@@ -44,8 +33,6 @@ export function paySplitBillCash(
   const sb = splitBillStore.getById(splitBillId)
   if (!sb || sb.storeId !== storeId) return { error: 'Split bill not found' }
   if (sb.status !== 'unpaid') return { error: 'Already paid or pending' }
-  const staleMsg = checkStale(storeId, splitBillId)
-  if (staleMsg) return { error: staleMsg }
 
   const total = sb.total + (tipAmount ?? 0)
   if (receivedAmount < total) return { error: 'Received amount less than due' }

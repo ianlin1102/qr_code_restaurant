@@ -10,13 +10,18 @@ export function getSplitBills(sessionId: string): SplitBill[] {
   return splitBillStore.getByField('sessionId', sessionId)
 }
 
-/** Get split bills with staleness check against current session state */
-export function getSplitBillsValidated(sessionId: string, storeId: string): SplitBill[] {
+/**
+ * Invalidate conflicting unpaid splits after a customer payment.
+ * Called from webhook after payment confirmed.
+ * - by-item: delete if any itemKeys overlap with newly paid items
+ * - by-percent: delete if remaining balance changed (subtotal would differ)
+ * Returns number of splits deleted.
+ */
+export function invalidateConflictingSplits(sessionId: string, storeId: string): number {
   const splits = getSplitBills(sessionId)
   const session = sessionStore.getById(sessionId)
-  if (!session) return splits
+  if (!session) return 0
 
-  // Build paid qty map from session's paidItemIds (customer payments)
   const paidQtyMap = new Map<string, number>()
   for (const pid of session.paidItemIds ?? []) {
     const parts = pid.split(':')
@@ -25,45 +30,35 @@ export function getSplitBillsValidated(sessionId: string, storeId: string): Spli
     paidQtyMap.set(baseKey, (paidQtyMap.get(baseKey) ?? 0) + qty)
   }
 
-  return splits.map(sb => {
-    // Only check unpaid splits
-    if (sb.status !== 'unpaid') return sb
+  let deleted = 0
+  for (const sb of splits) {
+    if (sb.status !== 'unpaid') continue
 
+    let conflict = false
     if (sb.type === 'by-item' && sb.itemKeys) {
-      // Check if any assigned items have been paid by customer
       for (const key of sb.itemKeys) {
         const parts = key.split(':')
         const baseKey = `${parts[0]}:${parts[1]}`
-        const splitQty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity
-        const paidQty = paidQtyMap.get(baseKey) ?? 0
-        if (paidQty > 0) {
-          // Check if the item's total available qty can still cover split + paid
-          const orderId = parts[0]
-          const idx = parseInt(parts[1], 10)
-          const order = orderStore.getById(orderId)
-          const totalQty = order?.items[idx]?.quantity ?? 0
-          // Other splits' assigned qty (excluding this split)
-          const otherSplits = splits.filter(s => s.id !== sb.id)
-          const otherAssigned = buildAssignedQtyMap(otherSplits).get(baseKey) ?? 0
-          const available = totalQty - paidQty - otherAssigned
-          if (available < splitQty) {
-            return { ...sb, stale: true, staleReason: 'Some items in this split have been paid separately' }
-          }
+        if (paidQtyMap.has(baseKey)) {
+          conflict = true
+          break
         }
       }
     } else if (sb.type === 'by-percent') {
-      // Recalculate what this percent would be now
       const mainBill = getMainBillSummary(sessionId, storeId)
       if (mainBill) {
         const nowSubtotal = Math.round(mainBill.subtotal * (sb.percent ?? 0) / 100)
-        // If the recalculated amount differs by more than 1 cent, mark stale
-        if (Math.abs(nowSubtotal - sb.subtotal) > 1) {
-          return { ...sb, stale: true, staleReason: 'Bill balance has changed since this split was created' }
-        }
+        if (Math.abs(nowSubtotal - sb.subtotal) > 1) conflict = true
       }
     }
-    return sb
-  })
+
+    if (conflict) {
+      splitBillStore.delete(sb.id)
+      logger.info({ splitBillId: sb.id, sessionId, type: sb.type }, 'split bill auto-invalidated after customer payment')
+      deleted++
+    }
+  }
+  return deleted
 }
 
 /** Items NOT assigned to any split bill — the "main bill" remainder. */

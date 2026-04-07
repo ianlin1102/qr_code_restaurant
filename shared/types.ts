@@ -252,8 +252,6 @@ export interface SplitBill {
   paymentIntentId?: string    // Stripe PI for manual capture
   paidAt?: string
   method?: 'stripe' | 'cash'
-  stale?: boolean             // true if split conflicts with current session state
-  staleReason?: string        // human-readable reason
   createdAt: string
 }
 

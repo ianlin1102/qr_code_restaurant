@@ -16,7 +16,7 @@ router.get(
   '/', requirePermission('tables:read'),
   (req: Request, res: Response) => {
     const { storeId, sessionId } = req.params
-    const splits = svc.getSplitBillsValidated(sessionId, storeId)
+    const splits = svc.getSplitBills(sessionId)
     const mainBill = svc.getMainBillSummary(sessionId, storeId)
     res.json({ splits, mainBill })
   },

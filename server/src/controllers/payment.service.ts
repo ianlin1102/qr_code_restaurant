@@ -1,6 +1,7 @@
 import { getStripe } from '../lib/stripe.js'
 import { createOrder } from './order.service.js'
 import { getActiveSession, addPayment, confirmItemPayment, confirmPercentPayment, calcTax, calcServiceFee } from './session.service.js'
+import { invalidateConflictingSplits } from './split-bill.service.js'
 import { orderStore, sessionStore, paymentStore } from '../repositories/stores.js'
 import logger from '../lib/logger.js'
 import type { CreateOrderRequest } from '@qr-order/shared'
@@ -169,8 +170,10 @@ export async function handleWebhookEvent(
         if (result.payment) {
           paymentStore.update(result.payment.id, { method: 'stripe' })
         }
+        // Auto-delete conflicting unpaid splits after customer payment
+        const invalidated = invalidateConflictingSplits(sessionId, storeId)
         logger.info(
-          { storeId, sessionId, amount: pi.amount, settlementType, paymentIntentId: pi.id },
+          { storeId, sessionId, amount: pi.amount, settlementType, paymentIntentId: pi.id, invalidatedSplits: invalidated },
           'session payment recorded via webhook',
         )
       }
