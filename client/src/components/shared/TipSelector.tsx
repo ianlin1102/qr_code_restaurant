@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
@@ -20,18 +20,21 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
   const [customOpen, setCustomOpen] = useState(false)
   const [customVal, setCustomVal] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  // Stable ref to avoid useEffect re-triggering when onSelect changes
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
 
   const isPreset = (pct: number) =>
     selected?.type === 'percent' && selected.pct === pct
 
-  const applyCustom = useCallback((val: string) => {
+  const applyCustom = (val: string) => {
     const dollars = parseFloat(val)
     if (!isNaN(dollars) && dollars > 0) {
-      onSelect({ type: 'custom', amount: Math.round(dollars * 100) })
+      onSelectRef.current({ type: 'custom', amount: Math.round(dollars * 100) })
     } else if (val === '' || val === '0') {
-      onSelect(null)
+      onSelectRef.current(null)
     }
-  }, [onSelect])
+  }
 
   // Debounced auto-apply: 1 second after last keystroke
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
       applyCustom(customVal)
     }, 1000)
     return () => clearTimeout(debounceRef.current)
-  }, [customVal, customOpen, applyCustom])
+  }, [customVal, customOpen])
 
   return (
     <div className="bg-card rounded-2xl p-4 shadow-sm mb-4 relative">
