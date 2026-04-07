@@ -83,18 +83,22 @@ export function reopenSession(
 export function addPayment(
   storeId: string, sessionId: string,
   amount: number, paidBy?: string, stripePaymentIntentId?: string,
+  tipAmount?: number,
 ): { session: Session; payment: Payment } | { error: string } {
   const session = sessionStore.getById(sessionId)
   if (!session || session.storeId !== storeId) return { error: 'Session not found' }
 
+  const tip = tipAmount ?? 0
   const payment: Payment = {
     id: uuid(), sessionId, storeId, amount,
     paidBy, stripePaymentIntentId,
+    ...(tip > 0 ? { tipAmount: tip } : {}),
     createdAt: new Date().toISOString(),
   }
   paymentStore.create(payment)
 
-  const newTotalPaid = session.totalPaid + amount
+  // totalPaid tracks food+tax+fee only — exclude tip
+  const newTotalPaid = session.totalPaid + (amount - tip)
   const netDue = session.totalAmount - session.discountAmount
   const tax = calcTax(storeId, netDue)
   const fee = calcServiceFee(storeId, netDue)

@@ -153,7 +153,8 @@ export async function handleWebhookEvent(
 
     // --- Session payment (pay-later or split) ---
     if (paymentType === 'session-payment' && sessionId) {
-      const result = addPayment(storeId, sessionId, pi.amount, paidBy || 'customer', pi.id)
+      const tipAmt = pi.metadata.tipAmount ? parseInt(pi.metadata.tipAmount, 10) : 0
+      const result = addPayment(storeId, sessionId, pi.amount, paidBy || 'customer', pi.id, tipAmt)
       if ('error' in result) {
         logger.error({ error: result.error, paymentIntentId: pi.id }, 'webhook: failed to record session payment')
       } else {
@@ -164,13 +165,9 @@ export async function handleWebhookEvent(
         } else if (settlementType === 'by-percent') {
           confirmPercentPayment(sessionId)
         }
-        // Tag as stripe payment + record tip
+        // Tag as stripe payment method
         if (result.payment) {
-          const tipAmt = pi.metadata.tipAmount ? parseInt(pi.metadata.tipAmount, 10) : undefined
-          paymentStore.update(result.payment.id, {
-            method: 'stripe',
-            ...(tipAmt ? { tipAmount: tipAmt } : {}),
-          })
+          paymentStore.update(result.payment.id, { method: 'stripe' })
         }
         logger.info(
           { storeId, sessionId, amount: pi.amount, settlementType, paymentIntentId: pi.id },
@@ -220,7 +217,8 @@ export async function handleWebhookEvent(
     // Record payment on session
     const sid = sessionId || result.sessionId
     if (sid) {
-      addPayment(storeId, sid, pi.amount, cart.customerName || 'customer', pi.id)
+      const payFirstTip = pi.metadata.tipAmount ? parseInt(pi.metadata.tipAmount, 10) : 0
+      addPayment(storeId, sid, pi.amount, cart.customerName || 'customer', pi.id, payFirstTip)
     }
 
     logger.info(
