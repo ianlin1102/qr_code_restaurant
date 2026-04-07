@@ -140,16 +140,46 @@ export function getSessionSummary(storeId: string, sessionId: string) {
     .map(id => orderStore.getById(id)).filter(Boolean)
   const payments = getPayments(sessionId)
   const store = storeStore.getById(storeId)
+  const rates = { taxRate: store?.taxRate ?? 0, serviceFeeRate: store?.serviceFeeRate ?? 0 }
+
   const bill = calcBillSummary({
     totalAmount: freshSession.totalAmount,
     discountAmount: freshSession.discountAmount,
     totalPaid: freshSession.totalPaid,
-    taxRate: store?.taxRate ?? 0,
-    serviceFeeRate: store?.serviceFeeRate ?? 0,
+    ...rates,
   })
+
+  // Calculate remaining from unpaid items (source of truth)
+  // This avoids accumulated rounding errors from totalPaid
+  const paidQtyMap = new Map<string, number>()
+  for (const pid of freshSession.paidItemIds ?? []) {
+    const parts = pid.split(':')
+    const baseKey = `${parts[0]}:${parts[1]}`
+    const qty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity
+    paidQtyMap.set(baseKey, (paidQtyMap.get(baseKey) ?? 0) + qty)
+  }
+  let unpaidSubtotal = 0
+  for (const order of orders) {
+    if (!order) continue
+    for (let idx = 0; idx < order.items.length; idx++) {
+      const item = order.items[idx]
+      if (item.voided) continue
+      const baseKey = `${order.id}:${idx}`
+      const paidQty = Math.min(paidQtyMap.get(baseKey) ?? 0, item.quantity)
+      const remainingQty = item.quantity - paidQty
+      if (remainingQty <= 0) continue
+      const optAdj = (item.selectedOptions ?? []).reduce((s: number, o: any) => s + (o.priceAdjust ?? 0), 0)
+      unpaidSubtotal += (item.price + optAdj) * remainingQty
+    }
+  }
+  const unpaidTax = calcTax(storeId, unpaidSubtotal)
+  const unpaidFee = calcServiceFee(storeId, unpaidSubtotal)
+  const itemBasedRemaining = unpaidSubtotal + unpaidTax + unpaidFee
 
   return {
     ...freshSession, orders, payments, ...bill,
+    // Override remaining with item-based calculation when in by-item mode
+    remaining: freshSession.settlementMode === 'by-item' ? itemBasedRemaining : bill.remaining,
   }
 }
 
