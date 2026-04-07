@@ -26,14 +26,18 @@ router.post('/', (req, res) => {
 })
 
 // GET /api/stores/:storeId/orders
-// - Authenticated (admin): full access, optional filters
-// - Unauthenticated (customer): must provide tableId, sensitive fields stripped
+// - With tableId: public (customer sees own table orders)
+// - Without tableId: requires orders:read (admin sees all orders)
 router.get('/', optionalAuth, (req, res) => {
   const status = req.query.status as OrderStatus | undefined
   const tableId = req.query.tableId as string | undefined
 
-  if (!req.user && !tableId) {
+  if (!tableId && !req.user) {
     res.status(400).json({ error: 'tableId is required' })
+    return
+  }
+  if (!tableId && req.user && !req.user.permissions?.includes('orders:read')) {
+    res.status(403).json({ error: 'Insufficient permissions' })
     return
   }
 
