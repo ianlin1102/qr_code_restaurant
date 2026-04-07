@@ -13,8 +13,9 @@ export function paySplitBillCard(
   if (!sb || sb.storeId !== storeId) return { error: 'Split bill not found' }
   if (sb.status !== 'unpaid') return { error: 'Already paid or pending' }
 
-  const total = sb.total + (tipAmount ?? 0)
-  const payResult = addPayment(storeId, sb.sessionId, total, 'waiter')
+  const tip = tipAmount ?? 0
+  const total = sb.total + tip
+  const payResult = addPayment(storeId, sb.sessionId, total, 'waiter', undefined, tip)
   if ('error' in payResult) return payResult
 
   splitBillStore.update(splitBillId, {
@@ -34,10 +35,11 @@ export function paySplitBillCash(
   if (!sb || sb.storeId !== storeId) return { error: 'Split bill not found' }
   if (sb.status !== 'unpaid') return { error: 'Already paid or pending' }
 
-  const total = sb.total + (tipAmount ?? 0)
+  const tip = tipAmount ?? 0
+  const total = sb.total + tip
   if (receivedAmount < total) return { error: 'Received amount less than due' }
 
-  const payResult = addPayment(storeId, sb.sessionId, total, 'waiter')
+  const payResult = addPayment(storeId, sb.sessionId, total, 'waiter', undefined, tip)
   if ('error' in payResult) return payResult
 
   paymentStore.update(payResult.payment.id, { method: 'cash' as const })

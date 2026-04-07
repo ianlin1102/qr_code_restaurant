@@ -447,17 +447,23 @@ export function payByPercent(
     ...rates,
   })
   const remaining = bill.remaining
-  const subtotal = Math.round(remaining * percent / 100)
+  const splitAmount = Math.round(remaining * percent / 100)
 
   if (percent < 100) {
-    const leftover = remaining - subtotal
-    if (subtotal < 100) return { error: 'Split amount must be at least $1.00' }
+    const leftover = remaining - splitAmount
+    if (splitAmount < 100) return { error: 'Split amount must be at least $1.00' }
     if (leftover < 100) return { error: 'Remaining balance after split must be at least $1.00' }
   }
 
-  const tax = sharedCalcTax(subtotal, rates.taxRate)
-  const serviceFee = sharedCalcServiceFee(subtotal, rates.serviceFeeRate)
-  return { amount: subtotal + tax + serviceFee, tax, serviceFee }
+  // remaining already includes tax+fee, so split proportionally (no double tax)
+  // Back-calculate the tax/fee portion for display only
+  const taxRate = rates.taxRate / 100
+  const feeRate = rates.serviceFeeRate / 100
+  const totalRate = 1 + taxRate + feeRate
+  const foodPortion = Math.round(splitAmount / totalRate)
+  const tax = Math.round(foodPortion * taxRate)
+  const serviceFee = Math.round(foodPortion * feeRate)
+  return { amount: splitAmount, tax, serviceFee }
 }
 
 /** Called by webhook AFTER payment confirmed — marks items as paid */

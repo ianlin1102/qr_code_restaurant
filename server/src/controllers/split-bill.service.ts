@@ -111,8 +111,40 @@ export function createSplitBill(
   const session = sessionStore.getById(sessionId)
   if (!session || session.storeId !== storeId) return { error: 'Session not found' }
 
+  // B3: Check settlement mode conflict
+  if (session.settlementMode === 'by-percent' && data.type === 'by-item') {
+    return { error: 'Cannot create by-item split: session is in by-percent settlement mode' }
+  }
+  if (session.settlementMode === 'by-item' && data.type === 'by-percent') {
+    return { error: 'Cannot create by-percent split: session is in by-item settlement mode' }
+  }
+
   let subtotal: number
   if (data.type === 'by-item') {
+    // B2: Check against paidItemIds — can't split already-paid items
+    const paidQtyMap = new Map<string, number>()
+    for (const pid of session.paidItemIds ?? []) {
+      const parts = pid.split(':')
+      const baseKey = `${parts[0]}:${parts[1]}`
+      const qty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity
+      paidQtyMap.set(baseKey, (paidQtyMap.get(baseKey) ?? 0) + qty)
+    }
+    for (const key of data.itemKeys ?? []) {
+      const parts = key.split(':')
+      const baseKey = `${parts[0]}:${parts[1]}`
+      const reqQty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity
+      const paidQty = paidQtyMap.get(baseKey) ?? 0
+      const orderId = parts[0]
+      const idx = parseInt(parts[1], 10)
+      const order = orderStore.getById(orderId)
+      const totalQty = order?.items[idx]?.quantity ?? 0
+      const assignedQty = buildAssignedQtyMap(getSplitBills(sessionId)).get(baseKey) ?? 0
+      const available = totalQty - paidQty - assignedQty
+      if (available < reqQty) {
+        return { error: `Item ${baseKey} has insufficient unpaid quantity (available: ${available})` }
+      }
+    }
+
     const result = calcByItemSubtotal(session.orderIds, sessionId, data.itemKeys ?? [])
     if ('error' in result) return result
     subtotal = result.subtotal
