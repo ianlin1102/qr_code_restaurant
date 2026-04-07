@@ -22,7 +22,8 @@ export function FloorCanvas({
   tables, editable, selectedTableId, onTableClick, onTableMove, className,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const [zoom, setZoom] = useState(1)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  const [zoom, setZoom] = useState(isMobile ? 2 : 1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const dragRef = useRef<{
     id: string; startX: number; startY: number; origX: number; origY: number
