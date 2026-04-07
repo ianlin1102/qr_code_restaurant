@@ -51,8 +51,26 @@ MVP 阶段：JSON 文件存储，迁移路径 → PostgreSQL（Prisma schema 已
 
 ## 防御规则（历史 Bug 总结）
 
+### 结算操作必须经过 Settlement Gateway
+所有结算操作（payByItems, payByPercent, createSplit, paySplit, cashPayment 等）必须通过 `settlement/gateway.ts` 的 `executeSettlement()` 入口。不要直接从路由调用 service 函数。Gateway 负责校验、执行、计算 allowedActions、记录日志。Service 函数是 trusted internal，不做校验。
+
+### 前端 UI 由 allowedActions 控制
+前端不自己判断操作是否合法，只读 API 响应中的 `allowedActions` 来显示/隐藏按钮。错误响应也带 `allowedActions`，收到就更新 UI。
+
+### totalPaid 不含小费
+`addPayment` 的第 6 参数是 tipAmount，`totalPaid += amount - tip`。小费记录在 Payment.tipAmount 上但不影响 remaining 计算。
+
+### remaining 在 by-item 模式下从未付菜品计算
+`getSessionSummary` 在 `settlementMode === 'by-item'` 时，remaining = 未付菜品 subtotal + tax，不是 `totalWithTax - totalPaid`。这避免了历史支付误差累积。
+
 ### 副作用必须在确认后执行
 `payByItems` 是纯计算器，不改数据。`confirmItemPayment` 只在 webhook 确认支付后由 server 调用。前端传的 amount 只是"请求金额"，server 有权拒绝或调整。
+
+### Split 支付后更新 paidItemIds
+`paySplitBillCard/Cash` 支付后调用 `markSplitItemsPaid(sb)` 将 split 的 itemKeys 加入 session.paidItemIds。这样 by-item remaining 计算能反映 split 已付菜品。
+
+### payByPercent 不双重征税
+`payByPercent` 的 `remaining` 已含税。返回的 `amount` 直接按 remaining 比例切割，不额外算税。tax/serviceFee 是反推显示值。
 
 ### 重命名/改签名后的检查
 1. `grep -r "旧名字" client/ server/ shared/` — 包括 useEffect 依赖数组
