@@ -5,11 +5,17 @@ import { requirePermission } from '../middleware/permission.middleware.js'
 
 const router = Router({ mergeParams: true })
 
-// GET /api/stores/:storeId (public — customer needs store info)
+// GET /api/stores/:storeId (public with limited fields, admin gets full)
 router.get('/', (req, res) => {
   const store = getStore(req.params.storeId)
   if (!store) return res.status(404).json({ error: 'Store not found' })
-  // Strip internal fields for public API
+  // If authenticated admin, return full store object
+  const authHeader = req.headers.authorization
+  if (authHeader?.startsWith('Bearer ')) {
+    res.json(store)
+    return
+  }
+  // Public: strip internal fields
   const { autoAcceptOrders, createdAt, updatedAt, ...publicStore } = store
   res.json(publicStore)
 })

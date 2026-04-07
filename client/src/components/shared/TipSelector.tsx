@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
@@ -19,19 +19,29 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
   const { t } = useTranslation('customer')
   const [customOpen, setCustomOpen] = useState(false)
   const [customVal, setCustomVal] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const isPreset = (pct: number) =>
     selected?.type === 'percent' && selected.pct === pct
 
-  // Apply custom tip on blur (not on every keystroke — avoids PaymentIntent churn)
-  const applyCustom = () => {
-    const dollars = parseFloat(customVal)
+  const applyCustom = useCallback((val: string) => {
+    const dollars = parseFloat(val)
     if (!isNaN(dollars) && dollars > 0) {
       onSelect({ type: 'custom', amount: Math.round(dollars * 100) })
-    } else {
+    } else if (val === '' || val === '0') {
       onSelect(null)
     }
-  }
+  }, [onSelect])
+
+  // Debounced auto-apply: 1 second after last keystroke
+  useEffect(() => {
+    if (!customOpen) return
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      applyCustom(customVal)
+    }, 1000)
+    return () => clearTimeout(debounceRef.current)
+  }, [customVal, customOpen, applyCustom])
 
   return (
     <div className="bg-card rounded-2xl p-4 shadow-sm mb-4 relative">
@@ -39,7 +49,7 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
       {loadingTip && <Loader2 className="h-4 w-4 animate-spin absolute right-4 top-4" />}
       <div className="grid grid-cols-4 gap-2">
         {TIP_PRESETS.map(pct => (
-          <button key={pct} onClick={() => { setCustomOpen(false); onSelect({ type: 'percent', pct }) }}
+          <button key={pct} onClick={() => { setCustomOpen(false); setCustomVal(''); onSelect({ type: 'percent', pct }) }}
             className={cn(
               'rounded-xl py-2.5 min-h-[48px] text-center transition-colors',
               isPreset(pct)
@@ -75,8 +85,8 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
             step="0.01"
             value={customVal}
             onChange={e => setCustomVal(e.target.value)}
-            onBlur={applyCustom}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCustom(); (e.target as HTMLInputElement).blur() } }}
+            onBlur={() => applyCustom(customVal)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCustom(customVal); (e.target as HTMLInputElement).blur() } }}
             placeholder="0.00"
             className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             autoFocus

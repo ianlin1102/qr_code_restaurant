@@ -423,7 +423,7 @@ export function payByPercent(
 
   const tax = sharedCalcTax(subtotal, rates.taxRate)
   const serviceFee = sharedCalcServiceFee(subtotal, rates.serviceFeeRate)
-  return { amount: subtotal, tax, serviceFee }
+  return { amount: subtotal + tax + serviceFee, tax, serviceFee }
 }
 
 /** Called by webhook AFTER payment confirmed — marks items as paid */

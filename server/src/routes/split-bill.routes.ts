@@ -18,7 +18,7 @@ router.get(
     const { storeId, sessionId } = req.params
     const splitBills = svc.getSplitBills(sessionId)
     const mainBill = svc.getMainBillSummary(sessionId, storeId)
-    res.json({ splitBills, mainBill })
+    res.json({ splits: splitBills, mainBill })
   },
 )
 
