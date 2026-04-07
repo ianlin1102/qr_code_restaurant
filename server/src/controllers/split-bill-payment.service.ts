@@ -1,8 +1,20 @@
-import { splitBillStore, paymentStore } from '../repositories/stores.js'
+import { splitBillStore, paymentStore, sessionStore } from '../repositories/stores.js'
 import { addPayment } from './session.service.js'
 import { getStripe } from '../lib/stripe.js'
 import logger from '../lib/logger.js'
 import type { SplitBill } from '@qr-order/shared'
+
+/** Mark split's items as paid in session.paidItemIds */
+function markSplitItemsPaid(sb: SplitBill) {
+  if (sb.type !== 'by-item' || !sb.itemKeys?.length) return
+  const session = sessionStore.getById(sb.sessionId)
+  if (!session) return
+  const existing = session.paidItemIds ?? []
+  sessionStore.update(sb.sessionId, {
+    settlementMode: 'by-item',
+    paidItemIds: [...existing, ...sb.itemKeys],
+  })
+}
 
 // ===== Pay Card (MVP simple — marks paid immediately) =====
 
@@ -22,6 +34,7 @@ export function paySplitBillCard(
     status: 'paid', paymentId: payResult.payment.id,
     paidAt: new Date().toISOString(), method: 'stripe',
   })
+  markSplitItemsPaid(sb)
   return { splitBill: splitBillStore.getById(splitBillId)! }
 }
 
@@ -47,6 +60,7 @@ export function paySplitBillCash(
     status: 'paid', paymentId: payResult.payment.id,
     paidAt: new Date().toISOString(), method: 'cash',
   })
+  markSplitItemsPaid(sb)
   return { splitBill: splitBillStore.getById(splitBillId)!, change: receivedAmount - total }
 }
 
