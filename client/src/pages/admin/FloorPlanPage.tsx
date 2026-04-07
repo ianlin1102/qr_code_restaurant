@@ -3,6 +3,7 @@ import { Pencil, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { usePermission } from '@/hooks/usePermission'
 import { useT } from '@/i18n/useT'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,7 +18,7 @@ export default function FloorPlanPage() {
   const { t } = useT()
   const navigate = useNavigate()
   const storeId = useAuthStore(s => s.user?.storeId) ?? ''
-  const isOwner = useAuthStore(s => s.isOwner)
+  const canEdit = usePermission('tables:write')
 
   const [tables, setTables] = useState<Table[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -69,7 +70,7 @@ export default function FloorPlanPage() {
               <Badge className="bg-green-100 text-green-700 border-0">{idleCount}</Badge>
             </div>
           </div>
-          {isOwner() && (
+          {canEdit && (
             <Button size="sm" variant="outline" onClick={() => navigate('/admin/floor-plan/editor')}>
               <Pencil className="size-3 mr-1" />{t.common.edit}
             </Button>

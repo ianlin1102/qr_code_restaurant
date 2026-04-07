@@ -35,7 +35,6 @@ function downloadCsv(data: AnalyticsResponse) {
 export default function AnalyticsPage() {
   const { t } = useT()
   const storeId = useAuthStore(s => s.user?.storeId)
-  const isOwner = useAuthStore(s => s.isOwner)
   const [[start, end], setRange] = useState(defaultRange)
   const [data, setData] = useState<AnalyticsResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -57,12 +56,6 @@ export default function AnalyticsPage() {
   }, [storeId, start, end])
 
   useEffect(() => { fetchData() }, [fetchData])
-
-  if (!isOwner()) return (
-    <div className="flex items-center justify-center h-64">
-      <p className="text-muted-foreground">{t.analytics.accessRestricted}</p>
-    </div>
-  )
 
   if (!storeId) return <div className="p-8 text-center text-muted-foreground">{t.analytics.noStore}</div>
 

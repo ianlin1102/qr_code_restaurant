@@ -35,7 +35,6 @@ function fmtDiscount(dt: DiscountType, v: number) {
 export default function CouponManagePage() {
   const { t, lang } = useT()
   const storeId = useAuthStore(s => s.user?.storeId)
-  const isOwner = useAuthStore(s => s.isOwner)
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -112,12 +111,6 @@ export default function CouponManagePage() {
     try { await api.deleteCoupon(storeId, c.id); await fetchCoupons() }
     catch (err) { setError(errMsg(err)) }
   }
-
-  if (!isOwner()) return (
-    <div className="flex items-center justify-center h-64">
-      <p className="text-muted-foreground">{t.coupons.accessRestricted}</p>
-    </div>
-  )
 
   if (loading) return (
     <div className="flex items-center justify-center h-64"><p className="text-muted-foreground">{t.coupons.loading}</p></div>

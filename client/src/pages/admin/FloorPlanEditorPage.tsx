@@ -31,7 +31,6 @@ type UpdateTableFn = (s: string, t: string, d: Partial<Table>) => Promise<Table>
 export default function FloorPlanEditorPage() {
   const navigate = useNavigate()
   const storeId = useAuthStore(s => s.user?.storeId)
-  const isOwner = useAuthStore(s => s.isOwner)
   const { t } = useT()
   const [tables, setTables] = useState<Table[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -113,11 +112,6 @@ export default function FloorPlanEditorPage() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [dirty])
 
-  if (!isOwner()) return (
-    <div className="flex items-center justify-center h-64">
-      <p className="text-muted-foreground">{t.analytics.accessRestricted}</p>
-    </div>
-  )
   if (!storeId) return <p className="p-8 text-muted-foreground">{t.floorPlan.notAuth}</p>
   if (loading) return (
     <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
