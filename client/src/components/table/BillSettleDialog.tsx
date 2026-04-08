@@ -67,7 +67,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
     fetchSession()
     api.getCoupons(storeId).then(setCoupons).catch(() => {})
     // Poll every 5s to detect customer payments / external changes
-    const id = setInterval(fetchSession, 5000)
+    const id = setInterval(fetchSession, 3000)
     return () => clearInterval(id)
   }, [open, fetchSession, storeId])
 

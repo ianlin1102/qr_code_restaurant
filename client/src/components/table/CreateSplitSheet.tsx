@@ -104,8 +104,10 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, sp
           .filter(([, qty]) => qty > 0)
           .map(([key, qty]) => `${key}:${qty}`)
         if (itemKeys.length === 0) { notify.warning('No items selected'); return }
+        if (localSubtotal < 100) { notify.error('Split amount must be at least $1.00'); return }
         await api.createSplitBill(storeId, sessionId, { type: 'by-item', itemKeys })
       } else {
+        if (percentAmount < 100) { notify.error('Split amount must be at least $1.00'); return }
         await api.createSplitBill(storeId, sessionId, { type: 'by-percent', percent })
       }
       onCreated()

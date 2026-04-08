@@ -26,6 +26,7 @@ interface PaymentState {
 let pollId: ReturnType<typeof setInterval> | null = null
 let currentStoreId: string | null = null
 let currentTableId: string | null = null
+let lastFp = ''
 
 async function fetchSession(storeId: string, tableId: string): Promise<SessionSummary | null> {
   let s = await api.getActiveSession(storeId, tableId)
@@ -52,14 +53,20 @@ export const usePaymentStore = create<PaymentState>()((set) => ({
       .then(s => set({ summary: s, sessionId: s?.id ?? null, loading: false }))
       .catch(() => set({ loading: false }))
 
-    // Start polling every 10s
+    // Start polling every 5s (detects admin/other device payments)
     if (pollId) clearInterval(pollId)
     pollId = setInterval(() => {
       if (!currentStoreId || !currentTableId) return
       api.getActiveSession(currentStoreId, currentTableId)
-        .then(s => { if (s) set({ summary: s, sessionId: s.id }) })
+        .then(s => {
+          if (!s) return
+          const fp = `${s.totalPaid}|${s.remaining}|${s.status}|${s.settlementMode}`
+          if (fp === lastFp) return
+          lastFp = fp
+          set({ summary: s, sessionId: s.id })
+        })
         .catch(() => {})
-    }, 10_000)
+    }, 5_000)
   },
 
   stop: () => {

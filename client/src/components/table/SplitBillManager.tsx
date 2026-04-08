@@ -75,7 +75,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
   useEffect(() => {
     if (!open) return
     refresh()
-    const id = setInterval(refresh, 5000)
+    const id = setInterval(refresh, 3000)
     return () => clearInterval(id)
   }, [open, refresh])
 
