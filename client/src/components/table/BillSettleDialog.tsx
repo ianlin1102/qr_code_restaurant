@@ -169,9 +169,11 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
 function SessionSummaryView({ session, ts, tc, lang }: {
   session: SessionSummary; ts: Record<string, string>; tc: Record<string, string>; lang: string
 }) {
+  const zh = lang === 'zh'
   return (
     <div className="space-y-2 text-sm">
-      <div className="flex justify-between">
+      {/* Bill breakdown (dimmed — reference info) */}
+      <div className="flex justify-between text-muted-foreground">
         <span>{ts.subtotal || 'Subtotal'}</span>
         <span>{formatPriceUSD(session.totalAmount)}</span>
       </div>
@@ -182,33 +184,35 @@ function SessionSummaryView({ session, ts, tc, lang }: {
         </div>
       )}
       {session.tax > 0 && (
-        <div className="flex justify-between">
+        <div className="flex justify-between text-muted-foreground">
           <span>{tc.tax || 'Tax'}</span>
           <span>{formatPriceUSD(session.tax)}</span>
         </div>
       )}
       {session.serviceFee > 0 && (
-        <div className="flex justify-between">
-          <span>{lang === 'zh' ? '服务费' : 'Service Fee'}</span>
+        <div className="flex justify-between text-muted-foreground">
+          <span>{zh ? '服务费' : 'Service Fee'}</span>
           <span>{formatPriceUSD(session.serviceFee)}</span>
         </div>
       )}
-      <div className="flex justify-between font-semibold border-t pt-2">
-        <span>{ts.totalDue || 'Total Due'}</span>
-        <span>{formatPriceUSD(session.netDue)}</span>
+      <div className="flex justify-between text-muted-foreground border-t pt-2">
+        <span>{zh ? '账单总计' : 'Bill Total'}</span>
+        <span>{formatPriceUSD(session.totalWithTax)}</span>
       </div>
+      {/* Paid amount */}
       {session.totalPaid > 0 && (
         <div className="flex justify-between text-blue-600">
           <span>{ts.paid || 'Paid'}</span>
-          <span>{formatPriceUSD(session.totalPaid)}</span>
+          <span>-{formatPriceUSD(session.totalPaid)}</span>
         </div>
       )}
-      {session.remaining > 0 && (
-        <div className="flex justify-between text-orange-600 font-medium">
-          <span>{ts.remaining || 'Remaining'}</span>
-          <span>{formatPriceUSD(session.remaining)}</span>
-        </div>
-      )}
+      {/* Remaining — the hero number, what actually needs to be collected */}
+      <div className="flex justify-between font-bold text-base border-t pt-2">
+        <span>{session.remaining > 0 ? (ts.remaining || 'Remaining') : (ts.allPaid || 'Fully Paid')}</span>
+        <span className={session.remaining > 0 ? 'text-orange-600' : 'text-green-600'}>
+          {formatPriceUSD(session.remaining)}
+        </span>
+      </div>
     </div>
   )
 }
