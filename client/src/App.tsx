@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { useSessionStore } from './stores/session-store'
 
 /** Global error boundary — prevents white screen on crash */
@@ -53,6 +54,7 @@ function FallbackRedirect() {
 export default function App() {
   return (
     <ErrorBoundary>
+    <Toaster position="top-center" richColors closeButton />
     <BrowserRouter>
       <Routes>
         {/* Customer routes */}

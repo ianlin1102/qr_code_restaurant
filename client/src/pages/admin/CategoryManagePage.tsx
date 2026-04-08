@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useT } from '@/i18n/useT'
 import { Loader2, GripVertical } from 'lucide-react'
 import { api } from '@/services/api'
+import { notify } from '@/lib/notify'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -95,7 +96,7 @@ export default function CategoryManagePage() {
   const handleDelete = async (cat: Category) => {
     const count = itemCountForCategory(cat.id)
     if (count > 0) {
-      alert(`Cannot delete "${localized(cat, lang)}": it has ${count} dishes. Please move or delete them first.`)
+      notify.error(`Cannot delete "${localized(cat, lang)}": it has ${count} dishes. Please move or delete them first.`)
       return
     }
     if (!confirm(`Delete category "${localized(cat, lang)}"?`)) return
@@ -268,7 +269,7 @@ export default function CategoryManagePage() {
                         await api.updateCategory(STORE_ID, cat.id, { active: checked })
                         await fetchData()
                       } catch (err) {
-                        alert(err instanceof Error ? err.message : 'Failed to update')
+                        notify.fromError(err, 'Failed to update')
                       }
                     }}
                   />
@@ -361,7 +362,7 @@ export default function CategoryManagePage() {
                               await api.updateCategory(STORE_ID, cat.id, { active: checked })
                               await fetchData()
                             } catch (err) {
-                              alert(err instanceof Error ? err.message : 'Failed to update')
+                              notify.fromError(err, 'Failed to update')
                             }
                           }}
                         />

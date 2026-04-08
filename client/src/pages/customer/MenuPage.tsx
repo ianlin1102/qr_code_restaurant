@@ -16,6 +16,7 @@ import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
 import { usePaymentStore } from '@/stores/payment-store'
 import { useCartSync } from '@/hooks/useCartSync'
+import { notify } from '@/lib/notify'
 import type { MenuResponse, MenuItem } from '@qr-order/shared'
 
 /** Strip ALL HTML — render announcement as safe plain text with line breaks */
@@ -108,7 +109,7 @@ export default function MenuPage() {
     const stale = cartItems.filter(ci => unavailIds.has(ci.menuItemId))
     if (stale.length === 0) return
     stale.forEach(ci => removeItem(ci.cartKey))
-    alert(t('menu.itemsSoldOut', { names: stale.map(ci => ci.name).join(', ') }))
+    notify.warning(t('menu.itemsSoldOut', { names: stale.map(ci => ci.name).join(', ') }))
   }, [cartItems, removeItem, t])
 
   // Poll menu every 30s for real-time sold-out updates

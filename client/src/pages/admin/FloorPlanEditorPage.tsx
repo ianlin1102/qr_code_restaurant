@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus, Save, Trash2, ArrowLeft, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
+import { notify } from '@/lib/notify'
 import { useAuthStore } from '@/stores/auth-store'
 import { useT } from '@/i18n/useT'
 import { Button } from '@/components/ui/button'
@@ -133,7 +134,7 @@ export default function FloorPlanEditorPage() {
           onDeleteZone={(z) => {
             const assigned = tables.filter(tb => tb.zone === z)
             if (assigned.length > 0) {
-              alert(`Cannot delete "${z}" — ${assigned.length} table(s) still assigned. Move them first.`)
+              notify.error(`Cannot delete "${z}" — ${assigned.length} table(s) still assigned. Move them first.`)
               return
             }
             setZones(prev => prev.filter(x => x !== z))

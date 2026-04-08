@@ -3,6 +3,7 @@ import { useT } from '@/i18n/useT'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
+import { notify } from '@/lib/notify'
 import { ArrowLeft, Plus, Minus, Send, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -93,7 +94,7 @@ export default function OrderingSheet({ open, onClose, storeId, tableId, tableNa
         })),
       })
       setCart([]); onOrderCreated(); onClose()
-    } catch (err) { alert(err instanceof Error ? err.message : 'Failed') }
+    } catch (err) { notify.fromError(err, 'Failed to place order') }
     finally { setSending(false) }
   }
 

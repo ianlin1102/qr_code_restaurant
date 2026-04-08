@@ -8,6 +8,7 @@ import { api, type SessionSummary } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
 import { calcSplitByPercent } from '@qr-order/shared/pricing'
+import { notify } from '@/lib/notify'
 import { localized } from '@/lib/i18n-utils'
 
 interface Props {
@@ -116,7 +117,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
         state: { clientSecret, amount, tableId: session.tableId, sessionId: session.id, settlement },
       })
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Payment failed')
+      notify.fromError(err, 'Payment failed')
     } finally {
       setLoading(false)
     }

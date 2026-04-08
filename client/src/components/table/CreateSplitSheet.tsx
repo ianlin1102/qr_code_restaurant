@@ -8,6 +8,7 @@ import { itemUnitPrice } from '@/lib/pricing'
 import { calcSplitByPercent } from '@qr-order/shared/pricing'
 import { localized } from '@/lib/i18n-utils'
 import { useT } from '@/i18n/useT'
+import { notify } from '@/lib/notify'
 import type { SplitBill } from '@qr-order/shared'
 
 interface Props {
@@ -104,8 +105,7 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, sp
       }
       onCreated()
     } catch (e) {
-      console.error(e)
-      alert(e instanceof Error ? e.message : 'Failed')
+      notify.fromError(e, 'Failed to create split')
     } finally {
       setLoading(false)
     }
