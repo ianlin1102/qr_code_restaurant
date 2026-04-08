@@ -158,6 +158,15 @@ export async function handleWebhookEvent(
       const result = addPayment(storeId, sessionId, pi.amount, paidBy || 'customer', pi.id, tipAmt)
       if ('error' in result) {
         logger.error({ error: result.error, paymentIntentId: pi.id }, 'webhook: failed to record session payment')
+        // Auto-refund if overpayment (session already fully paid)
+        if (result.error.includes('already fully paid')) {
+          try {
+            await getStripe().refunds.create({ payment_intent: pi.id })
+            logger.info({ paymentIntentId: pi.id, amount: pi.amount }, 'auto-refunded overpayment')
+          } catch (refundErr) {
+            logger.error({ paymentIntentId: pi.id, error: refundErr }, 'failed to auto-refund overpayment')
+          }
+        }
       } else {
         // Apply settlement side effects ONLY after payment confirmed
         const { settlementType } = pi.metadata

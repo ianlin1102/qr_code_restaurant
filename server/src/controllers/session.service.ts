@@ -92,6 +92,20 @@ export function addPayment(
   if (!session || session.storeId !== storeId) return { error: 'Session not found' }
 
   const tip = tipAmount ?? 0
+  const foodAmount = amount - tip
+
+  // Overpayment protection: reject if session is already fully paid
+  const netDue = session.totalAmount - session.discountAmount
+  const tax = calcTax(storeId, netDue)
+  const fee = calcServiceFee(storeId, netDue)
+  const totalWithTax = netDue + tax + fee
+  const newTotalPaid = session.totalPaid + foodAmount
+
+  if (session.totalPaid >= totalWithTax) {
+    logger.warn({ sessionId, amount, totalPaid: session.totalPaid, totalWithTax }, 'payment rejected: session already fully paid')
+    return { error: 'Session is already fully paid. Payment rejected to prevent overcharge.' }
+  }
+
   const payment: Payment = {
     id: uuid(), sessionId, storeId, amount,
     paidBy, stripePaymentIntentId,
@@ -99,13 +113,6 @@ export function addPayment(
     createdAt: new Date().toISOString(),
   }
   paymentStore.create(payment)
-
-  // totalPaid tracks food+tax+fee only — exclude tip
-  const newTotalPaid = session.totalPaid + (amount - tip)
-  const netDue = session.totalAmount - session.discountAmount
-  const tax = calcTax(storeId, netDue)
-  const fee = calcServiceFee(storeId, netDue)
-  const totalWithTax = netDue + tax + fee
   sessionStore.update(sessionId, { totalPaid: newTotalPaid })
 
   logger.info(
