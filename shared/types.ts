@@ -226,8 +226,9 @@ export interface Payment {
   id: string
   sessionId: string
   storeId: string
-  amount: number               // cents (food + tax + tip)
+  amount: number               // cents (food + tax + tip, capped at remaining if overpayment)
   tipAmount?: number           // cents, tip portion (excluded from bill settlement)
+  refundAmount?: number        // cents, auto-refunded excess due to concurrent overpayment
   stripePaymentIntentId?: string
   paidBy?: string              // customer name or "waiter" for cash
   method?: 'stripe' | 'cash'

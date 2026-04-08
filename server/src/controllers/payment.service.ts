@@ -158,14 +158,12 @@ export async function handleWebhookEvent(
       const result = addPayment(storeId, sessionId, pi.amount, paidBy || 'customer', pi.id, tipAmt)
       if ('error' in result) {
         logger.error({ error: result.error, paymentIntentId: pi.id }, 'webhook: failed to record session payment')
-        // Auto-refund if overpayment (session already fully paid)
-        if (result.error.includes('already fully paid')) {
-          try {
-            await getStripe().refunds.create({ payment_intent: pi.id })
-            logger.info({ paymentIntentId: pi.id, amount: pi.amount }, 'auto-refunded overpayment')
-          } catch (refundErr) {
-            logger.error({ paymentIntentId: pi.id, error: refundErr }, 'failed to auto-refund overpayment')
-          }
+        // Full refund if session was already fully paid
+        try {
+          await getStripe().refunds.create({ payment_intent: pi.id })
+          logger.info({ paymentIntentId: pi.id, amount: pi.amount }, 'auto-refunded: session already fully paid')
+        } catch (refundErr) {
+          logger.error({ paymentIntentId: pi.id, error: refundErr }, 'failed to auto-refund')
         }
       } else {
         // Apply settlement side effects ONLY after payment confirmed
@@ -178,6 +176,16 @@ export async function handleWebhookEvent(
         // Tag as stripe payment method
         if (result.payment) {
           paymentStore.update(result.payment.id, { method: 'stripe' })
+        }
+        // Partial refund if payment was capped (overpayment scenario)
+        if (result.payment && (result.payment as any).refundAmount > 0) {
+          const refundAmt = (result.payment as any).refundAmount
+          try {
+            await getStripe().refunds.create({ payment_intent: pi.id, amount: refundAmt })
+            logger.info({ paymentIntentId: pi.id, refundAmount: refundAmt }, 'partial refund: payment exceeded remaining')
+          } catch (refundErr) {
+            logger.error({ paymentIntentId: pi.id, refundAmount: refundAmt, error: refundErr }, 'failed to partial refund')
+          }
         }
         // Auto-delete conflicting unpaid splits after customer payment
         const invalidated = invalidateConflictingSplits(sessionId, storeId)

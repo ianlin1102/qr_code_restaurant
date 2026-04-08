@@ -94,26 +94,43 @@ export function addPayment(
   const tip = tipAmount ?? 0
   const foodAmount = amount - tip
 
-  // Overpayment protection: reject if session is already fully paid
+  // Calculate remaining before this payment
   const netDue = session.totalAmount - session.discountAmount
   const tax = calcTax(storeId, netDue)
   const fee = calcServiceFee(storeId, netDue)
   const totalWithTax = netDue + tax + fee
-  const newTotalPaid = session.totalPaid + foodAmount
+  const remaining = totalWithTax - session.totalPaid
 
-  if (session.totalPaid >= totalWithTax) {
+  // Overpayment protection (3 cases):
+  // Case 1: Session already fully paid → full reject
+  if (remaining <= 0) {
     logger.warn({ sessionId, amount, totalPaid: session.totalPaid, totalWithTax }, 'payment rejected: session already fully paid')
     return { error: 'Session is already fully paid. Payment rejected to prevent overcharge.' }
   }
 
+  // Case 2: Payment would exceed remaining → cap at remaining, flag refund needed
+  const effectiveFood = Math.min(foodAmount, remaining)
+  const refundAmount = foodAmount > remaining ? (foodAmount - remaining) : 0
+
   const payment: Payment = {
-    id: uuid(), sessionId, storeId, amount,
+    id: uuid(), sessionId, storeId,
+    amount: effectiveFood + tip,
     paidBy, stripePaymentIntentId,
     ...(tip > 0 ? { tipAmount: tip } : {}),
+    ...(refundAmount > 0 ? { refundAmount } : {}),
     createdAt: new Date().toISOString(),
   }
   paymentStore.create(payment)
+
+  const newTotalPaid = session.totalPaid + effectiveFood
   sessionStore.update(sessionId, { totalPaid: newTotalPaid })
+
+  if (refundAmount > 0) {
+    logger.warn(
+      { sessionId, originalAmount: foodAmount, effectiveAmount: effectiveFood, refundAmount, totalPaid: newTotalPaid, totalWithTax },
+      'payment capped at remaining — partial refund needed',
+    )
+  }
 
   logger.info(
     { sessionId, amount, totalPaid: newTotalPaid, totalWithTax, paidBy },
