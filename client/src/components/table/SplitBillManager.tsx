@@ -61,11 +61,17 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
       const freshSplits = data.splits ?? []
       setSplits(freshSplits)
       setMainBill(data.mainBill ?? { total: 0, itemCount: 0 })
-      setAllowed(prev => prev ?? deriveAllowedActions(summary, freshSplits))
+      setAllowed(deriveAllowedActions(summary, freshSplits))
     } catch (e) { console.error(e) }
   }, [storeId, sessionId])
 
-  useEffect(() => { if (open) refresh() }, [open, refresh])
+  // Initial fetch + poll every 5s while open (detects customer payments / external changes)
+  useEffect(() => {
+    if (!open) return
+    refresh()
+    const id = setInterval(refresh, 5000)
+    return () => clearInterval(id)
+  }, [open, refresh])
 
   const tipCents = Math.round((parseFloat(tipInput) || 0) * 100)
   const resetPay = () => { setPayTarget(null); setTipInput('') }

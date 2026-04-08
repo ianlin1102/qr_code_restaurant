@@ -57,10 +57,12 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
   }, [storeId, sessionId])
 
   useEffect(() => {
-    if (open) {
-      fetchSession()
-      api.getCoupons(storeId).then(setCoupons).catch(() => {})
-    }
+    if (!open) return
+    fetchSession()
+    api.getCoupons(storeId).then(setCoupons).catch(() => {})
+    // Poll every 5s to detect customer payments / external changes
+    const id = setInterval(fetchSession, 5000)
+    return () => clearInterval(id)
   }, [open, fetchSession, storeId])
 
   if (!session) return null
