@@ -4,7 +4,7 @@ import { formatPriceUSD } from '@/lib/format'
 import type { Order, OrderItem } from '@qr-order/shared'
 
 function itemUnitPrice(item: OrderItem): number {
-  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
 }
 
 function formatTime(dateStr: string): string {

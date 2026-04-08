@@ -26,7 +26,7 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 const ACTIVE: OrderStatus[] = ['pending', 'confirmed', 'preparing']
 
 function unitPrice(item: OrderItem): number {
-  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
 }
 
 function fmtTime(iso: string): string {

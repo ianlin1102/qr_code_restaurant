@@ -23,7 +23,7 @@ type Mode = 'equal' | 'by-item'
 type Translations = typeof import('@/i18n/admin').adminT.zh
 
 function itemLineTotal(item: Order['items'][number]) {
-  const optAdj = (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+  const optAdj = (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
   return (item.price + optAdj) * item.quantity
 }
 

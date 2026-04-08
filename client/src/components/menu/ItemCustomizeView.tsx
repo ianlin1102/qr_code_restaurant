@@ -36,7 +36,7 @@ export default function ItemCustomizeView({ item, t, onBack, onConfirm }: Props)
     .filter(o => o.required)
     .every(o => selected[o.id])
 
-  const optAdjust = Object.values(selected).reduce((s, o) => s + o.priceAdjust, 0)
+  const optAdjust = Object.values(selected).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
   const unitTotal = (item.price + optAdjust) * qty
 
   return (

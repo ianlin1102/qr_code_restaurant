@@ -45,7 +45,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
     for (const order of session.orders) {
       order.items.forEach((item, idx) => {
         const key = `${order.id}:${idx}`
-        const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+        const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
         // Parse paid quantity from paidItemIds (format: "orderId:idx" or "orderId:idx:qty")
         let paidQty = 0
         for (const pid of session.paidItemIds ?? []) {

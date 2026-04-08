@@ -90,7 +90,7 @@ export default function OrderHistoryPage() {
                       )}
                     </span>
                     <span className="text-muted-foreground">
-                      {formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}
+                      {formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity)}
                     </span>
                   </div>
                 ))}

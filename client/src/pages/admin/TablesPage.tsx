@@ -26,7 +26,7 @@ function elapsed(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 function itemPrice(it: OrderItem) {
-  return (it.price + (it.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * it.quantity
+  return (it.price + (it.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * it.quantity
 }
 
 export default function TablesPage() {

@@ -163,7 +163,7 @@ export default function OrderConfirmPage() {
                             </span>
                           )}
                         </div>
-                        <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
+                        <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity)}</span>
                       </div>
                     ))}
                   </div>
@@ -234,7 +234,7 @@ export default function OrderConfirmPage() {
                 {paidOrder.items.map((item, idx) => (
                   <div key={idx} className="flex justify-between text-sm">
                     <span><span className="font-medium">{item.quantity}x</span> {item.name}</span>
-                    <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity)}</span>
+                    <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity)}</span>
                   </div>
                 ))}
               </div>

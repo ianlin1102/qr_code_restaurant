@@ -60,7 +60,7 @@ export default function OrderingSheet({ open, onClose, storeId, tableId, tableNa
   }
 
   const addWithOptions = (item: MenuItem, qty: number, opts: SelectedOption[]) => {
-    const adjust = opts.reduce((s, o) => s + o.priceAdjust, 0)
+    const adjust = opts.reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
     const key = buildCartKey(item.id, opts)
     setCart(prev => {
       const ex = prev.find(i => i.cartKey === key)

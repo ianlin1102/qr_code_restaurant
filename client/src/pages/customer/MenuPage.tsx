@@ -330,7 +330,7 @@ export default function MenuPage() {
                 const itemKey = `${o.id}:${ii}`
                 const isPaid = paidIds.some(k => k === itemKey || k.startsWith(itemKey + ':'))
                 const isVoided = !!(item as { voided?: boolean }).voided
-                const price = isVoided ? 0 : (item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)) * item.quantity
+                const price = isVoided ? 0 : (item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity
                 return (
                   <div key={`${oi}-${ii}`} className={`flex justify-between text-xs ${isVoided ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>
                     <span>

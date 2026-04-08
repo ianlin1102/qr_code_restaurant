@@ -42,7 +42,7 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, on
     return session.orders.flatMap(order =>
       order.items.map((item, idx) => {
         const key = `${order.id}:${idx}`
-        const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+        const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
         let paidQty = 0
         for (const pid of paidIds) {
           if (pid === key) { paidQty = item.quantity; break }

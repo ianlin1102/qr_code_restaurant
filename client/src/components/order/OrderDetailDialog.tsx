@@ -24,7 +24,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 }
 
 function itemUnitPrice(item: OrderItem): number {
-  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
 }
 
 function formatTime(dateStr: string): string {

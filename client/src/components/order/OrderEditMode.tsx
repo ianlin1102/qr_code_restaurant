@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { Plus, Minus, Trash2, Search } from 'lucide-react'
 
 function unitPrice(it: OrderItem): number {
-  return it.price + (it.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
+  return it.price + (it.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
 }
 
 const DISCOUNTS = [10, 25, 50, 100] as const

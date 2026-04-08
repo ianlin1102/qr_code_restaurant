@@ -70,7 +70,7 @@ export default function MenuItemDetailSheet({ item, open, onClose }: Props) {
   }
 
   const optionsAdjust = Object.values(selectedOptions)
-    .reduce((sum, o) => sum + o.priceAdjust, 0)
+    .reduce((sum, o) => sum + (o.priceAdjust ?? 0), 0)
   const unitTotal = item.price + optionsAdjust
   const totalPrice = unitTotal * quantity
 
