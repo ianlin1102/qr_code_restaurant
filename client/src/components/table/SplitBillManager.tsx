@@ -24,7 +24,8 @@ function deriveAllowedActions(session: SessionSummary, splits: SplitBill[]): All
   const isPaid = session.remaining <= 0
   const hasUnpaidSplits = splits.some(s => s.status === 'unpaid')
   const hasPercentSplits = splits.some(s => s.type === 'by-percent')
-  const effectiveMode = session.settlementMode || (hasPercentSplits ? 'by-percent' : undefined)
+  // effectiveMode: percent splits always enforce by-percent; otherwise trust session.settlementMode
+  const effectiveMode = hasPercentSplits ? 'by-percent' : session.settlementMode
   return {
     payByItems: !isClosed && !isPaid && effectiveMode !== 'by-percent',
     payByPercent: !isClosed && !isPaid,

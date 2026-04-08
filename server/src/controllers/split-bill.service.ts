@@ -201,6 +201,27 @@ export function deleteSplitBill(
   if (!sb || sb.storeId !== storeId) return { error: 'Split bill not found' }
   if (sb.status !== 'unpaid') return { error: 'Can only delete unpaid split bills' }
   splitBillStore.delete(splitBillId)
+
+  // Recalculate settlementMode based on remaining splits + confirmed payments
+  const session = sessionStore.getById(sb.sessionId)
+  if (session) {
+    const remainingSplits = getSplitBills(sb.sessionId)
+    const hasPercentSplits = remainingSplits.some(s => s.type === 'by-percent')
+    const hasItemSplits = remainingSplits.some(s => s.type === 'by-item')
+    const hasPaidItems = (session.paidItemIds ?? []).length > 0
+
+    let newMode: 'by-item' | 'by-percent' | undefined
+    if (hasPercentSplits) newMode = 'by-percent'
+    else if (hasItemSplits || hasPaidItems) newMode = 'by-item'
+    else if (session.totalPaid > 0) newMode = session.settlementMode // confirmed payments exist, keep mode
+    else newMode = undefined
+
+    if (newMode !== session.settlementMode) {
+      sessionStore.update(sb.sessionId, { settlementMode: newMode })
+      logger.info({ sessionId: sb.sessionId, oldMode: session.settlementMode, newMode }, 'settlementMode recalculated after split deletion')
+    }
+  }
+
   logger.info({ splitBillId, sessionId: sb.sessionId }, 'split bill deleted')
   return { ok: true }
 }

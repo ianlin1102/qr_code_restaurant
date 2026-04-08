@@ -6,9 +6,10 @@ export function computeAllowedActions(ctx: SettlementContext): AllowedActions {
   const hasUnpaidSplits = splits.some(s => s.status === 'unpaid')
   const isClosed = session.status === 'closed'
 
-  // Effective mode: session.settlementMode OR derived from existing splits (defense layer)
+  // Effective mode: session.settlementMode (recalculated on split deletion)
+  // Defense layer: existing percent splits always enforce by-percent even if flag is stale
   const hasPercentSplits = splits.some(s => s.type === 'by-percent')
-  const effectiveMode = session.settlementMode || (hasPercentSplits ? 'by-percent' : undefined)
+  const effectiveMode = hasPercentSplits ? 'by-percent' as const : session.settlementMode
 
   return {
     // by-percent is hard lock: blocks by-item. by-item is soft lock: allows upgrade to by-percent.
