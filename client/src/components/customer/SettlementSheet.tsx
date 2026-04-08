@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { api, type SessionSummary } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { calcSplitByPercent } from '@qr-order/shared/pricing'
 import { localized } from '@/lib/i18n-utils'
 
@@ -45,7 +46,6 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
     for (const order of session.orders) {
       order.items.forEach((item, idx) => {
         const key = `${order.id}:${idx}`
-        const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
         // Parse paid quantity from paidItemIds (format: "orderId:idx" or "orderId:idx:qty")
         let paidQty = 0
         for (const pid of session.paidItemIds ?? []) {
@@ -55,7 +55,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
         result.push({
           key,
           name: localized(item, lang),
-          unitPrice: item.price + optAdjust,
+          unitPrice: itemUnitPrice(item),
           totalQty: item.quantity,
           paidQty: Math.min(paidQty, item.quantity),
           opts: (item.selectedOptions ?? []).map(o => ({

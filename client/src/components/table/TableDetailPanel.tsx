@@ -4,6 +4,7 @@ import { localized } from '@/lib/i18n-utils'
 import type { Table, Order, OrderItem, OrderStatus } from '@qr-order/shared'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -26,7 +27,7 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 const ACTIVE: OrderStatus[] = ['pending', 'confirmed', 'preparing']
 
 function unitPrice(item: OrderItem): number {
-  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
+  return itemUnitPrice(item)
 }
 
 function fmtTime(iso: string): string {

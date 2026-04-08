@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
+import { itemLineTotal } from '@/lib/pricing'
 import { api } from '@/services/api'
 import type { Order } from '@qr-order/shared'
 
@@ -90,7 +91,7 @@ export default function OrderHistoryPage() {
                       )}
                     </span>
                     <span className="text-muted-foreground">
-                      {formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity)}
+                      {formatPriceUSD(itemLineTotal(item))}
                     </span>
                   </div>
                 ))}

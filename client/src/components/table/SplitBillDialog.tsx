@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { formatPriceUSD } from '@/lib/format'
+import { itemLineTotal as pricingLineTotal } from '@/lib/pricing'
 import { api } from '@/services/api'
 import type { Order } from '@qr-order/shared'
 
@@ -23,8 +24,7 @@ type Mode = 'equal' | 'by-item'
 type Translations = typeof import('@/i18n/admin').adminT.zh
 
 function itemLineTotal(item: Order['items'][number]) {
-  const optAdj = (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
-  return (item.price + optAdj) * item.quantity
+  return pricingLineTotal(item)
 }
 
 export default function SplitBillDialog({ open, onClose, order, storeId }: Props) {

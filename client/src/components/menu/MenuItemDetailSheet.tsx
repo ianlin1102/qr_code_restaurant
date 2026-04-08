@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -69,9 +70,7 @@ export default function MenuItemDetailSheet({ item, open, onClose }: Props) {
     return item.options.filter(o => o.required).every(o => selectedOptions[o.id])
   }
 
-  const optionsAdjust = Object.values(selectedOptions)
-    .reduce((sum, o) => sum + (o.priceAdjust ?? 0), 0)
-  const unitTotal = item.price + optionsAdjust
+  const unitTotal = itemUnitPrice({ price: item.price, quantity: 1, selectedOptions: Object.values(selectedOptions) })
   const totalPrice = unitTotal * quantity
 
   const handleAdd = () => {

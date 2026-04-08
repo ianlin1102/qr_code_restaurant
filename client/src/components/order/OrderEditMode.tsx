@@ -3,14 +3,11 @@ import { useTranslation } from 'react-i18next'
 import type { Order, OrderItem, MenuItem } from '@qr-order/shared'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Plus, Minus, Trash2, Search } from 'lucide-react'
-
-function unitPrice(it: OrderItem): number {
-  return it.price + (it.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
-}
 
 const DISCOUNTS = [10, 25, 50, 100] as const
 
@@ -31,7 +28,7 @@ export default function OrderEditMode({ order, storeId, onSave, onCancel }: Prop
     }).catch(() => {})
   }, [storeId])
 
-  const subtotal = items.reduce((s, it) => s + unitPrice(it) * it.quantity, 0)
+  const subtotal = items.reduce((s, it) => s + itemUnitPrice(it) * it.quantity, 0)
   const discountAmt = Math.round(subtotal * discount / 100)
 
   const updateQty = (idx: number, delta: number) => {
@@ -137,7 +134,7 @@ function EditableItemRow({ item, idx, onQty, onRemove, onRemark }: {
     <div className="text-sm space-y-1">
       <div className="flex items-center justify-between">
         <span className="font-medium truncate flex-1">{item.name}</span>
-        <span className="shrink-0 ml-2">{formatPriceUSD(unitPrice(item) * item.quantity)}</span>
+        <span className="shrink-0 ml-2">{formatPriceUSD(itemUnitPrice(item) * item.quantity)}</span>
       </div>
       {opts && opts.length > 0 && (
         <p className="text-xs text-orange-600">{opts.map((o) => `${(o.optionName || o.optionNameEn || "")}: ${(o.choiceName || o.choiceNameEn || "")}`).join(' | ')}</p>

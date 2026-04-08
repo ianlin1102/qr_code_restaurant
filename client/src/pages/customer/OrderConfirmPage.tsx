@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { useSessionStore } from '@/stores/session-store'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
+import { itemLineTotal } from '@/lib/pricing'
 import { getDeviceId } from '@/lib/device-id'
 import { api } from '@/services/api'
 import type { Order } from '@qr-order/shared'
@@ -163,7 +164,7 @@ export default function OrderConfirmPage() {
                             </span>
                           )}
                         </div>
-                        <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity)}</span>
+                        <span className="text-muted-foreground">{formatPriceUSD(itemLineTotal(item))}</span>
                       </div>
                     ))}
                   </div>
@@ -234,7 +235,7 @@ export default function OrderConfirmPage() {
                 {paidOrder.items.map((item, idx) => (
                   <div key={idx} className="flex justify-between text-sm">
                     <span><span className="font-medium">{item.quantity}x</span> {item.name}</span>
-                    <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity)}</span>
+                    <span className="text-muted-foreground">{formatPriceUSD(itemLineTotal(item))}</span>
                   </div>
                 ))}
               </div>

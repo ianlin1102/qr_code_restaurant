@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { useSessionStore } from '@/stores/session-store'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
+import { itemLineTotal } from '@/lib/pricing'
 import { api } from '@/services/api'
 import TipSelector, { type TipSelection } from '@/components/shared/TipSelector'
 import { calcTip } from '@qr-order/shared/pricing'
@@ -75,7 +76,7 @@ function CheckoutForm({ amount, items }: { amount: number; items: { name: string
                     </span>
                   )}
                 </span>
-                <span className="text-muted-foreground">{formatPriceUSD((item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity)}</span>
+                <span className="text-muted-foreground">{formatPriceUSD(itemLineTotal(item))}</span>
               </div>
             ))}
           </div>

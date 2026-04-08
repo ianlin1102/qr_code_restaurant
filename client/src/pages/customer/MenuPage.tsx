@@ -5,6 +5,7 @@ import { api } from '@/services/api'
 import { useCartStore } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
+import { itemLineTotal } from '@/lib/pricing'
 import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -330,7 +331,7 @@ export default function MenuPage() {
                 const itemKey = `${o.id}:${ii}`
                 const isPaid = paidIds.some(k => k === itemKey || k.startsWith(itemKey + ':'))
                 const isVoided = !!(item as { voided?: boolean }).voided
-                const price = isVoided ? 0 : (item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * item.quantity
+                const price = isVoided ? 0 : itemLineTotal(item)
                 return (
                   <div key={`${oi}-${ii}`} className={`flex justify-between text-xs ${isVoided ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>
                     <span>

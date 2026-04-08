@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { api, type SessionSummary } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { calcSplitByPercent } from '@qr-order/shared/pricing'
 import { localized } from '@/lib/i18n-utils'
 import { useT } from '@/i18n/useT'
@@ -42,13 +43,12 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, on
     return session.orders.flatMap(order =>
       order.items.map((item, idx) => {
         const key = `${order.id}:${idx}`
-        const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
         let paidQty = 0
         for (const pid of paidIds) {
           if (pid === key) { paidQty = item.quantity; break }
           if (pid.startsWith(key + ':')) paidQty += parseInt(pid.split(':')[2], 10) || 0
         }
-        return { key, name: localized(item, lang), unitPrice: item.price + optAdjust,
+        return { key, name: localized(item, lang), unitPrice: itemUnitPrice(item),
           totalQty: item.quantity, paidQty: Math.min(paidQty, item.quantity) }
       }),
     )

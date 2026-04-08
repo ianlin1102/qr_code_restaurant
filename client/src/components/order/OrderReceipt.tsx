@@ -1,11 +1,8 @@
 import { forwardRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatPriceUSD } from '@/lib/format'
-import type { Order, OrderItem } from '@qr-order/shared'
-
-function itemUnitPrice(item: OrderItem): number {
-  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
-}
+import { itemUnitPrice } from '@/lib/pricing'
+import type { Order } from '@qr-order/shared'
 
 function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleString('zh-CN', {

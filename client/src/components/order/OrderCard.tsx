@@ -4,11 +4,12 @@ import { useT } from '@/i18n/useT'
 import { localized } from '@/lib/i18n-utils'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import type { Order, OrderItem, OrderStatus } from '@qr-order/shared'
+import type { Order, OrderStatus } from '@qr-order/shared'
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   pending: 'bg-orange-100 text-orange-800 border-orange-200',
@@ -34,10 +35,6 @@ function timeColor(dateStr: string): string {
   if (minutes < 15) return 'text-green-600'
   if (minutes < 30) return 'text-orange-500'
   return 'text-red-600'
-}
-
-function itemUnitPrice(item: OrderItem): number {
-  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
 }
 
 interface Props {

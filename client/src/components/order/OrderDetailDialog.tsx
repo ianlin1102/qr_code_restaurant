@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { useT } from '@/i18n/useT'
 import { localized } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
@@ -12,7 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import OrderReceipt from '@/components/order/OrderReceipt'
-import type { Order, OrderItem, OrderStatus } from '@qr-order/shared'
+import type { Order, OrderStatus } from '@qr-order/shared'
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   pending: 'bg-orange-100 text-orange-800 border-orange-200',
@@ -21,10 +22,6 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   served: 'bg-green-100 text-green-800 border-green-200',
   paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   closed: 'bg-gray-100 text-gray-800 border-gray-200',
-}
-
-function itemUnitPrice(item: OrderItem): number {
-  return item.price + (item.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
 }
 
 function formatTime(dateStr: string): string {

@@ -8,6 +8,7 @@ import {
 import { api, type SessionSummary } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { formatPriceUSD } from '@/lib/format'
+import { itemLineTotal } from '@/lib/pricing'
 import { localized } from '@/lib/i18n-utils'
 import { printQrCodes } from '@/lib/qr-pdf'
 import { Button } from '@/components/ui/button'
@@ -26,7 +27,7 @@ function elapsed(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 function itemPrice(it: OrderItem) {
-  return (it.price + (it.selectedOptions ?? []).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)) * it.quantity
+  return itemLineTotal(it)
 }
 
 export default function TablesPage() {

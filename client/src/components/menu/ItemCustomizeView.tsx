@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { ArrowLeft, Plus, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,8 +37,7 @@ export default function ItemCustomizeView({ item, t, onBack, onConfirm }: Props)
     .filter(o => o.required)
     .every(o => selected[o.id])
 
-  const optAdjust = Object.values(selected).reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
-  const unitTotal = (item.price + optAdjust) * qty
+  const unitTotal = itemUnitPrice({ price: item.price, quantity: 1, selectedOptions: Object.values(selected) }) * qty
 
   return (
     <div className="flex flex-col h-full">

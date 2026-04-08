@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useT } from '@/i18n/useT'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
+import { itemUnitPrice } from '@/lib/pricing'
 import { ArrowLeft, Plus, Minus, Send, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -60,13 +61,13 @@ export default function OrderingSheet({ open, onClose, storeId, tableId, tableNa
   }
 
   const addWithOptions = (item: MenuItem, qty: number, opts: SelectedOption[]) => {
-    const adjust = opts.reduce((s, o) => s + (o.priceAdjust ?? 0), 0)
+    const price = itemUnitPrice({ price: item.price, quantity: 1, selectedOptions: opts })
     const key = buildCartKey(item.id, opts)
     setCart(prev => {
       const ex = prev.find(i => i.cartKey === key)
       if (ex) return prev.map(i => i.cartKey === key ? { ...i, quantity: i.quantity + qty } : i)
       return [...prev, {
-        menuItemId: item.id, name: item.name, price: item.price + adjust,
+        menuItemId: item.id, name: item.name, price,
         quantity: qty, cartKey: key, selectedOptions: opts,
       }]
     })
