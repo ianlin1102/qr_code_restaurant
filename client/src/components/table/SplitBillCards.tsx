@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { formatPriceUSD } from '@/lib/format'
+import type { AllowedActions } from '@/services/api'
 import type { SplitBill } from '@qr-order/shared'
 
 type Ts = Record<string, string>
@@ -18,9 +19,10 @@ export function TipInput({ value, onChange, label }: {
   )
 }
 
-export function MainBillCard({ label, badge, total, ts, onPayCard, onPayCash, onSplit }: {
+export function MainBillCard({ label, badge, total, ts, allowed, onPayCard, onPayCash, onSplit }: {
   label: string; badge: string; total: number
-  ts: Ts; onPayCard: () => void; onPayCash: () => void; onSplit: () => void
+  ts: Ts; allowed?: AllowedActions | null
+  onPayCard: () => void; onPayCash: () => void; onSplit: () => void
 }) {
   return (
     <div className="border rounded-lg p-3 space-y-2">
@@ -31,17 +33,17 @@ export function MainBillCard({ label, badge, total, ts, onPayCard, onPayCash, on
       <p className="text-lg font-bold">{formatPriceUSD(total)}</p>
       {total > 0 && (
         <div className="flex gap-2">
-          <Button size="sm" className="flex-1 min-h-[44px]" onClick={onPayCard}>{ts.payCard}</Button>
-          <Button size="sm" variant="outline" className="flex-1 min-h-[44px]" onClick={onPayCash}>{ts.payCash}</Button>
-          <Button size="sm" variant="secondary" className="flex-1 min-h-[44px]" onClick={onSplit}>{ts.split}</Button>
+          <Button size="sm" className="flex-1 min-h-[44px]" disabled={!allowed?.cashPayment} onClick={onPayCard}>{ts.payCard}</Button>
+          <Button size="sm" variant="outline" className="flex-1 min-h-[44px]" disabled={!allowed?.cashPayment} onClick={onPayCash}>{ts.payCash}</Button>
+          <Button size="sm" variant="secondary" className="flex-1 min-h-[44px]" disabled={!allowed?.createSplitByItem && !allowed?.createSplitByPercent} onClick={onSplit}>{ts.split}</Button>
         </div>
       )}
     </div>
   )
 }
 
-export function SplitCard({ split, ts, onPayCard, onPayCash, onMerge }: {
-  split: SplitBill; ts: Ts
+export function SplitCard({ split, ts, allowed, onPayCard, onPayCash, onMerge }: {
+  split: SplitBill; ts: Ts; allowed?: AllowedActions | null
   onPayCard: () => void; onPayCash: () => void; onMerge: () => void
 }) {
   const typeBadge = split.type === 'by-item' ? ts.byItemMode : ts.byPercentMode
@@ -65,9 +67,9 @@ export function SplitCard({ split, ts, onPayCard, onPayCash, onMerge }: {
       )}
       {split.status === 'unpaid' && (
         <div className="flex gap-2">
-          <Button size="sm" className="flex-1 min-h-[44px]" onClick={onPayCard}>{ts.payCard}</Button>
-          <Button size="sm" variant="outline" className="flex-1 min-h-[44px]" onClick={onPayCash}>{ts.payCash}</Button>
-          <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={onMerge}>{ts.mergeBack}</Button>
+          <Button size="sm" className="flex-1 min-h-[44px]" disabled={!allowed?.paySplit} onClick={onPayCard}>{ts.payCard}</Button>
+          <Button size="sm" variant="outline" className="flex-1 min-h-[44px]" disabled={!allowed?.paySplit} onClick={onPayCash}>{ts.payCash}</Button>
+          <Button size="sm" variant="ghost" className="min-h-[44px]" disabled={!allowed?.deleteSplit} onClick={onMerge}>{ts.mergeBack}</Button>
         </div>
       )}
       {split.status === 'pending-capture' && (

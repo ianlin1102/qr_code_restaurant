@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
-import { api, type SessionSummary } from '@/services/api'
+import { api, type SessionSummary, type AllowedActions } from '@/services/api'
 import type { SplitBill } from '@qr-order/shared'
 import { useT } from '@/i18n/useT'
 import CashPaymentPad from './CashPaymentPad'
@@ -19,6 +19,24 @@ interface Props {
 
 type PayTarget = { id: string; amount: number; method: 'card' | 'cash' }
 
+function deriveAllowedActions(session: SessionSummary, splits: SplitBill[]): AllowedActions {
+  const isClosed = session.status === 'closed'
+  const isPaid = session.remaining <= 0
+  const mode = session.settlementMode
+  const hasUnpaidSplits = splits.some(s => s.status === 'unpaid')
+  return {
+    payByItems: !isClosed && !isPaid && mode !== 'by-percent',
+    payByPercent: !isClosed && !isPaid,
+    cashPayment: !isClosed && !isPaid,
+    createSplitByItem: !isClosed && !isPaid && mode !== 'by-percent',
+    createSplitByPercent: !isClosed && !isPaid,
+    paySplit: !isClosed && hasUnpaidSplits,
+    deleteSplit: !isClosed && hasUnpaidSplits,
+    closeSession: !isClosed && isPaid,
+    reopenSession: isClosed,
+  }
+}
+
 export default function SplitBillManager({ open, onClose, storeId, sessionId }: Props) {
   const { t, lang } = useT()
   const ts = t.splitBill
@@ -29,6 +47,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
   const [tipInput, setTipInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [allowed, setAllowed] = useState<AllowedActions | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -37,8 +56,10 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
         api.getSplitBills(storeId, sessionId),
       ])
       setSession(summary)
-      setSplits(data.splits ?? [])
+      const freshSplits = data.splits ?? []
+      setSplits(freshSplits)
       setMainBill(data.mainBill ?? { total: 0, itemCount: 0 })
+      setAllowed(prev => prev ?? deriveAllowedActions(summary, freshSplits))
     } catch (e) { console.error(e) }
   }, [storeId, sessionId])
 
@@ -51,11 +72,12 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
     setLoading(true)
     try {
       if (splitId === 'main') {
-        // Main bill: use session payment endpoint — pay remaining balance
         const amount = (session?.remaining ?? 0) + tipCents
-        await api.addPayment(storeId, sessionId, amount, 'waiter')
+        const result = await api.addPayment(storeId, sessionId, amount, 'waiter')
+        if (result.allowedActions) setAllowed(result.allowedActions)
       } else {
-        await api.paySplitBillCard(storeId, sessionId, splitId, tipCents || undefined)
+        const result = await api.paySplitBillCard(storeId, sessionId, splitId, tipCents || undefined)
+        if ('allowedActions' in result) setAllowed(result.allowedActions)
       }
       resetPay()
       await refresh()
@@ -68,9 +90,11 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
     try {
       if (splitId === 'main') {
         const amount = (session?.remaining ?? 0) + tipCents
-        await api.recordCashPayment(storeId, sessionId, amount, received)
+        const result = await api.recordCashPayment(storeId, sessionId, amount, received)
+        if (result.allowedActions) setAllowed(result.allowedActions)
       } else {
-        await api.paySplitBillCash(storeId, sessionId, splitId, received, tipCents || undefined)
+        const result = await api.paySplitBillCash(storeId, sessionId, splitId, received, tipCents || undefined)
+        if (result.allowedActions) setAllowed(result.allowedActions)
       }
       resetPay()
       await refresh()
@@ -80,14 +104,20 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
 
   const handleMerge = async (splitId: string) => {
     if (!confirm(ts.mergeConfirm)) return
-    try { await api.deleteSplitBill(storeId, sessionId, splitId); await refresh() }
-    catch (e) { console.error(e) }
+    try {
+      const result = await api.deleteSplitBill(storeId, sessionId, splitId)
+      if (result.allowedActions) setAllowed(result.allowedActions)
+      await refresh()
+    } catch (e) { console.error(e) }
   }
 
   const handleCloseSession = async () => {
     setLoading(true)
-    try { await api.closeSession(storeId, sessionId); onClose() }
-    catch (e) { console.error(e) }
+    try {
+      const result = await api.closeSession(storeId, sessionId)
+      if (result.allowedActions) setAllowed(result.allowedActions)
+      onClose()
+    } catch (e) { console.error(e) }
     setLoading(false)
   }
 
@@ -136,13 +166,13 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
           <DialogHeader><DialogTitle>{ts.title}</DialogTitle></DialogHeader>
 
           <MainBillCard label={ts.mainBill} badge={`${mb.itemCount} ${ts.items}`}
-            total={mb.total} ts={ts}
+            total={mb.total} ts={ts} allowed={allowed}
             onPayCard={() => setPay('main', mb.total, 'card')}
             onPayCash={() => setPay('main', mb.total, 'cash')}
             onSplit={() => setSheetOpen(true)} />
 
           {splits.map(s => (
-            <SplitCard key={s.id} split={s} ts={ts}
+            <SplitCard key={s.id} split={s} ts={ts} allowed={allowed}
               onPayCard={() => setPay(s.id, s.total, 'card')}
               onPayCash={() => setPay(s.id, s.total, 'cash')}
               onMerge={() => handleMerge(s.id)} />
@@ -154,7 +184,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
             <div className="flex justify-between font-semibold text-orange-600"><span>{ts.sessionRemaining}</span><span>{formatPriceUSD(session.remaining)}</span></div>
           </div>
 
-          {session.isPaid && session.status !== 'closed' && (
+          {allowed?.closeSession && (
             <Button className="w-full min-h-[44px]" onClick={handleCloseSession} disabled={loading}>
               {loading && <Loader2 className="size-4 mr-2 animate-spin" />}{ts.closeSession}
             </Button>
@@ -164,7 +194,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
 
       <CreateSplitSheet open={sheetOpen} onClose={() => setSheetOpen(false)}
         storeId={storeId} sessionId={sessionId}
-        splits={splits} mainBillTotal={mb.total}
+        splits={splits} mainBillTotal={mb.total} allowed={allowed}
         onCreated={() => { setSheetOpen(false); refresh() }} />
     </>
   )

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
-import { api, type SessionSummary } from '@/services/api'
+import { api, type SessionSummary, type AllowedActions } from '@/services/api'
 import type { Coupon, Payment } from '@qr-order/shared'
 import CashPaymentPad from './CashPaymentPad'
 
@@ -20,8 +20,25 @@ interface Props {
   lang: string
 }
 
+function deriveAllowed(s: SessionSummary): AllowedActions {
+  const isClosed = s.status === 'closed'
+  const isPaid = s.remaining <= 0
+  return {
+    payByItems: !isClosed && !isPaid && s.settlementMode !== 'by-percent',
+    payByPercent: !isClosed && !isPaid,
+    cashPayment: !isClosed && !isPaid,
+    createSplitByItem: !isClosed && !isPaid && s.settlementMode !== 'by-percent',
+    createSplitByPercent: !isClosed && !isPaid,
+    paySplit: false,
+    deleteSplit: false,
+    closeSession: !isClosed && isPaid,
+    reopenSession: isClosed,
+  }
+}
+
 export default function BillSettleDialog({ open, onClose, storeId, sessionId, t, lang }: Props) {
   const [session, setSession] = useState<SessionSummary | null>(null)
+  const [allowed, setAllowed] = useState<AllowedActions | null>(null)
   const [couponCode, setCouponCode] = useState('')
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [payMethod, setPayMethod] = useState<'stripe' | 'cash' | null>(null)
@@ -35,6 +52,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
     try {
       const data = await api.getSessionSummary(storeId, sessionId)
       setSession(data)
+      setAllowed(deriveAllowed(data))
     } catch (e) { console.error(e) }
   }, [storeId, sessionId])
 
@@ -71,7 +89,8 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
   const handleCloseSession = async () => {
     setLoading(true)
     try {
-      await api.closeSession(storeId, sessionId)
+      const result = await api.closeSession(storeId, sessionId)
+      if (result.allowedActions) setAllowed(result.allowedActions)
       onClose()
     } catch (e) { console.error(e) }
     setLoading(false)
@@ -79,7 +98,8 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
 
   const handleReopenSession = async () => {
     try {
-      await api.reopenSession(storeId, sessionId)
+      const result = await api.reopenSession(storeId, sessionId)
+      if (result.allowedActions) setAllowed(result.allowedActions)
       fetchSession()
     } catch (e) { console.error(e) }
   }
@@ -98,12 +118,13 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
           onApply={handleApplyCoupon} onRemove={handleRemoveCoupon} ts={ts} tc={tc}
         />
 
-        {session.status !== 'closed' && session.remaining > 0 && (
+        {allowed?.cashPayment && (
           <PaymentMethodSection
             session={session} storeId={storeId} sessionId={sessionId}
             payMethod={payMethod} setPayMethod={setPayMethod}
             paying={paying} setPaying={setPaying}
-            fetchSession={fetchSession} ts={ts} lang={lang}
+            fetchSession={fetchSession} setAllowed={setAllowed}
+            ts={ts} lang={lang}
           />
         )}
 
@@ -111,7 +132,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
           <PaymentList payments={session.payments} ts={ts} />
         )}
 
-        {session.isPaid && session.status !== 'closed' && (
+        {allowed?.closeSession && (
           <div className="space-y-2">
             <p className="text-center py-2 text-green-600 font-medium">
               {ts.allPaid || 'Fully Paid!'}
@@ -123,7 +144,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
           </div>
         )}
 
-        {session.status === 'closed' && (
+        {allowed?.reopenSession && (
           <div className="space-y-2">
             <p className="text-center py-2 text-green-600 font-medium">
               {ts.sessionClosed || 'Session Closed'}
@@ -241,19 +262,20 @@ function PaymentList({ payments, ts }: {
   )
 }
 
-function PaymentMethodSection({ session, storeId, sessionId, payMethod, setPayMethod, paying, setPaying, fetchSession, ts, lang }: {
+function PaymentMethodSection({ session, storeId, sessionId, payMethod, setPayMethod, paying, setPaying, fetchSession, setAllowed, ts, lang }: {
   session: SessionSummary; storeId: string; sessionId: string
   payMethod: 'stripe' | 'cash' | null; setPayMethod: (v: 'stripe' | 'cash' | null) => void
   paying: boolean; setPaying: (v: boolean) => void
-  fetchSession: () => void; ts: Record<string, string>; lang: string
+  fetchSession: () => void; setAllowed: (v: AllowedActions) => void
+  ts: Record<string, string>; lang: string
 }) {
   const zh = lang === 'zh'
 
   const handleCardCharge = async () => {
     setPaying(true)
     try {
-      // Admin confirms card payment (terminal/external) — record directly like cash but tagged as stripe
-      await api.addPayment(storeId, sessionId, session.remaining, 'card')
+      const result = await api.addPayment(storeId, sessionId, session.remaining, 'card')
+      if (result.allowedActions) setAllowed(result.allowedActions)
       setPayMethod(null)
       fetchSession()
     } catch (e) { console.error(e) }
@@ -263,7 +285,8 @@ function PaymentMethodSection({ session, storeId, sessionId, payMethod, setPayMe
   const handleCashConfirm = async (receivedAmount: number) => {
     setPaying(true)
     try {
-      await api.recordCashPayment(storeId, sessionId, session.remaining, receivedAmount)
+      const result = await api.recordCashPayment(storeId, sessionId, session.remaining, receivedAmount)
+      if (result.allowedActions) setAllowed(result.allowedActions)
       setPayMethod(null)
       fetchSession()
     } catch (e) { console.error(e) }

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Minus, Plus } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { api, type SessionSummary } from '@/services/api'
+import { api, type SessionSummary, type AllowedActions } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
 import { calcSplitByPercent } from '@qr-order/shared/pricing'
@@ -34,7 +34,21 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   const t = (zh: string, en: string) => lang === 'zh' ? zh : en
 
   const remaining = session.remaining ?? 0
-  const lockedPercent = session.settlementMode === 'by-percent'
+  const [allowed, setAllowed] = useState<AllowedActions | null>(null)
+  // Derive initial allowedActions from session state; updated with real server values after API calls
+  useEffect(() => {
+    const mode = session.settlementMode
+    setAllowed({
+      payByItems: mode !== 'by-percent',
+      payByPercent: true,
+      cashPayment: true,
+      createSplitByItem: mode !== 'by-percent',
+      createSplitByPercent: true,
+      paySplit: false, deleteSplit: false,
+      closeSession: false, reopenSession: false,
+    })
+  }, [session.settlementMode])
+  const lockedPercent = allowed ? !allowed.payByItems : session.settlementMode === 'by-percent'
   const [tab, setTab] = useState<Tab>(lockedPercent ? 'percent' : 'items')
   // Map of "orderId:idx" → quantity to pay (0 = not selected)
   const [selectedQty, setSelectedQty] = useState<Record<string, number>>({})
@@ -89,6 +103,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
         const amt = r.amount ?? 0, tx = r.tax ?? 0, sf = r.serviceFee ?? 0
         setCalc({ subtotal: amt - tx - sf, tax: tx, svc: sf, total: amt })
         setCalcError(null)
+        if (r.allowedActions) setAllowed(r.allowedActions)
       }).catch((err) => {
         setCalc({ subtotal: 0, tax: 0, svc: 0, total: 0 })
         setCalcError(err instanceof Error ? err.message : t('金额不满足最低要求', 'Amount does not meet minimum requirement'))

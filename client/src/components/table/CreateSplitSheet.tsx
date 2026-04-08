@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { api, type SessionSummary } from '@/services/api'
+import { api, type SessionSummary, type AllowedActions } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
 import { calcSplitByPercent } from '@qr-order/shared/pricing'
@@ -18,12 +18,13 @@ interface Props {
   sessionId: string
   splits: SplitBill[]
   mainBillTotal: number
+  allowed: AllowedActions | null
   onCreated: () => void
 }
 
 type Tab = 'items' | 'percent'
 
-export default function CreateSplitSheet({ open, onClose, storeId, sessionId, splits, mainBillTotal, onCreated }: Props) {
+export default function CreateSplitSheet({ open, onClose, storeId, sessionId, splits, mainBillTotal, allowed, onCreated }: Props) {
   const { t, lang } = useT()
   const ts = t.splitBill
   const [tab, setTab] = useState<Tab>('items')
@@ -31,7 +32,7 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, sp
   const [selectedQty, setSelectedQty] = useState<Record<string, number>>({})
   const [percent, setPercent] = useState(50)
   const [loading, setLoading] = useState(false)
-  const lockedPercent = session?.settlementMode === 'by-percent'
+  const lockedPercent = allowed ? !allowed.createSplitByItem : session?.settlementMode === 'by-percent'
 
   useEffect(() => {
     if (open) {
@@ -216,7 +217,11 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, sp
             <span>{ts.subtotal}</span>
             <span>{formatPriceUSD(tab === 'items' ? localSubtotal : percentAmount)}</span>
           </div>
-          <Button className="w-full min-h-[44px]" disabled={loading || !hasSelection} onClick={handleCreate}>
+          <Button className="w-full min-h-[44px]" disabled={
+            loading || !hasSelection
+            || (tab === 'items' && allowed != null && !allowed.createSplitByItem)
+            || (tab === 'percent' && allowed != null && !allowed.createSplitByPercent)
+          } onClick={handleCreate}>
             {loading ? ts.processing : ts.createSplit}
           </Button>
         </div>
