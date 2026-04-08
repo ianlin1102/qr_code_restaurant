@@ -35,29 +35,62 @@ export function invalidateConflictingSplits(sessionId: string, storeId: string):
     if (sb.status !== 'unpaid') continue
 
     let conflict = false
+    let reason = ''
+
     if (sb.type === 'by-item' && sb.itemKeys) {
+      // Conflict 1: items overlap with paid items
       for (const key of sb.itemKeys) {
         const parts = key.split(':')
         const baseKey = `${parts[0]}:${parts[1]}`
         if (paidQtyMap.has(baseKey)) {
           conflict = true
+          reason = 'item overlap with paid items'
           break
         }
       }
+      // Conflict 2: mode upgraded to by-percent (by-item splits are invalid)
+      if (!conflict && session.settlementMode === 'by-percent') {
+        conflict = true
+        reason = 'mode upgraded to by-percent'
+      }
     } else if (sb.type === 'by-percent') {
+      // Conflict: remaining balance changed, split amount no longer matches
       const mainBill = getMainBillSummary(sessionId, storeId)
       if (mainBill) {
         const nowSubtotal = Math.round(mainBill.subtotal * (sb.percent ?? 0) / 100)
-        if (Math.abs(nowSubtotal - sb.subtotal) > 1) conflict = true
+        if (Math.abs(nowSubtotal - sb.subtotal) > 1) {
+          conflict = true
+          reason = `subtotal changed: was ${sb.subtotal}, now ${nowSubtotal}`
+        }
       }
     }
 
     if (conflict) {
       splitBillStore.delete(sb.id)
-      logger.info({ splitBillId: sb.id, sessionId, type: sb.type }, 'split bill auto-invalidated after customer payment')
+      logger.info({ splitBillId: sb.id, sessionId, type: sb.type, reason }, 'split bill auto-invalidated after customer payment')
       deleted++
     }
   }
+
+  // Recalculate settlementMode if splits were invalidated
+  if (deleted > 0) {
+    const remainingSplits = getSplitBills(sessionId)
+    const hasPercentSplits = remainingSplits.some(s => s.type === 'by-percent')
+    const hasItemSplits = remainingSplits.some(s => s.type === 'by-item')
+    const hasPaidItems = (session.paidItemIds ?? []).length > 0
+
+    let newMode: 'by-item' | 'by-percent' | undefined
+    if (hasPercentSplits) newMode = 'by-percent'
+    else if (session.settlementMode === 'by-percent') newMode = 'by-percent' // confirmed percent payment
+    else if (hasItemSplits || hasPaidItems) newMode = 'by-item'
+    else newMode = undefined
+
+    if (newMode !== session.settlementMode) {
+      sessionStore.update(sessionId, { settlementMode: newMode })
+      logger.info({ sessionId, oldMode: session.settlementMode, newMode }, 'settlementMode recalculated after split invalidation')
+    }
+  }
+
   return deleted
 }
 
