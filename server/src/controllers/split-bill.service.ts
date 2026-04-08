@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import { splitBillStore, orderStore, sessionStore, storeStore } from '../repositories/stores.js'
 import { unitPrice as calcUnitPrice, calcTaxAndFees, validateSplit } from '@qr-order/shared/pricing'
+import { getSessionSummary } from './session.service.js'
 import logger from '../lib/logger.js'
 import type { SplitBill } from '@qr-order/shared'
 
@@ -180,11 +181,25 @@ export function createSplitBill(
     if ('error' in result) return result
     subtotal = result.subtotal
   } else {
-    const mainBill = getMainBillSummary(sessionId, storeId)
-    if (!mainBill) return { error: 'Cannot compute main bill' }
     const pct = data.percent ?? 0
     if (pct < 1 || pct > 100) return { error: 'Percent must be 1-100' }
-    subtotal = Math.round(mainBill.subtotal * pct / 100)
+
+    // Base for percent split = session remaining minus existing unpaid split totals
+    // This accounts for customer payments already made
+    const summary = getSessionSummary(storeId, sessionId)
+    const remaining = summary?.remaining ?? 0
+    const existingSplits = getSplitBills(sessionId)
+    const unpaidSplitTotal = existingSplits.filter((s: SplitBill) => s.status === 'unpaid').reduce((sum: number, s: SplitBill) => sum + s.total, 0)
+    const availableForSplit = Math.max(0, remaining - unpaidSplitTotal)
+
+    // Back-calculate subtotal from available amount (remove tax/fee portion)
+    const store = storeStore.getById(storeId)
+    const taxRate = (store?.taxRate ?? 0) / 100
+    const feeRate = (store?.serviceFeeRate ?? 0) / 100
+    const totalRate = 1 + taxRate + feeRate
+    const availableSubtotal = Math.round(availableForSplit / totalRate)
+
+    subtotal = Math.round(availableSubtotal * pct / 100)
   }
 
   const store = storeStore.getById(storeId)

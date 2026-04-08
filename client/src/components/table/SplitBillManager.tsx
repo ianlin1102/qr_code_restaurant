@@ -211,7 +211,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
 
       <CreateSplitSheet open={sheetOpen} onClose={() => setSheetOpen(false)}
         storeId={storeId} sessionId={sessionId}
-        splits={splits} mainBillTotal={mb.total} allowed={allowed}
+        splits={splits} mainBillTotal={mainBillPayable} allowed={allowed}
         onCreated={() => { setSheetOpen(false); refresh() }} />
     </>
   )
