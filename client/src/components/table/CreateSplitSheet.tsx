@@ -58,7 +58,8 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, on
     allItems.reduce((sum, item) => sum + item.unitPrice * (selectedQty[item.key] ?? 0), 0),
   [allItems, selectedQty])
 
-  const percentAmount = session ? calcSplitByPercent(session.remaining, percent).splitAmount : 0
+  const sessionRemaining = session?.remaining ?? 0
+  const percentAmount = session ? calcSplitByPercent(sessionRemaining, percent).splitAmount : 0
 
   const adjustQty = (key: string, delta: number, max: number) => {
     setSelectedQty(prev => {
@@ -161,7 +162,7 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, on
                     <span className="text-sm font-semibold">{pct}%</span>
                     {session && (
                       <span className="block text-[10px] mt-0.5 opacity-70">
-                        {formatPriceUSD(calcSplitByPercent(session.remaining, pct).splitAmount)}
+                        {formatPriceUSD(calcSplitByPercent(sessionRemaining, pct).splitAmount)}
                       </span>
                     )}
                   </button>
@@ -175,7 +176,7 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, on
               </div>
               {session && (
                 <p className="text-center text-sm text-muted-foreground">
-                  {formatPriceUSD(percentAmount)} / {formatPriceUSD(session.remaining)}
+                  {formatPriceUSD(percentAmount)} / {formatPriceUSD(sessionRemaining)}
                 </p>
               )}
             </div>

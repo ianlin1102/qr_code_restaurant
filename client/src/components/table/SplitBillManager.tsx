@@ -135,10 +135,10 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
         <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{ts.title}</DialogTitle></DialogHeader>
 
-          <MainBillCard label={ts.mainBill} badge={`${mb.itemCount} ${ts.items} ${ts.remaining}`}
-            total={session.remaining} ts={ts}
-            onPayCard={() => setPay('main', session.remaining, 'card')}
-            onPayCash={() => setPay('main', session.remaining, 'cash')}
+          <MainBillCard label={ts.mainBill} badge={`${mb.itemCount} ${ts.items}`}
+            total={mb.total} ts={ts}
+            onPayCard={() => setPay('main', mb.total, 'card')}
+            onPayCash={() => setPay('main', mb.total, 'cash')}
             onSplit={() => setSheetOpen(true)} />
 
           {splits.map(s => (

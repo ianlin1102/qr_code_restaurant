@@ -9,6 +9,7 @@ import { useCartStore, unitPrice, type CartEntry } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
 import { getDeviceId } from '@/lib/device-id'
+import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
 
 interface CartItemCardProps {
@@ -97,6 +98,9 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null)
   const [paymentMode, setPaymentMode] = useState<'pay-first' | 'pay-later'>('pay-first')
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+
+  // Shared cart sync: push local changes (1s debounce), poll other devices (5s)
+  useCartSync(storeId, activeSessionId)
 
   const myDeviceId = useMemo(() => getDeviceId(), [])
 

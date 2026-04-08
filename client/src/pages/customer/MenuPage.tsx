@@ -7,7 +7,6 @@ import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
 import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { cn } from '@/lib/utils'
-import { getDeviceId } from '@/lib/device-id'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -15,7 +14,8 @@ import { Input } from '@/components/ui/input'
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
 import { usePaymentStore } from '@/stores/payment-store'
-import type { MenuResponse, MenuItem, CartItem } from '@qr-order/shared'
+import { useCartSync } from '@/hooks/useCartSync'
+import type { MenuResponse, MenuItem } from '@qr-order/shared'
 
 /** Strip ALL HTML — render announcement as safe plain text with line breaks */
 function plainText(html: string): string {
@@ -121,63 +121,8 @@ export default function MenuPage() {
     return () => clearInterval(id)
   }, [storeId, cleanupUnavailableCartItems])
 
-  // === Shared cart sync ===
-  // Push: send only MY items to server (don't overwrite other devices)
-  // Poll: fetch ALL items from server, replace local "other devices" items
-  const myDeviceId = useMemo(() => getDeviceId(), [])
-  const lastSubmitRef = useRef<string | null>(null)
-
-  // Push my items to server when they change (debounced 1s)
-  // Per-device storage: only PUT own items, server merges by deviceId — no race condition
-  useEffect(() => {
-    if (!storeId || !activeSessionId) return
-    const timer = setTimeout(() => {
-      const myLocal = useCartStore.getState().items.filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
-      const plain: CartItem[] = myLocal.map(({ menuItemId, name, price, quantity, remark, selectedOptions, addedBy, addedByDevice }) => ({
-        menuItemId, name, price, quantity,
-        ...(remark ? { remark } : {}),
-        ...(selectedOptions?.length ? { selectedOptions } : {}),
-        ...(addedBy ? { addedBy } : {}),
-        ...(addedByDevice ? { addedByDevice } : {}),
-      }))
-      api.updateSessionCart(storeId, activeSessionId, myDeviceId, plain).catch(() => {})
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [cartItems, storeId, activeSessionId, myDeviceId])
-
-  // Poll server every 5s — sync other devices' items + track cart version
-  useEffect(() => {
-    if (!storeId || !activeSessionId) return
-    const poll = () => {
-      api.getSessionCart(storeId, activeSessionId).then(({ items: serverItems, cartVersion, lastCartSubmitAt }) => {
-        const store = useCartStore.getState()
-        store.setCartVersion(cartVersion)
-        // Detect remote cart submission
-        if (lastCartSubmitAt && lastCartSubmitAt !== lastSubmitRef.current && serverItems.length === 0 && store.items.length > 0) {
-          store.clearCart()
-          lastSubmitRef.current = lastCartSubmitAt
-          return
-        }
-        lastSubmitRef.current = lastCartSubmitAt
-        const othersFromServer = serverItems.filter(i => i.addedByDevice && i.addedByDevice !== myDeviceId)
-        const currentOtherKeys = new Set(store.items.filter(i => i.addedByDevice && i.addedByDevice !== myDeviceId).map(i => i.addedByDevice + i.menuItemId))
-        const newOtherKeys = new Set(othersFromServer.map(i => i.addedByDevice + i.menuItemId))
-        if (currentOtherKeys.size !== newOtherKeys.size || [...currentOtherKeys].some(k => !newOtherKeys.has(k))) {
-          for (const item of store.items) {
-            if (item.addedByDevice && item.addedByDevice !== myDeviceId) {
-              store.removeItem(item.cartKey)
-            }
-          }
-          for (const item of othersFromServer) {
-            store.addItem(item)
-          }
-        }
-      }).catch(() => {})
-    }
-    poll() // Initial fetch immediately
-    const id = setInterval(poll, 5000)
-    return () => clearInterval(id)
-  }, [storeId, activeSessionId, myDeviceId])
+  // Shared cart sync: push local changes (1s debounce), poll other devices (5s)
+  useCartSync(storeId, activeSessionId)
 
   // Stable scroll handler — useCallback avoids re-attaching on every menu poll
   const handleScroll = useCallback(() => {

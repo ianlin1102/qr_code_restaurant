@@ -31,6 +31,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   const lang = i18n.language
   const t = (zh: string, en: string) => lang === 'zh' ? zh : en
 
+  const remaining = session.remaining ?? 0
   const lockedPercent = session.settlementMode === 'by-percent'
   const [tab, setTab] = useState<Tab>(lockedPercent ? 'percent' : 'items')
   // Map of "orderId:idx" → quantity to pay (0 = not selected)
@@ -84,7 +85,8 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
         ? api.payByItems(storeId, session.id, keys)
         : api.payByPercent(storeId, session.id, percent)
       req.then(r => {
-        setCalc({ subtotal: r.amount - r.tax - r.serviceFee, tax: r.tax, svc: r.serviceFee, total: r.amount })
+        const amt = r.amount ?? 0, tx = r.tax ?? 0, sf = r.serviceFee ?? 0
+        setCalc({ subtotal: amt - tx - sf, tax: tx, svc: sf, total: amt })
         setCalcError(null)
       }).catch((err) => {
         setCalc({ subtotal: 0, tax: 0, svc: 0, total: 0 })
@@ -203,7 +205,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
                     }`}>
                     <span className="text-sm font-semibold">{pct}%</span>
                     <span className="block text-[10px] mt-0.5 opacity-70">
-                      {formatPriceUSD(calcSplitByPercent(session.remaining, pct).splitAmount)}
+                      {formatPriceUSD(calcSplitByPercent(remaining, pct).splitAmount)}
                     </span>
                   </button>
                 ))}
@@ -221,7 +223,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
                 <span className="text-lg font-bold w-16 text-right">{percent}%</span>
               </div>
               <p className="text-center text-sm text-muted-foreground">
-                {formatPriceUSD(calcSplitByPercent(session.remaining, percent).splitAmount)} / {formatPriceUSD(session.remaining)}
+                {formatPriceUSD(calcSplitByPercent(remaining, percent).splitAmount)} / {formatPriceUSD(remaining)}
               </p>
             </div>
           )}
