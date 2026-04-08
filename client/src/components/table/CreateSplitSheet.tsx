@@ -103,7 +103,7 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, sp
         const itemKeys = Object.entries(selectedQty)
           .filter(([, qty]) => qty > 0)
           .map(([key, qty]) => `${key}:${qty}`)
-        if (itemKeys.length === 0) return
+        if (itemKeys.length === 0) { notify.warning('No items selected'); return }
         await api.createSplitBill(storeId, sessionId, { type: 'by-item', itemKeys })
       } else {
         await api.createSplitBill(storeId, sessionId, { type: 'by-percent', percent })
@@ -218,9 +218,9 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, sp
             <span>{formatPriceUSD(tab === 'items' ? localSubtotal : percentAmount)}</span>
           </div>
           <Button className="w-full min-h-[44px]" disabled={
-            loading || !hasSelection
-            || (tab === 'items' && allowed != null && !allowed.createSplitByItem)
-            || (tab === 'percent' && allowed != null && !allowed.createSplitByPercent)
+            loading || !hasSelection || !allowed
+            || (tab === 'items' && !allowed.createSplitByItem)
+            || (tab === 'percent' && !allowed.createSplitByPercent)
           } onClick={handleCreate}>
             {loading ? ts.processing : ts.createSplit}
           </Button>

@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
 import { api, type SessionSummary, type AllowedActions } from '@/services/api'
 import type { Coupon, Payment } from '@qr-order/shared'
+import { notify } from '@/lib/notify'
 import CashPaymentPad from './CashPaymentPad'
 
 interface Props {
@@ -58,7 +59,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
       lastFp.current = fp
       setSession(data)
       setAllowed(deriveAllowed(data))
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
   }, [storeId, sessionId])
 
   useEffect(() => {
@@ -82,7 +83,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
       setSession(prev => prev ? { ...prev, ...updated, payments: prev.payments, remaining: prev.remaining, isPaid: prev.isPaid, netDue: prev.netDue } : null)
       setCouponCode('')
       fetchSession()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
   }
 
   const handleRemoveCoupon = async () => {
@@ -90,7 +91,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
       const updated = await api.removeSessionCoupon(storeId, sessionId)
       setSession(prev => prev ? { ...prev, ...updated, payments: prev.payments, remaining: prev.remaining, isPaid: prev.isPaid, netDue: prev.netDue } : null)
       fetchSession()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
   }
 
   const handleCloseSession = async () => {
@@ -99,7 +100,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
       const result = await api.closeSession(storeId, sessionId)
       if (result.allowedActions) setAllowed(result.allowedActions)
       onClose()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
     setLoading(false)
   }
 
@@ -108,7 +109,7 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
       const result = await api.reopenSession(storeId, sessionId)
       if (result.allowedActions) setAllowed(result.allowedActions)
       fetchSession()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
   }
 
   return (
@@ -289,7 +290,7 @@ function PaymentMethodSection({ session, storeId, sessionId, payMethod, setPayMe
       if (result.allowedActions) setAllowed(result.allowedActions)
       setPayMethod(null)
       fetchSession()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
     setPaying(false)
   }
 
@@ -300,7 +301,7 @@ function PaymentMethodSection({ session, storeId, sessionId, payMethod, setPayMe
       if (result.allowedActions) setAllowed(result.allowedActions)
       setPayMethod(null)
       fetchSession()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
     setPaying(false)
   }
 

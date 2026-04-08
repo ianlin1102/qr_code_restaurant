@@ -15,7 +15,8 @@ export default function CashPaymentPad({ totalDue, onConfirm, onCancel, loading,
   const [input, setInput] = useState('')
   const zh = lang === 'zh'
 
-  const receivedCents = Math.round(parseFloat(input || '0') * 100)
+  const parsed = parseFloat(input || '0')
+  const receivedCents = Number.isFinite(parsed) ? Math.round(parsed * 100) : 0
   const change = receivedCents - totalDue
   const canConfirm = receivedCents >= totalDue && !loading
 

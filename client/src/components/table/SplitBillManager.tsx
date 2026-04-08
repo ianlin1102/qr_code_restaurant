@@ -6,6 +6,7 @@ import { formatPriceUSD } from '@/lib/format'
 import { api, type SessionSummary, type AllowedActions } from '@/services/api'
 import type { SplitBill } from '@qr-order/shared'
 import { useT } from '@/i18n/useT'
+import { notify } from '@/lib/notify'
 import CashPaymentPad from './CashPaymentPad'
 import CreateSplitSheet from './CreateSplitSheet'
 import { TipInput, MainBillCard, SplitCard } from './SplitBillCards'
@@ -67,7 +68,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
       setSplits(freshSplits)
       setMainBill(data.mainBill ?? { total: 0, itemCount: 0 })
       setAllowed(deriveAllowedActions(summary, freshSplits))
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
   }, [storeId, sessionId])
 
   // Initial fetch + poll every 5s while open (detects customer payments / external changes)
@@ -94,7 +95,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
       }
       resetPay()
       await refresh()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
     setLoading(false)
   }
 
@@ -110,7 +111,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
       }
       resetPay()
       await refresh()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
     setLoading(false)
   }
 
@@ -121,7 +122,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
       const result = await api.deleteSplitBill(storeId, sessionId, splitId)
       if (result.allowedActions) setAllowed(result.allowedActions)
       await refresh()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
   }
 
   const handleCloseSession = async () => {
@@ -130,7 +131,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
       const result = await api.closeSession(storeId, sessionId)
       if (result.allowedActions) setAllowed(result.allowedActions)
       onClose()
-    } catch (e) { console.error(e) }
+    } catch (e) { notify.fromError(e) }
     setLoading(false)
   }
 
