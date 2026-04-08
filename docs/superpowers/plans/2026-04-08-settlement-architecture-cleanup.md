@@ -64,8 +64,62 @@ Task 1 + Task 2 (parallel, client-side) → Task 3 + Task 4 (parallel, server-si
 
 Estimated: 2-3 hours with subagents.
 
+### Task 7: Mobile-friendly order actions on TablesPage
+
+**Current problems** (from UX audit Loop 6):
+- "编辑订单" link is `text-xs` — too small for touch (< 44px)
+- "Void" button is `text-[10px]` — nearly impossible to tap on mobile
+- No swipe/tap gesture on item cards — only tiny text links
+- `prompt()` used for void reason — browser native, not mobile-friendly
+
+**Target**:
+- Item card: tap entire card → open OrderEditDialog for that order
+- Void: swipe-left on item card reveals void button (44px min), or long-press
+- "编辑订单" header: increase to `min-h-[44px]` button with icon
+- Replace `prompt()` for void reason with a Dialog + Input
+- All interactive elements ≥ 44px touch target
+
+### Task 8: Ad-hoc item options (临时加选项)
+
+**Current**: Waiter can only use pre-defined menu options or override total price.
+**Target**: OrderEditDialog gains an "Add custom option" button:
+  - Input: option name (e.g., "加辣酱") + price adjust (e.g., +$1.00)
+  - Creates a SelectedOption with `optionId: 'custom-{uuid}'`
+  - Stored in OrderItem.selectedOptions like normal options
+  - Shows on receipt/bill as a line item
+  - Accounts correctly in `itemUnitPrice()` / `itemLineTotal()`
+
+### Task 9: Customer-side "waiter processing" indicator
+
+**Current**: No indication when waiter is handling splits/payments on admin side.
+**Target**: When session has unpaid splits (waiter created them), customer SettlementSheet shows:
+  - Banner: "服务生正在处理您的账单 / Waiter is processing your bill"
+  - Pay buttons still functional (customer can override — splits auto-invalidate)
+  - Detection: check if `getSplitBills()` returns any unpaid splits in the session
+  - Implementation: SettlementSheet polls session summary which already includes split count info, or add a `hasPendingSplits` field to session summary response
+
+### Task 10: Notion test checklist update
+
+After all tasks complete, update the Notion test page (33c6226e19418137844dcefb16ef7664) with:
+- New test items for Tasks 7-9
+- Mark any existing items that were affected by architecture changes
+- Verify all 84+ existing checkboxes still reflect correct behavior
+
+## Execution Order
+
+```
+Phase 1: Task 1 + Task 2 (parallel, client-side hooks)
+Phase 2: Task 3 + Task 4 (parallel, server-side split)
+Phase 3: Task 5 (auto-close consolidation)
+Phase 4: Task 6 + Task 7 (parallel, UI cleanup + mobile UX)
+Phase 5: Task 8 + Task 9 (parallel, new features)
+Phase 6: Task 10 (test checklist update)
+```
+
+Estimated: 3-4 hours with subagents.
+
 ## Non-goals
 
-- No API changes — all refactoring is internal
-- No behavior changes — purely structural
-- No new features — this is tech debt cleanup
+- No API contract changes — all refactoring is internal
+- No behavior changes in Phase 1-3 — purely structural
+- Tasks 7-9 are feature additions, built on the cleaned-up architecture
