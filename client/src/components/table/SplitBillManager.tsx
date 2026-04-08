@@ -104,6 +104,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
   }
 
   const handleMerge = async (splitId: string) => {
+    if (!allowed?.deleteSplit) return
     if (!confirm(ts.mergeConfirm)) return
     try {
       const result = await api.deleteSplitBill(storeId, sessionId, splitId)

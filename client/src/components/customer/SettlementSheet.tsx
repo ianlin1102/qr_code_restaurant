@@ -35,19 +35,22 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
 
   const remaining = session.remaining ?? 0
   const [allowed, setAllowed] = useState<AllowedActions | null>(null)
-  // Derive initial allowedActions from session state; updated with real server values after API calls
+  // Derive allowedActions from session state; overwritten by real server values after API calls
   useEffect(() => {
     const mode = session.settlementMode
+    const isPaid = (session.remaining ?? 0) <= 0
+    const isClosed = session.status === 'closed'
     setAllowed({
-      payByItems: mode !== 'by-percent',
-      payByPercent: true,
-      cashPayment: true,
-      createSplitByItem: mode !== 'by-percent',
-      createSplitByPercent: true,
+      payByItems: !isClosed && !isPaid && mode !== 'by-percent',
+      payByPercent: !isClosed && !isPaid,
+      cashPayment: !isClosed && !isPaid,
+      createSplitByItem: !isClosed && !isPaid && mode !== 'by-percent',
+      createSplitByPercent: !isClosed && !isPaid,
       paySplit: false, deleteSplit: false,
-      closeSession: false, reopenSession: false,
+      closeSession: !isClosed && isPaid,
+      reopenSession: isClosed,
     })
-  }, [session.settlementMode])
+  }, [session.settlementMode, session.remaining, session.status])
   const lockedPercent = allowed ? !allowed.payByItems : session.settlementMode === 'by-percent'
   const [tab, setTab] = useState<Tab>(lockedPercent ? 'percent' : 'items')
   // Map of "orderId:idx" → quantity to pay (0 = not selected)
