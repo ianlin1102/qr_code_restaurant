@@ -85,8 +85,8 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
     setLoading(true)
     try {
       if (splitId === 'main') {
-        const amount = (session?.remaining ?? 0) + tipCents
-        const result = await api.addPayment(storeId, sessionId, amount, 'waiter')
+        // Main bill pays payTarget.amount (which is set to the displayed value)
+        const result = await api.addPayment(storeId, sessionId, payTarget!.amount + tipCents, 'waiter')
         if (result.allowedActions) setAllowed(result.allowedActions)
       } else {
         const result = await api.paySplitBillCard(storeId, sessionId, splitId, tipCents || undefined)
@@ -102,8 +102,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
     setLoading(true)
     try {
       if (splitId === 'main') {
-        const amount = (session?.remaining ?? 0) + tipCents
-        const result = await api.recordCashPayment(storeId, sessionId, amount, received)
+        const result = await api.recordCashPayment(storeId, sessionId, payTarget!.amount + tipCents, received)
         if (result.allowedActions) setAllowed(result.allowedActions)
       } else {
         const result = await api.paySplitBillCash(storeId, sessionId, splitId, received, tipCents || undefined)
@@ -137,6 +136,9 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
 
   if (!session) return null
   const mb = mainBill ?? { total: 0, itemCount: 0 }
+  // Main bill payable = session remaining minus all unpaid split totals
+  const unpaidSplitTotal = splits.filter(s => s.status === 'unpaid').reduce((sum, s) => sum + s.total, 0)
+  const mainBillPayable = Math.max(0, session.remaining - unpaidSplitTotal)
 
   if (payTarget?.method === 'cash') {
     return (
@@ -180,9 +182,9 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
           <DialogHeader><DialogTitle>{ts.title}</DialogTitle></DialogHeader>
 
           <MainBillCard label={ts.mainBill} badge={`${mb.itemCount} ${ts.items}`}
-            total={mb.total} ts={ts} allowed={allowed}
-            onPayCard={() => setPay('main', mb.total, 'card')}
-            onPayCash={() => setPay('main', mb.total, 'cash')}
+            total={mainBillPayable} ts={ts} allowed={allowed}
+            onPayCard={() => setPay('main', mainBillPayable, 'card')}
+            onPayCash={() => setPay('main', mainBillPayable, 'cash')}
             onSplit={() => setSheetOpen(true)} />
 
           {splits.map(s => (

@@ -89,6 +89,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   // Fetch server calculation (debounced)
   const [calc, setCalc] = useState({ subtotal: 0, tax: 0, svc: 0, total: 0 })
   const [calcError, setCalcError] = useState<string | null>(null)
+  const [calcPending, setCalcPending] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -96,8 +97,10 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
     if (tab === 'items' && keys.length === 0) {
       setCalc({ subtotal: 0, tax: 0, svc: 0, total: 0 })
       setCalcError(null)
+      setCalcPending(false)
       return
     }
+    setCalcPending(true)
     debounceRef.current = setTimeout(() => {
       const req = tab === 'items'
         ? api.payByItems(storeId, session.id, keys)
@@ -106,10 +109,12 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
         const amt = r.amount ?? 0, tx = r.tax ?? 0, sf = r.serviceFee ?? 0
         setCalc({ subtotal: amt - tx - sf, tax: tx, svc: sf, total: amt })
         setCalcError(null)
+        setCalcPending(false)
         if (r.allowedActions) setAllowed(r.allowedActions)
       }).catch((err) => {
         setCalc({ subtotal: 0, tax: 0, svc: 0, total: 0 })
         setCalcError(err instanceof Error ? err.message : t('金额不满足最低要求', 'Amount does not meet minimum requirement'))
+        setCalcPending(false)
       })
     }, 300)
     return () => clearTimeout(debounceRef.current)
@@ -268,7 +273,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
               </div>
             </>
           )}
-          <Button className="w-full min-h-[44px]" disabled={loading || calc.total <= 0 || !!calcError} onClick={handlePay}>
+          <Button className="w-full min-h-[44px]" disabled={loading || calcPending || calc.total <= 0 || !!calcError} onClick={handlePay}>
             {loading ? t('处理中...', 'Processing...') : t('去支付', 'Pay') + ` ${formatPriceUSD(calc.total)}`}
           </Button>
         </div>

@@ -18,7 +18,7 @@ import TransferTableDialog from '@/components/table/TransferTableDialog'
 import SplitBillManager from '@/components/table/SplitBillManager'
 import TableCrudDialog from '@/components/table/TableCrudDialog'
 import OrderingSheet from '@/components/order/OrderingSheet'
-import type { Table, Order, OrderItem, Store } from '@qr-order/shared'
+import type { Table, Order, OrderItem } from '@qr-order/shared'
 
 const POLL = 10_000
 
@@ -46,7 +46,7 @@ export default function TablesPage() {
 
   const [transferOpen, setTransferOpen] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
-  const [store, setStore] = useState<Store | null>(null)
+  // store state removed — tax/fee now from session summary, not recalculated from rates
   const [viewTab, setViewTab] = useState<'current' | 'history'>('current')
   const [crudOpen, setCrudOpen] = useState(false)
   const [baseUrl, setBaseUrl] = useState(() => {
@@ -67,7 +67,7 @@ export default function TablesPage() {
   }, [storeId, showDisabled])
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL); return () => clearInterval(id) }, [fetchData, showDisabled])
-  useEffect(() => { if (storeId) api.getStore(storeId).then(setStore).catch(() => {}) }, [storeId])
+  // Removed: store fetch was only used for tax rate recalculation (now from session summary)
 
   // Fetch session summary when a table with active session is selected (or on poll)
   const fetchSession = useCallback(() => {
@@ -335,8 +335,13 @@ export default function TablesPage() {
               ) : viewTab === 'history' ? (
                 // History: grouped by order with date
                 displayOrders.map(o => {
-                  const oTax = Math.round(o.totalPrice * (store?.taxRate ?? 0) / 100)
-                  const oFee = Math.round(o.totalPrice * (store?.serviceFeeRate ?? 0) / 100)
+                  // Use session-level tax/fee (server-calculated), apportioned per order
+                  const sessionTax = sessionSummary?.tax ?? 0
+                  const sessionFee = sessionSummary?.serviceFee ?? 0
+                  const sessionFood = sessionSummary?.totalAmount ?? o.totalPrice
+                  const ratio = sessionFood > 0 ? o.totalPrice / sessionFood : 0
+                  const oTax = Math.round(sessionTax * ratio)
+                  const oFee = Math.round(sessionFee * ratio)
                   return (
                     <div key={o.id} className="mb-3 border rounded-lg p-3">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
