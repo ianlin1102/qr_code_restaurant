@@ -126,27 +126,36 @@ export default function MenuPage() {
   // Shared cart sync: push local changes (1s debounce), poll other devices (5s)
   useCartSync(storeId, activeSessionId)
 
-  // Stable scroll handler — header collapse + active category tracking
+  // Stable scroll handler — header collapse + active category tracking (RAF throttled)
+  const rafRef = useRef(0)
+  const activeCatRef = useRef('')
   const handleScroll = useCallback(() => {
     const viewport = menuScrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null
     if (!viewport) return
 
-    // Header collapse/expand
+    // Header collapse/expand (cheap, no layout queries)
     const THRESHOLD = 10
     const y = viewport.scrollTop
     if (y - lastScrollY.current > THRESHOLD) setHeaderCollapsed(true)
     else if (lastScrollY.current - y > THRESHOLD) setHeaderCollapsed(false)
     lastScrollY.current = y
 
-    // Track which category section is currently visible
-    const viewportTop = viewport.getBoundingClientRect().top + 120 // offset for header
-    let closest: { id: string; dist: number } | null = null
-    for (const [id, el] of Object.entries(sectionRefs.current)) {
-      if (!el) continue
-      const dist = Math.abs(el.getBoundingClientRect().top - viewportTop)
-      if (!closest || dist < closest.dist) closest = { id, dist }
-    }
-    if (closest) setActiveCategory(closest.id)
+    // Throttle category tracking to once per frame
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      const viewportTop = viewport.getBoundingClientRect().top + 120
+      let closest: { id: string; dist: number } | null = null
+      for (const [id, el] of Object.entries(sectionRefs.current)) {
+        if (!el) continue
+        const dist = Math.abs(el.getBoundingClientRect().top - viewportTop)
+        if (!closest || dist < closest.dist) closest = { id, dist }
+      }
+      // Only update state if category actually changed
+      if (closest && closest.id !== activeCatRef.current) {
+        activeCatRef.current = closest.id
+        setActiveCategory(closest.id)
+      }
+    })
   }, [])
 
   // Attach scroll listener once after menu loads (not on every menu change)
