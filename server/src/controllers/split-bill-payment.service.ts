@@ -70,7 +70,7 @@ export function paySplitBillCash(
 
 export async function createManualCaptureIntent(
   storeId: string, splitBillId: string,
-): Promise<{ clientSecret: string; paymentIntentId: string } | { error: string }> {
+): Promise<{ clientSecret: string; paymentIntentId: string; authorizedAmount: number } | { error: string }> {
   const sb = splitBillStore.getById(splitBillId)
   if (!sb || sb.storeId !== storeId) return { error: 'Split bill not found' }
   if (sb.status !== 'unpaid') return { error: 'Already paid or pending' }
@@ -87,12 +87,12 @@ export async function createManualCaptureIntent(
     status: 'pending-capture', paymentIntentId: pi.id,
   })
   logger.info({ splitBillId, piId: pi.id, holdAmount }, 'manual capture intent created')
-  return { clientSecret: pi.client_secret!, paymentIntentId: pi.id }
+  return { clientSecret: pi.client_secret!, paymentIntentId: pi.id, authorizedAmount: holdAmount }
 }
 
 export async function captureSplitBillPayment(
   storeId: string, splitBillId: string, tipAmount: number,
-): Promise<{ splitBill: SplitBill } | { error: string }> {
+): Promise<{ splitBill: SplitBill; sessionFullyPaid: boolean } | { error: string }> {
   const sb = splitBillStore.getById(splitBillId)
   if (!sb || sb.storeId !== storeId) return { error: 'Split bill not found' }
   if (sb.status !== 'pending-capture' || !sb.paymentIntentId) {
@@ -112,6 +112,12 @@ export async function captureSplitBillPayment(
     status: 'paid', paymentId: payResult.payment.id,
     paidAt: new Date().toISOString(), method: 'stripe',
   })
-  logger.info({ splitBillId, captureAmount }, 'split bill payment captured')
-  return { splitBill: splitBillStore.getById(splitBillId)! }
+  markSplitItemsPaid(sb)
+
+  // Check if session is fully paid
+  const session = sessionStore.getById(sb.sessionId)
+  const sessionFullyPaid = session ? session.totalPaid >= session.totalAmount : false
+
+  logger.info({ splitBillId, captureAmount, sessionFullyPaid }, 'split bill payment captured')
+  return { splitBill: splitBillStore.getById(splitBillId)!, sessionFullyPaid }
 }
