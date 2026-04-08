@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
@@ -47,10 +47,15 @@ export default function BillSettleDialog({ open, onClose, storeId, sessionId, t,
 
   const ts = (t.session ?? t.bill ?? {}) as Record<string, string>
   const tc = (t.common ?? {}) as Record<string, string>
+  const lastFp = useRef('')
 
   const fetchSession = useCallback(async () => {
     try {
       const data = await api.getSessionSummary(storeId, sessionId)
+      // Fingerprint: skip state updates if nothing changed (prevents re-render on poll)
+      const fp = `${data.totalPaid}|${data.remaining}|${data.status}|${data.settlementMode}|${data.payments?.length}`
+      if (fp === lastFp.current) return
+      lastFp.current = fp
       setSession(data)
       setAllowed(deriveAllowed(data))
     } catch (e) { console.error(e) }

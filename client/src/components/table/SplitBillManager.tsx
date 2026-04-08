@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
@@ -50,6 +50,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
   const [loading, setLoading] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [allowed, setAllowed] = useState<AllowedActions | null>(null)
+  const lastFp = useRef('')
 
   const refresh = useCallback(async () => {
     try {
@@ -57,8 +58,12 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
         api.getSessionSummary(storeId, sessionId),
         api.getSplitBills(storeId, sessionId),
       ])
-      setSession(summary)
       const freshSplits = data.splits ?? []
+      // Fingerprint: skip state updates if nothing changed (prevents re-render on poll)
+      const fp = `${summary.totalPaid}|${summary.remaining}|${summary.status}|${summary.settlementMode}|${freshSplits.map(s => s.id + s.status).join(',')}`
+      if (fp === lastFp.current) return
+      lastFp.current = fp
+      setSession(summary)
       setSplits(freshSplits)
       setMainBill(data.mainBill ?? { total: 0, itemCount: 0 })
       setAllowed(deriveAllowedActions(summary, freshSplits))
