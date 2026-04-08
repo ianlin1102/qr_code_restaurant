@@ -137,14 +137,9 @@ export function addPayment(
     'payment recorded',
   )
 
-  // Auto-close if fully paid and all orders served
+  // Auto-close when fully paid (payment is the strongest signal customer is leaving)
   if (newTotalPaid >= totalWithTax) {
-    const orders = session.orderIds
-      .map(id => orderStore.getById(id)).filter(Boolean)
-    const allServed = orders.every(o => o!.status === 'served')
-    if (allServed) {
-      closeSession(storeId, sessionId)
-    }
+    closeSession(storeId, sessionId)
   }
 
   return { session: sessionStore.getById(sessionId)!, payment }
@@ -511,6 +506,54 @@ export function confirmPercentPayment(sessionId: string): void {
   sessionStore.update(sessionId, { settlementMode: 'by-percent' })
   logger.info({ sessionId }, 'settlement mode locked to by-percent after payment confirmation')
 }
+
+// ===== Safety net: auto-close stale paid sessions =====
+
+const STALE_SESSION_CHECK_MS = 5 * 60 * 1000   // check every 5 minutes
+const STALE_SESSION_TIMEOUT_MS = 15 * 60 * 1000 // 15 minutes after last order
+
+export function autoCloseStaleSessionsOnce() {
+  const allSessions = sessionStore.getByField('status', 'active')
+  const now = Date.now()
+  let closed = 0
+
+  for (const session of allSessions) {
+    const store = storeStore.getById(session.storeId)
+    if (!store) continue
+
+    const netDue = session.totalAmount - session.discountAmount
+    const tax = calcTax(session.storeId, netDue)
+    const fee = calcServiceFee(session.storeId, netDue)
+    const totalWithTax = netDue + tax + fee
+
+    if (session.totalPaid < totalWithTax) continue // not fully paid
+
+    // Find most recent order activity
+    const orders = session.orderIds.map(id => orderStore.getById(id)).filter(Boolean)
+    const latestOrder = orders.reduce((latest, o) => {
+      const t = new Date(o!.createdAt).getTime()
+      return t > latest ? t : latest
+    }, 0)
+    const latestPayment = paymentStore.getByField('sessionId', session.id)
+      .reduce((latest, p) => {
+        const t = new Date(p.createdAt).getTime()
+        return t > latest ? t : latest
+      }, 0)
+    const lastActivity = Math.max(latestOrder, latestPayment, new Date(session.createdAt).getTime())
+
+    if (now - lastActivity >= STALE_SESSION_TIMEOUT_MS) {
+      closeSession(session.storeId, session.id)
+      logger.info({ sessionId: session.id, storeId: session.storeId, idleMinutes: Math.round((now - lastActivity) / 60000) },
+        'auto-closed stale paid session (safety net)')
+      closed++
+    }
+  }
+  return closed
+}
+
+// Start the safety net timer
+setInterval(autoCloseStaleSessionsOnce, STALE_SESSION_CHECK_MS)
+logger.info('session safety net started: checking for stale paid sessions every 5 minutes')
 
 /** @internal Called by settlement gateway. */
 export function recordCashPayment(

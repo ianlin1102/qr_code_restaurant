@@ -11,6 +11,7 @@ import { formatPriceUSD } from '@/lib/format'
 import { itemLineTotal } from '@/lib/pricing'
 import { localized } from '@/lib/i18n-utils'
 import { printQrCodes } from '@/lib/qr-pdf'
+import { notify } from '@/lib/notify'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import CloseTableDialog from '@/components/table/CloseTableDialog'
@@ -305,6 +306,18 @@ export default function TablesPage() {
                 </Button>
               )}
               <div className="flex-1" />
+              {sessionSummary?.isPaid && sessionSummary.status !== 'closed' && (
+                <Button size="sm" variant="outline" className="text-orange-600 border-orange-300"
+                  onClick={async () => {
+                    try {
+                      await api.closeSession(storeId!, sessionSummary.id)
+                      notify.success(lang === 'zh' ? '已翻桌' : 'Table turned')
+                      refresh()
+                    } catch (e) { notify.fromError(e) }
+                  }}>
+                  <RefreshCw className="size-4 mr-1" />{lang === 'zh' ? '翻桌' : 'Turn Table'}
+                </Button>
+              )}
               <Button size="sm" className="bg-green-500 hover:bg-green-600"
                 disabled={!currentOrder}
                 onClick={() => selected?.currentSessionId ? setSessionDialogOpen(true) : setCloseOpen(true)}>
