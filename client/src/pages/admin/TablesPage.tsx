@@ -19,6 +19,7 @@ import TransferTableDialog from '@/components/table/TransferTableDialog'
 import SplitBillManager from '@/components/table/SplitBillManager'
 import TableCrudDialog from '@/components/table/TableCrudDialog'
 import OrderingSheet from '@/components/order/OrderingSheet'
+import OrderEditDialog from '@/components/order/OrderEditDialog'
 import type { Table, Order, OrderItem } from '@qr-order/shared'
 
 const POLL = 10_000
@@ -50,6 +51,7 @@ export default function TablesPage() {
   // store state removed — tax/fee now from session summary, not recalculated from rates
   const [viewTab, setViewTab] = useState<'current' | 'history'>('current')
   const [crudOpen, setCrudOpen] = useState(false)
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const [baseUrl, setBaseUrl] = useState(() => {
     const saved = localStorage.getItem('qr-base-url')
     return saved || window.location.origin
@@ -271,8 +273,13 @@ export default function TablesPage() {
               <Button size="sm" onClick={() => setOrderingOpen(true)}>
                 <Plus className="size-4 mr-1" />{t.tables.addItems}
               </Button>
-              <Button size="sm" variant="outline" disabled={!currentOrder}
-                onClick={() => currentOrder && api.reprintOrder(storeId, currentOrder.id)}>
+              <Button size="sm" variant="outline" disabled={sessionOrders.length === 0}
+                onClick={async () => {
+                  for (const o of sessionOrders) {
+                    try { await api.reprintOrder(storeId, o.id) } catch {}
+                  }
+                  notify.success(lang === 'zh' ? '已发送打印' : 'Print sent')
+                }}>
                 <Printer className="size-4 mr-1" />{t.tables.printBill}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setTransferOpen(true)}>
@@ -378,62 +385,73 @@ export default function TablesPage() {
                     </div>
                   )
                 })
-              ) : displayOrders.flatMap(o => o.items.map((it, i) => {
-                const itemKey = `${o.id}:${i}`
-                // Check paid status: exact match or partial qty match (key format "orderId:idx" or "orderId:idx:qty")
-                const isPaid = paidItemSet.has(itemKey) || [...paidItemSet].some(k => k.startsWith(itemKey + ':'))
-                return (
-                  <div key={`${o.id}-${i}`} className={cn('bg-muted/30 rounded-xl p-3 sm:p-4 mb-2 sm:mb-3 shadow-sm hover:shadow-md transition-shadow flex gap-3', isPaid && 'opacity-40')}>
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
-                      {menuItemMap[it.menuItemId] ? (
-                        <img src={menuItemMap[it.menuItemId]} alt={localized(it, lang)} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-2xl text-muted-foreground">{localized(it, lang).charAt(0)}</span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold">{localized(it, lang)}</p>
-                        {isPaid && <span className="text-[10px] bg-green-100 text-green-700 rounded px-1.5 py-0.5">{lang === 'zh' ? '已付' : 'Paid'}</span>}
-                      </div>
-                      {it.selectedOptions && it.selectedOptions.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-0.5">
-                          {it.selectedOptions.map((opt, idx) => (
-                            <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
-                              {(opt.optionName || opt.optionNameEn || '')}{(opt.optionName || opt.optionNameEn) ? ': ' : ''}{(opt.choiceName || opt.choiceNameEn || '')}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {it.remark && <p className="text-sm text-muted-foreground italic">{t.tables.note}: {it.remark}</p>}
-                      <p className="text-xs text-gray-400 mt-1">{t.tables.qty}: {it.quantity}</p>
-                    </div>
-                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                      {it.voided ? (
-                        <>
-                          <span className="text-[10px] bg-red-100 text-red-700 rounded px-1.5 py-0.5">{t.voidItem?.voided || 'VOIDED'}</span>
-                          <p className="text-sm text-muted-foreground line-through">{formatPriceUSD(itemPrice(it))}</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className={cn('font-semibold', isPaid ? 'text-green-600 line-through' : 'text-primary')}>{formatPriceUSD(itemPrice(it))}</p>
-                          {!isPaid && (
-                            <button className="text-[10px] text-red-500 hover:text-red-700"
-                              onClick={async (e) => {
-                                e.stopPropagation()
-                                const reason = prompt(t.voidItem?.reason || 'Reason (optional)')
-                                if (reason === null) return
-                                try { await api.voidItem(storeId, o.id, i, reason || undefined); refresh() } catch {}
-                              }}>
-                              {t.voidItem?.button || 'Void'}
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
+              ) : displayOrders.map(o => (
+                <div key={o.id} className="mb-3">
+                  {/* Per-order header with edit button */}
+                  <div className="flex items-center justify-between px-2 py-1 mb-1">
+                    <span className="text-xs text-muted-foreground font-mono">#{o.orderNumber}</span>
+                    <button className="text-xs text-primary hover:underline"
+                      onClick={() => setEditingOrder(o)}>
+                      {lang === 'zh' ? '编辑订单' : 'Edit Order'}
+                    </button>
                   </div>
-                )
-              }))}
+                  {o.items.map((it, i) => {
+                    const itemKey = `${o.id}:${i}`
+                    const isPaid = paidItemSet.has(itemKey) || [...paidItemSet].some(k => k.startsWith(itemKey + ':'))
+                    return (
+                      <div key={`${o.id}-${i}`} className={cn('bg-muted/30 rounded-xl p-3 sm:p-4 mb-2 sm:mb-3 shadow-sm hover:shadow-md transition-shadow flex gap-3', isPaid && 'opacity-40')}>
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
+                          {menuItemMap[it.menuItemId] ? (
+                            <img src={menuItemMap[it.menuItemId]} alt={localized(it, lang)} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-2xl text-muted-foreground">{localized(it, lang).charAt(0)}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{localized(it, lang)}</p>
+                            {isPaid && <span className="text-[10px] bg-green-100 text-green-700 rounded px-1.5 py-0.5">{lang === 'zh' ? '已付' : 'Paid'}</span>}
+                          </div>
+                          {it.selectedOptions && it.selectedOptions.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {it.selectedOptions.map((opt, idx) => (
+                                <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
+                                  {(opt.optionName || opt.optionNameEn || '')}{(opt.optionName || opt.optionNameEn) ? ': ' : ''}{(opt.choiceName || opt.choiceNameEn || '')}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {it.remark && <p className="text-sm text-muted-foreground italic">{t.tables.note}: {it.remark}</p>}
+                          <p className="text-xs text-gray-400 mt-1">{t.tables.qty}: {it.quantity}</p>
+                        </div>
+                        <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                          {it.voided ? (
+                            <>
+                              <span className="text-[10px] bg-red-100 text-red-700 rounded px-1.5 py-0.5">{t.voidItem?.voided || 'VOIDED'}</span>
+                              <p className="text-sm text-muted-foreground line-through">{formatPriceUSD(itemPrice(it))}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className={cn('font-semibold', isPaid ? 'text-green-600 line-through' : 'text-primary')}>{formatPriceUSD(itemPrice(it))}</p>
+                              {!isPaid && (
+                                <button className="text-[10px] text-red-500 hover:text-red-700"
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    const reason = prompt(t.voidItem?.reason || 'Reason (optional)')
+                                    if (reason === null) return
+                                    try { await api.voidItem(storeId, o.id, i, reason || undefined); refresh() } catch {}
+                                  }}>
+                                  {t.voidItem?.button || 'Void'}
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
             </div>
 
             {/* Payment summary footer */}
@@ -477,7 +495,7 @@ export default function TablesPage() {
       <TableCrudDialog table={editingTable} storeId={storeId} open={crudOpen}
         onClose={() => setCrudOpen(false)} onSaved={() => { fetchData(); setCrudOpen(false) }}
         activeZone={activeZone} zones={zones} />
-      {selected && (
+      {selected && <>
         <OrderingSheet
           open={orderingOpen}
           onClose={() => setOrderingOpen(false)}
@@ -486,7 +504,15 @@ export default function TablesPage() {
           tableName={selected.name}
           onOrderCreated={refresh}
         />
-      )}
+        <OrderEditDialog
+          order={editingOrder}
+          storeId={storeId}
+          open={!!editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSaved={() => { setEditingOrder(null); refresh() }}
+          isOwner={true}
+        />
+      </>}
     </div>
   )
 }
