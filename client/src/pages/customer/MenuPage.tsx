@@ -126,15 +126,27 @@ export default function MenuPage() {
   // Shared cart sync: push local changes (1s debounce), poll other devices (5s)
   useCartSync(storeId, activeSessionId)
 
-  // Stable scroll handler — useCallback avoids re-attaching on every menu poll
+  // Stable scroll handler — header collapse + active category tracking
   const handleScroll = useCallback(() => {
     const viewport = menuScrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null
     if (!viewport) return
+
+    // Header collapse/expand
     const THRESHOLD = 10
     const y = viewport.scrollTop
     if (y - lastScrollY.current > THRESHOLD) setHeaderCollapsed(true)
     else if (lastScrollY.current - y > THRESHOLD) setHeaderCollapsed(false)
     lastScrollY.current = y
+
+    // Track which category section is currently visible
+    const viewportTop = viewport.getBoundingClientRect().top + 120 // offset for header
+    let closest: { id: string; dist: number } | null = null
+    for (const [id, el] of Object.entries(sectionRefs.current)) {
+      if (!el) continue
+      const dist = Math.abs(el.getBoundingClientRect().top - viewportTop)
+      if (!closest || dist < closest.dist) closest = { id, dist }
+    }
+    if (closest) setActiveCategory(closest.id)
   }, [])
 
   // Attach scroll listener once after menu loads (not on every menu change)
