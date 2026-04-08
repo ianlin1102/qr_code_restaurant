@@ -30,7 +30,9 @@ export function checkIsPaid(ctx: SettlementContext): ErrorCode | null {
 export function checkModeCompatible(ctx: SettlementContext, requiredMode: 'by-item' | 'by-percent'): ErrorCode | null {
   const current = ctx.session.settlementMode
   if (!current) return null
-  if (current !== requiredMode) return 'SETTLEMENT_MODE_CONFLICT'
+  // by-percent is a hard lock — can't go back to by-item
+  // by-item is a soft lock — can upgrade to by-percent
+  if (current === 'by-percent' && requiredMode === 'by-item') return 'SETTLEMENT_MODE_CONFLICT'
   return null
 }
 

@@ -8,11 +8,12 @@ export function computeAllowedActions(ctx: SettlementContext): AllowedActions {
   const isClosed = session.status === 'closed'
 
   return {
+    // by-percent is hard lock: blocks by-item. by-item is soft lock: allows upgrade to by-percent.
     payByItems:          !isClosed && !isPaid && mode !== 'by-percent',
-    payByPercent:        !isClosed && !isPaid && mode !== 'by-item',
+    payByPercent:        !isClosed && !isPaid,
     cashPayment:         !isClosed && !isPaid,
     createSplitByItem:   !isClosed && !isPaid && mode !== 'by-percent',
-    createSplitByPercent:!isClosed && !isPaid && mode !== 'by-item',
+    createSplitByPercent:!isClosed && !isPaid,
     paySplit:            !isClosed && hasUnpaidSplits,
     deleteSplit:         !isClosed && hasUnpaidSplits,
     closeSession:        !isClosed && isPaid,

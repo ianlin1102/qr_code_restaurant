@@ -197,13 +197,12 @@ describe('Settlement mode locking', () => {
     if ('error' in r) expect(r.error).toContain('by-percent settlement mode')
   })
 
-  it('waiter cannot create by-percent split in by-item session', () => {
+  it('waiter CAN create by-percent split in by-item session (soft lock, upgrades to by-percent)', () => {
     sessionStore.update(sessionId, { settlementMode: 'by-item' })
     const r = createSplitBill(STORE_ID, sessionId, {
       type: 'by-percent', percent: 50,
     })
-    expect('error' in r).toBe(true)
-    if ('error' in r) expect(r.error).toContain('by-item settlement mode')
+    expect('error' in r).toBe(false)
   })
 })
 

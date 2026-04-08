@@ -113,21 +113,35 @@ describe('Gateway: allowedActions', () => {
   })
 })
 
-describe('Gateway: mode locking', () => {
-  it('pay-items locks mode, blocks pay-percent', () => {
+describe('Gateway: mode locking (one-way: by-item → by-percent OK, by-percent → by-item BLOCKED)', () => {
+  it('by-item mode allows pay-percent (soft lock, can upgrade)', () => {
     sessionStore.update(sessionId, { settlementMode: 'by-item' })
     const r = executeSettlement(STORE_ID, sessionId, { type: 'pay-percent', percent: 50 })
+    expect(r.ok).toBe(true)
+  })
+
+  it('by-percent mode blocks pay-items (hard lock)', () => {
+    sessionStore.update(sessionId, { settlementMode: 'by-percent' })
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'pay-items', itemKeys: [`${orderId}:0:1`] })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('SETTLEMENT_MODE_CONFLICT')
   })
 
-  it('create-split by-item blocked in by-percent session', () => {
+  it('by-percent mode blocks create-split by-item', () => {
     sessionStore.update(sessionId, { settlementMode: 'by-percent' })
     const r = executeSettlement(STORE_ID, sessionId, {
       type: 'create-split', splitType: 'by-item', itemKeys: [`${orderId}:0:2`],
     })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('SETTLEMENT_MODE_CONFLICT')
+  })
+
+  it('by-item mode allows create-split by-percent (upgrade)', () => {
+    sessionStore.update(sessionId, { settlementMode: 'by-item' })
+    const r = executeSettlement(STORE_ID, sessionId, {
+      type: 'create-split', splitType: 'by-percent', percent: 30,
+    })
+    expect(r.ok).toBe(true)
   })
 })
 
@@ -284,17 +298,26 @@ describe('Gateway: error codes (extended)', () => {
 // ===== AllowedActions state transitions =====
 
 describe('Gateway: allowedActions transitions', () => {
-  it('by-item mode locks out by-percent actions', () => {
+  it('by-item mode still allows by-percent (soft lock, can upgrade)', () => {
     sessionStore.update(sessionId, { settlementMode: 'by-item' })
-    // Make a successful operation to get allowedActions
     const r = executeSettlement(STORE_ID, sessionId, {
       type: 'create-split', splitType: 'by-item', itemKeys: [`${orderId}:0:1`],
     })
     if (!r.ok) return
-    expect(r.allowedActions.payByPercent).toBe(false)
-    expect(r.allowedActions.createSplitByPercent).toBe(false)
+    expect(r.allowedActions.payByPercent).toBe(true)
+    expect(r.allowedActions.createSplitByPercent).toBe(true)
     expect(r.allowedActions.payByItems).toBe(true)
     expect(r.allowedActions.createSplitByItem).toBe(true)
+  })
+
+  it('by-percent mode blocks by-item actions (hard lock)', () => {
+    sessionStore.update(sessionId, { settlementMode: 'by-percent' })
+    const r = executeSettlement(STORE_ID, sessionId, { type: 'pay-percent', percent: 50 })
+    if (!r.ok) return
+    expect(r.allowedActions.payByItems).toBe(false)
+    expect(r.allowedActions.createSplitByItem).toBe(false)
+    expect(r.allowedActions.payByPercent).toBe(true)
+    expect(r.allowedActions.createSplitByPercent).toBe(true)
   })
 
   it('after creating unpaid split, paySplit and deleteSplit are allowed', () => {

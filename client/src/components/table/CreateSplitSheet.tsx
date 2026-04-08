@@ -31,10 +31,14 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, sp
   const [selectedQty, setSelectedQty] = useState<Record<string, number>>({})
   const [percent, setPercent] = useState(50)
   const [loading, setLoading] = useState(false)
+  const lockedPercent = session?.settlementMode === 'by-percent'
 
   useEffect(() => {
     if (open) {
-      api.getSessionSummary(storeId, sessionId).then(setSession).catch(console.error)
+      api.getSessionSummary(storeId, sessionId).then(s => {
+        setSession(s)
+        if (s?.settlementMode === 'by-percent') setTab('percent')
+      }).catch(console.error)
       setSelectedQty({})
       setPercent(50)
     }
@@ -122,13 +126,15 @@ export default function CreateSplitSheet({ open, onClose, storeId, sessionId, sp
           <SheetTitle>{ts.newSplit}</SheetTitle>
         </SheetHeader>
 
-        {/* Tab bar */}
+        {/* Tab bar — by-item disabled when session locked to by-percent */}
         <div className="flex gap-2 px-4">
           {(['items', 'percent'] as const).map(id => (
-            <button key={id} onClick={() => setTab(id)}
+            <button key={id}
+              disabled={id === 'items' && lockedPercent}
+              onClick={() => setTab(id)}
               className={`flex-1 min-h-[44px] rounded-md text-sm font-medium transition-colors ${
                 tab === id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-              }`}>
+              } ${id === 'items' && lockedPercent ? 'opacity-50 cursor-not-allowed' : ''}`}>
               {id === 'items' ? ts.byItems : ts.byPercent}
             </button>
           ))}

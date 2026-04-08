@@ -112,12 +112,9 @@ export function createSplitBill(
   const session = sessionStore.getById(sessionId)
   if (!session || session.storeId !== storeId) return { error: 'Session not found' }
 
-  // B3: Check settlement mode conflict
+  // B3: Check settlement mode conflict (one-way lock: by-percent blocks by-item, but by-item allows upgrade to by-percent)
   if (session.settlementMode === 'by-percent' && data.type === 'by-item') {
     return { error: 'Cannot create by-item split: session is in by-percent settlement mode' }
-  }
-  if (session.settlementMode === 'by-item' && data.type === 'by-percent') {
-    return { error: 'Cannot create by-percent split: session is in by-item settlement mode' }
   }
 
   let subtotal: number
