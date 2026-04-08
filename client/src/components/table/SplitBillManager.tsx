@@ -22,13 +22,14 @@ type PayTarget = { id: string; amount: number; method: 'card' | 'cash' }
 function deriveAllowedActions(session: SessionSummary, splits: SplitBill[]): AllowedActions {
   const isClosed = session.status === 'closed'
   const isPaid = session.remaining <= 0
-  const mode = session.settlementMode
   const hasUnpaidSplits = splits.some(s => s.status === 'unpaid')
+  const hasPercentSplits = splits.some(s => s.type === 'by-percent')
+  const effectiveMode = session.settlementMode || (hasPercentSplits ? 'by-percent' : undefined)
   return {
-    payByItems: !isClosed && !isPaid && mode !== 'by-percent',
+    payByItems: !isClosed && !isPaid && effectiveMode !== 'by-percent',
     payByPercent: !isClosed && !isPaid,
     cashPayment: !isClosed && !isPaid,
-    createSplitByItem: !isClosed && !isPaid && mode !== 'by-percent',
+    createSplitByItem: !isClosed && !isPaid && effectiveMode !== 'by-percent',
     createSplitByPercent: !isClosed && !isPaid,
     paySplit: !isClosed && hasUnpaidSplits,
     deleteSplit: !isClosed && hasUnpaidSplits,

@@ -181,6 +181,12 @@ export function createSplitBill(
     status: 'unpaid', createdAt: new Date().toISOString(),
   }
   splitBillStore.create(splitBill)
+
+  // Lock settlement mode on split creation (not just on payment confirmation)
+  if (!session.settlementMode || (session.settlementMode === 'by-item' && data.type === 'by-percent')) {
+    sessionStore.update(sessionId, { settlementMode: data.type })
+  }
+
   logger.info({ splitBillId: splitBill.id, sessionId, type: data.type }, 'split bill created')
   return splitBill
 }
