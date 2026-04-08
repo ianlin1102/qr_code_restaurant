@@ -88,7 +88,14 @@ function CheckoutForm({ amount, items }: { amount: number; items: { name: string
             <span className="text-sm">{t('checkout.loadingPayment')}</span>
           </div>
         )}
-        <PaymentElement onReady={() => setPaymentReady(true)} />
+        <PaymentElement
+          onReady={() => setPaymentReady(true)}
+          options={{
+            layout: 'tabs',
+            defaultValues: { billingDetails: { address: { country: 'US' } } },
+            wallets: { applePay: 'auto', googlePay: 'auto' },
+          }}
+        />
 
         <div className="flex items-center justify-center gap-1.5 text-green-600 text-xs">
           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/></svg>
@@ -195,7 +202,11 @@ export default function CheckoutPage() {
           loadingTip={loadingTip}
         />
 
-        <Elements stripe={stripePromise} options={{ clientSecret: activeSecret!, locale: lang === 'zh' ? 'zh' : 'en' }} key={activeSecret}>
+        <Elements stripe={stripePromise} options={{
+          clientSecret: activeSecret!,
+          locale: lang === 'zh' ? 'zh' : 'en',
+          appearance: { theme: 'stripe' },
+        }} key={activeSecret}>
           <CheckoutForm amount={activeAmount} items={cartItems} />
         </Elements>
       </div>
