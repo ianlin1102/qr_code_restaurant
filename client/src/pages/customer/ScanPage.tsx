@@ -1,22 +1,32 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { UtensilsCrossed, RefreshCw, ArrowRight } from 'lucide-react'
+import { UtensilsCrossed, RefreshCw, ArrowRight, Globe, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useSessionStore } from '@/stores/session-store'
 import { useCartStore } from '@/stores/cart-store'
 import { api } from '@/services/api'
+import type { Store } from '@qr-order/shared'
 
 export default function ScanPage() {
   const { storeId, tableId } = useParams<{ storeId: string; tableId: string }>()
   const session = useSessionStore()
   const clearCart = useCartStore(s => s.clearCart)
   const navigate = useNavigate()
-  const { t } = useTranslation('customer')
+  const { t, i18n } = useTranslation('customer')
   const [error, setError] = useState<string | null>(null)
   const [disabled, setDisabled] = useState(false)
+  const [showLangModal, setShowLangModal] = useState(false)
+  const [store, setStore] = useState<Store | null>(null)
+  const [announcement, setAnnouncement] = useState<string | null>(null)
 
   const goToMenu = () => navigate(`/menu/${storeId}`, { replace: true })
+
+  // Fetch store info (for announcement + logo)
+  useEffect(() => {
+    if (storeId) api.getStore(storeId).then(setStore).catch(() => {})
+  }, [storeId])
 
   useEffect(() => {
     if (!storeId || !tableId) return
@@ -28,32 +38,60 @@ export default function ScanPage() {
       return
     }
 
-    // Ensure language is set
+    // First visit: no language set → show language modal
     const hasLang = localStorage.getItem('i18n-lang')
     if (!hasLang) {
-      navigate(`/lang-select/${storeId}/${tableId}`, { replace: true })
-      return
+      setShowLangModal(true)
+      return // wait for language selection before proceeding
     }
 
-    // New table — validate via API
-    async function init() {
-      try {
-        const table = await api.getTable(storeId!, tableId!)
-        if (table.enabled === false) {
-          setDisabled(true)
-          return
-        }
-        clearCart()
-        session.setSession(storeId!, tableId!, table.name)
-        goToMenu()
-      } catch {
-        // API failed but we can still set session and try
-        session.setSession(storeId!, tableId!, '')
-        setError(t('scan.error'))
-      }
-    }
-    init()
+    // Language set → validate table and proceed
+    initTable()
   }, [storeId, tableId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function initTable() {
+    if (!storeId || !tableId) return
+    try {
+      const table = await api.getTable(storeId, tableId)
+      if (table.enabled === false) {
+        setDisabled(true)
+        return
+      }
+      clearCart()
+      session.setSession(storeId, tableId, table.name)
+      goToMenu()
+    } catch {
+      session.setSession(storeId!, tableId!, '')
+      setError(t('scan.error'))
+    }
+  }
+
+  const selectLang = (lang: string) => {
+    i18n.changeLanguage(lang)
+    localStorage.setItem('i18n-lang', lang)
+
+    // Check for announcement
+    const ann = lang === 'en' && store?.announcementEn
+      ? store.announcementEn
+      : store?.announcement
+    if (ann?.trim()) {
+      setAnnouncement(ann)
+    } else {
+      setShowLangModal(false)
+      initTable()
+    }
+  }
+
+  const dismissAnnouncement = () => {
+    // Mark announcement as seen
+    if (announcement && storeId) {
+      const hash = Array.from(announcement).reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0).toString(36)
+      localStorage.setItem(`announcement-hash-${storeId}`, hash.slice(0, 8))
+    }
+    setAnnouncement(null)
+    setShowLangModal(false)
+    initTable()
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -84,8 +122,7 @@ export default function ScanPage() {
             <p className="text-sm text-destructive text-center max-w-xs">{error}</p>
             <p className="text-xs text-muted-foreground text-center">{t('scan.retryDesc')}</p>
             <div className="flex gap-2">
-              <Button onClick={() => window.location.reload()}
-                variant="outline" className="gap-2">
+              <Button onClick={() => window.location.reload()} variant="outline" className="gap-2">
                 <RefreshCw className="w-4 h-4" />{t('scan.retry')}
               </Button>
               <Button onClick={goToMenu} className="gap-2">
@@ -113,6 +150,60 @@ export default function ScanPage() {
       <div className="absolute bottom-8 opacity-[0.03]">
         <UtensilsCrossed className="w-48 h-48 text-primary" />
       </div>
+
+      {/* Language Selection Modal — first visit only */}
+      <Dialog open={showLangModal} onOpenChange={() => {/* prevent dismiss without selection */}}>
+        <DialogContent className="max-w-sm w-[calc(100vw-2rem)] p-0 gap-0 [&>button]:hidden">
+          {announcement ? (
+            /* Announcement view (after language selected) */
+            <div className="flex flex-col items-center gap-5 p-6">
+              {store?.logo && (
+                <img src={store.logo} alt="" className="w-16 h-16 rounded-xl object-cover shadow-md" />
+              )}
+              <h2 className="text-lg font-bold text-primary text-center">
+                {i18n.language === 'en' ? (store?.nameEn || store?.name) : store?.name}
+              </h2>
+              <div className="w-full bg-muted/50 rounded-xl p-4">
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{announcement}</p>
+              </div>
+              <button onClick={dismissAnnouncement}
+                className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-primary text-white font-medium hover:bg-primary/90 transition-colors">
+                {i18n.language === 'en' ? 'Start Ordering' : '开始点餐'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            /* Language selection view */
+            <div className="flex flex-col items-center gap-6 p-6">
+              <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+                <Globe className="w-7 h-7 text-primary" />
+              </div>
+              <div className="text-center space-y-1">
+                <h2 className="text-xl font-bold text-primary">Select Language</h2>
+                <p className="text-lg text-primary/80">选择语言</p>
+              </div>
+              <div className="w-full space-y-3">
+                <button onClick={() => selectLang('zh')}
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-xl bg-primary text-white shadow-lg hover:bg-primary/90 transition-colors group">
+                  <div>
+                    <p className="text-xl font-bold">中文</p>
+                    <p className="text-xs text-white/70">Chinese</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-white/60 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+                <button onClick={() => selectLang('en')}
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-xl border-2 border-primary/20 bg-card hover:bg-primary/5 transition-colors group">
+                  <div>
+                    <p className="text-xl font-bold text-primary">English</p>
+                    <p className="text-xs text-muted-foreground">International</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-primary/40 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
