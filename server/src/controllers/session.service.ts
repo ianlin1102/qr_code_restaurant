@@ -492,19 +492,30 @@ export function payByPercent(
 export function confirmItemPayment(sessionId: string, itemKeys: string[]): void {
   const session = sessionStore.getById(sessionId)
   if (!session) return
+
+  // Race condition guard: if mode was already upgraded to by-percent by another
+  // concurrent payment, don't downgrade back to by-item. Still record paidItemIds
+  // so the items are tracked, but respect the mode lock.
+  const newMode = session.settlementMode === 'by-percent' ? 'by-percent' : 'by-item'
+  if (session.settlementMode === 'by-percent') {
+    logger.warn({ sessionId, itemKeys, currentMode: 'by-percent' },
+      'item payment confirmed but mode already locked to by-percent — keeping mode, still tracking paid items')
+  }
+
   sessionStore.update(sessionId, {
-    settlementMode: 'by-item',
+    settlementMode: newMode,
     paidItemIds: [...(session.paidItemIds ?? []), ...itemKeys],
   })
-  logger.info({ sessionId, itemKeys }, 'items marked as paid after payment confirmation')
+  logger.info({ sessionId, itemKeys, mode: newMode }, 'items marked as paid after payment confirmation')
 }
 
 /** Called by webhook AFTER payment confirmed — locks to percent mode */
 export function confirmPercentPayment(sessionId: string): void {
   const session = sessionStore.getById(sessionId)
   if (!session) return
+  // by-item → by-percent upgrade is always allowed (one-way lock)
   sessionStore.update(sessionId, { settlementMode: 'by-percent' })
-  logger.info({ sessionId }, 'settlement mode locked to by-percent after payment confirmation')
+  logger.info({ sessionId, previousMode: session.settlementMode }, 'settlement mode locked to by-percent after payment confirmation')
 }
 
 // ===== Safety net: auto-close stale paid sessions =====
