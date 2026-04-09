@@ -3,6 +3,7 @@ import { createError, httpStatus } from './errors'
 import type { ErrorCode } from './errors'
 import { computeAllowedActions, EMPTY_ACTIONS } from './allowed-actions'
 import { logSettlement } from './logger'
+import { emit } from '../lib/event-bus.js'
 import {
   sessionStore, orderStore, paymentStore, storeStore, splitBillStore,
 } from '../repositories/stores'
@@ -40,15 +41,16 @@ function loadContext(storeId: string, sessionId: string): SettlementContext | nu
 
   const assignedQtyMap = buildAssignedQtyMap(splits)
 
-  // Calculate remaining
+  // Calculate remaining and totalWithTax
   const summary = getSessionSummary(storeId, sessionId)
   const remaining = summary?.remaining ?? 0
+  const totalWithTax = summary?.totalWithTax ?? 0
   const mainBill = getMainBillSummary(sessionId, storeId)
   const mainBillTotal = mainBill?.total ?? 0
 
   return {
     store, session, orders, payments, splits,
-    paidQtyMap, assignedQtyMap, remaining, mainBillTotal,
+    paidQtyMap, assignedQtyMap, remaining, totalWithTax, mainBillTotal,
   }
 }
 
@@ -106,6 +108,24 @@ export function executeSettlement(
       remaining: freshRemaining,
       allowedActions: freshAllowed,
     }
+  }
+
+  if (result.ok) {
+    // All settlement actions affect session state
+    emit({ type: 'session:summary', storeId, sessionId })
+
+    // Split-related actions also emit split:changed
+    if (['create-split', 'delete-split', 'pay-split-card', 'pay-split-cash'].includes(action.type)) {
+      emit({ type: 'split:changed', storeId, sessionId })
+    }
+
+    // Close/reopen affect table status
+    if (action.type === 'close-session' || action.type === 'reopen-session') {
+      emit({ type: 'store:tables', storeId })
+    }
+
+    // All settlement actions may affect store-level views
+    emit({ type: 'store:orders', storeId })
   }
 
   logSettlement(ctx, action, result)

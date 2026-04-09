@@ -2,7 +2,7 @@ import { useRef, useCallback } from 'react'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
 import { useT } from '@/i18n/useT'
-import { localized } from '@/lib/i18n-utils'
+import { localized, optionLabel } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -135,7 +135,7 @@ export default function OrderDetailDialog({
                 </div>
                 {item.selectedOptions && item.selectedOptions.length > 0 && (
                   <p className="text-xs text-orange-600">
-                    {item.selectedOptions.map(o => `${(o.optionName || o.optionNameEn || "")}: ${(o.choiceName || o.choiceNameEn || "")}`).join(' | ')}
+                    {item.selectedOptions.map(o => optionLabel(o)).join(' | ')}
                   </p>
                 )}
                 {item.remark && (

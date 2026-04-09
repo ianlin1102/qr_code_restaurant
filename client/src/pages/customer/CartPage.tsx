@@ -11,6 +11,7 @@ import { formatPriceUSD } from '@/lib/format'
 import { getDeviceId } from '@/lib/device-id'
 import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
+import { optionLabel } from '@/lib/i18n-utils'
 
 interface CartItemCardProps {
   item: CartEntry
@@ -34,7 +35,7 @@ function CartItemCard({ item, isOwn, updateQuantity, updateRemark, t }: CartItem
             <div className="flex flex-wrap gap-1 mt-1">
               {item.selectedOptions.map(opt => (
                 <Badge key={opt.optionId} variant="outline" className="text-xs rounded-full bg-blue-50 border-blue-200 text-blue-700">
-                  {opt.optionName || opt.optionNameEn || ''}: {opt.choiceName || opt.choiceNameEn || ''}
+                  {optionLabel(opt)}
                   {opt.priceAdjust > 0 && ` +${formatPriceUSD(opt.priceAdjust)}`}
                 </Badge>
               ))}
@@ -100,7 +101,7 @@ export default function CartPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
 
   // Shared cart sync: push local changes (1s debounce), poll other devices (5s)
-  useCartSync(storeId, activeSessionId)
+  const { markSubmitted } = useCartSync(storeId, activeSessionId)
 
   const myDeviceId = useMemo(() => getDeviceId(), [])
 
@@ -170,6 +171,7 @@ export default function CartPage() {
 
     try {
       const result = await api.submitSessionCart(storeId, activeSessionId, cartVersion, customerName)
+      markSubmitted()
 
       if (result.paymentMode === 'pay-later' && result.order) {
         clearCart()

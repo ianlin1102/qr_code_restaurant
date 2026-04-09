@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/i18n/useT'
-import { localized } from '@/lib/i18n-utils'
+import { localized, optionLabel } from '@/lib/i18n-utils'
 import type { Table, Order, OrderItem, OrderStatus } from '@qr-order/shared'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
@@ -205,7 +205,7 @@ function ItemRow({ item }: { item: OrderItem }) {
           <div className="flex flex-wrap gap-1 mt-0.5">
             {item.selectedOptions.map((o, idx) => (
               <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
-                {(o.optionName || o.optionNameEn || "") ? `${(o.optionName || o.optionNameEn || "")}: ${(o.choiceName || o.choiceNameEn || "")}` : (o.choiceName || o.choiceNameEn || "")}
+                {optionLabel(o)}
               </span>
             ))}
           </div>

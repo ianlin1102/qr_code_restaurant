@@ -12,9 +12,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog'
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
 import { usePaymentStore } from '@/stores/payment-store'
+import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
 import { notify } from '@/lib/notify'
 import type { MenuResponse, MenuItem } from '@qr-order/shared'
@@ -125,6 +129,21 @@ export default function MenuPage() {
 
   // Shared cart sync: push local changes (1s debounce), poll other devices (5s)
   useCartSync(storeId, activeSessionId)
+
+  // Session closed dialog — listen for session:summary SSE events
+  const [sessionClosedOpen, setSessionClosedOpen] = useState(false)
+  const { subscribe: subscribeSession } = useSessionEvents(storeId, activeSessionId)
+  useEffect(() => {
+    return subscribeSession('session:summary', () => {
+      usePaymentStore.getState().handleEvent()
+    })
+  }, [subscribeSession])
+  // React to session status changes — show dialog when closed
+  useEffect(() => {
+    if (sessionSummary?.status === 'closed') {
+      setSessionClosedOpen(true)
+    }
+  }, [sessionSummary?.status])
 
   // Stable scroll handler — header collapse + active category tracking (RAF throttled)
   const rafRef = useRef(0)
@@ -585,6 +604,19 @@ export default function MenuPage() {
           session={sessionSummary}
         />
       )}
+
+      {/* Session Closed Dialog */}
+      <Dialog open={sessionClosedOpen} onOpenChange={setSessionClosedOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('session.closedTitle')}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{t('session.closedMessage')}</p>
+          <DialogFooter>
+            <Button onClick={() => setSessionClosedOpen(false)}>{t('session.closedOk')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Announcement Popup */}
       {showAnnouncement && (menu.store.announcement || menu.store.announcementEn) && (

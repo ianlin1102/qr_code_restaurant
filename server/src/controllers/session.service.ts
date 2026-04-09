@@ -3,6 +3,7 @@ import { sessionStore, paymentStore, orderStore, tableStore, storeStore } from '
 import type { Session, Payment, DiscountType, CartItem } from '@qr-order/shared'
 import { unitPrice as calcUnitPrice, calcTax as sharedCalcTax, calcServiceFee as sharedCalcServiceFee, calcBillSummary, calcTaxAndFees } from '@qr-order/shared/pricing'
 import logger from '../lib/logger.js'
+import { emit } from '../lib/event-bus.js'
 
 // ===== Session CRUD =====
 
@@ -137,10 +138,8 @@ export function addPayment(
     'payment recorded',
   )
 
-  // Auto-close when fully paid (payment is the strongest signal customer is leaving)
-  if (newTotalPaid >= totalWithTax) {
-    closeSession(storeId, sessionId)
-  }
+  // Auto-close removed — admin uses the "Close Table" button manually.
+  // Safety net timer (auto-close.ts, 15min) remains as fallback for abandoned sessions.
 
   return { session: sessionStore.getById(sessionId)!, payment }
 }
@@ -263,10 +262,12 @@ export function applyCoupon(
     discountAmount = Math.min(discountValue, session.totalAmount)
   }
 
-  return sessionStore.update(sessionId, {
+  const updated = sessionStore.update(sessionId, {
     couponId, couponCode, couponDiscountType: discountType,
     couponDiscountValue: discountValue, discountAmount,
   })!
+  emit({ type: 'session:summary', storeId, sessionId })
+  return updated
 }
 
 export function removeCoupon(
@@ -274,11 +275,13 @@ export function removeCoupon(
 ): Session | { error: string } {
   const session = sessionStore.getById(sessionId)
   if (!session || session.storeId !== storeId) return { error: 'Session not found' }
-  return sessionStore.update(sessionId, {
+  const updated = sessionStore.update(sessionId, {
     couponId: undefined, couponCode: undefined,
     couponDiscountType: undefined, couponDiscountValue: undefined,
     discountAmount: 0,
   })!
+  emit({ type: 'session:summary', storeId, sessionId })
+  return updated
 }
 
 // ===== Shared Cart (per-device storage, syncs across devices for same table) =====
@@ -303,6 +306,7 @@ export function updateDeviceCart(sessionId: string, deviceId: string, items: Car
     cart[deviceId] = items
   }
   sessionStore.update(sessionId, { pendingCart: cart })
+  emit({ type: 'cart:updated', storeId: session!.storeId, sessionId })
 }
 
 export function clearSessionCart(sessionId: string): void {
@@ -341,6 +345,8 @@ export function submitSessionCart(
   })
 
   logger.info({ sessionId, storeId, itemCount: allItems.length, paymentMode }, 'session cart submitted')
+  emit({ type: 'cart:submitted', storeId, sessionId })
+  emit({ type: 'session:summary', storeId, sessionId })
   return { items: allItems, paymentMode, tableId: session.tableId }
 }
 
@@ -518,53 +524,8 @@ export function confirmPercentPayment(sessionId: string): void {
   logger.info({ sessionId, previousMode: session.settlementMode }, 'settlement mode locked to by-percent after payment confirmation')
 }
 
-// ===== Safety net: auto-close stale paid sessions =====
-
-const STALE_SESSION_CHECK_MS = 5 * 60 * 1000   // check every 5 minutes
-const STALE_SESSION_TIMEOUT_MS = 15 * 60 * 1000 // 15 minutes after last order
-
-export function autoCloseStaleSessionsOnce() {
-  const allSessions = sessionStore.getByField('status', 'active')
-  const now = Date.now()
-  let closed = 0
-
-  for (const session of allSessions) {
-    const store = storeStore.getById(session.storeId)
-    if (!store) continue
-
-    const netDue = session.totalAmount - session.discountAmount
-    const tax = calcTax(session.storeId, netDue)
-    const fee = calcServiceFee(session.storeId, netDue)
-    const totalWithTax = netDue + tax + fee
-
-    if (session.totalPaid < totalWithTax) continue // not fully paid
-
-    // Find most recent order activity
-    const orders = session.orderIds.map(id => orderStore.getById(id)).filter(Boolean)
-    const latestOrder = orders.reduce((latest, o) => {
-      const t = new Date(o!.createdAt).getTime()
-      return t > latest ? t : latest
-    }, 0)
-    const latestPayment = paymentStore.getByField('sessionId', session.id)
-      .reduce((latest, p) => {
-        const t = new Date(p.createdAt).getTime()
-        return t > latest ? t : latest
-      }, 0)
-    const lastActivity = Math.max(latestOrder, latestPayment, new Date(session.createdAt).getTime())
-
-    if (now - lastActivity >= STALE_SESSION_TIMEOUT_MS) {
-      closeSession(session.storeId, session.id)
-      logger.info({ sessionId: session.id, storeId: session.storeId, idleMinutes: Math.round((now - lastActivity) / 60000) },
-        'auto-closed stale paid session (safety net)')
-      closed++
-    }
-  }
-  return closed
-}
-
-// Start the safety net timer
-setInterval(autoCloseStaleSessionsOnce, STALE_SESSION_CHECK_MS)
-logger.info('session safety net started: checking for stale paid sessions every 5 minutes')
+// Re-export auto-close for backward compat
+export { autoCloseStaleSessionsOnce, startAutoCloseTimer } from '../settlement/auto-close.js'
 
 /** @internal Called by settlement gateway. */
 export function recordCashPayment(

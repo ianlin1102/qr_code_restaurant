@@ -1,5 +1,5 @@
 import type { SettlementContext } from '../types'
-import { checkNotClosed, checkHasRemaining, checkAmount, checkReceived } from '../rules'
+import { checkNotClosed, checkHasRemaining, checkAmount, checkReceived, checkMaxAmount } from '../rules'
 import { recordCashPayment } from '../../controllers/session.service'
 
 export function execute(ctx: SettlementContext, action: { type: 'cash-payment'; amount: number; receivedAmount: number }) {
@@ -8,6 +8,7 @@ export function execute(ctx: SettlementContext, action: { type: 'cash-payment'; 
     checkHasRemaining(ctx),
     checkAmount(action.amount),
     checkAmount(action.receivedAmount),
+    checkMaxAmount(action.receivedAmount, ctx.totalWithTax),
   ]
   for (const code of checks) {
     if (code) return { error: code, message: errorMessage(code) }
@@ -31,6 +32,7 @@ function errorMessage(code: string): string {
     case 'SESSION_FULLY_PAID': return 'Session is fully paid'
     case 'INVALID_AMOUNT': return 'Amount must be a positive number'
     case 'INSUFFICIENT_RECEIVED': return 'Received amount must be >= amount due'
+    case 'AMOUNT_EXCEEDS_MAXIMUM': return 'Amount exceeds maximum allowed'
     default: return code
   }
 }

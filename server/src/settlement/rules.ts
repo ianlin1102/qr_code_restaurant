@@ -84,6 +84,13 @@ export function checkAmount(val: unknown): ErrorCode | null {
   return null
 }
 
+/** Reject amounts unreasonably above the bill total. Max = max($100, totalWithTax × 2). */
+export function checkMaxAmount(amount: number, totalWithTax: number): ErrorCode | null {
+  const maxAllowed = Math.max(10000, totalWithTax * 2)
+  if (amount > maxAllowed) return 'AMOUNT_EXCEEDS_MAXIMUM'
+  return null
+}
+
 export function checkMinimum(splitAmount: number, remainingAfterSplit: number, isFullPayment: boolean): ErrorCode | null {
   if (isFullPayment) return null
   if (splitAmount < 100) return 'AMOUNT_BELOW_MINIMUM'

@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { Order, OrderItem, MenuItem } from '@qr-order/shared'
+import type { Order, OrderItem, MenuItem, SelectedOption } from '@qr-order/shared'
 
 interface Props {
   order: Order | null
@@ -121,6 +121,34 @@ export default function OrderEditDialog({
     })
   }
 
+  const handleAddCustomOption = (idx: number, name: string, priceCents: number) => {
+    const newOpt: SelectedOption = {
+      optionId: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      optionName: name,
+      choiceId: `custom-${Date.now()}`,
+      choiceName: name,
+      priceAdjust: priceCents,
+    }
+    setEditItems(prev => {
+      const items = [...prev]
+      const item = items[idx]
+      const currentOptions = [...(item.selectedOptions ?? [])]
+      currentOptions.push(newOpt)
+      items[idx] = { ...items[idx], selectedOptions: currentOptions }
+      return items
+    })
+  }
+
+  const handleRemoveCustomOption = (idx: number, optionId: string) => {
+    setEditItems(prev => {
+      const items = [...prev]
+      const item = items[idx]
+      const currentOptions = (item.selectedOptions ?? []).filter(o => o.optionId !== optionId)
+      items[idx] = { ...items[idx], selectedOptions: currentOptions }
+      return items
+    })
+  }
+
   const selectedAddItem = allMenuItems.find(m => m.id === addItemId)
 
   const handleAddItem = () => {
@@ -207,6 +235,8 @@ export default function OrderEditDialog({
                     onOption={handleOption}
                     onRemove={handleRemoveItem}
                     onPriceChange={handlePriceChange}
+                    onAddCustomOption={handleAddCustomOption}
+                    onRemoveCustomOption={handleRemoveCustomOption}
                   />
                 )
               })}
@@ -303,6 +333,8 @@ interface EditItemRowProps {
   onOption: (idx: number, optionId: string, choiceId: string) => void
   onRemove: (idx: number) => void
   onPriceChange: (idx: number, newPrice: number) => void
+  onAddCustomOption: (idx: number, name: string, priceCents: number) => void
+  onRemoveCustomOption: (idx: number, optionId: string) => void
 }
 
 function EditItemRow({
@@ -315,8 +347,26 @@ function EditItemRow({
   onOption,
   onRemove,
   onPriceChange,
+  onAddCustomOption,
+  onRemoveCustomOption,
 }: EditItemRowProps) {
   const { t, lang } = useT()
+  const [showCustomForm, setShowCustomForm] = useState(false)
+  const [customName, setCustomName] = useState('')
+  const [customPriceInput, setCustomPriceInput] = useState('')
+
+  const customOptions = (item.selectedOptions ?? []).filter(o => o.optionId.startsWith('custom-'))
+
+  const handleSubmitCustom = () => {
+    const name = customName.trim()
+    if (!name) return
+    const dollars = parseFloat(customPriceInput) || 0
+    const cents = Math.round(dollars * 100)
+    onAddCustomOption(idx, name, cents)
+    setCustomName('')
+    setCustomPriceInput('')
+    setShowCustomForm(false)
+  }
 
   return (
     <div className="border rounded-lg p-3 space-y-2">
@@ -394,6 +444,82 @@ function EditItemRow({
           })}
         </div>
       )}
+
+      {/* Custom (ad-hoc) options */}
+      <div className="space-y-1">
+        {customOptions.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {customOptions.map(opt => (
+              <span
+                key={opt.optionId}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-amber-50 border border-amber-200 text-amber-800"
+              >
+                <span className="text-[9px] font-semibold">{t.dashboard.customLabel}</span>
+                {opt.choiceName}
+                {opt.priceAdjust > 0 && (
+                  <span className="text-amber-600">+{formatPriceUSD(opt.priceAdjust)}</span>
+                )}
+                <button
+                  type="button"
+                  className="ml-0.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-amber-500 hover:text-red-600"
+                  onClick={() => onRemoveCustomOption(idx, opt.optionId)}
+                  aria-label="Remove"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {showCustomForm ? (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Input
+              value={customName}
+              onChange={e => setCustomName(e.target.value)}
+              placeholder={t.dashboard.customOptionName}
+              className="w-28 h-9 text-xs"
+              autoFocus
+              onKeyDown={e => { if (e.key === 'Enter') handleSubmitCustom() }}
+            />
+            <Input
+              type="number"
+              min={0}
+              step={0.01}
+              value={customPriceInput}
+              onChange={e => setCustomPriceInput(e.target.value)}
+              placeholder={t.dashboard.customOptionPrice}
+              className="w-24 h-9 text-xs"
+              onKeyDown={e => { if (e.key === 'Enter') handleSubmitCustom() }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="min-h-[44px] text-xs"
+              onClick={handleSubmitCustom}
+              disabled={!customName.trim()}
+            >
+              {t.dashboard.addDish}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="min-h-[44px] text-xs text-muted-foreground"
+              onClick={() => { setShowCustomForm(false); setCustomName(''); setCustomPriceInput('') }}
+            >
+              {t.common.cancel}
+            </Button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="min-h-[44px] px-2 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+            onClick={() => setShowCustomForm(true)}
+          >
+            {t.dashboard.addCustomOption}
+          </button>
+        )}
+      </div>
 
       {/* Remark */}
       <Input

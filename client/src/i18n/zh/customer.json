@@ -99,6 +99,11 @@
     "orderNumber": "订单 #{{number}}",
     "items": "{{count}} 件商品"
   },
+  "session": {
+    "closedTitle": "桌台已结账",
+    "closedMessage": "您的账单已处理完成",
+    "closedOk": "好的"
+  },
   "common": {
     "allergyNotice": "价格已包含适用的服务费。如有严重过敏情况，请在提交前通知工作人员。",
     "kitchenNotified": "厨房已通知",

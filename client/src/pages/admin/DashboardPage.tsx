@@ -8,8 +8,9 @@ import OrderDetailDialog from '@/components/order/OrderDetailDialog'
 import OrderEditDialog from '@/components/order/OrderEditDialog'
 import type { Order, OrderStatus } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
+import { useStoreEvents } from '@/hooks/useStoreEvents'
 
-const POLL_INTERVAL = 5000
+const POLL_INTERVAL = 30_000
 
 type TabFilter = 'all' | OrderStatus
 
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const STORE_ID = useAuthStore(s => s.user!.storeId)
   const isOwner = useAuthStore(s => s.isOwner)
+  const { subscribe } = useStoreEvents(STORE_ID)
 
   const TABS: { key: TabFilter; label: string }[] = [
     { key: 'all', label: t.dashboard.all },
@@ -55,13 +57,18 @@ export default function DashboardPage() {
     }
   }, [])
 
-  // Initial fetch and polling
+  // Initial fetch and fallback polling (SSE is primary)
   useEffect(() => {
     setLoading(true)
     fetchOrders()
     const interval = setInterval(() => fetchOrders(), POLL_INTERVAL)
     return () => clearInterval(interval)
   }, [fetchOrders])
+
+  // SSE-driven updates: refresh on store:orders events
+  useEffect(() => {
+    return subscribe('store:orders', () => { fetchOrders() })
+  }, [subscribe, fetchOrders])
 
   // Re-fetch when tab changes
   useEffect(() => {

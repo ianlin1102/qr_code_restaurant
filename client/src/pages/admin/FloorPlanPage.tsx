@@ -11,14 +11,16 @@ import { cn } from '@/lib/utils'
 import { FloorCanvas } from '@/components/floor/FloorCanvas'
 import TableGrid from '@/components/table/TableGrid'
 import type { Table, Order } from '@qr-order/shared'
+import { useStoreEvents } from '@/hooks/useStoreEvents'
 
-const POLL_INTERVAL = 10_000
+const POLL_INTERVAL = 30_000
 
 export default function FloorPlanPage() {
   const { t } = useT()
   const navigate = useNavigate()
   const storeId = useAuthStore(s => s.user?.storeId) ?? ''
   const canEdit = usePermission('tables:write')
+  const { subscribe } = useStoreEvents(storeId)
 
   const [tables, setTables] = useState<Table[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -34,6 +36,11 @@ export default function FloorPlanPage() {
   }, [storeId])
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL_INTERVAL); return () => clearInterval(id) }, [fetchData])
+
+  // SSE-driven updates: refresh on store:tables events
+  useEffect(() => {
+    return subscribe('store:tables', () => { fetchData() })
+  }, [subscribe, fetchData])
 
   const enabledTables = useMemo(() => tables.filter(tb => tb.enabled), [tables])
   const occupiedCount = useMemo(() => enabledTables.filter(tb => tb.status === 'occupied').length, [enabledTables])

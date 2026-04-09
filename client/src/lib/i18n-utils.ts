@@ -10,6 +10,14 @@ export function localized(
   return item.name
 }
 
+/** Format option label: skip "name: name" duplication for custom options. */
+export function optionLabel(o: { optionName?: string; optionNameEn?: string; choiceName?: string; choiceNameEn?: string }): string {
+  const opt = o.optionName || o.optionNameEn || ''
+  const choice = o.choiceName || o.choiceNameEn || ''
+  if (!opt || opt === choice) return choice
+  return `${opt}: ${choice}`
+}
+
 export function localizedDesc(
   item: { description?: string; descriptionEn?: string },
   lang: string,

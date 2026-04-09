@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -10,12 +10,15 @@ import { formatPriceUSD } from '@/lib/format'
 import { itemLineTotal } from '@/lib/pricing'
 import { getDeviceId } from '@/lib/device-id'
 import { api } from '@/services/api'
+import { useSessionEvents } from '@/hooks/useSessionEvents'
+import { usePaymentStore } from '@/stores/payment-store'
 import type { Order } from '@qr-order/shared'
 
 export default function OrderConfirmPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { storeId, tableId, tableName } = useSessionStore()
+  const paymentSessionId = usePaymentStore(s => s.sessionId)
   const clearMyItems = useCartStore(s => s.clearMyItems)
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
@@ -34,6 +37,8 @@ export default function OrderConfirmPage() {
   const [paymentAmount, setPaymentAmount] = useState<number | null>(null)
   // Track whether this is a settlement (partial) payment vs a new order payment
   const [isSettlement, setIsSettlement] = useState(false)
+  // SSE: use sessionId from payment store for real-time updates
+  const { subscribe } = useSessionEvents(storeId, paymentSessionId)
 
   // Pay-later: clear own items
   useEffect(() => {
@@ -47,7 +52,34 @@ export default function OrderConfirmPage() {
     }
   }, [isPayLater, clearMyItems, storeId, tableId])
 
-  // On successful Stripe payment: poll for this payment to appear in session
+  // Check session for payment confirmation (shared by both retry and SSE)
+  const checkPaymentConfirmed = useCallback((piId: string | null) => {
+    if (!storeId || !tableId) return
+    api.getActiveSession(storeId, tableId).then(s => {
+      if (!s) return
+
+      const thisPayment = piId
+        ? s.payments.find(p => p.stripePaymentIntentId === piId)
+        : null
+      if (!thisPayment && piId) return // not yet confirmed
+
+      const amount = thisPayment?.amount ?? null
+      setPaymentAmount(amount)
+
+      const settlement = !!(s.settlementMode || (s.paidItemIds && s.paidItemIds.length > 0))
+      setIsSettlement(settlement)
+
+      if (s.orders.length > 0) {
+        if (settlement) {
+          setPaidOrder({ ...s.orders[0], items: [], totalPrice: amount ?? 0 })
+        } else {
+          setPaidOrder({ ...s.orders[0], items: s.orders.flatMap(o => o.items), totalPrice: amount ?? s.totalPaid })
+        }
+      } else { setOrderTimeout(true) }
+    }).catch(() => {})
+  }, [storeId, tableId])
+
+  // On successful Stripe payment: retry polling for payment confirmation (fallback)
   useEffect(() => {
     if (!paymentSuccess || !storeId || !tableId) return
     const deviceId = getDeviceId()
@@ -58,36 +90,40 @@ export default function OrderConfirmPage() {
     }).catch(() => {})
 
     let attempts = 0
+    const maxAttempts = 7 // ~21s at 3s intervals
     const poll = () => {
       api.getActiveSession(storeId, tableId).then(s => {
-        if (!s) { if (++attempts < 8) setTimeout(poll, 1500); else setOrderTimeout(true); return }
+        if (!s) { if (++attempts < maxAttempts) setTimeout(poll, 3000); else setOrderTimeout(true); return }
 
         const thisPayment = piId
           ? s.payments.find(p => p.stripePaymentIntentId === piId)
           : null
-        if (!thisPayment && piId && ++attempts < 8) { setTimeout(poll, 1500); return }
+        if (!thisPayment && piId && ++attempts < maxAttempts) { setTimeout(poll, 3000); return }
 
         const amount = thisPayment?.amount ?? null
         setPaymentAmount(amount)
 
-        // Detect if this was a settlement payment (session has settlementMode or paidItemIds)
         const settlement = !!(s.settlementMode || (s.paidItemIds && s.paidItemIds.length > 0))
         setIsSettlement(settlement)
 
         if (s.orders.length > 0) {
-          // For settlement: don't show item list (we paid specific items, not a new order)
-          // For new order: show the order items
           if (settlement) {
-            // Use a minimal order object — just the amount, no misleading item list
             setPaidOrder({ ...s.orders[0], items: [], totalPrice: amount ?? 0 })
           } else {
             setPaidOrder({ ...s.orders[0], items: s.orders.flatMap(o => o.items), totalPrice: amount ?? s.totalPaid })
           }
         } else { setOrderTimeout(true) }
-      }).catch(() => { if (++attempts < 8) setTimeout(poll, 1500); else setOrderTimeout(true) })
+      }).catch(() => { if (++attempts < maxAttempts) setTimeout(poll, 3000); else setOrderTimeout(true) })
     }
     poll()
   }, [paymentSuccess, storeId, tableId, clearMyItems, searchParams])
+
+  // SSE-driven payment confirmation: on session:summary, check if payment appeared
+  useEffect(() => {
+    if (!paymentSuccess) return
+    const piId = searchParams.get('payment_intent')
+    return subscribe('session:summary', () => { checkPaymentConfirmed(piId) })
+  }, [paymentSuccess, subscribe, searchParams, checkPaymentConfirmed])
 
   // Payment failed
   if (paymentFailed) {

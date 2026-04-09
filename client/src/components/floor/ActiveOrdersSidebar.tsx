@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { adminT } from '@/i18n/admin'
+import { useStoreEvents } from '@/hooks/useStoreEvents'
 
 type T = (typeof adminT)['en']
 
@@ -16,7 +17,7 @@ interface Props {
 }
 
 const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'preparing']
-const REFRESH_INTERVAL = 15_000
+const REFRESH_INTERVAL = 30_000
 const WARN_MINUTES = 15
 const CRITICAL_MINUTES = 30
 
@@ -76,6 +77,7 @@ function itemCount(order: Order): number {
 
 export default function ActiveOrdersSidebar({ storeId, onOrderClick }: Props) {
   const { t } = useT()
+  const { subscribe } = useStoreEvents(storeId)
   const [orders, setOrders] = useState<Order[]>([])
   const [, setTick] = useState(0)
 
@@ -90,6 +92,7 @@ export default function ActiveOrdersSidebar({ storeId, onOrderClick }: Props) {
 
   useEffect(() => {
     fetchOrders()
+    // Fallback polling at 30s (SSE is primary)
     const dataInterval = setInterval(fetchOrders, REFRESH_INTERVAL)
     const tickInterval = setInterval(() => setTick(prev => prev + 1), 60_000)
     return () => {
@@ -97,6 +100,11 @@ export default function ActiveOrdersSidebar({ storeId, onOrderClick }: Props) {
       clearInterval(tickInterval)
     }
   }, [fetchOrders])
+
+  // SSE-driven updates: refresh on store:orders events
+  useEffect(() => {
+    return subscribe('store:orders', () => { fetchOrders() })
+  }, [subscribe, fetchOrders])
 
   const grouped = STATUS_GROUPS.map(group => ({
     ...group,

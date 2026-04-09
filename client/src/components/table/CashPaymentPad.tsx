@@ -15,10 +15,12 @@ export default function CashPaymentPad({ totalDue, onConfirm, onCancel, loading,
   const [input, setInput] = useState('')
   const zh = lang === 'zh'
 
+  const maxCents = Math.max(10000, totalDue * 2)
   const parsed = parseFloat(input || '0')
   const receivedCents = Number.isFinite(parsed) ? Math.round(parsed * 100) : 0
+  const overMax = receivedCents > maxCents
   const change = receivedCents - totalDue
-  const canConfirm = receivedCents >= totalDue && !loading
+  const canConfirm = receivedCents >= totalDue && !overMax && !loading
 
   const press = (key: string) => {
     if (key === 'back') return setInput(prev => prev.slice(0, -1))
@@ -26,6 +28,10 @@ export default function CashPaymentPad({ totalDue, onConfirm, onCancel, loading,
     // limit to 2 decimal places
     const dotIdx = input.indexOf('.')
     if (dotIdx >= 0 && input.length - dotIdx > 2 && key !== '.') return
+    // prevent typing beyond max
+    const next = input + key
+    const nextCents = Math.round(parseFloat(next) * 100)
+    if (Number.isFinite(nextCents) && nextCents > maxCents) return
     setInput(prev => prev + key)
   }
 
@@ -52,9 +58,11 @@ export default function CashPaymentPad({ totalDue, onConfirm, onCancel, loading,
         ${input || '0.00'}
       </div>
       <div className="text-center text-sm font-medium">
-        {receivedCents >= totalDue
-          ? <span className="text-green-600">{zh ? '找零' : 'Change'}: {formatPriceUSD(change)}</span>
-          : input ? <span className="text-red-500">{zh ? '金额不足' : 'Insufficient'}</span> : null}
+        {overMax
+          ? <span className="text-red-500">{zh ? '超出最大金额' : 'Exceeds maximum'} {formatPriceUSD(maxCents)}</span>
+          : receivedCents >= totalDue
+            ? <span className="text-green-600">{zh ? '找零' : 'Change'}: {formatPriceUSD(change)}</span>
+            : input ? <span className="text-red-500">{zh ? '金额不足' : 'Insufficient'}</span> : null}
       </div>
 
       <div className="flex gap-2">

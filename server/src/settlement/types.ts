@@ -25,6 +25,7 @@ export interface SettlementContext {
   paidQtyMap: Map<string, number>
   assignedQtyMap: Map<string, number>
   remaining: number
+  totalWithTax: number
   mainBillTotal: number
 }
 

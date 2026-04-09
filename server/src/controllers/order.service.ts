@@ -5,6 +5,7 @@ import { createSession, getActiveSession, addOrderToSession, recalcSessionTotal 
 import type { Order, OrderItem, CreateOrderRequest, OrderStatus } from '@qr-order/shared'
 import logger from '../lib/logger.js'
 import { orderStore, tableStore, storeStore, sessionStore } from '../repositories/stores.js'
+import { emit } from '../lib/event-bus.js'
 
 const storeCounters = new Map<string, number>()
 
@@ -128,6 +129,10 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
   // Fire-and-forget print (don't block order creation)
   printOrder(order).catch(err => logger.error({ orderId: order.id, err }, 'print failed'))
 
+  emit({ type: 'order:created', storeId, sessionId: order.sessionId ?? '', order })
+  emit({ type: 'session:summary', storeId, sessionId: order.sessionId ?? '' })
+  emit({ type: 'store:orders', storeId })
+
   return order
 }
 
@@ -154,6 +159,8 @@ export function updateOrderStatus(storeId: string, orderId: string, status: Orde
   })
 
   // No auto-idle here; session close handles table release
+  emit({ type: 'order:updated', storeId: order.storeId, sessionId: order.sessionId ?? '', order: updated! })
+  emit({ type: 'store:orders', storeId: order.storeId })
   return updated!
 }
 
@@ -225,6 +232,7 @@ export function deleteOrder(storeId: string, orderId: string): { success: true }
 
   orderStore.delete(orderId)
   logger.info({ storeId, orderId, orderNumber: order.orderNumber }, 'order deleted')
+  emit({ type: 'store:orders', storeId: order.storeId })
   return { success: true }
 }
 
@@ -263,6 +271,9 @@ export function voidItem(
   }
 
   logger.info({ storeId, orderId, itemIndex, userId, reason }, 'item voided')
+  emit({ type: 'order:updated', storeId: order.storeId, sessionId: order.sessionId ?? '', order: updated })
+  emit({ type: 'session:summary', storeId: order.storeId, sessionId: order.sessionId ?? '' })
+  emit({ type: 'store:orders', storeId: order.storeId })
   return updated
 }
 
@@ -321,6 +332,10 @@ export async function updateOrderItems(storeId: string, orderId: string, items: 
     const active = sessions.find(s => s.orderIds.includes(orderId) && s.status === 'active')
     if (active) recalcSessionTotal(active.id)
   }
+
+  emit({ type: 'order:updated', storeId: updated!.storeId, sessionId: updated!.sessionId ?? '', order: updated! })
+  emit({ type: 'session:summary', storeId: updated!.storeId, sessionId: updated!.sessionId ?? '' })
+  emit({ type: 'store:orders', storeId: updated!.storeId })
 
   return updated!
 }

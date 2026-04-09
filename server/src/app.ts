@@ -19,6 +19,7 @@ import clockRoutes from './routes/clock.routes.js'
 import sessionRoutes from './routes/session.routes.js'
 import roleRoutes from './routes/role.routes.js'
 import splitBillRoutes from './routes/split-bill.routes.js'
+import sseRoutes from './routes/sse.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
@@ -49,6 +50,8 @@ app.use('/api/stores/:storeId/menu', menuRoutes)
 app.use('/api/stores/:storeId/orders', orderRoutes)
 app.use('/api/stores/:storeId/checkout', paymentRoutes)
 app.use('/api/stores/:storeId/tables', tableRoutes)
+// SSE must be before session routes (Express matches in mount order)
+app.use('/api/stores/:storeId', sseRoutes)
 app.use('/api/stores/:storeId/sessions', sessionRoutes)
 app.use('/api/stores/:storeId/sessions/:sessionId/split-bills', splitBillRoutes)
 app.use('/api/stores/:storeId/analytics', analyticsRoutes)

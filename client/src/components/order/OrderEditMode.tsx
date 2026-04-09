@@ -4,6 +4,7 @@ import type { Order, OrderItem, MenuItem } from '@qr-order/shared'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
+import { optionLabel } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -137,7 +138,7 @@ function EditableItemRow({ item, idx, onQty, onRemove, onRemark }: {
         <span className="shrink-0 ml-2">{formatPriceUSD(itemUnitPrice(item) * item.quantity)}</span>
       </div>
       {opts && opts.length > 0 && (
-        <p className="text-xs text-orange-600">{opts.map((o) => `${(o.optionName || o.optionNameEn || "")}: ${(o.choiceName || o.choiceNameEn || "")}`).join(' | ')}</p>
+        <p className="text-xs text-orange-600">{opts.map((o) => optionLabel(o)).join(' | ')}</p>
       )}
       <div className="flex items-center gap-1">
         <Button size="sm" variant="outline" className="min-h-[44px] min-w-[44px] p-0" onClick={() => onQty(idx, -1)}><Minus className="size-4" /></Button>

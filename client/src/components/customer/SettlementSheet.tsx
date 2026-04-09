@@ -1,15 +1,16 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Minus, Plus } from 'lucide-react'
+import { Minus, Plus, Info, CheckCircle } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { api, type SessionSummary, type AllowedActions } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
+import { deriveAllowedActions } from '@/lib/settlement'
 import { calcSplitByPercent } from '@qr-order/shared/pricing'
 import { notify } from '@/lib/notify'
-import { localized } from '@/lib/i18n-utils'
+import { localized, optionLabel } from '@/lib/i18n-utils'
 
 interface Props {
   open: boolean
@@ -37,19 +38,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   const [allowed, setAllowed] = useState<AllowedActions | null>(null)
   // Derive allowedActions from session state; overwritten by real server values after API calls
   useEffect(() => {
-    const mode = session.settlementMode
-    const isPaid = (session.remaining ?? 0) <= 0
-    const isClosed = session.status === 'closed'
-    setAllowed({
-      payByItems: !isClosed && !isPaid && mode !== 'by-percent',
-      payByPercent: !isClosed && !isPaid,
-      cashPayment: !isClosed && !isPaid,
-      createSplitByItem: !isClosed && !isPaid && mode !== 'by-percent',
-      createSplitByPercent: !isClosed && !isPaid,
-      paySplit: false, deleteSplit: false,
-      closeSession: !isClosed && isPaid,
-      reopenSession: isClosed,
-    })
+    setAllowed(deriveAllowedActions(session))
   }, [session.settlementMode, session.remaining, session.status])
   const lockedPercent = allowed ? !allowed.payByItems : session.settlementMode === 'by-percent'
   const [tab, setTab] = useState<Tab>(lockedPercent ? 'percent' : 'items')
@@ -57,6 +46,15 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   const [selectedQty, setSelectedQty] = useState<Record<string, number>>({})
   const [percent, setPercent] = useState(50)
   const [loading, setLoading] = useState(false)
+
+  // Check if waiter has created unpaid split bills for this session
+  const [hasWaiterSplits, setHasWaiterSplits] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    api.getSplitBills(storeId, session.id)
+      .then(({ splits }) => setHasWaiterSplits(splits.some(s => s.status === 'unpaid')))
+      .catch(() => setHasWaiterSplits(false))
+  }, [open, storeId, session.id])
 
   // Flatten all order items with keys
   const allItems = useMemo(() => {
@@ -77,9 +75,9 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
           totalQty: item.quantity,
           paidQty: Math.min(paidQty, item.quantity),
           opts: (item.selectedOptions ?? []).map(o => ({
-            label: `${o.optionName || o.optionNameEn || ''}: ${o.choiceName || o.choiceNameEn || ''}`,
+            label: optionLabel(o),
             adjust: o.priceAdjust,
-          })).filter(o => o.label.replace(':', '').trim()),
+          })).filter(o => o.label.trim()),
         })
       })
     }
@@ -153,7 +151,31 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
           <SheetTitle>{t('结账', 'Settle Bill')}</SheetTitle>
         </SheetHeader>
 
+        {/* Session closed banner — hide all payment controls */}
+        {session.status === 'closed' && (
+          <div className="mx-4 flex flex-col items-center gap-2 rounded-md bg-gray-100 border border-gray-300 px-4 py-6">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+            <p className="text-base font-semibold text-gray-800">
+              {t('账单已关闭', 'Bill Closed')}
+            </p>
+            <Button variant="outline" className="mt-2" onClick={onClose}>
+              {t('好的', 'OK')}
+            </Button>
+          </div>
+        )}
+
+        {/* Waiter processing banner */}
+        {session.status !== 'closed' && hasWaiterSplits && (
+          <div className="mx-4 flex items-center gap-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+            <Info className="w-4 h-4 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-800">
+              {t('服务生正在处理您的账单', 'Waiter is processing your bill')}
+            </p>
+          </div>
+        )}
+
         {/* Tab bar */}
+        {session.status !== 'closed' && (<>
         <div className="flex gap-2 px-4">
           {(['items', 'percent'] as const).map(id => (
             <button
@@ -277,6 +299,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
             {loading ? t('处理中...', 'Processing...') : t('去支付', 'Pay') + ` ${formatPriceUSD(calc.total)}`}
           </Button>
         </div>
+        </>)}
       </SheetContent>
     </Sheet>
   )

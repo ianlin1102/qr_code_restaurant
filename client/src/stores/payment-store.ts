@@ -21,6 +21,8 @@ interface PaymentState {
   stop: () => void
   /** Force refresh from server */
   refresh: () => void
+  /** Handle SSE event — triggers immediate refresh (called by components with SSE access) */
+  handleEvent: () => void
 }
 
 let pollId: ReturnType<typeof setInterval> | null = null
@@ -53,7 +55,7 @@ export const usePaymentStore = create<PaymentState>()((set) => ({
       .then(s => set({ summary: s, sessionId: s?.id ?? null, loading: false }))
       .catch(() => set({ loading: false }))
 
-    // Start polling every 5s (detects admin/other device payments)
+    // Fallback polling every 30s (SSE is primary, polling is safety net)
     if (pollId) clearInterval(pollId)
     pollId = setInterval(() => {
       if (!currentStoreId || !currentTableId) return
@@ -66,7 +68,7 @@ export const usePaymentStore = create<PaymentState>()((set) => ({
           set({ summary: s, sessionId: s.id })
         })
         .catch(() => {})
-    }, 5_000)
+    }, 30_000)
   },
 
   stop: () => {
@@ -79,6 +81,20 @@ export const usePaymentStore = create<PaymentState>()((set) => ({
     if (!currentStoreId || !currentTableId) return
     api.getActiveSession(currentStoreId, currentTableId)
       .then(s => { if (s) set({ summary: s, sessionId: s.id }) })
+      .catch(() => {})
+  },
+
+  handleEvent: () => {
+    // SSE event received — fetch fresh data immediately (same as refresh)
+    if (!currentStoreId || !currentTableId) return
+    api.getActiveSession(currentStoreId, currentTableId)
+      .then(s => {
+        if (!s) return
+        const fp = `${s.totalPaid}|${s.remaining}|${s.status}|${s.settlementMode}`
+        if (fp === lastFp) return
+        lastFp = fp
+        set({ summary: s, sessionId: s.id })
+      })
       .catch(() => {})
   },
 }))

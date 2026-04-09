@@ -1,5 +1,5 @@
 import type { SettlementContext } from '../types'
-import { checkNotClosed, checkAmount } from '../rules'
+import { checkNotClosed, checkAmount, checkMaxAmount } from '../rules'
 import { addPayment } from '../../controllers/session.service'
 
 export function execute(ctx: SettlementContext, action: {
@@ -8,6 +8,7 @@ export function execute(ctx: SettlementContext, action: {
   const checks = [
     checkNotClosed(ctx),
     checkAmount(action.amount),
+    checkMaxAmount(action.amount, ctx.totalWithTax),
   ]
   for (const code of checks) {
     if (code) return { error: code, message: errorMessage(code) }
@@ -28,6 +29,7 @@ function errorMessage(code: string): string {
   switch (code) {
     case 'SESSION_CLOSED': return 'Session is closed'
     case 'INVALID_AMOUNT': return 'Amount must be a positive number'
+    case 'AMOUNT_EXCEEDS_MAXIMUM': return 'Amount exceeds maximum allowed'
     default: return code
   }
 }

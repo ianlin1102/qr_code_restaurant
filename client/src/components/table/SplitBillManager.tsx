@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
-import { api, type SessionSummary, type AllowedActions } from '@/services/api'
-import type { SplitBill } from '@qr-order/shared'
+import { api } from '@/services/api'
 import { useT } from '@/i18n/useT'
 import { notify } from '@/lib/notify'
+import { useSettlementPoll } from '@/hooks/useSettlementPoll'
 import CashPaymentPad from './CashPaymentPad'
 import CreateSplitSheet from './CreateSplitSheet'
 import { TipInput, MainBillCard, SplitCard } from './SplitBillCards'
@@ -20,64 +20,17 @@ interface Props {
 
 type PayTarget = { id: string; amount: number; method: 'card' | 'cash' }
 
-function deriveAllowedActions(session: SessionSummary, splits: SplitBill[]): AllowedActions {
-  const isClosed = session.status === 'closed'
-  const isPaid = session.remaining <= 0
-  const hasUnpaidSplits = splits.some(s => s.status === 'unpaid')
-  const hasPercentSplits = splits.some(s => s.type === 'by-percent')
-  // effectiveMode: percent splits always enforce by-percent; otherwise trust session.settlementMode
-  const effectiveMode = hasPercentSplits ? 'by-percent' : session.settlementMode
-  return {
-    payByItems: !isClosed && !isPaid && effectiveMode !== 'by-percent',
-    payByPercent: !isClosed && !isPaid,
-    cashPayment: !isClosed && !isPaid,
-    createSplitByItem: !isClosed && !isPaid && effectiveMode !== 'by-percent',
-    createSplitByPercent: !isClosed && !isPaid,
-    paySplit: !isClosed && hasUnpaidSplits,
-    deleteSplit: !isClosed && hasUnpaidSplits,
-    closeSession: !isClosed && isPaid,
-    reopenSession: isClosed,
-  }
-}
-
 export default function SplitBillManager({ open, onClose, storeId, sessionId }: Props) {
   const { t, lang } = useT()
   const ts = t.splitBill
-  const [session, setSession] = useState<SessionSummary | null>(null)
-  const [splits, setSplits] = useState<SplitBill[]>([])
-  const [mainBill, setMainBill] = useState<{ total: number; itemCount: number } | null>(null)
   const [payTarget, setPayTarget] = useState<PayTarget | null>(null)
   const [tipInput, setTipInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [allowed, setAllowed] = useState<AllowedActions | null>(null)
-  const lastFp = useRef('')
 
-  const refresh = useCallback(async () => {
-    try {
-      const [summary, data] = await Promise.all([
-        api.getSessionSummary(storeId, sessionId),
-        api.getSplitBills(storeId, sessionId),
-      ])
-      const freshSplits = data.splits ?? []
-      // Fingerprint: skip state updates if nothing changed (prevents re-render on poll)
-      const fp = `${summary.totalPaid}|${summary.remaining}|${summary.status}|${summary.settlementMode}|${freshSplits.map(s => s.id + s.status).join(',')}`
-      if (fp === lastFp.current) return
-      lastFp.current = fp
-      setSession(summary)
-      setSplits(freshSplits)
-      setMainBill(data.mainBill ?? { total: 0, itemCount: 0 })
-      setAllowed(deriveAllowedActions(summary, freshSplits))
-    } catch (e) { notify.fromError(e) }
-  }, [storeId, sessionId])
-
-  // Initial fetch + poll every 5s while open (detects customer payments / external changes)
-  useEffect(() => {
-    if (!open) return
-    refresh()
-    const id = setInterval(refresh, 3000)
-    return () => clearInterval(id)
-  }, [open, refresh])
+  const { session, splits, mainBill, allowed, setAllowed, refresh } = useSettlementPoll({
+    storeId, sessionId, active: open, withSplits: true,
+  })
 
   const tipCents = Math.round((parseFloat(tipInput) || 0) * 100)
   const resetPay = () => { setPayTarget(null); setTipInput('') }

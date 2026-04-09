@@ -99,6 +99,11 @@
     "orderNumber": "Order #{{number}}",
     "items": "{{count}} items"
   },
+  "session": {
+    "closedTitle": "Table Session Ended",
+    "closedMessage": "Your bill has been processed",
+    "closedOk": "OK"
+  },
   "common": {
     "allergyNotice": "Prices include service charge where applicable. Please notify staff of any severe allergies before submitting.",
     "kitchenNotified": "Kitchen Notified",

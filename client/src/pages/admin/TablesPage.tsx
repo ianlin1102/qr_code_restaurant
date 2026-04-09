@@ -9,10 +9,14 @@ import { api, type SessionSummary } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { formatPriceUSD } from '@/lib/format'
 import { itemLineTotal } from '@/lib/pricing'
-import { localized } from '@/lib/i18n-utils'
+import { localized, optionLabel } from '@/lib/i18n-utils'
 import { printQrCodes } from '@/lib/qr-pdf'
 import { notify } from '@/lib/notify'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import CloseTableDialog from '@/components/table/CloseTableDialog'
 import TransferTableDialog from '@/components/table/TransferTableDialog'
@@ -21,8 +25,9 @@ import TableCrudDialog from '@/components/table/TableCrudDialog'
 import OrderingSheet from '@/components/order/OrderingSheet'
 import OrderEditDialog from '@/components/order/OrderEditDialog'
 import type { Table, Order, OrderItem } from '@qr-order/shared'
+import { useStoreEvents } from '@/hooks/useStoreEvents'
 
-const POLL = 10_000
+const POLL = 30_000
 
 function elapsed(ms: number): string {
   const m = Math.floor(ms / 60_000); const s = Math.floor((ms % 60_000) / 1000)
@@ -32,10 +37,90 @@ function itemPrice(it: OrderItem) {
   return itemLineTotal(it)
 }
 
+/** Open a browser print window with a combined session receipt (all orders). */
+function printSessionReceipt(
+  orders: Order[], table: Table,
+  summary: SessionSummary | null, lang: string,
+) {
+  const zh = lang === 'zh'
+  const now = new Date().toLocaleString('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  })
+  const allItems: { name: string; qty: number; price: number; opts: string; remark?: string }[] = []
+  for (const o of orders) {
+    for (const it of o.items) {
+      if (it.voided) continue
+      const opts = (it.selectedOptions ?? []).map(op =>
+        `${op.choiceName || op.choiceNameEn || ''}`).filter(Boolean).join(', ')
+      allItems.push({
+        name: localized(it, lang), qty: it.quantity,
+        price: itemLineTotal(it), opts, remark: it.remark,
+      })
+    }
+  }
+  const subtotal = allItems.reduce((s, i) => s + i.price, 0)
+  const tax = summary?.tax ?? 0
+  const svc = summary?.serviceFee ?? 0
+  const total = summary?.totalWithTax ?? subtotal
+  const paid = summary?.totalPaid ?? 0
+  const remaining = summary?.remaining ?? total
+
+  const rows = allItems.map(i => `
+    <tr>
+      <td style="text-align:left">${i.name} x${i.qty}</td>
+      <td style="text-align:right">${formatPriceUSD(i.price)}</td>
+    </tr>
+    ${i.opts ? `<tr><td colspan="2" style="padding-left:12px;font-size:11px;color:#555">${i.opts}</td></tr>` : ''}
+    ${i.remark ? `<tr><td colspan="2" style="padding-left:12px;font-size:11px;color:#555">*${i.remark}</td></tr>` : ''}
+  `).join('')
+
+  const html = `<html><head><title>${zh ? '账单' : 'Bill'}</title>
+<style>
+  body{margin:0;padding:0;font-family:'Courier New',monospace;font-size:12px;line-height:1.5}
+  .r{width:280px;padding:16px;margin:auto}
+  .c{text-align:center} .b{font-weight:bold}
+  .d{border-top:1px dashed #333;margin:6px 0}
+  table{width:100%;border-collapse:collapse}
+  td{padding:2px 0}
+  .total td{font-size:14px;font-weight:bold;padding-top:4px}
+  @media print{body{margin:0}}
+</style></head><body>
+<div class="r">
+  <div class="c b" style="font-size:16px;margin-bottom:4px">${zh ? '账单' : 'Bill'}</div>
+  <div class="d"></div>
+  <table>
+    <tr><td>${zh ? '桌号' : 'Table'}</td><td style="text-align:right" class="b">${table.name}</td></tr>
+    <tr><td>${zh ? '时间' : 'Time'}</td><td style="text-align:right">${now}</td></tr>
+    <tr><td>${zh ? '订单数' : 'Orders'}</td><td style="text-align:right">${orders.length}</td></tr>
+  </table>
+  <div class="d"></div>
+  <table>${rows}</table>
+  <div class="d"></div>
+  <table>
+    <tr><td>${zh ? '小计' : 'Subtotal'}</td><td style="text-align:right">${formatPriceUSD(subtotal)}</td></tr>
+    ${tax > 0 ? `<tr><td>${zh ? '税' : 'Tax'}</td><td style="text-align:right">${formatPriceUSD(tax)}</td></tr>` : ''}
+    ${svc > 0 ? `<tr><td>${zh ? '服务费' : 'Service Fee'}</td><td style="text-align:right">${formatPriceUSD(svc)}</td></tr>` : ''}
+    <tr class="total"><td>${zh ? '合计' : 'Total'}</td><td style="text-align:right">${formatPriceUSD(total)}</td></tr>
+    ${paid > 0 ? `<tr><td style="color:green">${zh ? '已付' : 'Paid'}</td><td style="text-align:right;color:green">-${formatPriceUSD(paid)}</td></tr>` : ''}
+    ${remaining > 0 && paid > 0 ? `<tr class="total"><td style="color:orange">${zh ? '待付' : 'Remaining'}</td><td style="text-align:right;color:orange">${formatPriceUSD(remaining)}</td></tr>` : ''}
+  </table>
+  <div class="d"></div>
+  <div class="c" style="font-size:11px;color:#666;margin-top:8px">${zh ? '谢谢光临' : 'Thank you!'}</div>
+</div>
+<script>window.onload=function(){window.print()}</script>
+</body></html>`
+
+  const w = window.open('', '_blank', 'width=320,height=600')
+  if (!w) return
+  w.document.write(html)
+  w.document.close()
+}
+
 export default function TablesPage() {
   const { t, lang } = useT()
   const [searchParams, setSearchParams] = useSearchParams()
   const storeId = useAuthStore(s => s.user?.storeId) ?? ''
+  const { subscribe } = useStoreEvents(storeId)
 
   const [tables, setTables] = useState<Table[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -60,6 +145,8 @@ export default function TablesPage() {
   const [orderingOpen, setOrderingOpen] = useState(false)
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false)
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null)
+  const [voidTarget, setVoidTarget] = useState<{ orderId: string; itemIndex: number } | null>(null)
+  const [voidReason, setVoidReason] = useState('')
 
   const fetchData = useCallback(async () => {
     if (!storeId) return
@@ -70,6 +157,14 @@ export default function TablesPage() {
   }, [storeId, showDisabled])
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, POLL); return () => clearInterval(id) }, [fetchData, showDisabled])
+
+  // SSE-driven updates: refresh on store:tables and store:orders events
+  useEffect(() => {
+    const unsub1 = subscribe('store:tables', () => { fetchData() })
+    const unsub2 = subscribe('store:orders', () => { fetchData() })
+    return () => { unsub1(); unsub2() }
+  }, [subscribe, fetchData])
+
   // Removed: store fetch was only used for tax rate recalculation (now from session summary)
 
   // Fetch session summary when a table with active session is selected (or on poll)
@@ -258,6 +353,13 @@ export default function TablesPage() {
                 <div className="flex items-center gap-2">
                   <Armchair className="size-4 text-primary" />
                   <h2 className="text-lg font-bold">{selected.name} {t.tables.tableDetail}</h2>
+                  {selected.status === 'occupied' && sessionSummary && (() => {
+                    const tp = sessionSummary.totalPaid ?? 0
+                    const rem = sessionSummary.remaining ?? 0
+                    if (tp > 0 && rem > 0) return <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-600">{t.tables.status.settling}</span>
+                    if (rem <= 0 && tp > 0) return <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-50 text-green-600">{t.tables.status.fullyPaid}</span>
+                    return null
+                  })()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {selected.capacity ?? '?'} {t.tables.guests} &bull; <span className="font-mono">{elapsed(elapsedMs)}</span> {t.tables.elapsed}
@@ -270,16 +372,23 @@ export default function TablesPage() {
 
             {/* Action buttons row */}
             <div className="px-4 py-3 border-b flex flex-wrap gap-2">
+              {sessionSummary && (sessionSummary.remaining ?? 0) <= 0 && (sessionSummary.totalPaid ?? 0) > 0 && sessionSummary.status !== 'closed' && (
+                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={async () => {
+                    try {
+                      await api.closeSession(storeId!, sessionSummary.id)
+                      notify.success(lang === 'zh' ? '已翻桌' : 'Table turned')
+                      refresh()
+                    } catch (e) { notify.fromError(e) }
+                  }}>
+                  <CheckCircle2 className="size-4 mr-1" />{lang === 'zh' ? '翻桌' : 'Close Table'}
+                </Button>
+              )}
               <Button size="sm" onClick={() => setOrderingOpen(true)}>
                 <Plus className="size-4 mr-1" />{t.tables.addItems}
               </Button>
               <Button size="sm" variant="outline" disabled={sessionOrders.length === 0}
-                onClick={async () => {
-                  for (const o of sessionOrders) {
-                    try { await api.reprintOrder(storeId, o.id) } catch {}
-                  }
-                  notify.success(lang === 'zh' ? '已发送打印' : 'Print sent')
-                }}>
+                onClick={() => printSessionReceipt(sessionOrders, selected!, sessionSummary, lang)}>
                 <Printer className="size-4 mr-1" />{t.tables.printBill}
               </Button>
               <Button size="sm" variant="outline" onClick={() => setTransferOpen(true)}>
@@ -313,18 +422,6 @@ export default function TablesPage() {
                 </Button>
               )}
               <div className="flex-1" />
-              {sessionSummary?.isPaid && sessionSummary.status !== 'closed' && (
-                <Button size="sm" variant="outline" className="text-orange-600 border-orange-300"
-                  onClick={async () => {
-                    try {
-                      await api.closeSession(storeId!, sessionSummary.id)
-                      notify.success(lang === 'zh' ? '已翻桌' : 'Table turned')
-                      refresh()
-                    } catch (e) { notify.fromError(e) }
-                  }}>
-                  <RefreshCw className="size-4 mr-1" />{lang === 'zh' ? '翻桌' : 'Turn Table'}
-                </Button>
-              )}
               <Button size="sm" className="bg-green-500 hover:bg-green-600"
                 disabled={!currentOrder}
                 onClick={() => selected?.currentSessionId ? setSessionDialogOpen(true) : setCloseOpen(true)}>
@@ -390,10 +487,10 @@ export default function TablesPage() {
                   {/* Per-order header with edit button */}
                   <div className="flex items-center justify-between px-2 py-1 mb-1">
                     <span className="text-xs text-muted-foreground font-mono">#{o.orderNumber}</span>
-                    <button className="text-xs text-primary hover:underline"
+                    <Button size="sm" variant="ghost" className="min-h-[44px] text-primary"
                       onClick={() => setEditingOrder(o)}>
                       {lang === 'zh' ? '编辑订单' : 'Edit Order'}
-                    </button>
+                    </Button>
                   </div>
                   {o.items.map((it, i) => {
                     const itemKey = `${o.id}:${i}`
@@ -416,7 +513,7 @@ export default function TablesPage() {
                             <div className="flex flex-wrap gap-1 mt-0.5">
                               {it.selectedOptions.map((opt, idx) => (
                                 <span key={idx} className="text-[10px] bg-orange-50 text-orange-700 rounded px-1.5 py-0.5">
-                                  {(opt.optionName || opt.optionNameEn || '')}{(opt.optionName || opt.optionNameEn) ? ': ' : ''}{(opt.choiceName || opt.choiceNameEn || '')}
+                                  {optionLabel(opt)}
                                 </span>
                               ))}
                             </div>
@@ -434,15 +531,15 @@ export default function TablesPage() {
                             <>
                               <p className={cn('font-semibold', isPaid ? 'text-green-600 line-through' : 'text-primary')}>{formatPriceUSD(itemPrice(it))}</p>
                               {!isPaid && (
-                                <button className="text-[10px] text-red-500 hover:text-red-700"
-                                  onClick={async (e) => {
+                                <Button size="sm" variant="ghost"
+                                  className="min-h-[44px] text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={(e) => {
                                     e.stopPropagation()
-                                    const reason = prompt(t.voidItem?.reason || 'Reason (optional)')
-                                    if (reason === null) return
-                                    try { await api.voidItem(storeId, o.id, i, reason || undefined); refresh() } catch {}
+                                    setVoidTarget({ orderId: o.id, itemIndex: i })
+                                    setVoidReason('')
                                   }}>
                                   {t.voidItem?.button || 'Void'}
-                                </button>
+                                </Button>
                               )}
                             </>
                           )}
@@ -513,6 +610,38 @@ export default function TablesPage() {
           isOwner={true}
         />
       </>}
+
+      {/* Void Item Dialog */}
+      <Dialog open={!!voidTarget} onOpenChange={open => { if (!open) setVoidTarget(null) }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t.voidItem?.confirm || 'Void this item? Price will be set to $0.'}</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder={t.voidItem?.reason || 'Reason (optional)'}
+            value={voidReason}
+            onChange={e => setVoidReason(e.target.value)}
+            className="min-h-[80px]"
+          />
+          <DialogFooter>
+            <Button variant="outline" className="min-h-[44px]"
+              onClick={() => setVoidTarget(null)}>
+              {t.common.cancel}
+            </Button>
+            <Button variant="destructive" className="min-h-[44px]"
+              onClick={async () => {
+                if (!voidTarget) return
+                try {
+                  await api.voidItem(storeId, voidTarget.orderId, voidTarget.itemIndex, voidReason || undefined)
+                  refresh()
+                } catch { /* silent */ }
+                setVoidTarget(null)
+              }}>
+              {t.voidItem?.button || 'Void'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

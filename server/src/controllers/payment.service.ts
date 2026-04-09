@@ -3,6 +3,7 @@ import { createOrder } from './order.service.js'
 import { getActiveSession, addPayment, confirmItemPayment, confirmPercentPayment, calcTax, calcServiceFee } from './session.service.js'
 import { invalidateConflictingSplits } from './split-bill.service.js'
 import { orderStore, sessionStore, paymentStore } from '../repositories/stores.js'
+import { emit } from '../lib/event-bus.js'
 import logger from '../lib/logger.js'
 import type { CreateOrderRequest } from '@qr-order/shared'
 
@@ -112,6 +113,12 @@ export async function createPaymentIntentForSession(req: SessionCheckoutRequest)
     return { error: 'Nothing to pay', status: 400 }
   }
 
+  // Cap: max(100.00, totalWithTax × 2) — prevent unreasonable charges
+  const maxAllowed = Math.max(10000, totalWithTax * 2)
+  if (chargeAmount > maxAllowed) {
+    return { error: `Amount exceeds maximum allowed (${(maxAllowed / 100).toFixed(2)})`, status: 400 }
+  }
+
   const paymentIntent = await getStripe().paymentIntents.create({
     amount: chargeAmount,
     currency: 'usd',
@@ -170,8 +177,16 @@ export async function handleWebhookEvent(
         const { settlementType } = pi.metadata
         if (settlementType === 'by-item' && pi.metadata.itemKeys) {
           confirmItemPayment(sessionId, JSON.parse(pi.metadata.itemKeys))
+          emit({ type: 'session:summary', storeId, sessionId })
+          emit({ type: 'store:orders', storeId })
         } else if (settlementType === 'by-percent') {
           confirmPercentPayment(sessionId)
+          emit({ type: 'session:summary', storeId, sessionId })
+          emit({ type: 'store:orders', storeId })
+        } else {
+          emit({ type: 'session:summary', storeId, sessionId })
+          emit({ type: 'store:orders', storeId })
+          emit({ type: 'store:tables', storeId })
         }
         // Tag as stripe payment method
         if (result.payment) {
@@ -240,6 +255,12 @@ export async function handleWebhookEvent(
       const payFirstTip = pi.metadata.tipAmount ? parseInt(pi.metadata.tipAmount, 10) : 0
       addPayment(storeId, sid, pi.amount, cart.customerName || 'customer', pi.id, payFirstTip)
     }
+
+    if (sid) {
+      emit({ type: 'session:summary', storeId, sessionId: sid })
+    }
+    emit({ type: 'store:orders', storeId })
+    emit({ type: 'store:tables', storeId })
 
     logger.info(
       { orderId: result.id, orderNumber: result.orderNumber, storeId, sessionId: sid, paymentIntentId: pi.id },
