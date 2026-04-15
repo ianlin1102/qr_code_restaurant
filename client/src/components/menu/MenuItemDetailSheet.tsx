@@ -14,18 +14,19 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import type { MenuItem, SelectedOption } from '@qr-order/shared'
+import type { MenuItem, Category, SelectedOption } from '@qr-order/shared'
 
 const QUICK_TAGS_ZH = ['不要葱', '少辣', '多酱', '不要味精', '少盐', '少油']
 const QUICK_TAGS_EN = ['No Onions', 'Less Spicy', 'Extra Sauce', 'No MSG', 'Less Salt', 'Less Oil']
 
 interface Props {
   item: MenuItem | null
+  category?: Category
   open: boolean
   onClose: () => void
 }
 
-export default function MenuItemDetailSheet({ item, open, onClose }: Props) {
+export default function MenuItemDetailSheet({ item, category, open, onClose }: Props) {
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
   const addItem = useCartStore(s => s.addItem)
@@ -47,7 +48,15 @@ export default function MenuItemDetailSheet({ item, open, onClose }: Props) {
 
   if (!item) return null
 
-  const tags = lang === 'en' ? QUICK_TAGS_EN : QUICK_TAGS_ZH
+  const itemQuickTags = item.quickTags
+  const categoryQuickTags = category?.quickTags
+  const defaultTags = lang === 'en' ? QUICK_TAGS_EN : QUICK_TAGS_ZH
+  const tags =
+    itemQuickTags && itemQuickTags.length > 0
+      ? itemQuickTags
+      : categoryQuickTags && categoryQuickTags.length > 0
+      ? categoryQuickTags
+      : defaultTags
 
   const toggleTag = (tag: string) => {
     setQuickTags(prev =>
@@ -142,24 +151,26 @@ export default function MenuItemDetailSheet({ item, open, onClose }: Props) {
           <Separator />
 
           {/* Quick tags */}
-          <div>
-            <p className="text-sm font-semibold mb-2">{t('menu.quickTags')}</p>
-            <div className="flex flex-wrap gap-2">
-              {tags.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => toggleTag(tag)}
-                  className={`px-3 py-2 min-h-[36px] rounded-full text-xs border transition-colors ${
-                    quickTags.includes(tag)
-                      ? 'border-primary bg-primary/10 text-primary font-medium'
-                      : 'border-gray-200 text-muted-foreground hover:border-gray-300'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
+          {tags.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold mb-2">{t('menu.quickTags')}</p>
+              <div className="flex flex-wrap gap-2">
+                {tags.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={`px-3 py-2 min-h-[36px] rounded-full text-xs border transition-colors ${
+                      quickTags.includes(tag)
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-gray-200 text-muted-foreground hover:border-gray-300'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Option groups */}
           {hasOptions && item.options!.map(option => (

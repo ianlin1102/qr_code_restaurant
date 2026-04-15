@@ -74,13 +74,10 @@ export interface TimeEntry {
 }
 
 // ===== Menu =====
-export type DietaryTag =
-  | 'vegetarian'
-  | 'vegan'
-  | 'gluten-free'
-  | 'contains-nuts'
-  | 'spicy'
-  | 'dairy-free'
+export const DIETARY_TAGS = [
+  'vegetarian', 'vegan', 'gluten-free', 'contains-nuts', 'spicy', 'dairy-free',
+] as const
+export type DietaryTag = typeof DIETARY_TAGS[number]
 
 export interface Category {
   id: string

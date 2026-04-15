@@ -2,15 +2,7 @@ import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
 import { storeStore } from '../repositories/stores.js'
 import type { Category, DietaryTag, MenuItem, MenuResponse } from '@qr-order/shared'
-
-const DIETARY_TAGS: readonly DietaryTag[] = [
-  'vegetarian',
-  'vegan',
-  'gluten-free',
-  'contains-nuts',
-  'spicy',
-  'dairy-free',
-]
+import { DIETARY_TAGS } from '@qr-order/shared'
 
 const categoryStore = new JsonStore<Category>('categories.json')
 const menuItemStore = new JsonStore<MenuItem>('menu-items.json')

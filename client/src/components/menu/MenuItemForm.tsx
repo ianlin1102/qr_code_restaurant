@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useT } from '@/i18n/useT'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
@@ -20,9 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { MenuItem, Category, MenuItemOption, MenuItemOptionChoice } from '@qr-order/shared'
+import type { MenuItem, Category, MenuItemOption, MenuItemOptionChoice, DietaryTag } from '@qr-order/shared'
 import { v4 as uuid } from 'uuid'
 import ImageUpload from '@/components/shared/ImageUpload'
+import { DIETARY_TAGS, DIETARY_META } from '@/lib/dietary'
+import { cn } from '@/lib/utils'
 
 export function blankItem(categoryId: string): Omit<MenuItem, 'id' | 'storeId'> {
   return {
@@ -101,6 +103,9 @@ export default function MenuItemForm({
           allowCustomPrice: editingItem.allowCustomPrice ?? false,
           sortOrder: editingItem.sortOrder ?? 0,
           options: editingItem.options,
+          dietary: editingItem.dietary ?? [],
+          isRecommended: editingItem.isRecommended ?? false,
+          quickTags: editingItem.quickTags ?? [],
         })
       } else {
         await api.updateMenuItem(storeId, editingItem.id!, editingItem)
@@ -261,6 +266,12 @@ function BasicFields({
         <label className="text-sm font-medium">{t.common.image}</label>
         <ImageUpload value={item.image} onChange={url => updateField('image', url)} />
       </div>
+      <DietaryField dietary={item.dietary ?? []} updateField={updateField} />
+      <div className="flex items-center gap-2">
+        <Switch checked={item.isRecommended ?? false} onCheckedChange={v => updateField('isRecommended', v)} />
+        <label className="text-sm font-medium">{t.menu.recommendedLabel}</label>
+      </div>
+      <QuickTagsField quickTags={item.quickTags ?? []} updateField={updateField} />
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium">{t.menuManage.sortOrder}</label>
@@ -281,6 +292,86 @@ function BasicFields({
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function DietaryField({
+  dietary,
+  updateField,
+}: {
+  dietary: DietaryTag[]
+  updateField: (field: string, value: unknown) => void
+}) {
+  const { t } = useT()
+  const toggle = (tag: DietaryTag) => {
+    const next = dietary.includes(tag) ? dietary.filter(d => d !== tag) : [...dietary, tag]
+    updateField('dietary', next)
+  }
+  return (
+    <div>
+      <label className="text-sm font-medium">{t.menu.dietaryLabel}</label>
+      <div className="flex flex-wrap gap-1.5 mt-1.5">
+        {DIETARY_TAGS.map(tag => {
+          const meta = DIETARY_META[tag]
+          const Icon = meta.icon
+          const selected = dietary.includes(tag)
+          return (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => toggle(tag)}
+              className={cn(
+                'flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs transition-colors',
+                selected ? `${meta.bg} ${meta.color}` : 'border-gray-200 text-gray-500 hover:bg-muted',
+              )}
+            >
+              <Icon className="size-3.5" />
+              <span>{t.menu.dietary[tag]}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function QuickTagsField({
+  quickTags,
+  updateField,
+}: {
+  quickTags: string[]
+  updateField: (field: string, value: unknown) => void
+}) {
+  const { t } = useT()
+  const [text, setText] = useState(quickTags.join('\n'))
+  const initRef = useRef(false)
+  useEffect(() => {
+    if (!initRef.current) { initRef.current = true; return }
+    // Re-sync only if the upstream array shape no longer matches current text
+    const current = text.split('\n').map(s => s.trim()).filter(Boolean)
+    const same = current.length === quickTags.length && current.every((v, i) => v === quickTags[i])
+    if (!same) setText(quickTags.join('\n'))
+  }, [quickTags, text])
+  const commit = (raw: string) => {
+    setText(raw)
+    const lines = raw
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .slice(0, 10)
+    updateField('quickTags', lines)
+  }
+  return (
+    <div>
+      <label className="text-sm font-medium">{t.menu.quickTagsLabel}</label>
+      <Textarea
+        value={text}
+        onChange={e => commit(e.target.value)}
+        placeholder={t.menu.quickTagsPlaceholder}
+        rows={3}
+        className="text-base"
+      />
     </div>
   )
 }

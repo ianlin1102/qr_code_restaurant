@@ -63,6 +63,7 @@ export const adminT = {
       dietaryLabel: '饮食标签',
       recommendedLabel: '推荐菜品',
       quickTagsLabel: '快捷备注（每行一条）',
+      quickTagsPlaceholder: '每行一条，最多 10 条',
       dietary: {
         vegetarian: '素食',
         vegan: '纯素',
@@ -375,6 +376,7 @@ export const adminT = {
       dietaryLabel: 'Dietary Tags',
       recommendedLabel: 'Recommended',
       quickTagsLabel: 'Quick Remarks (one per line)',
+      quickTagsPlaceholder: 'One per line, up to 10',
       dietary: {
         vegetarian: 'Vegetarian',
         vegan: 'Vegan',

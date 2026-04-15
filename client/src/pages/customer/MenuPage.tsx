@@ -21,6 +21,7 @@ import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
 import { notify } from '@/lib/notify'
+import { DietaryBadges, RecommendedBadge } from '@/components/menu/MenuItemBadges'
 import type { MenuResponse, MenuItem } from '@qr-order/shared'
 
 /** Strip ALL HTML — render announcement as safe plain text with line breaks */
@@ -493,6 +494,7 @@ export default function MenuPage() {
                           !item.available ? 'opacity-50 pointer-events-none' : ''
                         }`}
                       >
+                        {item.isRecommended && item.available && <RecommendedBadge />}
                         {!item.available && (
                           <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-lg">
                             <span className="bg-red-600 text-white text-xs font-bold px-8 py-0.5 -rotate-12">{t('common:soldOut').toUpperCase()}</span>
@@ -515,6 +517,7 @@ export default function MenuPage() {
                         {/* Item info */}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{localized(item, lang)}</p>
+                          <DietaryBadges item={item} className="mt-0.5" />
                           {item.description && (
                             <p className="text-xs text-muted-foreground truncate">
                               {localizedDesc(item, lang)}
@@ -591,6 +594,7 @@ export default function MenuPage() {
       {/* Item Detail Sheet */}
       <MenuItemDetailSheet
         item={selectedMenuItem}
+        category={selectedMenuItem ? menu?.categories.find(c => c.id === selectedMenuItem.categoryId) : undefined}
         open={detailSheetOpen}
         onClose={() => { setDetailSheetOpen(false); setSelectedMenuItem(null) }}
       />
