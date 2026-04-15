@@ -19,7 +19,16 @@
     "announcement": "Announcement",
     "gotIt": "Got it",
     "setName": "+ Name",
-    "enterName": "Your name (optional):"
+    "enterName": "Your name (optional):",
+    "dietary": {
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "gluten-free": "Gluten Free",
+      "contains-nuts": "Contains Nuts",
+      "spicy": "Spicy",
+      "dairy-free": "Dairy Free"
+    },
+    "recommended": "Recommended"
   },
   "cart": {
     "title": "My Orders",

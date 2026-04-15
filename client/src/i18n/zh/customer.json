@@ -19,7 +19,16 @@
     "announcement": "公告",
     "gotIt": "知道了",
     "setName": "+ 名字",
-    "enterName": "请输入您的名字（可选）："
+    "enterName": "请输入您的名字（可选）：",
+    "dietary": {
+      "vegetarian": "素食",
+      "vegan": "纯素",
+      "gluten-free": "无麸质",
+      "contains-nuts": "含坚果",
+      "spicy": "辣",
+      "dairy-free": "无乳制品"
+    },
+    "recommended": "推荐"
   },
   "cart": {
     "title": "我的订单",

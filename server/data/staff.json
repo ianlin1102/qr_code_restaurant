@@ -3,7 +3,7 @@
     "id": "staff-owner-001",
     "storeId": "store-demo-002",
     "username": "admin",
-    "password": "$2a$10$dummyhashfordemopurposesonly12345678",
+    "password": "$2b$10$C//xy17Vr.tMp/1mNQIYp.5o3yV5a1kO/Z65365bkwasVbeVC7oHq",
     "role": "owner",
     "createdAt": "2026-03-01T00:00:00.000Z"
   },

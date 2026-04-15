@@ -1,7 +1,16 @@
 import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
 import { storeStore } from '../repositories/stores.js'
-import type { Category, MenuItem, MenuResponse } from '@qr-order/shared'
+import type { Category, DietaryTag, MenuItem, MenuResponse } from '@qr-order/shared'
+
+const DIETARY_TAGS: readonly DietaryTag[] = [
+  'vegetarian',
+  'vegan',
+  'gluten-free',
+  'contains-nuts',
+  'spicy',
+  'dairy-free',
+]
 
 const categoryStore = new JsonStore<Category>('categories.json')
 const menuItemStore = new JsonStore<MenuItem>('menu-items.json')
@@ -70,6 +79,35 @@ function validateMenuItem(data: Partial<MenuItem>): string | null {
         }
       }
     }
+  }
+  if (data.dietary !== undefined) {
+    if (!Array.isArray(data.dietary)) {
+      return 'dietary must be an array of dietary tags'
+    }
+    for (const tag of data.dietary) {
+      if (!DIETARY_TAGS.includes(tag as DietaryTag)) {
+        return `dietary tag "${tag}" is invalid. Allowed: ${DIETARY_TAGS.join(', ')}`
+      }
+    }
+  }
+  if (data.quickTags !== undefined) {
+    if (!Array.isArray(data.quickTags)) {
+      return 'quickTags must be an array of strings'
+    }
+    if (data.quickTags.length > 10) {
+      return 'quickTags must contain at most 10 entries'
+    }
+    for (const tag of data.quickTags) {
+      if (typeof tag !== 'string') {
+        return 'quickTags entries must be strings'
+      }
+      if (tag.trim().length > 20) {
+        return 'quickTags entries must be at most 20 characters (trimmed)'
+      }
+    }
+  }
+  if (data.isRecommended !== undefined && typeof data.isRecommended !== 'boolean') {
+    return 'isRecommended must be a boolean'
   }
   return null
 }

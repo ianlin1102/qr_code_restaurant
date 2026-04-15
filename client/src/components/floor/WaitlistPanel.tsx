@@ -5,6 +5,7 @@ import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { POLL } from '@/lib/intervals'
 
 interface Props {
   storeId: string
@@ -34,7 +35,7 @@ export default function WaitlistPanel({ storeId }: Props) {
 
   useEffect(() => {
     fetchWaitlist()
-    const interval = setInterval(fetchWaitlist, 30_000)
+    const interval = setInterval(fetchWaitlist, POLL.ADMIN_FALLBACK)
     return () => clearInterval(interval)
   }, [fetchWaitlist])
 

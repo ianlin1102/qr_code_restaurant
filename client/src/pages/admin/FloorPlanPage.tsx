@@ -12,8 +12,9 @@ import { FloorCanvas } from '@/components/floor/FloorCanvas'
 import TableGrid from '@/components/table/TableGrid'
 import type { Table, Order } from '@qr-order/shared'
 import { useStoreEvents } from '@/hooks/useStoreEvents'
+import { POLL } from '@/lib/intervals'
 
-const POLL_INTERVAL = 30_000
+const POLL_INTERVAL = POLL.ADMIN_FALLBACK
 
 export default function FloorPlanPage() {
   const { t } = useT()

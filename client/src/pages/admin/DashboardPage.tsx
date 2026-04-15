@@ -9,8 +9,9 @@ import OrderEditDialog from '@/components/order/OrderEditDialog'
 import type { Order, OrderStatus } from '@qr-order/shared'
 import { useAuthStore } from '@/stores/auth-store'
 import { useStoreEvents } from '@/hooks/useStoreEvents'
+import { POLL } from '@/lib/intervals'
 
-const POLL_INTERVAL = 30_000
+const POLL_INTERVAL = POLL.ADMIN_FALLBACK
 
 type TabFilter = 'all' | OrderStatus
 

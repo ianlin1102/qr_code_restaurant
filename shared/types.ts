@@ -74,6 +74,14 @@ export interface TimeEntry {
 }
 
 // ===== Menu =====
+export type DietaryTag =
+  | 'vegetarian'
+  | 'vegan'
+  | 'gluten-free'
+  | 'contains-nuts'
+  | 'spicy'
+  | 'dairy-free'
+
 export interface Category {
   id: string
   storeId: string
@@ -81,6 +89,7 @@ export interface Category {
   nameEn?: string
   sortOrder: number
   active?: boolean
+  quickTags?: string[]
 }
 
 export interface MenuItemOptionChoice {
@@ -114,6 +123,9 @@ export interface MenuItem {
   allowCustomPrice?: boolean     // admin can override price when ordering (ad-hoc item)
   sortOrder: number
   options?: MenuItemOption[]
+  dietary?: DietaryTag[]
+  isRecommended?: boolean
+  quickTags?: string[]
 }
 
 // ===== Tables =====

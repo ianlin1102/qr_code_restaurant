@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { adminT } from '@/i18n/admin'
 import { useStoreEvents } from '@/hooks/useStoreEvents'
+import { POLL } from '@/lib/intervals'
 
 type T = (typeof adminT)['en']
 
@@ -17,7 +18,7 @@ interface Props {
 }
 
 const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'preparing']
-const REFRESH_INTERVAL = 30_000
+const REFRESH_INTERVAL = POLL.ADMIN_FALLBACK
 const WARN_MINUTES = 15
 const CRITICAL_MINUTES = 30
 

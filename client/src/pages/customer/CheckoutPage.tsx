@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -132,10 +132,15 @@ export default function CheckoutPage() {
   const { t, i18n } = useTranslation('customer')
   const lang = i18n.language
 
-  const [tipSelection, setTipSelection] = useState<TipSelection | null>(null)
+  const [tipSelection, setTipSelection] = useState<TipSelection | null>({ type: 'percent', pct: 18 })
   const [activeSecret, setActiveSecret] = useState(clientSecret)
   const [activeAmount, setActiveAmount] = useState(amount)
   const [loadingTip, setLoadingTip] = useState(false)
+
+  useEffect(() => {
+    applyTip({ type: 'percent', pct: 18 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const applyTip = async (sel: TipSelection | null) => {
     setTipSelection(sel)

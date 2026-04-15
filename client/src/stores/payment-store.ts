@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { api, type SessionSummary } from '@/services/api'
+import { POLL } from '@/lib/intervals'
 
 /**
  * Centralized session payment state — single source of truth for:
@@ -68,7 +69,7 @@ export const usePaymentStore = create<PaymentState>()((set) => ({
           set({ summary: s, sessionId: s.id })
         })
         .catch(() => {})
-    }, 30_000)
+    }, POLL.ADMIN_FALLBACK)
   },
 
   stop: () => {

@@ -230,7 +230,6 @@ export default function CouponManagePage() {
                 <SelectContent>
                   <SelectItem value="percentage">{t.coupons.types.percentage}</SelectItem>
                   <SelectItem value="fixed">{t.coupons.types.fixed}</SelectItem>
-                  <SelectItem value="bogo">{t.coupons.types.bogo}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>

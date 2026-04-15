@@ -2,6 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { QRCodeSVG } from 'qrcode.react'
 import type { Table } from '@qr-order/shared'
+import { notify } from './notify'
 
 function renderQrSvg(url: string): string {
   const element = createElement(QRCodeSVG, {
@@ -68,7 +69,7 @@ export function printQrCodes(tables: Table[], baseUrl: string, storeName: string
   const html = buildPageHtml(tables, baseUrl, storeName)
   const win = window.open('', '_blank')
   if (!win) {
-    alert('Please allow pop-ups to print QR codes.')
+    notify.error('Please allow pop-ups to print QR codes.')
     return
   }
   win.document.write(html)

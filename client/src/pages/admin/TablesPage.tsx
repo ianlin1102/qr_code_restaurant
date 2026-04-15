@@ -26,8 +26,9 @@ import OrderingSheet from '@/components/order/OrderingSheet'
 import OrderEditDialog from '@/components/order/OrderEditDialog'
 import type { Table, Order, OrderItem } from '@qr-order/shared'
 import { useStoreEvents } from '@/hooks/useStoreEvents'
+import { POLL as INTERVALS } from '@/lib/intervals'
 
-const POLL = 30_000
+const POLL = INTERVALS.ADMIN_FALLBACK
 
 function elapsed(ms: number): string {
   const m = Math.floor(ms / 60_000); const s = Math.floor((ms % 60_000) / 1000)
