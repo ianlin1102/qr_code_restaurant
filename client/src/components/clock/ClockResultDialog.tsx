@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { TimeEntry } from '@qr-order/shared'
+import { minutesSince } from '@/lib/time-format'
 
 interface ClockResultDialogProps {
   open: boolean
@@ -35,9 +36,7 @@ export default function ClockResultDialog({
   open, onOpenChange, username, clockedIn, currentEntry,
   loading, onClockIn, onClockOut, t,
 }: ClockResultDialogProps) {
-  const elapsed = currentEntry
-    ? Math.round((Date.now() - new Date(currentEntry.clockIn).getTime()) / 60000)
-    : 0
+  const elapsed = currentEntry ? minutesSince(currentEntry.clockIn) : 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

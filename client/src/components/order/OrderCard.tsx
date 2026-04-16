@@ -5,6 +5,7 @@ import { localized, optionLabel } from '@/lib/i18n-utils'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
+import { minutesSince } from '@/lib/time-format'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -22,8 +23,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 
 
 function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60000)
+  const minutes = minutesSince(dateStr)
   if (minutes < 1) return 'Just now'
   if (minutes < 60) return `${minutes}m ago`
   const hours = Math.floor(minutes / 60)
@@ -31,7 +31,7 @@ function timeAgo(dateStr: string): string {
 }
 
 function timeColor(dateStr: string): string {
-  const minutes = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000)
+  const minutes = minutesSince(dateStr)
   if (minutes < 15) return 'text-green-600'
   if (minutes < 30) return 'text-orange-500'
   return 'text-red-600'

@@ -6,13 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { POLL } from '@/lib/intervals'
+import { minutesSince } from '@/lib/time-format'
 
 interface Props {
   storeId: string
-}
-
-function minutesSince(isoDate: string): number {
-  return Math.floor((Date.now() - new Date(isoDate).getTime()) / 60_000)
 }
 
 export default function WaitlistPanel({ storeId }: Props) {

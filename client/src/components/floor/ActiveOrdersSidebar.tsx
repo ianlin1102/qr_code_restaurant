@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import type { adminT } from '@/i18n/admin'
 import { useStoreEvents } from '@/hooks/useStoreEvents'
 import { POLL } from '@/lib/intervals'
+import { minutesSince } from '@/lib/time-format'
 
 type T = (typeof adminT)['en']
 
@@ -52,9 +53,6 @@ const STATUS_GROUPS: StatusGroup[] = [
   },
 ]
 
-function minutesSince(isoDate: string): number {
-  return Math.floor((Date.now() - new Date(isoDate).getTime()) / 60_000)
-}
 
 function formatElapsed(minutes: number, t: T): string {
   if (minutes < 1) return t.activeOrders.justNow

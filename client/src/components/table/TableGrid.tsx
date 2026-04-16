@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { formatPriceUSD } from '@/lib/format'
+import { minutesSince } from '@/lib/time-format'
 
 interface TableGridProps {
   tables: Table[]
@@ -12,8 +13,7 @@ interface TableGridProps {
 }
 
 function formatElapsed(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60000)
+  const minutes = minutesSince(dateStr)
   if (minutes < 1) return '<1m'
   if (minutes < 60) return `${minutes}m`
   const hours = Math.floor(minutes / 60)

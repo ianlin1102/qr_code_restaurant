@@ -15,6 +15,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import type { MenuItem, Category, SelectedOption } from '@qr-order/shared'
+import { DietaryBadges } from '@/components/menu/MenuItemBadges'
 
 const QUICK_TAGS_ZH = ['不要葱', '少辣', '多酱', '不要味精', '少盐', '少油']
 const QUICK_TAGS_EN = ['No Onions', 'Less Spicy', 'Extra Sauce', 'No MSG', 'Less Salt', 'Less Oil']
@@ -127,6 +128,7 @@ export default function MenuItemDetailSheet({ item, category, open, onClose }: P
             <SheetTitle className="text-left text-lg">
               {localized(item, lang)}
             </SheetTitle>
+            <DietaryBadges item={item} showLabel className="pt-0.5" />
             {description && (
               <p className="text-sm text-muted-foreground text-left">{description}</p>
             )}

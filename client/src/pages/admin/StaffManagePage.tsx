@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { AuthUser, RoleDefinition, Permission, TimeEntry } from '@qr-order/shared'
+import { minutesSince } from '@/lib/time-format'
 
 const ALL_PERMISSIONS: Permission[] = [
   'orders:read', 'orders:write',
@@ -70,7 +71,7 @@ export default function StaffManagePage() {
         todayMinutes += e.duration
       } else if (!e.clockOut) {
         clockedIn = true
-        currentShiftMin = Math.round((Date.now() - new Date(e.clockIn).getTime()) / 60000)
+        currentShiftMin = minutesSince(e.clockIn)
         todayMinutes += currentShiftMin
       }
     }

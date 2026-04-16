@@ -5,6 +5,7 @@ import type { Table, Order, OrderItem, OrderStatus } from '@qr-order/shared'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
+import { minutesSince } from '@/lib/time-format'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -122,7 +123,7 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
 }
 
 function elapsed(iso: string, t: typeof import('@/i18n/admin').adminT.zh.tableDetail): string {
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
+  const m = minutesSince(iso)
   if (m < 1) return t.justNow
   if (m < 60) return t.minutesAgo.replace('{{m}}', String(m))
   return t.hoursAgo.replace('{{h}}', String(Math.floor(m / 60))).replace('{{m}}', String(m % 60))

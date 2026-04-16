@@ -27,13 +27,10 @@ import OrderEditDialog from '@/components/order/OrderEditDialog'
 import type { Table, Order, OrderItem } from '@qr-order/shared'
 import { useStoreEvents } from '@/hooks/useStoreEvents'
 import { POLL as INTERVALS } from '@/lib/intervals'
+import { formatDurationMs } from '@/lib/time-format'
 
 const POLL = INTERVALS.ADMIN_FALLBACK
 
-function elapsed(ms: number): string {
-  const m = Math.floor(ms / 60_000); const s = Math.floor((ms % 60_000) / 1000)
-  return `${m}:${String(s).padStart(2, '0')}`
-}
 function itemPrice(it: OrderItem) {
   return itemLineTotal(it)
 }
@@ -363,7 +360,7 @@ export default function TablesPage() {
                   })()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {selected.capacity ?? '?'} {t.tables.guests} &bull; <span className="font-mono">{elapsed(elapsedMs)}</span> {t.tables.elapsed}
+                  {selected.capacity ?? '?'} {t.tables.guests} &bull; <span className="font-mono">{formatDurationMs(elapsedMs)}</span> {t.tables.elapsed}
                 </p>
               </div>
               <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
