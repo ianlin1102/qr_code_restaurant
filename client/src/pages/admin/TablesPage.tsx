@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useT } from '@/i18n/useT'
 import {
   Armchair, Plus, Printer, ArrowLeftRight,
-  CheckCircle2, Loader2, QrCode, Pencil, RefreshCw, XCircle,
+  CheckCircle2, Loader2, QrCode, Pencil, RefreshCw, XCircle, Bell, Sparkles,
 } from 'lucide-react'
 import { api, type SessionSummary } from '@/services/api'
 import { useAuthStore } from '@/stores/auth-store'
@@ -394,6 +394,42 @@ export default function TablesPage() {
 
             {/* Action buttons row */}
             <div className="px-4 py-3 border-b flex flex-wrap gap-2">
+              {selected.waiterCalledAt && (
+                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white"
+                  onClick={async () => {
+                    try {
+                      const updated = await api.ackWaiterCall(storeId!, selected.id)
+                      setSelected(updated); fetchData()
+                      notify.success('✓')
+                    } catch (e) { notify.fromError(e) }
+                  }}>
+                  <Bell className="size-4 mr-1" />{t.tableDetail.ackWaiterCall}
+                </Button>
+              )}
+              {(selected.status === 'occupied' || selected.status === 'bill-requested') && (
+                <Button size="sm" variant="outline"
+                  onClick={async () => {
+                    try {
+                      const updated = await api.setTableStatus(storeId!, selected.id, 'cleaning')
+                      setSelected(updated); fetchData()
+                      notify.success('✓')
+                    } catch (e) { notify.fromError(e) }
+                  }}>
+                  <Sparkles className="size-4 mr-1" />{t.tableDetail.markCleaning}
+                </Button>
+              )}
+              {selected.status === 'cleaning' && (
+                <Button size="sm" variant="outline"
+                  onClick={async () => {
+                    try {
+                      const updated = await api.setTableStatus(storeId!, selected.id, 'idle')
+                      setSelected(updated); fetchData()
+                      notify.success('✓')
+                    } catch (e) { notify.fromError(e) }
+                  }}>
+                  <CheckCircle2 className="size-4 mr-1" />{t.tableDetail.markIdle}
+                </Button>
+              )}
               {sessionSummary && (sessionSummary.remaining ?? 0) <= 0 && (sessionSummary.totalPaid ?? 0) > 0 && sessionSummary.status !== 'closed' && (
                 <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white"
                   onClick={async () => {
