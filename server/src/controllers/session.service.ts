@@ -128,8 +128,8 @@ export function addPayment(
 
   // FIFO item attribution for generic (non-item-specific) payments.
   // Walk orders oldest-first, mark items as paid until the running total
-  // of paid food amount is covered. This keeps paidItemIds consistent
-  // with totalPaid so the customer SettlementSheet shows correct paid/unpaid.
+  // of paid amount (including per-item tax) is covered. Uses per-item tax
+  // to avoid over-attribution from the tax surplus in totalPaid.
   {
     const sessionOrders = (session.orderIds ?? []).map(id => orderStore.getById(id)).filter(Boolean)
     const existingPaid = new Set(session.paidItemIds ?? [])
@@ -144,9 +144,12 @@ export function addPayment(
         const fullKey = `${baseKey}:${item.quantity}`
         if (existingPaid.has(fullKey) || existingPaid.has(baseKey)) continue
         const optAdj = (item.selectedOptions ?? []).reduce((s: number, o: any) => s + (o.priceAdjust ?? 0), 0)
-        const itemTotal = (item.price + optAdj) * item.quantity
-        if (budget >= itemTotal) {
-          budget -= itemTotal
+        const itemSubtotal = (item.price + optAdj) * item.quantity
+        const itemTax = calcTax(storeId, itemSubtotal)
+        const itemFee = calcServiceFee(storeId, itemSubtotal)
+        const itemWithTax = itemSubtotal + itemTax + itemFee
+        if (budget >= itemWithTax) {
+          budget -= itemWithTax
           newPaidIds.push(fullKey)
         }
       }
