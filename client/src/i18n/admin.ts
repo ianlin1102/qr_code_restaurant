@@ -84,6 +84,7 @@ export const adminT = {
       sortLabel: '排序号', sortHint: '数字越小越靠前',
       clickToRename: '点击输入排序号', emptyPrompt: '暂无分类，点击"添加分类"创建',
       catCount: '个分类',
+      hideQuickTagsLabel: '此分类菜品无需快捷备注（例：饮料）',
     },
     tables: {
       title: '桌台管理', newTable: '新增桌台', tableDetail: '桌台详情',
@@ -398,6 +399,7 @@ export const adminT = {
       sortLabel: 'Sort Order', sortHint: 'Lower number = higher position',
       clickToRename: 'Click to set sort order', emptyPrompt: 'No categories. Click "Add Category" to create one.',
       catCount: 'categories',
+      hideQuickTagsLabel: 'No quick remarks for this category (e.g. drinks)',
     },
     tables: {
       title: 'Table Management', newTable: 'New Table', tableDetail: 'Table Details',

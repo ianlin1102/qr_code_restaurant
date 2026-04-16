@@ -177,7 +177,7 @@ export const api = {
   getCategories: (storeId: string) =>
     fetchJSON<Category[]>(`/stores/${storeId}/menu/categories`),
 
-  createCategory: (storeId: string, data: { name: string; nameEn?: string; sortOrder: number }) =>
+  createCategory: (storeId: string, data: { name: string; nameEn?: string; sortOrder: number; hideQuickTags?: boolean }) =>
     fetchJSON<Category>(`/stores/${storeId}/menu/categories`, {
       method: 'POST',
       body: JSON.stringify(data),

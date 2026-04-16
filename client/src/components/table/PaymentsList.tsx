@@ -5,6 +5,7 @@ import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { notify } from '@/lib/notify'
 import { Button } from '@/components/ui/button'
+import { sanitizeDollarInput, dollarStringToCents, centsToDollarString } from '@/lib/money-input'
 
 interface Props {
   storeId: string
@@ -21,21 +22,21 @@ export default function PaymentsList({ storeId, payments, lang, onUpdated }: Pro
 
   const startEdit = (p: Payment) => {
     setEditingId(p.id)
-    setInputValue(((p.tipAmount ?? 0) / 100).toFixed(2))
+    setInputValue(centsToDollarString(p.tipAmount ?? 0))
   }
   const cancelEdit = () => {
     setEditingId(null)
     setInputValue('')
   }
   const saveTip = async (paymentId: string) => {
-    const dollars = parseFloat(inputValue)
-    if (!Number.isFinite(dollars) || dollars < 0) {
+    const cents = dollarStringToCents(inputValue)
+    if (cents === null) {
       notify.error(zh ? '请输入合法金额' : 'Enter a valid amount')
       return
     }
     setSaving(true)
     try {
-      await api.adjustPaymentTip(storeId, paymentId, Math.round(dollars * 100))
+      await api.adjustPaymentTip(storeId, paymentId, cents)
       notify.success(zh ? '小费已更新' : 'Tip updated')
       cancelEdit()
       onUpdated()
@@ -67,12 +68,10 @@ export default function PaymentsList({ storeId, payments, lang, onUpdated }: Pro
                 <>
                   <span className="text-muted-foreground">$</span>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    inputMode="decimal"
                     autoFocus
                     value={inputValue}
-                    onChange={e => setInputValue(e.target.value)}
+                    onChange={e => setInputValue(sanitizeDollarInput(e.target.value))}
                     onKeyDown={e => {
                       if (e.key === 'Enter') saveTip(p.id)
                       if (e.key === 'Escape') cancelEdit()

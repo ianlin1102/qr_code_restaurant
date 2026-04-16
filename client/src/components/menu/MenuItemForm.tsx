@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { MenuItem, Category, MenuItemOption, MenuItemOptionChoice, DietaryTag } from '@qr-order/shared'
+import { sanitizeDollarInput, dollarStringToCents, centsToDollarString } from '@/lib/money-input'
 import { v4 as uuid } from 'uuid'
 import ImageUpload from '@/components/shared/ImageUpload'
 import { DIETARY_TAGS, DIETARY_META } from '@/lib/dietary'
@@ -240,7 +241,7 @@ function BasicFields({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium">{t.menuManage.priceYuan} *</label>
-          <Input type="number" step="0.01" value={((item.price ?? 0) / 100).toFixed(2)} onChange={e => updateField('price', Math.round(parseFloat(e.target.value || '0') * 100))} placeholder="38.00" className="text-base" />
+          <Input inputMode="decimal" value={centsToDollarString(item.price ?? 0)} onChange={e => updateField('price', dollarStringToCents(sanitizeDollarInput(e.target.value)) ?? 0)} placeholder="38.00" className="text-base" />
         </div>
         <div>
           <label className="text-sm font-medium">{t.menuManage.category}</label>
@@ -420,7 +421,7 @@ function OptionsSection({
                   <Input value={choice.nameEn ?? ''} onChange={e => updateChoice(optIdx, choiceIdx, 'nameEn', e.target.value)} placeholder={t.menuManage.choiceNameEn} className="flex-1 text-base" />
                   <div className="flex items-center gap-1 w-[100px]">
                     <span className="text-xs text-muted-foreground">+&#xA5;</span>
-                    <Input type="number" step="0.01" value={(choice.priceAdjust / 100).toFixed(2)} onChange={e => updateChoice(optIdx, choiceIdx, 'priceAdjust', Math.round(parseFloat(e.target.value || '0') * 100))} className="w-20 text-base" />
+                    <Input inputMode="decimal" value={centsToDollarString(choice.priceAdjust)} onChange={e => updateChoice(optIdx, choiceIdx, 'priceAdjust', dollarStringToCents(sanitizeDollarInput(e.target.value)) ?? 0)} className="w-20 text-base" />
                   </div>
                   <Button variant="ghost" size="sm" className="text-red-500 px-2" onClick={() => removeChoice(optIdx, choiceIdx)}>
                     &#xD7;

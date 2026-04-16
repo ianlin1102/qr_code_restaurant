@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { sanitizeDollarInput, dollarStringToCents } from '@/lib/money-input'
 
 export type TipSelection =
   | { type: 'percent'; pct: number }
@@ -28,10 +29,10 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
     selected?.type === 'percent' && selected.pct === pct
 
   const applyCustom = (val: string) => {
-    const dollars = parseFloat(val)
-    if (!isNaN(dollars) && dollars > 0) {
-      onSelectRef.current({ type: 'custom', amount: Math.round(dollars * 100) })
-    } else if (val === '' || val === '0') {
+    const cents = dollarStringToCents(val)
+    if (cents && cents > 0) {
+      onSelectRef.current({ type: 'custom', amount: cents })
+    } else if (val === '' || val === '0' || val === '0.00') {
       onSelectRef.current(null)
     }
   }
@@ -82,12 +83,9 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
         <div className="flex items-center gap-2 mt-3">
           <span className="text-sm font-medium text-muted-foreground">$</span>
           <input
-            type="number"
             inputMode="decimal"
-            min="0"
-            step="0.01"
             value={customVal}
-            onChange={e => setCustomVal(e.target.value)}
+            onChange={e => setCustomVal(sanitizeDollarInput(e.target.value))}
             onBlur={() => applyCustom(customVal)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCustom(customVal); (e.target as HTMLInputElement).blur() } }}
             placeholder="0.00"

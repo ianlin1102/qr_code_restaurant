@@ -87,6 +87,7 @@ export interface Category {
   sortOrder: number
   active?: boolean
   quickTags?: string[]
+  hideQuickTags?: boolean      // when true, detail sheet hides the quick-tags section entirely
 }
 
 export interface MenuItemOptionChoice {

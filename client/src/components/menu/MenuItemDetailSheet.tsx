@@ -51,6 +51,7 @@ export default function MenuItemDetailSheet({ item, category, open, onClose }: P
 
   const itemQuickTags = item.quickTags
   const categoryQuickTags = category?.quickTags
+  const hideTagsSection = category?.hideQuickTags === true
   const defaultTags = lang === 'en' ? QUICK_TAGS_EN : QUICK_TAGS_ZH
   const tags =
     itemQuickTags && itemQuickTags.length > 0
@@ -153,7 +154,7 @@ export default function MenuItemDetailSheet({ item, category, open, onClose }: P
           <Separator />
 
           {/* Quick tags */}
-          {tags.length > 0 && (
+          {!hideTagsSection && tags.length > 0 && (
             <div>
               <p className="text-sm font-semibold mb-2">{t('menu.quickTags')}</p>
               <div className="flex flex-wrap gap-2">

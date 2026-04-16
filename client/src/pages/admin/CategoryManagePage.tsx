@@ -23,7 +23,7 @@ export default function CategoryManagePage() {
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingCat, setEditingCat] = useState<{ name: string; nameEn?: string; sortOrder: number } | null>(null)
+  const [editingCat, setEditingCat] = useState<{ name: string; nameEn?: string; sortOrder: number; hideQuickTags?: boolean } | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null) // null = adding new
   const [saving, setSaving] = useState(false)
 
@@ -63,11 +63,11 @@ export default function CategoryManagePage() {
 
   const openDialog = (cat?: Category) => {
     if (cat) {
-      setEditingCat({ name: cat.name, nameEn: cat.nameEn ?? '', sortOrder: cat.sortOrder })
+      setEditingCat({ name: cat.name, nameEn: cat.nameEn ?? '', sortOrder: cat.sortOrder, hideQuickTags: cat.hideQuickTags ?? false })
       setEditingId(cat.id)
     } else {
       const maxSort = categories.reduce((max, c) => Math.max(max, c.sortOrder), 0)
-      setEditingCat({ name: '', nameEn: '', sortOrder: maxSort + 1 })
+      setEditingCat({ name: '', nameEn: '', sortOrder: maxSort + 1, hideQuickTags: false })
       setEditingId(null)
     }
     setDialogOpen(true)
@@ -80,7 +80,7 @@ export default function CategoryManagePage() {
       if (editingId) {
         await api.updateCategory(STORE_ID, editingId, { ...editingCat, nameEn: editingCat.nameEn?.trim() || undefined })
       } else {
-        await api.createCategory(STORE_ID, { name: editingCat.name.trim(), nameEn: editingCat.nameEn?.trim() || undefined, sortOrder: editingCat.sortOrder })
+        await api.createCategory(STORE_ID, { name: editingCat.name.trim(), nameEn: editingCat.nameEn?.trim() || undefined, sortOrder: editingCat.sortOrder, hideQuickTags: editingCat.hideQuickTags })
       }
       setDialogOpen(false)
       setEditingCat(null)
@@ -433,6 +433,15 @@ export default function CategoryManagePage() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">{t.categories.sortHint}</p>
               </div>
+              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="rounded"
+                  checked={editingCat.hideQuickTags ?? false}
+                  onChange={e => setEditingCat({ ...editingCat, hideQuickTags: e.target.checked })}
+                />
+                <span>{t.categories.hideQuickTagsLabel}</span>
+              </label>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>{t.common.cancel}</Button>
                 <Button onClick={handleSave} disabled={saving || !editingCat.name.trim()}>
