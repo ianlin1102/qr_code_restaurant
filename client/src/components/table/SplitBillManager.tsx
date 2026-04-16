@@ -156,9 +156,14 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
           </div>
 
           {allowed?.closeSession && (
-            <Button className="w-full min-h-[44px]" onClick={handleCloseSession} disabled={loading}>
-              {loading && <Loader2 className="size-4 mr-2 animate-spin" />}{ts.closeSession}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 min-h-[44px]" onClick={onClose} disabled={loading}>
+                {lang === 'zh' ? '继续用餐' : 'Continue Dining'}
+              </Button>
+              <Button variant="destructive" className="flex-1 min-h-[44px]" onClick={handleCloseSession} disabled={loading}>
+                {loading && <Loader2 className="size-4 mr-2 animate-spin" />}{ts.closeSession}
+              </Button>
+            </div>
           )}
         </DialogContent>
       </Dialog>
