@@ -14,8 +14,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import OrderEditMode from '@/components/order/OrderEditMode'
 import TransferTableDialog from '@/components/table/TransferTableDialog'
 import SplitBillDialog from '@/components/table/SplitBillDialog'
-import { Pencil, ArrowRightLeft, Split, ExternalLink } from 'lucide-react'
+import { Pencil, ArrowRightLeft, Split, ExternalLink, Bell, Sparkles, CheckCircle2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { notify } from '@/lib/notify'
 
 const STATUS_STYLE: Record<OrderStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -44,6 +45,10 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<'current' | 'history'>('current')
   const [, setTick] = useState(0)
+  const [selected, setSelected] = useState<Table | null>(table)
+  const [statusPending, setStatusPending] = useState(false)
+
+  useEffect(() => { setSelected(table) }, [table])
 
   const fetchOrders = useCallback(async () => {
     if (!table) return
@@ -60,6 +65,36 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
   useEffect(() => {
     if (open && table) { setTab('current'); fetchOrders() }
   }, [open, table, fetchOrders])
+
+  const handleAckCall = async () => {
+    if (!selected || statusPending) return
+    setStatusPending(true)
+    try {
+      const updated = await api.ackWaiterCall(storeId, selected.id)
+      setSelected(updated)
+      notify.success('✓')
+      fetchOrders()
+    } catch (err) {
+      notify.fromError(err)
+    } finally {
+      setStatusPending(false)
+    }
+  }
+
+  const handleSetStatus = async (status: 'cleaning' | 'idle') => {
+    if (!selected || statusPending) return
+    setStatusPending(true)
+    try {
+      const updated = await api.setTableStatus(storeId, selected.id, status)
+      setSelected(updated)
+      notify.success('✓')
+      fetchOrders()
+    } catch (err) {
+      notify.fromError(err)
+    } finally {
+      setStatusPending(false)
+    }
+  }
 
   useEffect(() => {
     if (!open) return
@@ -82,20 +117,47 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
       <SheetContent side="right" className="flex flex-col p-0 w-full sm:w-[380px] sm:max-w-[380px]">
         <SheetHeader className="px-4 pt-4 pb-2">
           <div className="flex items-center justify-between">
-            <SheetTitle>{table ? `#${table.number} ${table.name || ''}` : t.tables.tableDetail}</SheetTitle>
-            {table && (
+            <SheetTitle>{selected ? `#${selected.number} ${selected.name || ''}` : t.tables.tableDetail}</SheetTitle>
+            {selected && (
               <Button variant="outline" size="sm" className="gap-1 text-xs"
-                onClick={() => { onClose(); nav(`/admin/tables?select=${table.id}`) }}>
+                onClick={() => { onClose(); nav(`/admin/tables?select=${selected.id}`) }}>
                 <ExternalLink className="size-3" />{t.tables.tableDetail}
               </Button>
             )}
           </div>
-          {table && (
+          {selected && (
             <p className="text-sm text-muted-foreground">
-              {table.status === 'occupied' ? t.tableDetail.occupied : t.tableDetail.idle}
-              {table.capacity ? ` · ${table.capacity} ${t.floorPlan.seats}` : ''}
-              {table.zone ? ` · ${table.zone}` : ''}
+              {selected.status === 'occupied' ? t.tableDetail.occupied : t.tableDetail.idle}
+              {selected.capacity ? ` · ${selected.capacity} ${t.floorPlan.seats}` : ''}
+              {selected.zone ? ` · ${selected.zone}` : ''}
             </p>
+          )}
+          {selected && (selected.waiterCalledAt
+            || selected.status === 'occupied'
+            || selected.status === 'bill-requested'
+            || selected.status === 'cleaning') && (
+            <div className="flex flex-wrap gap-1.5 pt-2">
+              {selected.waiterCalledAt && (
+                <Button size="sm" disabled={statusPending} onClick={handleAckCall}
+                  className="min-h-[36px] text-xs bg-orange-500 hover:bg-orange-600 text-white">
+                  <Bell className="size-3 mr-1" />{t.tableDetail.ackWaiterCall}
+                </Button>
+              )}
+              {(selected.status === 'occupied' || selected.status === 'bill-requested') && (
+                <Button size="sm" variant="outline" disabled={statusPending}
+                  onClick={() => handleSetStatus('cleaning')}
+                  className="min-h-[36px] text-xs">
+                  <Sparkles className="size-3 mr-1" />{t.tableDetail.markCleaning}
+                </Button>
+              )}
+              {selected.status === 'cleaning' && (
+                <Button size="sm" variant="outline" disabled={statusPending}
+                  onClick={() => handleSetStatus('idle')}
+                  className="min-h-[36px] text-xs">
+                  <CheckCircle2 className="size-3 mr-1" />{t.tableDetail.markIdle}
+                </Button>
+              )}
+            </div>
           )}
         </SheetHeader>
 

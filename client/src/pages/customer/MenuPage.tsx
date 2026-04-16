@@ -63,6 +63,9 @@ export default function MenuPage() {
   const [showAnnouncement, setShowAnnouncement] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [waiterCalled, setWaiterCalled] = useState(false)
+  const [calling, setCalling] = useState(false)
+  const [billRequested, setBillRequested] = useState(false)
+  const [requestingBill, setRequestingBill] = useState(false)
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null)
   const [settlementOpen, setSettlementOpen] = useState(false)
@@ -196,6 +199,43 @@ export default function MenuPage() {
 
   const handleAdd = (item: MenuItem) => { setSelectedMenuItem(item); setDetailSheetOpen(true) }
 
+  const handleCallWaiter = async () => {
+    if (!storeId || !tableId || calling) return
+    setCalling(true)
+    try {
+      await api.callWaiter(storeId, tableId)
+      notify.success(t('menu.waiterCalledToast'))
+      setWaiterCalled(true)
+      setTimeout(() => setWaiterCalled(false), 10000)
+    } catch (err) {
+      notify.fromError(err)
+    } finally {
+      setCalling(false)
+    }
+  }
+
+  const handleRequestBill = async () => {
+    if (!storeId || !tableId || requestingBill) return
+    setRequestingBill(true)
+    try {
+      await api.requestBill(storeId, tableId)
+      notify.success(t('menu.billRequestedToast'))
+      setBillRequested(true)
+      setTimeout(() => setBillRequested(false), 10000)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.includes("Cannot request bill from status 'bill-requested'")) {
+        notify.info(t('menu.alreadyRequested'))
+        setBillRequested(true)
+        setTimeout(() => setBillRequested(false), 10000)
+      } else {
+        notify.fromError(err)
+      }
+    } finally {
+      setRequestingBill(false)
+    }
+  }
+
   const dismissAnnouncement = () => {
     const ann = lang === 'en' && menu?.store.announcementEn ? menu.store.announcementEn : menu?.store.announcement
     if (ann) {
@@ -268,13 +308,25 @@ export default function MenuPage() {
                   'text-xs px-3',
                   waiterCalled ? 'border-green-500 text-green-600' : 'border-orange-400 text-orange-600'
                 )}
-                onClick={() => {
-                  setWaiterCalled(true)
-                  setTimeout(() => setWaiterCalled(false), 3000)
-                }}
+                disabled={calling}
+                onClick={handleCallWaiter}
               >
                 {waiterCalled ? t('menu.waiterCalled') : t('menu.callWaiter')}
               </Button>
+              {sessionSummary && sessionRemaining > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={requestingBill}
+                  className={cn(
+                    'text-xs px-3',
+                    billRequested ? 'border-green-500 text-green-600' : 'border-amber-500 text-amber-700'
+                  )}
+                  onClick={handleRequestBill}
+                >
+                  {billRequested ? t('menu.billRequested') : t('menu.requestBill')}
+                </Button>
+              )}
               {tableName && (
                 <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" />

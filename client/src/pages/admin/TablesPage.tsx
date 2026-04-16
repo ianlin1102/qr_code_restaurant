@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useT } from '@/i18n/useT'
 import {
@@ -161,6 +161,17 @@ export default function TablesPage() {
     const unsub1 = subscribe('store:tables', () => { fetchData() })
     const unsub2 = subscribe('store:orders', () => { fetchData() })
     return () => { unsub1(); unsub2() }
+  }, [subscribe, fetchData])
+
+  const tablesRef = useRef<Table[]>([])
+  tablesRef.current = tables
+  useEffect(() => {
+    return subscribe('table:waiter-called', (data: { tableId?: string }) => {
+      const tbl = tablesRef.current.find(t => t.id === data?.tableId)
+      const name = tbl?.name
+      notify.warning(name ? `Table ${name} needs service` : 'A table is calling for service')
+      fetchData()
+    })
   }, [subscribe, fetchData])
 
   // Removed: store fetch was only used for tax rate recalculation (now from session summary)

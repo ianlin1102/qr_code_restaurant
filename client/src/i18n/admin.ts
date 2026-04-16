@@ -266,6 +266,7 @@ export const adminT = {
       edit: '修改', note: '备注',
       occupied: '使用中', idle: '空闲',
       justNow: '刚刚', minutesAgo: '{{m}}分钟前', hoursAgo: '{{h}}小时前',
+      ackWaiterCall: '✓ 已知悉呼叫', markCleaning: '标记清理中', markIdle: '标记空闲',
     },
     menuManage: {
       addItemTitle: '添加菜品', editItemTitle: '编辑菜品',
@@ -579,6 +580,7 @@ export const adminT = {
       edit: 'Edit', note: 'Note',
       occupied: 'Occupied', idle: 'Available',
       justNow: 'Just now', minutesAgo: '{{m}}m ago', hoursAgo: '{{h}}h ago',
+      ackWaiterCall: '✓ Acknowledge Call', markCleaning: 'Mark Cleaning', markIdle: 'Mark Idle',
     },
     menuManage: {
       addItemTitle: 'Add Dish', editItemTitle: 'Edit Dish',

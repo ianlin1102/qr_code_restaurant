@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react'
 
-type StoreEventType = 'store:tables' | 'store:orders'
+type StoreEventType = 'store:tables' | 'store:orders' | 'table:waiter-called'
 
 type Handler = (data: any) => void
 
@@ -20,7 +20,7 @@ export function useStoreEvents(storeId: string | null | undefined) {
     const es = new EventSource(url)
     esRef.current = es
 
-    const eventTypes: StoreEventType[] = ['store:tables', 'store:orders']
+    const eventTypes: StoreEventType[] = ['store:tables', 'store:orders', 'table:waiter-called']
 
     for (const type of eventTypes) {
       es.addEventListener(type, (e: MessageEvent) => {

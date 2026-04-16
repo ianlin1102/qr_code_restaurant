@@ -61,12 +61,19 @@ export default function TableGrid({ tables, orders, onTableClick }: TableGridPro
           <Card
             key={table.id}
             className={cn(
-              'cursor-pointer transition-all hover:shadow-md min-h-[100px]',
+              'relative cursor-pointer transition-all hover:shadow-md min-h-[100px]',
               statusConfig.cls,
               table.status === 'cleaning' && 'animate-pulse',
             )}
             onClick={() => onTableClick?.(table)}
           >
+            {table.waiterCalledAt && (
+              <span
+                className="absolute top-1 right-1 h-3 w-3 rounded-full bg-orange-500 animate-pulse shadow-lg ring-2 ring-orange-300"
+                title="Waiter called"
+                aria-label="Waiter called"
+              />
+            )}
             <CardContent className="p-3 flex flex-col items-center justify-center gap-1.5">
               {/* Compact table label */}
               <span className="text-lg font-bold leading-tight text-center">
