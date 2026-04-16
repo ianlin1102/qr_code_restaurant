@@ -16,6 +16,7 @@ import { formatPriceUSD } from '@/lib/format'
 import { itemLineTotal } from '@/lib/pricing'
 import { api } from '@/services/api'
 import TipSelector, { type TipSelection } from '@/components/shared/TipSelector'
+import { notify } from '@/lib/notify'
 import { calcTip } from '@qr-order/shared/pricing'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -165,8 +166,10 @@ export default function CheckoutPage() {
       } else return
       setActiveSecret(result.clientSecret)
       setActiveAmount(result.amount)
-    } catch { /* keep original */ }
-    finally { setLoadingTip(false) }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Tip update failed'
+      if (!msg.includes('Session expired')) notify.error(msg)
+    } finally { setLoadingTip(false) }
   }
 
   if (!activeSecret) {
