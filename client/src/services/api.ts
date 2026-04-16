@@ -235,6 +235,21 @@ export const api = {
       method: 'POST',
     }),
 
+  callWaiter: (storeId: string, tableId: string) =>
+    fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}/call-waiter`, { method: 'POST' }),
+
+  ackWaiterCall: (storeId: string, tableId: string) =>
+    fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}/ack-waiter-call`, { method: 'POST' }),
+
+  requestBill: (storeId: string, tableId: string) =>
+    fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}/request-bill`, { method: 'POST' }),
+
+  setTableStatus: (storeId: string, tableId: string, status: Table['status']) =>
+    fetchJSON<Table>(`/stores/${storeId}/tables/${tableId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+
   // Customer: get orders for a specific table
   getTableOrders: (storeId: string, tableId: string) =>
     fetchJSON<Order[]>(`/stores/${storeId}/orders?tableId=${tableId}`),

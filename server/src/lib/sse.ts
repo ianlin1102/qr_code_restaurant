@@ -59,7 +59,7 @@ export function startEventRouter(): void {
         }
       } else {
         // Store-scoped client: gets store-level events
-        if (event.type === 'store:tables' || event.type === 'store:orders') {
+        if (event.type === 'store:tables' || event.type === 'store:orders' || event.type === 'table:waiter-called') {
           sendEvent(client, event.type, event)
         }
       }

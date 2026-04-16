@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import { getTables, getTablePublic, enableTable, disableTable, updateTable, settleTable, closeTable, getNextAvailableNumber, regenerateTableId } from '../controllers/table.service.js'
+import { callWaiter, ackWaiterCall, requestBill, setTableStatus } from '../controllers/table-status.service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 import { requirePermission } from '../middleware/permission.middleware.js'
 import { sanitizeString, requireFiniteNumber } from '../lib/sanitize.js'
+import type { Table } from '@qr-order/shared'
 
 const router = Router({ mergeParams: true })
 
@@ -92,6 +94,38 @@ router.post('/:tableId/close', requireAuth, requirePermission('tables:write'), (
     res.status(400).json(result)
     return
   }
+  res.json(result)
+})
+
+// ===== Table status actions =====
+
+// POST call waiter (public — customer side)
+router.post('/:tableId/call-waiter', (req, res) => {
+  const result = callWaiter(req.params.storeId, req.params.tableId)
+  if ('error' in result) { res.status(400).json(result); return }
+  res.json(result)
+})
+
+// POST acknowledge waiter call (admin)
+router.post('/:tableId/ack-waiter-call', requireAuth, requirePermission('tables:write'), (req, res) => {
+  const result = ackWaiterCall(req.params.storeId, req.params.tableId)
+  if ('error' in result) { res.status(400).json(result); return }
+  res.json(result)
+})
+
+// POST request bill (public — customer side)
+router.post('/:tableId/request-bill', (req, res) => {
+  const result = requestBill(req.params.storeId, req.params.tableId)
+  if ('error' in result) { res.status(400).json(result); return }
+  res.json(result)
+})
+
+// PATCH table status (admin — mark cleaning/idle)
+router.patch('/:tableId/status', requireAuth, requirePermission('tables:write'), (req, res) => {
+  const status = req.body?.status as Table['status']
+  if (typeof status !== 'string') { res.status(400).json({ error: 'status required' }); return }
+  const result = setTableStatus(req.params.storeId, req.params.tableId, status)
+  if ('error' in result) { res.status(400).json(result); return }
   res.json(result)
 })
 

@@ -145,6 +145,7 @@ export interface Table {
   width?: number
   height?: number
   shape?: 'square' | 'round' | 'long'
+  waiterCalledAt?: string    // ISO timestamp; set when customer presses Call Waiter, cleared on admin ack
 }
 
 // ===== Cart (frontend only) =====
