@@ -128,7 +128,7 @@ router.post(
   requireAuth, requirePermission('tables:write'),
   (req: Request, res: Response) => {
     const result = executeSettlement(req.params.storeId, req.params.sessionId, {
-      type: 'cash-payment', amount: req.body.amount, receivedAmount: req.body.receivedAmount,
+      type: 'cash-payment', amount: req.body.amount, receivedAmount: req.body.receivedAmount, tipAmount: req.body.tipAmount,
     })
     res.status(result.ok ? 200 : httpStatus((result as any).code)).json(result)
   },
