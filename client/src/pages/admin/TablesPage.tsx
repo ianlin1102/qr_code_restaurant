@@ -264,12 +264,20 @@ export default function TablesPage() {
 
   const statusColor = (status: Table['status'], enabled: boolean) => {
     if (!enabled) return 'border-l-gray-300'
-    if (status === 'occupied') return 'border-l-red-500'
-    return 'border-l-green-500'
+    switch (status) {
+      case 'occupied': return 'border-l-red-500'
+      case 'bill-requested': return 'border-l-red-600'
+      case 'cleaning': return 'border-l-yellow-500'
+      default: return 'border-l-green-500'
+    }
   }
   const statusBadge = (status: Table['status']) => {
-    if (status === 'occupied') return { label: t.tables.status.occupied, cls: 'text-red-600 bg-red-50' }
-    return { label: t.tables.status.idle, cls: 'text-green-600 bg-green-50' }
+    switch (status) {
+      case 'occupied': return { label: t.tables.status.occupied, cls: 'text-red-600 bg-red-50' }
+      case 'bill-requested': return { label: t.tables.status.billRequested, cls: 'text-red-700 bg-red-100 ring-1 ring-red-300' }
+      case 'cleaning': return { label: t.tables.status.cleaning, cls: 'text-yellow-700 bg-yellow-50' }
+      default: return { label: t.tables.status.idle, cls: 'text-green-600 bg-green-50' }
+    }
   }
 
   if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
@@ -339,7 +347,12 @@ export default function TablesPage() {
                     statusColor(tb.status, tb.enabled),
                     isActive ? 'ring-2 ring-primary bg-primary/5' : 'bg-card hover:bg-accent/50',
                     !tb.enabled && 'opacity-50',
+                    tb.status === 'cleaning' && 'animate-pulse',
                   )}>
+                  {tb.waiterCalledAt && (
+                    <span className="absolute top-1 left-1 h-3 w-3 rounded-full bg-orange-500 animate-pulse shadow-lg ring-2 ring-orange-300"
+                      title="Waiter called" aria-label="Waiter called" />
+                  )}
                   <p className="text-lg font-bold">#{tb.number}</p>
                   <p className="text-xs text-muted-foreground truncate">{tb.name || ''}</p>
                   <span className={cn('absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded-full font-medium', cls)}>
