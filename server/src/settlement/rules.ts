@@ -91,10 +91,9 @@ export function checkMaxAmount(amount: number, totalWithTax: number): ErrorCode 
   return null
 }
 
-export function checkMinimum(splitAmount: number, remainingAfterSplit: number, isFullPayment: boolean): ErrorCode | null {
+export function checkMinimum(splitAmount: number, _remainingAfterSplit: number, isFullPayment: boolean): ErrorCode | null {
   if (isFullPayment) return null
   if (splitAmount < 100) return 'AMOUNT_BELOW_MINIMUM'
-  if (remainingAfterSplit > 0 && remainingAfterSplit < 100) return 'REMAINING_BELOW_MINIMUM'
   return null
 }
 

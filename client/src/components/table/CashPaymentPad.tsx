@@ -83,22 +83,35 @@ export default function CashPaymentPad({ totalDue, onConfirm, onCancel, loading,
       </div>
 
       <div className="flex flex-col gap-2 pt-1">
-        {showChangeTip && change > 0 && canConfirm && (
-          <Button variant="secondary" className="w-full min-h-[44px] text-sm"
-            disabled={loading}
-            onClick={() => onConfirm(receivedCents, change)}>
-            {zh ? `找零 ${formatPriceUSD(change)} → 作为小费` : `Change ${formatPriceUSD(change)} → Leave as tip`}
-          </Button>
+        {showChangeTip && change > 0 && canConfirm ? (
+          <>
+            <Button className="w-full min-h-[48px] text-sm bg-primary hover:bg-primary/90"
+              disabled={loading}
+              onClick={() => onConfirm(receivedCents, change)}>
+              {loading && <Loader2 className="size-4 mr-2 animate-spin" />}
+              {zh ? `找零 ${formatPriceUSD(change)} → 作为小费` : `Change ${formatPriceUSD(change)} → Leave as tip`}
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" className="flex-1 min-h-[44px]" onClick={onCancel} disabled={loading}>
+                {zh ? '返回' : 'Back'}
+              </Button>
+              <Button variant="outline" className="flex-1 min-h-[44px]" disabled={!canConfirm}
+                onClick={() => onConfirm(receivedCents)}>
+                {zh ? `退找零 ${formatPriceUSD(change)}` : `Return ${formatPriceUSD(change)}`}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex gap-2">
+            <Button variant="ghost" className="flex-1 min-h-[44px]" onClick={onCancel} disabled={loading}>
+              {zh ? '返回' : 'Back'}
+            </Button>
+            <Button className="flex-1 min-h-[44px]" disabled={!canConfirm} onClick={() => onConfirm(receivedCents)}>
+              {loading && <Loader2 className="size-4 mr-2 animate-spin" />}
+              {zh ? '确认收款' : 'Confirm'}
+            </Button>
+          </div>
         )}
-        <div className="flex gap-2">
-          <Button variant="ghost" className="flex-1 min-h-[44px]" onClick={onCancel} disabled={loading}>
-            {zh ? '返回' : 'Back'}
-          </Button>
-          <Button className="flex-1 min-h-[44px]" disabled={!canConfirm} onClick={() => onConfirm(receivedCents)}>
-            {loading && <Loader2 className="size-4 mr-2 animate-spin" />}
-            {zh ? '确认收款' : 'Confirm'}
-          </Button>
-        </div>
       </div>
     </div>
   )
