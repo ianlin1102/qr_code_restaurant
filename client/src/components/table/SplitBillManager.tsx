@@ -52,11 +52,12 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
     setLoading(false)
   }
 
-  const handlePayCash = async (splitId: string, received: number) => {
+  const handlePayCash = async (splitId: string, received: number, changeTip?: number) => {
+    const effectiveTip = changeTip ?? tipCents
     setLoading(true)
     try {
       if (splitId === 'main') {
-        const result = await api.recordCashPayment(storeId, sessionId, payTarget!.amount + tipCents, received)
+        const result = await api.recordCashPayment(storeId, sessionId, payTarget!.amount, received, effectiveTip || undefined)
         if (result.allowedActions) setAllowed(result.allowedActions)
       } else {
         const result = await api.paySplitBillCash(storeId, sessionId, splitId, received, tipCents || undefined)
@@ -101,8 +102,8 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
           <DialogHeader><DialogTitle>{ts.payCash}</DialogTitle></DialogHeader>
           <TipInput value={tipInput} onChange={setTipInput} label={ts.tipOptional} />
           <CashPaymentPad totalDue={payTarget.amount + tipCents} lang={lang}
-            loading={loading} onCancel={resetPay} showChangeTip={false}
-            onConfirm={received => handlePayCash(payTarget.id, received)} />
+            loading={loading} onCancel={resetPay}
+            onConfirm={(received, changeTip) => handlePayCash(payTarget.id, received, changeTip)} />
         </DialogContent>
       </Dialog>
     )
