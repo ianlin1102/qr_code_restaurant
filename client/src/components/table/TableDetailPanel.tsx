@@ -72,7 +72,7 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
     try {
       const updated = await api.ackWaiterCall(storeId, selected.id)
       setSelected(updated)
-      notify.success('✓')
+      notify.success(t.common.updated)
       fetchOrders()
     } catch (err) {
       notify.fromError(err)
@@ -87,7 +87,7 @@ export default function TableDetailPanel({ table, storeId, open, onClose }: Prop
     try {
       const updated = await api.setTableStatus(storeId, selected.id, status)
       setSelected(updated)
-      notify.success('✓')
+      notify.success(t.common.updated)
       fetchOrders()
     } catch (err) {
       notify.fromError(err)

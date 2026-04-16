@@ -17,7 +17,7 @@ export const adminT = {
       price: '价格', quantity: '数量', total: '合计', subtotal: '小计',
       tax: '税费', notes: '备注', createdAt: '创建时间',
       enabled: '已启用', disabled: '已禁用', langSwitch: 'EN',
-      saving: '保存中...', image: '图片',
+      saving: '保存中...', image: '图片', updated: '已更新',
     },
     login: {
       title: '员工登录', username: '用户名', password: '密码',
@@ -331,7 +331,7 @@ export const adminT = {
       price: 'Price', quantity: 'Qty', total: 'Total', subtotal: 'Subtotal',
       tax: 'Tax', notes: 'Notes', createdAt: 'Created',
       enabled: 'Enabled', disabled: 'Disabled', langSwitch: '中文',
-      saving: 'Saving...', image: 'Image',
+      saving: 'Saving...', image: 'Image', updated: 'Updated',
     },
     login: {
       title: 'Staff Login', username: 'Username', password: 'Password',

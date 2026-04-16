@@ -400,7 +400,7 @@ export default function TablesPage() {
                     try {
                       const updated = await api.ackWaiterCall(storeId!, selected.id)
                       setSelected(updated); fetchData()
-                      notify.success('✓')
+                      notify.success(t.common.updated)
                     } catch (e) { notify.fromError(e) }
                   }}>
                   <Bell className="size-4 mr-1" />{t.tableDetail.ackWaiterCall}
@@ -412,7 +412,7 @@ export default function TablesPage() {
                     try {
                       const updated = await api.setTableStatus(storeId!, selected.id, 'cleaning')
                       setSelected(updated); fetchData()
-                      notify.success('✓')
+                      notify.success(t.common.updated)
                     } catch (e) { notify.fromError(e) }
                   }}>
                   <Sparkles className="size-4 mr-1" />{t.tableDetail.markCleaning}
@@ -424,7 +424,7 @@ export default function TablesPage() {
                     try {
                       const updated = await api.setTableStatus(storeId!, selected.id, 'idle')
                       setSelected(updated); fetchData()
-                      notify.success('✓')
+                      notify.success(t.common.updated)
                     } catch (e) { notify.fromError(e) }
                   }}>
                   <CheckCircle2 className="size-4 mr-1" />{t.tableDetail.markIdle}
