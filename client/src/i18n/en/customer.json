@@ -102,6 +102,7 @@
     "securePayment": "Secure encrypted payment via Stripe",
     "tip": "Add a Tip",
     "tipCustom": "Custom",
+    "tipMax": "Max tip: {{max}}",
     "tipConfirm": "OK",
     "tipApply": "Apply",
     "orderSummary": "Order Summary"

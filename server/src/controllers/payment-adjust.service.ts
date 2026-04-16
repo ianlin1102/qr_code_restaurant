@@ -41,7 +41,11 @@ export function adjustPaymentTip(
   }
 
   const previousTip = payment.tipAmount ?? 0
-  const updated = paymentStore.update(paymentId, { tipAmount: newTipAmount })!
+  const foodPortion = payment.amount - previousTip
+  const updated = paymentStore.update(paymentId, {
+    amount: foodPortion + newTipAmount,
+    tipAmount: newTipAmount,
+  })!
   logger.info(
     { storeId, paymentId, sessionId: payment.sessionId, from: previousTip, to: newTipAmount },
     'cash payment tip adjusted',

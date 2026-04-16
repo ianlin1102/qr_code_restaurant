@@ -82,18 +82,31 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
       </div>
 
       {customOpen && (
-        <div className="flex items-center gap-2 mt-3">
-          <span className="text-sm font-medium text-muted-foreground">$</span>
-          <input
-            inputMode="decimal"
-            value={customVal}
-            onChange={e => setCustomVal(sanitizeDollarInput(e.target.value))}
-            onBlur={() => applyCustom(customVal)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCustom(customVal); (e.target as HTMLInputElement).blur() } }}
-            placeholder="0.00"
-            className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-            autoFocus
-          />
+        <div className="space-y-1 mt-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">$</span>
+            <input
+              inputMode="decimal"
+              value={customVal}
+              onChange={e => {
+                const sanitized = sanitizeDollarInput(e.target.value)
+                const cents = dollarStringToCents(sanitized)
+                if (cents !== null && cents > maxTipCents) {
+                  setCustomVal((maxTipCents / 100).toFixed(2))
+                } else {
+                  setCustomVal(sanitized)
+                }
+              }}
+              onBlur={() => applyCustom(customVal)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCustom(customVal); (e.target as HTMLInputElement).blur() } }}
+              placeholder="0.00"
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              autoFocus
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            {t('checkout.tipMax', { max: formatPriceUSD(maxTipCents) })}
+          </p>
         </div>
       )}
     </div>
