@@ -126,20 +126,38 @@ export function addPayment(
   const newTotalPaid = session.totalPaid + effectiveFood
   const updates: Partial<Session> = { totalPaid: newTotalPaid }
 
-  // When fully paid and in by-item mode, ensure ALL items are in paidItemIds
-  // so remaining (item-based) agrees with remaining (totalPaid-based).
-  if (newTotalPaid >= totalWithTax && session.settlementMode === 'by-item') {
-    const allKeys: string[] = []
+  // FIFO item attribution for generic (non-item-specific) payments.
+  // Walk orders oldest-first, mark items as paid until the running total
+  // of paid food amount is covered. This keeps paidItemIds consistent
+  // with totalPaid so the customer SettlementSheet shows correct paid/unpaid.
+  {
     const sessionOrders = (session.orderIds ?? []).map(id => orderStore.getById(id)).filter(Boolean)
+    const existingPaid = new Set(session.paidItemIds ?? [])
+    const newPaidIds = [...existingPaid]
+    let budget = newTotalPaid
     for (const order of sessionOrders) {
       if (!order) continue
       for (let idx = 0; idx < order.items.length; idx++) {
-        if (order.items[idx].voided) continue
-        allKeys.push(`${order.id}:${idx}:${order.items[idx].quantity}`)
+        const item = order.items[idx]
+        if (item.voided) continue
+        const baseKey = `${order.id}:${idx}`
+        const fullKey = `${baseKey}:${item.quantity}`
+        if (existingPaid.has(fullKey) || existingPaid.has(baseKey)) continue
+        const optAdj = (item.selectedOptions ?? []).reduce((s: number, o: any) => s + (o.priceAdjust ?? 0), 0)
+        const itemTotal = (item.price + optAdj) * item.quantity
+        if (budget >= itemTotal) {
+          budget -= itemTotal
+          newPaidIds.push(fullKey)
+        }
       }
     }
-    updates.paidItemIds = allKeys
-    logger.info({ sessionId, itemCount: allKeys.length }, 'auto-marked all items paid (fully settled via generic payment)')
+    if (newPaidIds.length > existingPaid.size) {
+      updates.paidItemIds = newPaidIds
+      if (!session.settlementMode) {
+        updates.settlementMode = 'by-item'
+      }
+      logger.info({ sessionId, marked: newPaidIds.length - existingPaid.size }, 'FIFO item attribution for generic payment')
+    }
   }
 
   sessionStore.update(sessionId, updates)
