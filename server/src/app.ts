@@ -9,6 +9,7 @@ import orderRoutes from './routes/order.routes.js'
 import tableRoutes from './routes/table.routes.js'
 import uploadRoutes from './routes/upload.routes.js'
 import paymentRoutes from './routes/payment.routes.js'
+import paymentAdjustRoutes from './routes/payment-adjust.routes.js'
 import webhookRoutes from './routes/webhook.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
 import couponRoutes from './routes/coupon.routes.js'
@@ -49,6 +50,7 @@ app.use('/api/stores/:storeId', storeRoutes)
 app.use('/api/stores/:storeId/menu', menuRoutes)
 app.use('/api/stores/:storeId/orders', orderRoutes)
 app.use('/api/stores/:storeId/checkout', paymentRoutes)
+app.use('/api/stores/:storeId/payments', paymentAdjustRoutes)
 app.use('/api/stores/:storeId/tables', tableRoutes)
 // SSE must be before session routes (Express matches in mount order)
 app.use('/api/stores/:storeId', sseRoutes)

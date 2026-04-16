@@ -250,6 +250,12 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
 
+  adjustPaymentTip: (storeId: string, paymentId: string, tipAmount: number) =>
+    fetchJSON<Payment>(`/stores/${storeId}/payments/${paymentId}/tip`, {
+      method: 'PATCH',
+      body: JSON.stringify({ tipAmount }),
+    }),
+
   // Customer: get orders for a specific table
   getTableOrders: (storeId: string, tableId: string) =>
     fetchJSON<Order[]>(`/stores/${storeId}/orders?tableId=${tableId}`),

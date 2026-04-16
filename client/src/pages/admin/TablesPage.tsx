@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import CloseTableDialog from '@/components/table/CloseTableDialog'
 import TransferTableDialog from '@/components/table/TransferTableDialog'
 import SplitBillManager from '@/components/table/SplitBillManager'
+import PaymentsList from '@/components/table/PaymentsList'
 import TableCrudDialog from '@/components/table/TableCrudDialog'
 import OrderingSheet from '@/components/order/OrderingSheet'
 import OrderEditDialog from '@/components/order/OrderEditDialog'
@@ -627,6 +628,14 @@ export default function TablesPage() {
                   <span className="text-primary">{formatPriceUSD(remaining)}</span>
                 </div>
               </div>
+            )}
+            {viewTab === 'current' && (sessionSummary?.payments?.length ?? 0) > 0 && (
+              <PaymentsList
+                storeId={storeId!}
+                payments={sessionSummary!.payments!}
+                lang={lang}
+                onUpdated={refresh}
+              />
             )}
           </div>
         )}
