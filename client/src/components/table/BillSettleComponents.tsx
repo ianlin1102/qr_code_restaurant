@@ -135,10 +135,10 @@ export function PaymentMethodSection({ session, storeId, sessionId, payMethod, s
     setPaying(false)
   }
 
-  const handleCashConfirm = async (receivedAmount: number) => {
+  const handleCashConfirm = async (receivedAmount: number, tipAmount?: number) => {
     setPaying(true)
     try {
-      const result = await api.recordCashPayment(storeId, sessionId, session.remaining, receivedAmount)
+      const result = await api.recordCashPayment(storeId, sessionId, session.remaining, receivedAmount, tipAmount)
       if (result.allowedActions) setAllowed(result.allowedActions)
       setPayMethod(null)
       fetchSession()

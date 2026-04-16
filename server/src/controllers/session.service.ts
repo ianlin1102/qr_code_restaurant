@@ -124,7 +124,25 @@ export function addPayment(
   paymentStore.create(payment)
 
   const newTotalPaid = session.totalPaid + effectiveFood
-  sessionStore.update(sessionId, { totalPaid: newTotalPaid })
+  const updates: Partial<Session> = { totalPaid: newTotalPaid }
+
+  // When fully paid and in by-item mode, ensure ALL items are in paidItemIds
+  // so remaining (item-based) agrees with remaining (totalPaid-based).
+  if (newTotalPaid >= totalWithTax && session.settlementMode === 'by-item') {
+    const allKeys: string[] = []
+    const sessionOrders = (session.orderIds ?? []).map(id => orderStore.getById(id)).filter(Boolean)
+    for (const order of sessionOrders) {
+      if (!order) continue
+      for (let idx = 0; idx < order.items.length; idx++) {
+        if (order.items[idx].voided) continue
+        allKeys.push(`${order.id}:${idx}:${order.items[idx].quantity}`)
+      }
+    }
+    updates.paidItemIds = allKeys
+    logger.info({ sessionId, itemCount: allKeys.length }, 'auto-marked all items paid (fully settled via generic payment)')
+  }
+
+  sessionStore.update(sessionId, updates)
 
   if (refundAmount > 0) {
     logger.warn(
@@ -199,8 +217,12 @@ export function getSessionSummary(storeId: string, sessionId: string) {
 
   return {
     ...freshSession, orders, payments, ...bill,
-    // Override remaining with item-based calculation when in by-item mode
-    remaining: freshSession.settlementMode === 'by-item' ? itemBasedRemaining : bill.remaining,
+    // In by-item mode, remaining = unpaid items sum. But if totalPaid already
+    // covers the bill (e.g., admin cash didn't update paidItemIds), take the
+    // lower of the two to prevent display contradictions.
+    remaining: freshSession.settlementMode === 'by-item'
+      ? Math.max(0, Math.min(itemBasedRemaining, bill.remaining))
+      : bill.remaining,
   }
 }
 
@@ -530,11 +552,11 @@ export { autoCloseStaleSessionsOnce, startAutoCloseTimer } from '../settlement/a
 /** @internal Called by settlement gateway. */
 export function recordCashPayment(
   storeId: string, sessionId: string,
-  amount: number, receivedAmount: number,
+  amount: number, receivedAmount: number, tipAmount?: number,
 ): { session: Session; payment: Payment; change: number } | { error: string } {
   if (receivedAmount < amount) return { error: 'Received amount less than due' }
 
-  const result = addPayment(storeId, sessionId, amount, 'waiter')
+  const result = addPayment(storeId, sessionId, amount, 'waiter', undefined, tipAmount)
   if ('error' in result) return result
 
   paymentStore.update(result.payment.id, { method: 'cash' as const })

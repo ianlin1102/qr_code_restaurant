@@ -2,7 +2,7 @@ import type { SettlementContext } from '../types'
 import { checkNotClosed, checkHasRemaining, checkAmount, checkReceived, checkMaxAmount } from '../rules'
 import { recordCashPayment } from '../../controllers/session.service'
 
-export function execute(ctx: SettlementContext, action: { type: 'cash-payment'; amount: number; receivedAmount: number }) {
+export function execute(ctx: SettlementContext, action: { type: 'cash-payment'; amount: number; receivedAmount: number; tipAmount?: number }) {
   const checks = [
     checkNotClosed(ctx),
     checkHasRemaining(ctx),
@@ -20,7 +20,8 @@ export function execute(ctx: SettlementContext, action: { type: 'cash-payment'; 
   const rcvCheck = checkReceived(received, amount)
   if (rcvCheck) return { error: rcvCheck, message: 'Received amount must be >= amount due' }
 
-  const result = recordCashPayment(ctx.store.id, ctx.session.id, amount, received)
+  const tip = Math.max(0, Math.round(action.tipAmount ?? 0))
+  const result = recordCashPayment(ctx.store.id, ctx.session.id, amount + tip, received, tip)
   if ('error' in result) return { error: 'INVALID_AMOUNT', message: result.error }
 
   return { data: { payment: result.payment, change: result.change } }

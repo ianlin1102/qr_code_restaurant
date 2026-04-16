@@ -5,13 +5,14 @@ import { formatPriceUSD } from '@/lib/format'
 
 interface Props {
   totalDue: number       // cents
-  onConfirm: (receivedAmount: number) => void
+  onConfirm: (receivedAmount: number, tipAmount?: number) => void
   onCancel: () => void
   loading?: boolean
   lang: string
+  showChangeTip?: boolean
 }
 
-export default function CashPaymentPad({ totalDue, onConfirm, onCancel, loading, lang }: Props) {
+export default function CashPaymentPad({ totalDue, onConfirm, onCancel, loading, lang, showChangeTip = true }: Props) {
   const [input, setInput] = useState('')
   const zh = lang === 'zh'
 
@@ -81,14 +82,23 @@ export default function CashPaymentPad({ totalDue, onConfirm, onCancel, loading,
         ))}
       </div>
 
-      <div className="flex gap-2 pt-1">
-        <Button variant="ghost" className="flex-1 min-h-[44px]" onClick={onCancel} disabled={loading}>
-          {zh ? '返回' : 'Back'}
-        </Button>
-        <Button className="flex-1 min-h-[44px]" disabled={!canConfirm} onClick={() => onConfirm(receivedCents)}>
-          {loading && <Loader2 className="size-4 mr-2 animate-spin" />}
-          {zh ? '确认收款' : 'Confirm'}
-        </Button>
+      <div className="flex flex-col gap-2 pt-1">
+        {showChangeTip && change > 0 && canConfirm && (
+          <Button variant="secondary" className="w-full min-h-[44px] text-sm"
+            disabled={loading}
+            onClick={() => onConfirm(receivedCents, change)}>
+            {zh ? `找零 ${formatPriceUSD(change)} → 作为小费` : `Change ${formatPriceUSD(change)} → Leave as tip`}
+          </Button>
+        )}
+        <div className="flex gap-2">
+          <Button variant="ghost" className="flex-1 min-h-[44px]" onClick={onCancel} disabled={loading}>
+            {zh ? '返回' : 'Back'}
+          </Button>
+          <Button className="flex-1 min-h-[44px]" disabled={!canConfirm} onClick={() => onConfirm(receivedCents)}>
+            {loading && <Loader2 className="size-4 mr-2 animate-spin" />}
+            {zh ? '确认收款' : 'Confirm'}
+          </Button>
+        </div>
       </div>
     </div>
   )

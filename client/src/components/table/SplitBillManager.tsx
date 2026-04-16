@@ -101,7 +101,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
           <DialogHeader><DialogTitle>{ts.payCash}</DialogTitle></DialogHeader>
           <TipInput value={tipInput} onChange={setTipInput} label={ts.tipOptional} />
           <CashPaymentPad totalDue={payTarget.amount + tipCents} lang={lang}
-            loading={loading} onCancel={resetPay}
+            loading={loading} onCancel={resetPay} showChangeTip={false}
             onConfirm={received => handlePayCash(payTarget.id, received)} />
         </DialogContent>
       </Dialog>

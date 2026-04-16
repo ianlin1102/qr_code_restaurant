@@ -5,7 +5,7 @@ import type { Session, Payment, SplitBill, Order, Store } from '@qr-order/shared
 export type SettlementAction =
   | { type: 'pay-items'; itemKeys: string[] }
   | { type: 'pay-percent'; percent: number }
-  | { type: 'cash-payment'; amount: number; receivedAmount: number }
+  | { type: 'cash-payment'; amount: number; receivedAmount: number; tipAmount?: number }
   | { type: 'add-payment'; amount: number; paidBy: string; tipAmount?: number; stripePaymentIntentId?: string }
   | { type: 'create-split'; splitType: 'by-item' | 'by-percent'; itemKeys?: string[]; percent?: number; label?: string }
   | { type: 'delete-split'; splitBillId: string }

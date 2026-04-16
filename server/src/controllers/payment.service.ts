@@ -113,10 +113,12 @@ export async function createPaymentIntentForSession(req: SessionCheckoutRequest)
     return { error: 'Nothing to pay', status: 400 }
   }
 
-  // Cap: max(100.00, totalWithTax × 2) — prevent unreasonable charges
-  const maxAllowed = Math.max(10000, totalWithTax * 2)
-  if (chargeAmount > maxAllowed) {
-    return { error: `Amount exceeds maximum allowed (${(maxAllowed / 100).toFixed(2)})`, status: 400 }
+  // Cap food portion separately from tip.
+  // Food: capped at remaining (already done above via Math.min).
+  // Tip: capped at max(remaining, $200) — generous but bounded.
+  const maxTip = Math.max(remaining, 200_00)
+  if (tip > maxTip) {
+    return { error: `Tip exceeds maximum allowed (${(maxTip / 100).toFixed(2)})`, status: 400 }
   }
 
   const paymentIntent = await getStripe().paymentIntents.create({

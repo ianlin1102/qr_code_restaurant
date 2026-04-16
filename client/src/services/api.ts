@@ -452,10 +452,10 @@ export const api = {
       { method: 'POST', body: JSON.stringify({ percent }) },
     ),
 
-  recordCashPayment: (storeId: string, sessionId: string, amount: number, receivedAmount: number) =>
+  recordCashPayment: (storeId: string, sessionId: string, amount: number, receivedAmount: number, tipAmount?: number) =>
     settlementFetch<{ payment: Payment; change: number }>(
       `/stores/${storeId}/sessions/${sessionId}/cash-payment`,
-      { method: 'POST', body: JSON.stringify({ amount, receivedAmount }) },
+      { method: 'POST', body: JSON.stringify({ amount, receivedAmount, tipAmount }) },
     ),
 
   // Split Bills (admin)
