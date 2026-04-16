@@ -28,10 +28,12 @@ export default function TipSelector({ baseAmount, selected, onSelect, loadingTip
   const isPreset = (pct: number) =>
     selected?.type === 'percent' && selected.pct === pct
 
+  const maxTipCents = Math.max(baseAmount, 200_00)
+
   const applyCustom = (val: string) => {
     const cents = dollarStringToCents(val)
     if (cents && cents > 0) {
-      onSelectRef.current({ type: 'custom', amount: cents })
+      onSelectRef.current({ type: 'custom', amount: Math.min(cents, maxTipCents) })
     } else if (val === '' || val === '0' || val === '0.00') {
       onSelectRef.current(null)
     }

@@ -138,7 +138,7 @@ export default function CheckoutPage() {
   const [loadingTip, setLoadingTip] = useState(false)
 
   useEffect(() => {
-    applyTip({ type: 'percent', pct: 18 })
+    if (clientSecret && amount > 0) applyTip({ type: 'percent', pct: 18 })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

@@ -12,6 +12,7 @@ import { getDeviceId } from '@/lib/device-id'
 import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
 import { optionLabel } from '@/lib/i18n-utils'
+import type { CartItem } from '@qr-order/shared'
 
 interface CartItemCardProps {
   item: CartEntry
@@ -170,6 +171,18 @@ export default function CartPage() {
     setSubmitting(true)
 
     try {
+      // Force push local cart to server before submitting (prevents race where
+      // the 1s debounce hasn't fired yet → server's pendingCart is empty → 400)
+      const myLocal: CartItem[] = items
+        .filter(i => (i.addedByDevice || myDeviceId) === myDeviceId)
+        .map(({ menuItemId, name, price, quantity, remark, selectedOptions, addedBy, addedByDevice }) => ({
+          menuItemId, name, price, quantity,
+          ...(remark ? { remark } : {}),
+          ...(selectedOptions?.length ? { selectedOptions } : {}),
+          ...(addedBy ? { addedBy } : {}),
+          ...(addedByDevice ? { addedByDevice } : {}),
+        }))
+      await api.updateSessionCart(storeId, activeSessionId, myDeviceId, myLocal)
       const result = await api.submitSessionCart(storeId, activeSessionId, cartVersion, customerName)
       markSubmitted()
 
