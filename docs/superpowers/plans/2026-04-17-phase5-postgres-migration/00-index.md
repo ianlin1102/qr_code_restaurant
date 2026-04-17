@@ -55,6 +55,21 @@
 - 相关单元测试 `pnpm test <pattern>` 绿
 - 贴实际命令输出到 commit 或 review，不靠"应该 ok"
 
+### 规则 7：现有系统行为断言需 grep 证据支撑（evidence-first）
+
+任何对"现有代码/系统如何工作"的断言——无论在 spec 设计讨论、plan 编写、还是 task 实施阶段——必须伴随 grep 或代码引用证据。
+
+**范例**：
+
+- ✅ "legacy itemKey 格式是 `orderId:idx:qty`（`server/src/lib/session-state.ts:121`）"
+- ❌ "itemKey 是每个 order_item 创建时分配的稳定 UUID"（凭印象，无证据）
+
+暂时无法 grep 的断言（例如涉及前端交互行为、用户 UX 期望、环境配置）必须显式标注 `[ASSUMPTION, needs verification in Phase X]`，**不得默认成立**。
+
+**历史教训**：2026-04-17 Phase D 段 2a verify 阶段发现 spec §4.1 `OrderItem.itemKey` 设计基于错误事实假设——CC 在 spec 小节 4 Q4 讨论时凭印象回答"itemKey 是稳定 UUID"，未被要求提供 grep 证据就进入 spec。后续 plan Task 2/17/19/20 和 §6.2 Webhook 全部连锁错误，直到 Task 17 verify 阶段才发现。修正成本：spec + plan 两个 commit（`4fdd6b6c` + `976c492b`）和若干小时深度返工。若规则 7 早存在，grep 10 分钟即可拦截。
+
+规则 7 的执行者**包括** CC 本身——CC 在描述现有行为时必须主动贴 grep 证据，不等用户要。
+
 ---
 
 ## 批次结构
