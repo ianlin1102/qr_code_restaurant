@@ -131,7 +131,7 @@
 | B | 0 | [phase-b-infrastructure.md](./phase-b-infrastructure.md) | 10（Task 2-10） | Phase A 全部完成（1c 必须先跑） |
 | C | 1 | [phase-c-test-db.md](./phase-c-test-db.md) | 5（Task 11-15） | Phase B 全部完成 |
 | D | 2 | [phase-d-repositories.md](./phase-d-repositories.md)（Task 16-22）+ [phase-d-repositories-part2.md](./phase-d-repositories-part2.md)（Task 23-26） | 11（Task 16-26） | Phase C 全部完成 |
-| E | 3a | _（批 2 待写）_ | 3（Task 27-29） | Phase D |
+| E | 3a | [phase-e-agent-a.md](./phase-e-agent-a.md)（Task 27, 349 行）+ [phase-e-agent-b.md](./phase-e-agent-b.md)（Task 28, 428 行）+ [phase-e-agent-c.md](./phase-e-agent-c.md)（Task 29, 298 行） | 3（Task 27-29，按 agent 切分，每 agent 一文件） | Phase D |
 | F | 3b | _（批 2 待写）_ | 2（Task 30-31） | Phase D（可和 E 并行） |
 | G | 3c | _（批 2 待写）_ | 11（Task 32-42，含 B2 checkpoint） | Phase E/F |
 | H | 4 | _（批 2 待写）_ | 3（Task 43-45） | Phase G |
