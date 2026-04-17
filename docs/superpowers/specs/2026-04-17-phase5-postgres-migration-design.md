@@ -78,6 +78,9 @@
 | D52 | 读写参数策略 | 写操作 repo 方法的 `db` 参数**必填**，读操作可保留默认值 | 防止写操作漏传 tx 破坏原子性；读操作漏传仅降级到非 tx 隔离，影响小 |
 | D53 | Repository 层形态 | 11 个语义化 repo 文件（一 entity 一文件，含该 entity 的业务方法），**不做通用 CRUD 适配器**。old `stores.ts` Phase D 不动，Phase E/F/G 逐域替换 import，Phase I 删除 | 生产代码 grep 显示 JsonStore 被同步链/非空断言/`session.orderIds` 专属字段深度嵌入——"生成通用适配器 + 加 await" 跑不起来，每个 call site 都要语义重写，不如直接去语义化 repo |
 | D54 | Phase D 切换层面 | **一次性切换是 storage 层（JSON → Postgres），业务层是渐进迁移**。Phase D 新增 Prisma repo 就位、`stores.ts` / JsonStore 不动、**应用照常启动**。Phase E/F/G 才逐域替换业务代码 import | 纠正 spec §9.5 原验收（"tsc -b 通过 + 基本登录跑通"）的空想——storage/业务层混为一谈。D54 把两层分开 |
+| D55 | 多步写操作参数窄化（D26 精化） | 方法内有 ≥2 次 DB round-trip 且依赖前后一致性的写操作，`db` 参数类型窄化为 `Prisma.TransactionClient`（不是 `Db` 联合）。单步写（`createDraftOrder` 嵌套 create、`updateStatus`）不受约束 | D26 说"读写统一接受 PrismaClient 或 TransactionClient"，D55 对**多步写**进一步收紧——否则乐观锁 WHERE 检查 + 后续 write 跨独立 connection 会破坏原子性保证。编译期强制 caller 必须 withTenantContext |
+| D56 | itemKey 模型重构 — DB FK + API 薄兼容层 | **DB 层**：PaymentItem / SplitBillItem 用 `(orderItemId FK, quantity)`，彻底删 itemKey 字符串列。**Service/Repository 层**：纯 FK 模型。**Controller 边界**：1cm 薄转换层集中在 `server/src/lib/legacy-itemkey.ts`（`parseItemKey` / `formatItemKey`）。Phase G 废弃 5 处散落 `.split(':')`，前端 API 契约不变 | 2026-04-17 Phase D 段 2a grep 发现 spec §4.1 原 itemKey 设计（"稳定 UUID，跨选项变更保持"）与现有 legacy 代码事实不符——实际 legacy 是派生字符串 `orderId:idx:qty`，5 处代码重复 `.split(':')`。B 方案 FK 化 + API 层保字符串兼容，兼顾事实 + Phase 5 scope 控制（D47 兜底，legacy 59 条 Payment 数据不迁移）|
+| D57 | OrderItem.position 稳定 idx 契约 | OrderItem 新增 `position Int` 列 + `@@unique([orderId, position])`；position 由 caller 在嵌套 create 时显式填充（0-indexed）；`replaceDraftItems` 重排时重新分配 `0..N-1`。所有 repo `include: { items: { orderBy: { position: 'asc' }}}`。替代原本（错误设计的）`itemKey` UUID 列。**迁移语义**：Phase 5 实施尚未到 Task 3，plan 文档里 init migration SQL 直接并入此改动，不走增量 migration；Task 3 实施后若 init migration 已应用到任何环境，后续任何 OrderItem/PaymentItem schema 改动必须走增量 migration（规则 1） | grep 证据：legacy 代码 `order.items[idx]` 在 FIFO 归因 / split 冲突检测 / pay-by-item 是稳定契约（session-state.ts:107、split-bill.service.ts:55、settlement/rules.ts:57）。Prisma 嵌套 create 不保证返回顺序——position 列显式锚定 |
 
 ---
 
@@ -327,14 +330,18 @@ model OrderItem {
   orderId    String   @map("order_id")
   order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItemId String   @map("menu_item_id")
-  itemKey    String   @map("item_key")   // 稳定 UUID，跨选项变更保持
+  position   Int                          // D57：稳定 idx 契约，caller 填 0-indexed
   name       String
   unitPrice  Int      @map("unit_price")
   quantity   Int
   note       String?
-  
-  options    OrderItemOption[]
-  
+
+  options        OrderItemOption[]
+  paymentItems   PaymentItem[]
+  splitBillItems SplitBillItem[]
+
+  @@unique([orderId, position])
+  @@index([orderId])
   @@index([menuItemId])
   @@map("order_items")
 }
@@ -373,13 +380,16 @@ model Payment {
 }
 
 model PaymentItem {
-  id        String  @id @default(uuid())
-  storeId   String  @map("store_id")  // 冗余
-  paymentId String  @map("payment_id")
-  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  itemKey   String  @map("item_key")
-  
-  @@index([itemKey])
+  id           String     @id @default(uuid())
+  storeId      String     @map("store_id")  // 冗余
+  paymentId    String     @map("payment_id")
+  payment      Payment    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderItemId  String     @map("order_item_id")
+  orderItem    OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  paidQuantity Int        @map("paid_quantity")
+
+  @@index([paymentId])
+  @@index([orderItemId])
   @@map("payment_items")
 }
 
@@ -405,15 +415,35 @@ model SplitBill {
 }
 
 model SplitBillItem {
-  id          String    @id @default(uuid())
-  storeId     String    @map("store_id")  // 冗余
-  splitBillId String    @map("split_bill_id")
-  splitBill   SplitBill @relation(fields: [splitBillId], references: [id], onDelete: Cascade)
-  itemKey     String    @map("item_key")
-  quantity    Int       @default(1)
-  
+  id           String     @id @default(uuid())
+  storeId      String     @map("store_id")  // 冗余
+  splitBillId  String     @map("split_bill_id")
+  splitBill    SplitBill  @relation(fields: [splitBillId], references: [id], onDelete: Cascade)
+  orderItemId  String     @map("order_item_id")
+  orderItem    OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  quantity     Int        @default(1)
+
+  @@index([splitBillId])
+  @@index([orderItemId])
   @@map("split_bill_items")
 }
+
+// ========== §4.1 事实勘误（2026-04-17） ==========
+
+// ⚠️ 事实勘误（Phase D 段 2a 期间发现）
+//
+// 本 §4.1 早前版本的 OrderItem.itemKey / PaymentItem.itemKey / SplitBillItem.itemKey
+// 列基于**错误事实假设**——假设 legacy 系统 itemKey 是"每个 order_item 创建时分配的
+// 稳定 UUID"。实际 grep 显示 legacy itemKey 是派生字符串 "orderId:idx:qty"
+// （见 server/src/lib/session-state.ts:121、server/src/controllers/split-bill.service.ts:47、
+// 5 处散落 .split(':')），由 FIFO 归因/前端 UI 动态生成，从不持久化为列。
+//
+// D56 把 DB 层升级为 (orderItemId FK + quantity) 规范化模型；D57 加 OrderItem.position
+// 列锚定 idx 契约；Controller 边界保留 legacy 字符串格式作 API 兼容层
+// （见 server/src/lib/legacy-itemkey.ts）。
+//
+// 流程教训：详见 docs/superpowers/plans/2026-04-17-phase5-postgres-migration/00-index.md
+// 规则 7（evidence-first for "现有行为" 断言）。
 
 // ========== 外围 ==========
 
@@ -697,7 +727,7 @@ grep -rn "prisma\.\(order\|payment\|session\|splitBill\)\.\(create\|update\|dele
 
 | 操作 | 原子步骤 | 失败处理 |
 |---|---|---|
-| Webhook 确认支付 | 1. 创建 Payment 2. 创建 PaymentItem 3. 失效冲突 splits 4. 重算 settlementMode | 全回滚 → Stripe 重试 |
+| Webhook 确认支付 | 1. 创建 Payment 2. 创建 PaymentItem `(paymentId, orderItemId, paidQuantity)` 3. 失效冲突 splits（判定：SplitBillItem `(orderItemId, quantity)` 与 paid 总量重叠）4. 重算 settlementMode | 全回滚 → Stripe 重试 |
 | Cart submit（B2） | UPDATE `status='draft' AND version=?` → `pending`，version+1 | affected=0 → 409 |
 | 创建 Split | 1. 校验无重叠 2. 创建 split_bill + items 3. 更新 mode | 冲突抛错回滚 |
 | Close Session | session.status='closed' + table.current_session_id=null | 两表同步 |
