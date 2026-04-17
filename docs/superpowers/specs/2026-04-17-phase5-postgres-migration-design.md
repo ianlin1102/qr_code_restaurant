@@ -1196,39 +1196,65 @@ server/src/repositories/
 
 ### 9.6 Stage 3a：外围域（串行 A → B → C）
 
+> **⚠️ 2026-04-17 Phase E plan 事实修正**（规则 7 应用）
+>
+> 本小节原始文件列表凭印象写作，Phase E plan 段 3a/3b/3c grep 验证后发现
+> 3 项事实错误。下方列表为**修正后**版本——原错误全部记录在本小节
+> "Phase E plan 修正记录" 子小节，保留 spec 演进的审计痕迹。
+>
+> 每个文件的 **Modify / Create** 标注也一并加入——原 spec 未区分导致
+> Phase E 实施 agent 可能误以为所有 test 文件已存在。
+
 **Agent A（menu + category）** 独占：
 ```
-server/src/routes/menu.routes.ts
-server/src/routes/category.routes.ts
-server/src/controllers/menu.service.ts
-server/src/__tests__/menu.test.ts
+Modify: server/src/routes/menu.routes.ts
+Modify: server/src/controllers/menu.service.ts    (含 category + menuItem 两套 CRUD)
+Create: server/src/__tests__/menu.test.ts         (Phase E 新建)
 ```
 
 **Agent B（staff 体系）** 独占：
 ```
-server/src/routes/staff.routes.ts
-server/src/routes/role.routes.ts
-server/src/routes/clock.routes.ts
-server/src/routes/waitlist.routes.ts
-server/src/controllers/staff.service.ts
-server/src/controllers/role.service.ts
-server/src/controllers/clock.service.ts
-server/src/controllers/waitlist.service.ts
-server/src/__tests__/{staff,roles}.test.ts
+Modify: server/src/routes/staff.routes.ts
+Modify: server/src/routes/role.routes.ts
+Modify: server/src/routes/clock.routes.ts
+Modify: server/src/routes/waitlist.routes.ts
+Modify: server/src/controllers/staff.service.ts
+Modify: server/src/controllers/role.service.ts
+Modify: server/src/controllers/clock.service.ts
+Modify: server/src/controllers/waitlist.service.ts
+Create: server/src/__tests__/staff.test.ts        (Phase E 新建，含 clock 业务 case)
+Create: server/src/__tests__/roles.test.ts        (Phase E 新建)
+Create: server/src/__tests__/waitlist.test.ts     (Phase E 新增，原 spec 未列)
 ```
 
 **Agent C（coupon + analytics + printer）** 独占：
 ```
-server/src/routes/coupon.routes.ts
-server/src/routes/analytics.routes.ts
-server/src/routes/printer.routes.ts
-server/src/controllers/coupon.service.ts
-server/src/controllers/analytics.service.ts
-server/src/controllers/printer.service.ts
-server/src/__tests__/coupons.test.ts
+Modify: server/src/routes/coupon.routes.ts
+Modify: server/src/routes/analytics.routes.ts
+Modify: server/src/routes/printer.routes.ts
+Modify: server/src/controllers/coupon.service.ts
+Modify: server/src/controllers/analytics.service.ts
+Modify: server/src/controllers/printer.service.ts
+Create: server/src/__tests__/coupons.test.ts      (Phase E 新建)
 ```
 
-**每个 agent 的动作**：删 JsonStore 调用、async 化、包 `tenantAwareRoute`、emit 移 tx 外、写 RLS-aware 测试
+**每个 agent 的动作**：删 JsonStore 调用、async 化、包 `tenantAwareRoute`、emit 移 tx 外 (用 `res.locals.afterCommit` 钩子——见 §5.4 / Task 8 补丁)、写 RLS-aware 业务语义测试
+
+#### Phase E plan 修正记录（2026-04-17）
+
+| # | 原 spec 声明（错误） | 实际状态（grep 验证） | 修正 |
+|---|---|---|---|
+| 1 | `server/src/routes/category.routes.ts` 归 Agent A | ❌ 文件**不存在**——category 路由合并在 `menu.routes.ts` 内 | 从 Agent A 列表删除 |
+| 2 | `server/src/__tests__/menu.test.ts` 隐含已存在 | ❌ 文件不存在——`__tests__/` 实际仅含 `module-permissions.test.ts / settlement-gateway.test.ts / split-billing-integration.test.ts` | 明标 `Create` |
+| 3 | Agent B `{staff,roles}.test.ts` 只列两个 | Phase E 新策略（每域 3-5 业务 case + 1 RLS smoke）需要 `waitlist.test.ts` 独立文件 | 新增 `waitlist.test.ts` |
+| 4 | Agent C `coupons.test.ts` 隐含已存在 | ❌ 文件不存在 | 明标 `Create` |
+| 5 | 无 `category.service.ts` 明示（模糊） | category CRUD 在 `menu.service.ts` 内，非独立 service 文件 | 在 Agent A `menu.service.ts` 后加注释说明 |
+
+**历史模式**：本修正是 Phase 5 项目内第 2 次 spec 事实错误（第 1 次是 §4.1
+`OrderItem.itemKey` 设计基于错误事实假设，见 D56/D57 修正 commit `4fdd6b6c`）。
+两次模式一致——spec 写作时未 grep 现存代码/文件结构就落笔。规则 7（evidence-
+first for "existing behavior" claims）的直接应用场景：spec 编写者自身也
+必须遵守，不仅 plan/task 阶段。
 
 ### 9.7 Stage 3b：Platform admin（D44 并行）
 
