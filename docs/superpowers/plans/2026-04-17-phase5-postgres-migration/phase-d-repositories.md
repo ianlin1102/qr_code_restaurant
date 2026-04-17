@@ -1534,5 +1534,13 @@ Task 18-22 全部写完（sessions / payments / split-bills / menu / staff）。
 
 **用户 spot check 建议**：Task 19 payments.ts（D56 FK + derivePaidQuantityByOrderItem 是核心）+ 随机一个 Task 18/20/21/22 即可。其他信汇报。
 
-下一步：**段 2 段 2c**（Task 23-26：roles + coupons + waitlist + platform-admin）。Task 23 的 `resolveLicensedPermissions` helper 影响多处，Task 26 platform-admin 走 BYPASSRLS，两个要重点 verify。
+---
+
+## 段 2c（Task 23-26）见独立文件
+
+**2026-04-17 文件拆分**：段 2c 的 4 个 task（roles / coupons / waitlist / platform-admin）移至独立文件以符合规则 8（避免本文件继续累积破防）：
+
+→ [`phase-d-repositories-part2.md`](./phase-d-repositories-part2.md)
+
+拆分理由见该文件开头小节。完整 Phase D 验收（11 个 repo 一次冒烟）的命令仍在本文件上方 "Phase D 最终验收" 小节。
 

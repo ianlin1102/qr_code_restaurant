@@ -4,7 +4,7 @@ Created: 2026-04-17, post-段 2b（new file, no prior version existed — grep-v
 
 ## 当前位置
 
-Phase D 段 2b 完成（Task 16-22）。下一步：段 2c（Task 23-26：roles / coupons / waitlist / platform-admin）。
+Phase D 段 2c plan 已写完（Task 23-26 在独立文件 `phase-d-repositories-part2.md`）。**下一步**：等待用户 review（L1 Task 23 resolveLicensedPermissions / L2 Task 26 platform-admin），review 通过后 Phase D 全部 plan 就绪，可启动 Phase D 实施（Task 16-26 依次执行）或者直接推进批 2（Phase E-K）plan 写作。
 
 ## 近期关键 commit
 
@@ -53,5 +53,6 @@ Phase D 段 2b 完成（Task 16-22）。下一步：段 2c（Task 23-26：roles 
 
 1. `RESUME.md`（本文件）—— 项目当前状态
 2. `00-index.md` —— 全局规则 1-8
-3. `phase-d-repositories.md` —— 段 2c 的 task 列表和前置上下文
-4. （按需）`phase-g-handoff.md` work-log —— 积攒的 Phase G 交接项
+3. `phase-d-repositories.md` —— 段 2a/2b 的 task 列表（Task 16-22）+ Phase D 前置上下文
+4. `phase-d-repositories-part2.md` —— **段 2c（Task 23-26）task plan 已完成**
+5. （按需）`phase-g-handoff.md` work-log —— 积攒的 Phase G 交接项

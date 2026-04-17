@@ -130,7 +130,7 @@
 | A | -1 | [phase-a-backup.md](./phase-a-backup.md) | 3（1a/1b/1c） | 无 |
 | B | 0 | [phase-b-infrastructure.md](./phase-b-infrastructure.md) | 10（Task 2-10） | Phase A 全部完成（1c 必须先跑） |
 | C | 1 | [phase-c-test-db.md](./phase-c-test-db.md) | 5（Task 11-15） | Phase B 全部完成 |
-| D | 2 | [phase-d-repositories.md](./phase-d-repositories.md) | 11（Task 16-26） | Phase C 全部完成 |
+| D | 2 | [phase-d-repositories.md](./phase-d-repositories.md)（Task 16-22）+ [phase-d-repositories-part2.md](./phase-d-repositories-part2.md)（Task 23-26） | 11（Task 16-26） | Phase C 全部完成 |
 | E | 3a | _（批 2 待写）_ | 3（Task 27-29） | Phase D |
 | F | 3b | _（批 2 待写）_ | 2（Task 30-31） | Phase D（可和 E 并行） |
 | G | 3c | _（批 2 待写）_ | 11（Task 32-42，含 B2 checkpoint） | Phase E/F |
@@ -176,7 +176,7 @@
 | 14 | 写 `rls-coverage.test.ts` + `tenant-isolation.test.ts` |
 | 15 | 写 `module-registry.test.ts` |
 
-### Phase D：Stage 2 Repository 层 → [phase-d-repositories.md](./phase-d-repositories.md)
+### Phase D：Stage 2 Repository 层 → [phase-d-repositories.md](./phase-d-repositories.md)（16-22）+ [phase-d-repositories-part2.md](./phase-d-repositories-part2.md)（23-26）
 
 | Task | 内容 |
 |---|---|
