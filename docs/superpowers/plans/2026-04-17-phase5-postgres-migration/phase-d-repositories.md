@@ -1273,6 +1273,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **方法清单**（涵盖 Category + MenuItem + MenuItemOption 三实体）：
 
 - `listMenu(db?)`：读当前租户菜单——categories + 嵌套 menuItems（按 sortOrder）+ 嵌套 options
+- `listCategories(db?)`：**(Phase E 段 3a 回填)** flat categories（不带 nested menuItems）——analytics/admin 列表用，避免 listMenu 的 nested 负载
 - `findCategory(id, db?)` / `findItem(id, db?)`：基础 read
 - `upsertCategory(data, db)` / `upsertItem(data, db)` / `upsertOption(data, db)`：单步写
 - `setItemAvailability(id, isAvailable, db)`：单步
@@ -1318,6 +1319,13 @@ export const menuRepo = {
       },
       orderBy: { sortOrder: 'asc' },
     }) as Promise<CategoryWithItems[]>,
+
+  /** Phase E 段 3a 回填: flat categories (no nested items) for analytics/admin lists. */
+  listCategories: (db: Db = prisma): Promise<Category[]> =>
+    db.category.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    }),
 
   findCategory: (id: string, db: Db = prisma): Promise<Category | null> =>
     db.category.findUnique({ where: { id } }),
@@ -1437,6 +1445,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - `setClockPin(staffId, clockPin, db)`：单步
 - `setPassword(staffId, passwordHash, db)`：单步——**字段名 passwordHash 不是 password**（D56 的同类事实修正——schema 字段名已在 Phase B Task 2 修正）
 
+**Phase E 段 3b 回填方法**（原 Task 22 plan 未列，Phase E 实施期发现依赖缺失）：
+
+- `delete(id, db)`：**(段 3b 决策点 F)** 物理删除 Staff——Agent B `removeStaff` 流程依赖（legacy `staff.service.ts:114`）
+- `findActiveTimeEntry(userId, db?)`：**(段 3b Phase D 遗漏)** 查 userId 未 clockOut 的 TimeEntry——verifyPin / clockIn 路径依赖（legacy `clock.service.ts:19`）
+- `createTimeEntry(data, db)`：创建打卡记录（legacy `clock.service.ts:40`）
+- `closeTimeEntry(entryId, clockOut, db)`：关闭打卡记录——**duration 在 repo 内部算**（决策点 G：业务不变量在 repo 保证，caller 只传 timestamp）
+- `listTimeEntries(storeId, filter?, db?)`：列工时（legacy `clock.service.ts:67` + Agent C `analytics.service.getStaffPerformance` 依赖）
+
 - [ ] **Step 1：写文件**
 
 ```bash
@@ -1452,7 +1468,7 @@ cat > server/src/repositories/staff.ts <<'EOF'
  * tenant context (app.current_store_id) restricts rows at DB level.
  */
 
-import type { Staff, Role } from '@prisma/client'
+import type { Staff, Role, TimeEntry } from '@prisma/client'
 import { prisma, type Db } from './prisma-client.js'
 
 type StaffWithRole = Staff & { role: Role | null }
@@ -1506,6 +1522,66 @@ export const staffRepo = {
 
   setPassword: (staffId: string, passwordHash: string, db: Db): Promise<Staff> =>
     db.staff.update({ where: { id: staffId }, data: { passwordHash } }),
+
+  // ========== Phase E 段 3b 回填: delete + TimeEntry methods ==========
+
+  delete: (id: string, db: Db): Promise<Staff> =>
+    db.staff.delete({ where: { id } }),
+
+  findActiveTimeEntry: (userId: string, db: Db = prisma): Promise<TimeEntry | null> =>
+    db.timeEntry.findFirst({
+      where: { userId, clockOut: null },
+      orderBy: { clockIn: 'desc' },
+    }),
+
+  createTimeEntry: (
+    data: { userId: string; storeId: string; clockIn: Date },
+    db: Db
+  ): Promise<TimeEntry> =>
+    db.timeEntry.create({
+      data: {
+        userId: data.userId,
+        storeId: data.storeId,
+        clockIn: data.clockIn,
+        clockOut: null,
+        duration: null,
+      },
+    }),
+
+  /**
+   * Close an active TimeEntry. duration computed in repo (business invariant
+   * per decision point G): caller passes only clockOut timestamp.
+   * Throws if entry already closed (double-clockOut guard).
+   */
+  closeTimeEntry: async (
+    entryId: string,
+    clockOut: Date,
+    db: Db
+  ): Promise<TimeEntry> => {
+    const entry = await db.timeEntry.findUnique({ where: { id: entryId } })
+    if (!entry) throw new Error(`TimeEntry ${entryId} not found`)
+    if (entry.clockOut) throw new Error(`TimeEntry ${entryId} already closed`)
+    const durationMin = Math.floor((clockOut.getTime() - entry.clockIn.getTime()) / 60000)
+    return db.timeEntry.update({
+      where: { id: entryId },
+      data: { clockOut, duration: durationMin },
+    })
+  },
+
+  listTimeEntries: (
+    storeId: string,
+    filter: { userId?: string; from?: Date; to?: Date } = {},
+    db: Db = prisma
+  ): Promise<TimeEntry[]> =>
+    db.timeEntry.findMany({
+      where: {
+        storeId,
+        ...(filter.userId && { userId: filter.userId }),
+        ...(filter.from && { clockIn: { gte: filter.from } }),
+        ...(filter.to && { clockIn: { lte: filter.to } }),
+      },
+      orderBy: { clockIn: 'desc' },
+    }),
 }
 
 export type { StaffWithRole }
@@ -1543,4 +1619,116 @@ Task 18-22 全部写完（sessions / payments / split-bills / menu / staff）。
 → [`phase-d-repositories-part2.md`](./phase-d-repositories-part2.md)
 
 拆分理由见该文件开头小节。完整 Phase D 验收（11 个 repo 一次冒烟）的命令仍在本文件上方 "Phase D 最终验收" 小节。
+
+---
+
+## Phase E 回填附录（2026-04-17 事后补丁）
+
+Phase E plan 段 3a/3b/3c 实施期发现 Phase D 原始 plan 存在 5 项方法/文件缺失——
+实施 agent 跑到调用点时发现 Phase D repo 未覆盖。5 项集中在本附录作为事后补丁
+记录，对应方法/文件本体已在上方 Task 21/22 + `phase-d-repositories-part2.md`
+Task 23 原位 inline 回填（保持 plan 对实施 agent 的机械可读性）：
+
+| # | 补丁内容 | 原 Task | 发现来源 | 原位回填处 |
+|---|---|---|---|---|
+| 1 | `menuRepo.listCategories` | Task 21 menu.ts | 段 3a 决策点 A | 本文件 Task 21 inline |
+| 2 | `staffRepo.delete` | Task 22 staff.ts | 段 3b 决策点 F | 本文件 Task 22 inline |
+| 3 | `staffRepo.findActiveTimeEntry` + `createTimeEntry` + `closeTimeEntry` + `listTimeEntries` | Task 22 staff.ts | 段 3b Phase D 遗漏（clock.service 依赖） | 本文件 Task 22 inline |
+| 4 | `roleRepo.findByName` | Task 23 roles.ts | 段 3b 决策点 E | `phase-d-repositories-part2.md` Task 23 inline |
+| 5 | **`printerRepo` 新文件** | 新增（本附录直接落） | 段 3c Phase D 遗漏 | **本附录下方** |
+
+### Phase E 回填项 5：`printerRepo` 新文件
+
+**Files:**
+- Create: `server/src/repositories/printer.ts`
+
+**设计职责**：PrinterConfig entity 的最小 repo。Store 和 PrinterConfig 是 1:1 关系（每店最多一个 printer 配置），方法集紧凑。Phase D 原始 11 repo 清单无 printer——Phase E Agent C 段 3c 发现缺失。
+
+**方法清单**：
+- `findByStoreId(storeId, db?)`：读当前 store 的 printer config（0/1 行）
+- `upsertConfig(storeId, config, db)`：单步 upsert——无 config 时创建，有时更新。折叠 legacy 3 步 get/check/create（`printer.service.ts:14-34`）
+
+**实施模板**：
+
+```bash
+cat > server/src/repositories/printer.ts <<'EOF'
+/**
+ * PrinterConfig entity repository.
+ *
+ * Store ↔ PrinterConfig is 1:1 by convention (app layer enforces single
+ * config per store; DB schema has @@unique(storeId) for hard guarantee).
+ *
+ * Scope: CRUD on config row. Actual print dispatch (printOrder / reprintOrder)
+ * stays in service layer — it's hardware protocol, not data access.
+ */
+
+import type { PrinterConfig } from '@prisma/client'
+import { prisma, type Db } from './prisma-client.js'
+
+export const printerRepo = {
+  findByStoreId: (storeId: string, db: Db = prisma): Promise<PrinterConfig | null> =>
+    db.printerConfig.findUnique({ where: { storeId } }),
+
+  /**
+   * Upsert by storeId — single-step collapses legacy 3-step get/check/create
+   * (see printer.service.ts:14-34 for legacy shape).
+   * Rule 3: write op — db mandatory.
+   */
+  upsertConfig: (
+    storeId: string,
+    config: {
+      name?: string
+      ipAddress?: string | null
+      port?: number | null
+      paperWidth?: number | null
+      enabled?: boolean
+    },
+    db: Db
+  ): Promise<PrinterConfig> =>
+    db.printerConfig.upsert({
+      where: { storeId },
+      create: {
+        storeId,
+        name: config.name ?? 'Default Printer',
+        ipAddress: config.ipAddress ?? null,
+        port: config.port ?? null,
+        paperWidth: config.paperWidth ?? 80,
+        enabled: config.enabled ?? true,
+      },
+      update: {
+        ...(config.name !== undefined && { name: config.name }),
+        ...(config.ipAddress !== undefined && { ipAddress: config.ipAddress }),
+        ...(config.port !== undefined && { port: config.port }),
+        ...(config.paperWidth !== undefined && { paperWidth: config.paperWidth }),
+        ...(config.enabled !== undefined && { enabled: config.enabled }),
+      },
+    }),
+}
+EOF
+```
+
+**Prisma schema 依赖**（Phase B Task 2 必须含，否则同批新增 migration）：
+- `model PrinterConfig` 实体：id / storeId / name / ipAddress / port / paperWidth / enabled / createdAt
+- `@@unique([storeId])` 约束（1:1 enforcement，让 `findUnique where: { storeId }` 可用）
+- RLS policy（同其他 tenant-scoped 表，`USING (store_id = current_setting('app.current_store_id'))`）
+
+若 Phase B Task 2 schema 写作时漏了 PrinterConfig → 按规则 1：**新增** `prisma/migrations/20260418000001_add_printer_config/migration.sql`，不改已发布 `20260417000001_init`。
+
+**Phase D 验收命令更新**：原 11 repo for 循环改为 12：
+
+```bash
+for f in server/src/repositories/{store,orders,sessions,payments,split-bills,menu,staff,roles,coupons,waitlist,platform-admin,printer}.ts; do
+  cd server && ./node_modules/.bin/tsc --noEmit $f 2>&1 | grep -E "error TS" && echo "FAIL: $f" || echo "OK: $f"
+  cd ..
+done
+```
+
+---
+
+### 回填方式的设计决策
+
+- **原位 inline（项 1-4）**：方法写进原 Task heredoc，实施 agent 按 Task 读一遍就能机械执行——不用跨文件跳转
+- **附录独立小节（项 5）**：printerRepo 是新文件而非加方法，附录定义更清晰
+- **每项 git blame 可追溯**：commit message 明示每项来源段，reviewer `git log -p` 能看到每方法是 2026-04-17 事后补充，不是 Phase D 原始设计
+- **00-index.md 的 Phase D 任务数不改**：附录的 printerRepo 不占 Task 编号——避免 Phase E/F/G 的 Task 27+ 编号连锁变动
 

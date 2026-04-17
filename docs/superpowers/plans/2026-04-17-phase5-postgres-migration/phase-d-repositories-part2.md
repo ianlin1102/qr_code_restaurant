@@ -82,6 +82,7 @@
 - `ensureSystemRoles(storeId, tx)`：**多步写**——确保 owner / manager / waiter 三个系统角色存在 + owner 同步 ALL_PERMISSIONS
   - 对照 legacy `role.service.ts:33-75`
   - `TransactionClient` 必填（D55），多步且需要前后一致
+- `findByName(storeId, name, db?)`：**(Phase E 段 3b 回填)** 按 name 在 store scope 内查角色——Agent B `staff.changeRole` 依赖（决策点 E：role name string → roleId 解析）
 - `resolveLicensedPermissions(input, db?)`：**L1 核心 helper**
   - 签名：`(input: { storeId, roleId?, legacyRole? }, db?) => Promise<Permission[]>`
   - 语义对照 legacy `role.service.ts:130-159`：
@@ -167,6 +168,18 @@ export const roleRepo = {
 
   findById: (id: string, db: Db = prisma): Promise<Role | null> =>
     db.role.findUnique({ where: { id } }),
+
+  /**
+   * Phase E 段 3b 回填: name-based lookup within a store scope.
+   * Used by staff.changeRole (Agent B decision point E) to resolve legacy
+   * role name strings ('owner' / 'manager' / 'waiter' / custom name) to roleId.
+   */
+  findByName: (
+    storeId: string,
+    name: string,
+    db: Db = prisma
+  ): Promise<Role | null> =>
+    db.role.findFirst({ where: { storeId, name } }),
 
   /**
    * Create a custom role. isSystem=false by default (custom roles only).
