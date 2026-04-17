@@ -70,15 +70,21 @@
 
 ---
 
-## Plan 阶段对 spec 的补强项（批 2 写完前回填 spec）
+## Plan 阶段对 spec 的补强项
 
-实施阶段比 spec 设计阶段更贴近代码，难免发现应该加强的防御。以下改动在 plan 里**已经落地**，但 spec 文档还没同步——批 2 完成后统一回填 design doc：
+实施阶段比 spec 设计阶段更贴近代码，难免发现应该加强的防御。分两类：
+
+**已回填 spec**（single commit 已同步）：
+
+- **D53 / D54**（commit `a9d18efc`）：Phase D 从"通用 CRUD 适配器 + 加 await"重新定位为"11 个语义 repo，storage 层一次切、业务层渐进迁"。Spec §9.5 Stage 2 已完整重写
+
+**待批 2 完成后统一回填**：
 
 - **Task 4**：RLS policy 除 `USING` 外加了 `WITH CHECK`（spec §4.5 / §5.4 只提了 `USING`）。`WITH CHECK` 控制 INSERT/UPDATE 新值，防"漏写 store_id 的 insert 被接受"。加强但不冲突
 - **Task 6**：`withTenantContext` 用 `set_config()` + 参数化（`$executeRaw` 标签模板），不再字符串拼接。spec §5.4 示例代码用的是 `$executeRawUnsafe`——plan 升级了防御。`withPlatformContext` 同步改用 `tx.$executeRaw\`SET LOCAL ROLE platform_admin\``（style parity）
 - **Task 2**：`Order.status` / `Session.status` / `Payment.status` / `SplitBill.status` 用 Prisma enum，DB 层强制（spec §4.1 schema 示例用的是 `String`）
 
-批 2 完成后建一个 commit `docs(phase-5): reconcile spec with plan-stage enhancements` 把上述改动补回 spec。
+批 2 完成后建一个 commit `docs(phase-5): reconcile spec with plan-stage enhancements` 把待回填的三条补回 spec。
 
 ---
 
