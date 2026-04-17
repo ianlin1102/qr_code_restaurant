@@ -17,10 +17,13 @@ Spec §9.5 原本写的 "tsc -b 通过 + 基本登录功能跑通" 是**空想**
 
 生产代码 grep 证据显示 JsonStore 深度嵌入业务代码（同步 `.map/.find` 链、非空断言、`session.orderIds` 专属字段），"生成通用适配器 + 加 await" 跑不起来。
 
-已回填 spec 的两条决策（commit `a9d18efc`）：
+已回填 spec 的决策：
 
-- **D53 Repository 层形态**：11 个语义化 repo 文件（一 entity 一文件），含该 entity 的业务方法。**不做通用 CRUD 适配器**
-- **D54 Phase D 切换层面**：一次性切换是 storage 层，业务层是渐进迁移。Phase D 不动业务代码，应用照常启动
+- **D53 Repository 层形态**（commit `a9d18efc`）：11 个语义化 repo 文件（一 entity 一文件），含该 entity 的业务方法。**不做通用 CRUD 适配器**
+- **D54 Phase D 切换层面**（commit `a9d18efc`）：一次性切换是 storage 层，业务层是渐进迁移。Phase D 不动业务代码，应用照常启动
+- **D55 多步写参数窄化**（commit `4fdd6b6c`）：`≥2` 次 DB round-trip 且依赖前后一致性的写操作，签名用 `Prisma.TransactionClient`（不是 `Db` 联合），编译期强制 tx
+- **D56 itemKey 模型修正**（commit `4fdd6b6c`）：DB 层用 `(orderItemId FK + quantity)`，彻底删 itemKey 字符串列；API 层保留 legacy 字符串透过 `server/src/lib/legacy-itemkey.ts` 薄转换（Phase G task）
+- **D57 OrderItem.position**（commit `4fdd6b6c`）：稳定 idx 契约，caller 填 0-indexed，`@@unique([orderId, position])`
 
 **Phase D 实际做什么**：
 
@@ -58,10 +61,10 @@ Phase D 结束前选一个落地。记在本 phase 的 verify 清单里。
 | Task | 新文件 | 核心方法 |
 |---|---|---|
 | 16 | `server/src/repositories/store.ts` | `findById` / `create` / `updateSettings` / `listAll` / `withinLicense` |
-| 17 | `server/src/repositories/orders.ts` | **B2 核心**：`findSubmitted`（默认排除 draft）/ `findDraft` / `upsertDraft` / `submitDraft`（乐观锁）/ `createDraftOrder`（嵌套 create）/ `findBySessionId` / `findActive` |
+| 17 | `server/src/repositories/orders.ts` | **B2 核心**：`findSubmitted`（默认排除 draft）/ `findDraft` / `createDraftOrder` / **`replaceDraftItems`**（整批替换，匹配 legacy updateDeviceCart）/ `submitDraft`（乐观锁）/ `updateStatus` / `voidOrder`（state-guarded）|
 | 18 | `server/src/repositories/sessions.ts` | `findById` / `findBySessionForTable` / `createForTable` / `closeSession` / `reopenSession` / `applyCoupon` |
-| 19 | `server/src/repositories/payments.ts` | `create`（含 PaymentItem 嵌套）/ `findBySessionId` / `confirmStripe` / `sumConfirmed` |
-| 20 | `server/src/repositories/split-bills.ts` | `create`（含 items）/ `findActive` / `markPaid` / `invalidate` |
+| 19 | `server/src/repositories/payments.ts` | `create`（含 PaymentItem 嵌套，**FK 模型 `(orderItemId, paidQuantity)`，D56**）/ `findBySessionId` / `confirmStripe` / `sumConfirmed` / `derivePaidQuantityByOrderItem`（替代 legacy `derivePaidState`）|
+| 20 | `server/src/repositories/split-bills.ts` | `create`（SplitBillItem **FK 模型 `(orderItemId, quantity)`**）/ `findActive` / `markPaid` / `invalidate`（冲突判定：`(orderItemId, quantity)` 与 paid + other splits 重叠）|
 | 21 | `server/src/repositories/menu.ts` | categories + menuItems + menuItemOptions，`listMenu`（含关联）/ `upsertItem` / `upsertOptions` |
 | 22 | `server/src/repositories/staff.ts` | `findById` / `findByUsername` / `listAll` / `createStaff` / `updateRole` / `setClockPin` |
 | 23 | `server/src/repositories/roles.ts` | `findByStoreId` / `upsertRole` + **`resolveLicensedPermissions` helper** |
@@ -300,24 +303,26 @@ Task 17 是 Phase D 最关键的一个——B2 设计的所有乐观锁、判别
 
 **前置**：Task 16 完成。
 
-**方法清单**（展开版本）：
+**方法清单**（D56/D57/D55 修正后）：
 
 - `findById(id, db?)`：基础读
-- `findBySessionId(sessionId, db?)`：查一个 session 的所有 orders（不含 draft）
+- `findBySessionId(sessionId, db?)`：查一个 session 的所有 orders（不含 draft），`orderBy createdAt asc`，items 按 `position asc`
 - `findSubmitted(where, db?)`：**默认排除 draft**（D24 核心）。where 允许额外过滤
-- `findDraft(sessionId, deviceId, db?)`：**显式查 draft**（cart 场景专用）。返回 `DraftOrder | null`
-- `findActive(storeId, db?)`：kitchen/KDS 用（只要 `pending` / `preparing`，用 `isActiveOrder` helper 语义对齐）
-- `createDraftOrder(input, db)`：**嵌套 create**——Order + OrderItem[] + OrderItemOption[] 一个 tx 原子
-- `upsertDraftItem(orderId, item, expectedVersion, db)`：乐观锁——加一道菜进 draft，version+1。冲突抛 409
-- `removeDraftItem(orderId, itemKey, expectedVersion, db)`：删 draft 里的菜，version+1
-- `submitDraft(orderId, expectedVersion, db)`：**乐观锁 draft→pending**（D30 核心）。`WHERE status='draft' AND version=?`，affected=0 抛 409
-- `updateStatus(id, status, db)`：推进 pending→preparing→served
-- `voidOrder(id, db)`：管理端软失效
+- `findDraft(sessionId, deviceId, db?)`：**显式查 draft**（cart 场景专用）。返回 `DraftOrderWithItems | null`
+- `findActive(storeId, db?)`：kitchen/KDS 用（`pending` / `preparing`）
+- `createDraftOrder(input, db)`：**单步嵌套 create**（D55 豁免）——Order + OrderItem[] + OrderItemOption[] 一个 SQL tx 原子。**Precondition**：caller 必须先 `findDraft` 确认没现存 draft（partial unique 否则抛 P2002）
+- `replaceDraftItems(orderId, items, expectedVersion, tx)`：**整批替换语义**（D56）——对齐现有 `updateDeviceCart` 行为。DELETE 所有现存 OrderItem（cascade options）+ INSERT 新集合，position 重排 0..N-1。多步写 → `tx: TransactionClient` 必填（D55）
+- `submitDraft(orderId, expectedVersion, tx)`：**乐观锁 draft→pending**（D30）。多步写 → `TransactionClient` 必填（D55）
+- `updateStatus(id, status, db)`：kitchen 流转 `pending→preparing→served`，**无 version check**（submitted 之后物理互斥，容忍 last-write-wins）
+- `voidOrder(id, db)`：管理端软失效——**状态 guard**：只允许 `pending/preparing` 被 void，served/voided 会抛
 
 **关键实现要点**：
-- **类型签名区分** `DraftOrder` vs `SubmittedOrder`（D23）——返回类型显式
-- 所有读的 `include` 默认带 `items.include.options`（避免 N+1）
-- `findSubmitted` 默认用 `status: { not: 'draft' }`，调用方不需要记
+- **类型签名区分** `DraftOrderWithItems` vs `SubmittedOrderWithItems`（D23）——返回类型显式
+- 所有读的 `include` 默认带 `items: { include: { options: true }, orderBy: { position: 'asc' }}`（D57）
+- `findSubmitted` 默认用 `status: { not: 'draft' }`
+- **多步写用 `Prisma.TransactionClient`（D55）**，不是 `Db`——编译期强制 caller withTenantContext
+- **无 itemKey 列**（D56）——OrderItem 用 `position` 锚定 idx，PaymentItem/SplitBillItem 用 `(orderItemId FK + quantity)` 引用
+- `crypto.randomUUID` 不需要（legacy 代码的 itemKey UUID 设计是 spec 错误事实假设，D56/D57 已修正）
 
 - [ ] **Step 1：写 `server/src/repositories/orders.ts`**
 
@@ -330,22 +335,33 @@ cat > server/src/repositories/orders.ts <<'EOF'
  *   - findSubmitted (default-exclude-draft) is the 95% use case for
  *     kitchen/settlement/summary/analytics
  *   - findDraft (explicit) is the 5% use case — only cart endpoints
- *   - Type discriminants at function boundaries reject draft at compile time:
- *     function calcXxx(orders: SubmittedOrder[]) — compile-time rejects draft[]
+ *   - Type discriminants at function boundaries reject draft at compile time
  *
  * Optimistic locking (D30):
  *   - version column bumped on every draft mutation
- *   - submitDraft, upsertDraftItem, removeDraftItem all take expectedVersion
- *   - WHERE version=? AND status='draft' — affected_rows=0 → throw 409
+ *   - submitDraft + replaceDraftItems take expectedVersion
+ *   - WHERE version=? AND status='draft' — affected_rows=0 → throw
+ *     OPTIMISTIC_LOCK_CONFLICT (Phase G route layer maps to HTTP 409)
+ *
+ * Position contract (D57):
+ *   - OrderItem.position is 0-indexed; @@unique(orderId, position)
+ *   - createDraftOrder and replaceDraftItems both assign position from
+ *     items[] array index (0..N-1)
+ *   - items always loaded via orderBy: { position: 'asc' }
+ *
+ * No itemKey column (D56):
+ *   - legacy `"orderId:idx:qty"` string never persisted on OrderItem
+ *   - PaymentItem / SplitBillItem reference order items by FK + quantity
+ *   - API boundary still emits/accepts legacy string via server/src/lib/legacy-itemkey.ts
  *
  * Partial unique constraint (schema-level):
  *   UNIQUE (session_id, device_id) WHERE status='draft'
  *   — enforces "one draft per device per session"
  */
 
-import type { Prisma, Order, OrderItem, OrderItemOption } from '@prisma/client'
+import { Prisma } from '@prisma/client'
+import type { Order, OrderItem, OrderItemOption } from '@prisma/client'
 import { prisma, type Db } from './prisma-client.js'
-import type { DraftOrder, SubmittedOrder } from '@qr-order/shared'
 
 type OrderWithItems = Order & {
   items: (OrderItem & { options: OrderItemOption[] })[]
@@ -358,16 +374,33 @@ type SubmittedOrderWithItems = OrderWithItems & {
 }
 
 const includeItemsAndOptions = {
-  items: { include: { options: true } },
+  items: {
+    include: { options: true },
+    orderBy: { position: 'asc' },
+  },
 } as const satisfies Prisma.OrderInclude
+
+/**
+ * Draft item input — used by createDraftOrder and replaceDraftItems.
+ * position is NOT part of this — repo fills it from array index (D57).
+ * itemKey is NOT part of this — legacy UUID design was spec error (D56).
+ */
+type DraftItemInput = {
+  menuItemId: string
+  name: string
+  unitPrice: number
+  quantity: number
+  note?: string
+  options: {
+    groupName: string
+    name: string
+    priceAdjust: number
+  }[]
+}
 
 // ========== Reads ==========
 
 export const orderRepo = {
-  /**
-   * Read a single order by id — no status filter, includes items + options.
-   * Caller must narrow if they need type safety on status.
-   */
   findById: (id: string, db: Db = prisma): Promise<OrderWithItems | null> =>
     db.order.findUnique({
       where: { id },
@@ -376,7 +409,6 @@ export const orderRepo = {
 
   /**
    * All orders attached to a session — EXCLUDES draft (use findDraft for cart).
-   * Primary API for settlement / summary / kitchen lists.
    */
   findBySessionId: (
     sessionId: string,
@@ -389,10 +421,7 @@ export const orderRepo = {
     }) as Promise<SubmittedOrderWithItems[]>,
 
   /**
-   * Generic submitted-only find with caller-supplied where clause.
    * DEFAULT-EXCLUDES draft — caller cannot accidentally include drafts.
-   *
-   * If caller needs drafts, they must use findDraft (explicit intent).
    */
   findSubmitted: (
     where: Prisma.OrderWhereInput = {},
@@ -404,10 +433,6 @@ export const orderRepo = {
       orderBy: { createdAt: 'desc' },
     }) as Promise<SubmittedOrderWithItems[]>,
 
-  /**
-   * Active orders for kitchen/KDS — status in ('pending', 'preparing').
-   * Excludes draft (not submitted), served (done), voided.
-   */
   findActive: (
     storeId: string,
     db: Db = prisma
@@ -422,9 +447,6 @@ export const orderRepo = {
     }) as Promise<SubmittedOrderWithItems[]>,
 
   /**
-   * Explicit draft lookup — cart endpoints only.
-   * Returns null if no draft exists for this (session, device) pair.
-   *
    * Partial unique index ensures at most one draft per (sessionId, deviceId).
    */
   findDraft: (
@@ -437,16 +459,21 @@ export const orderRepo = {
       include: includeItemsAndOptions,
     }) as Promise<DraftOrderWithItems | null>,
 
-  // ========== Writes (rule 3: db mandatory) ==========
+  // ========== Writes ==========
 
   /**
-   * Create a new draft order with items atomically.
-   * Used by cart-add when no draft exists yet for this (sessionId, deviceId).
+   * Single-step atomic nested create (rule D55 exempt — one SQL round-trip).
    *
-   * Items created nested (single SQL transaction).
-   * itemKey is caller-generated (crypto.randomUUID()) and stays stable across
-   * subsequent option mutations — used by PaymentItem / SplitBillItem to tag
-   * which items were paid/split.
+   * PRECONDITION: caller must verify no existing draft for (sessionId, deviceId)
+   * via findDraft first. Partial unique index rejects duplicates with P2002.
+   *
+   * Typical controller flow:
+   *   const existing = await orderRepo.findDraft(sessionId, deviceId, tx)
+   *   if (existing)
+   *     return orderRepo.replaceDraftItems(existing.id, newItems, existing.version, tx)
+   *   return orderRepo.createDraftOrder({...}, tx)
+   *
+   * position is assigned from items[] array index (0, 1, 2, ...) — D57.
    */
   createDraftOrder: async (
     input: {
@@ -454,19 +481,7 @@ export const orderRepo = {
       sessionId: string
       tableId: string
       deviceId: string
-      items: {
-        menuItemId: string
-        itemKey: string
-        name: string
-        unitPrice: number
-        quantity: number
-        note?: string
-        options: {
-          groupName: string
-          name: string
-          priceAdjust: number
-        }[]
-      }[]
+      items: DraftItemInput[]
     },
     db: Db
   ): Promise<DraftOrderWithItems> => {
@@ -480,10 +495,10 @@ export const orderRepo = {
         version: 0,
         lastCartActivityAt: new Date(),
         items: {
-          create: input.items.map(i => ({
+          create: input.items.map((i, idx) => ({
             storeId: input.storeId,
             menuItemId: i.menuItemId,
-            itemKey: i.itemKey,
+            position: idx,                // D57: repo fills from array index
             name: i.name,
             unitPrice: i.unitPrice,
             quantity: i.quantity,
@@ -505,33 +520,24 @@ export const orderRepo = {
   },
 
   /**
-   * Add (or replace quantity) for an item inside an existing draft.
-   * Bumps version — caller passes expectedVersion, mismatch throws 409 semantically
-   * (we throw Error with `.code='OPTIMISTIC_LOCK_CONFLICT'` for routes to map).
+   * Whole-array replacement — matches legacy updateDeviceCart semantics.
    *
-   * If itemKey already exists in the draft, quantity is incremented; otherwise
-   * a new OrderItem row is added.
+   * Rationale (D56): cart-add/remove identity on server side was position+qty,
+   * never a stable key. Frontend computes full CartItem[] for the device and
+   * sends it; server wipes and re-inserts. No itemKey merge logic needed.
+   *
+   * Multi-step write (D55): tx MUST be a TransactionClient, not PrismaClient.
+   * Optimistic lock spans version check + delete + insert — all one tx.
+   *
+   * Position reassigned 0..N-1 from items[] array order.
    */
-  upsertDraftItem: async (
+  replaceDraftItems: async (
     orderId: string,
-    item: {
-      menuItemId: string
-      itemKey: string // stable key; if exists, quantity += new quantity
-      name: string
-      unitPrice: number
-      quantity: number
-      note?: string
-      options: {
-        groupName: string
-        name: string
-        priceAdjust: number
-      }[]
-    },
+    items: DraftItemInput[],
     expectedVersion: number,
-    db: Db
+    tx: Prisma.TransactionClient
   ): Promise<DraftOrderWithItems> => {
-    // First, bump version with optimistic lock check.
-    const bumped = await db.order.updateMany({
+    const bumped = await tx.order.updateMany({
       where: { id: orderId, version: expectedVersion, status: 'draft' },
       data: { version: { increment: 1 }, lastCartActivityAt: new Date() },
     })
@@ -541,30 +547,31 @@ export const orderRepo = {
       throw err
     }
 
-    // Check if itemKey exists — if yes, increment quantity; else insert.
-    const existing = await db.orderItem.findFirst({
-      where: { orderId, itemKey: item.itemKey },
+    // Wipe existing items (cascade deletes options via FK).
+    await tx.orderItem.deleteMany({ where: { orderId } })
+
+    // Need storeId to populate redundant store_id columns.
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      select: { storeId: true },
     })
-    if (existing) {
-      await db.orderItem.update({
-        where: { id: existing.id },
-        data: { quantity: existing.quantity + item.quantity },
-      })
-    } else {
-      const order = await db.order.findUnique({ where: { id: orderId }, select: { storeId: true } })
-      if (!order) throw new Error('Order vanished mid-upsert')
-      await db.orderItem.create({
+    if (!order) throw new Error(`Order ${orderId} vanished mid-replace`)
+
+    // Insert new set with position 0..N-1.
+    for (let idx = 0; idx < items.length; idx++) {
+      const i = items[idx]
+      await tx.orderItem.create({
         data: {
           storeId: order.storeId,
           orderId,
-          menuItemId: item.menuItemId,
-          itemKey: item.itemKey,
-          name: item.name,
-          unitPrice: item.unitPrice,
-          quantity: item.quantity,
-          note: item.note ?? null,
+          menuItemId: i.menuItemId,
+          position: idx,
+          name: i.name,
+          unitPrice: i.unitPrice,
+          quantity: i.quantity,
+          note: i.note ?? null,
           options: {
-            create: item.options.map(o => ({
+            create: i.options.map(o => ({
               storeId: order.storeId,
               groupName: o.groupName,
               name: o.name,
@@ -575,36 +582,7 @@ export const orderRepo = {
       })
     }
 
-    const updated = await db.order.findUnique({
-      where: { id: orderId },
-      include: includeItemsAndOptions,
-    })
-    return updated as DraftOrderWithItems
-  },
-
-  /**
-   * Remove an item from a draft (by itemKey).
-   * Bumps version (optimistic lock).
-   */
-  removeDraftItem: async (
-    orderId: string,
-    itemKey: string,
-    expectedVersion: number,
-    db: Db
-  ): Promise<DraftOrderWithItems> => {
-    const bumped = await db.order.updateMany({
-      where: { id: orderId, version: expectedVersion, status: 'draft' },
-      data: { version: { increment: 1 }, lastCartActivityAt: new Date() },
-    })
-    if (bumped.count === 0) {
-      const err = new Error('Draft order version mismatch or order not in draft status')
-      ;(err as any).code = 'OPTIMISTIC_LOCK_CONFLICT'
-      throw err
-    }
-
-    await db.orderItem.deleteMany({ where: { orderId, itemKey } })
-
-    const updated = await db.order.findUnique({
+    const updated = await tx.order.findUnique({
       where: { id: orderId },
       include: includeItemsAndOptions,
     })
@@ -615,19 +593,21 @@ export const orderRepo = {
    * Promote draft → pending (order submit).
    * Optimistic lock: WHERE version=? AND status='draft'.
    *
+   * Multi-step (version check + status flip + read) — tx MUST be TransactionClient (D55).
+   *
    * This is THE B2 transition point. After this:
    *   - partial unique (session, device, status='draft') releases, allowing
    *     a new draft for subsequent cart-add
    *   - kitchen/KDS queries (findActive) start seeing this order
    *   - settlement queries (findSubmitted) include this order
-   *   - SSE 'order:created' should fire from the controller AFTER tx commit
+   *   - SSE 'order:created' should fire from the controller AFTER tx commit (rule 2)
    */
   submitDraft: async (
     orderId: string,
     expectedVersion: number,
-    db: Db
+    tx: Prisma.TransactionClient
   ): Promise<SubmittedOrderWithItems> => {
-    const bumped = await db.order.updateMany({
+    const bumped = await tx.order.updateMany({
       where: { id: orderId, version: expectedVersion, status: 'draft' },
       data: { version: { increment: 1 }, status: 'pending' },
     })
@@ -636,7 +616,7 @@ export const orderRepo = {
       ;(err as any).code = 'OPTIMISTIC_LOCK_CONFLICT'
       throw err
     }
-    const submitted = await db.order.findUnique({
+    const submitted = await tx.order.findUnique({
       where: { id: orderId },
       include: includeItemsAndOptions,
     })
@@ -645,8 +625,15 @@ export const orderRepo = {
 
   /**
    * Advance a submitted order's status (pending → preparing → served).
-   * Does NOT touch version (version is draft-only lock).
-   * Status 'draft' is rejected — drafts transition via submitDraft only.
+   *
+   * INTENTIONAL: no version check, last-write-wins.
+   * Rationale: kitchen/KDS flow is physically mutex (one staff terminal /
+   * single KDS display). Concurrent status flips on the same submitted order
+   * do not happen in practice — draft was the real concurrency hotspot and
+   * is already guarded by version lock.
+   *
+   * Status 'draft' is rejected at type level — drafts transition via submitDraft only.
+   * Single-step write — `db: Db` OK (D55 exempt).
    */
   updateStatus: (
     id: string,
@@ -657,13 +644,28 @@ export const orderRepo = {
 
   /**
    * Void a submitted order (admin action).
-   * Status stays in 'voided' forever — audit trail preserved.
+   *
+   * State guard: only `pending` or `preparing` are voidable.
+   *   - served orders require `refundOrder` (not yet implemented — touches Payment)
+   *   - already-voided orders throw to surface bugs/double-click
+   *
+   * Single-step (updateMany + guard check is one tx round-trip counted as one step).
    */
-  voidOrder: (id: string, db: Db): Promise<Order> =>
-    db.order.update({ where: { id }, data: { status: 'voided' } }),
+  voidOrder: async (id: string, db: Db): Promise<Order> => {
+    const result = await db.order.updateMany({
+      where: { id, status: { in: ['pending', 'preparing'] } },
+      data: { status: 'voided' },
+    })
+    if (result.count === 0) {
+      throw new Error(`Cannot void order ${id}: not in voidable state (pending/preparing)`)
+    }
+    const voided = await db.order.findUnique({ where: { id } })
+    if (!voided) throw new Error(`Order ${id} vanished after void`)
+    return voided
+  },
 }
 
-export type { OrderWithItems, DraftOrderWithItems, SubmittedOrderWithItems }
+export type { OrderWithItems, DraftOrderWithItems, SubmittedOrderWithItems, DraftItemInput }
 EOF
 ```
 
@@ -677,9 +679,10 @@ cd server
 预期：**0 error**。
 
 **若挂**，常见原因：
-- `DraftOrder` / `SubmittedOrder` 从 shared 导入失败——Phase B Task 7 的 `shared/types.ts` 判别联合是否正确 export 了
 - Prisma 类型推断和自定义 narrow type 冲突——可能需要更显式的类型 assertion（`as Promise<...>` 已经加了）
-- `OrderItem.itemKey` 在 schema 里没有——回去确认 Task 2 Prisma schema 里 OrderItem model 包含 `itemKey String @map("item_key")`
+- `OrderItem.position` 字段不存在——Phase B Task 2 Prisma schema 必须含 `position Int` + `@@unique([orderId, position])`
+- `PaymentItem` 外键字段名不对——必须是 `orderItemId`（@map `order_item_id`）+ `paidQuantity`（@map `paid_quantity`），无 `itemKey` 列
+- `Prisma.TransactionClient` 类型不存在——Prisma 版本问题，确认 `@prisma/client` >= 5.0
 
 - [ ] **Step 3：验证整个 server tsc 依然干净**
 
@@ -697,17 +700,22 @@ cd "$(git rev-parse --show-toplevel)"
 git add server/src/repositories/orders.ts
 git commit -m "feat(phase-5): add orders repository — B2 core with optimistic lock
 
-Phase D Task 17 — second repo, most complex.
-- findSubmitted (default excludes draft, 95% use case, D24)
-- findDraft (explicit cart-only, D24)
-- createDraftOrder (nested Order + items + options, atomic)
-- upsertDraftItem / removeDraftItem (optimistic lock via version)
-- submitDraft (draft → pending transition, D30)
+Phase D Task 17 — B2 foundation for Phase G Task 34.
+- findSubmitted (default excludes draft, D24) / findDraft (explicit, D24)
+- findBySessionId / findActive / findById
+- createDraftOrder (nested Order + items + options, single-step atomic)
+- replaceDraftItems (whole-array replace, matches legacy updateDeviceCart;
+  multi-step write, TransactionClient required per D55)
+- submitDraft (draft → pending transition, D30; TransactionClient required)
+- updateStatus (kitchen flow, last-write-wins — see code comment for rationale)
+- voidOrder (state-guarded: only pending/preparing voidable)
 - Type discriminants (DraftOrderWithItems / SubmittedOrderWithItems, D23)
-  at return types prevent accidentally mixing drafts into settlement code.
 
-Throws OPTIMISTIC_LOCK_CONFLICT on version mismatch — caller route layer
-maps to HTTP 409 with client re-fetch + retry (Phase G Task 34 handles this).
+D56 compliant: no itemKey column on OrderItem. Position column (D57) anchors
+idx contract. PaymentItem/SplitBillItem reference via FK + quantity in Task 19/20.
+
+Throws OPTIMISTIC_LOCK_CONFLICT on version mismatch — Phase G route layer
+maps to HTTP 409 + client retry (see Phase G handoff work-log).
 
 orderRepo not yet imported by any controller; session-cart.ts and others
 still use JsonStore. Migration happens in Phase G Task 33/34.

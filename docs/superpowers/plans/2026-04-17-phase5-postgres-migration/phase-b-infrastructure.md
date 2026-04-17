@@ -298,19 +298,19 @@ model OrderItem {
   orderId    String   @map("order_id")
   order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItemId String   @map("menu_item_id")
-  itemKey    String   @map("item_key")
+  position   Int                          // D57: caller 填 0-indexed，@@unique 保证稳定 idx 契约
   name       String
   unitPrice  Int      @map("unit_price")
   quantity   Int
   note       String?
 
-  options    OrderItemOption[]
-  paymentItems PaymentItem[]
+  options        OrderItemOption[]
+  paymentItems   PaymentItem[]
   splitBillItems SplitBillItem[]
 
+  @@unique([orderId, position])
   @@index([orderId])
   @@index([menuItemId])
-  @@index([itemKey])
   @@map("order_items")
 }
 
@@ -351,16 +351,16 @@ model Payment {
 }
 
 model PaymentItem {
-  id          String     @id @default(uuid())
-  storeId     String     @map("store_id")
-  paymentId   String     @map("payment_id")
-  payment     Payment    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  orderItemId String     @map("order_item_id")
-  orderItem   OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
-  itemKey     String     @map("item_key")
+  id           String     @id @default(uuid())
+  storeId      String     @map("store_id")
+  paymentId    String     @map("payment_id")
+  payment      Payment    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderItemId  String     @map("order_item_id")
+  orderItem    OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  paidQuantity Int        @map("paid_quantity")  // D56: 替代 itemKey 字符串的 qty 部分
 
-  @@index([itemKey])
   @@index([paymentId])
+  @@index([orderItemId])
   @@map("payment_items")
 }
 
@@ -395,11 +395,10 @@ model SplitBillItem {
   splitBill    SplitBill  @relation(fields: [splitBillId], references: [id], onDelete: Cascade)
   orderItemId  String     @map("order_item_id")
   orderItem    OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
-  itemKey      String     @map("item_key")
-  quantity     Int        @default(1)
+  quantity     Int        @default(1)  // D56: 无 itemKey 字符串，此列即分配数量
 
   @@index([splitBillId])
-  @@index([itemKey])
+  @@index([orderItemId])
   @@map("split_bill_items")
 }
 
