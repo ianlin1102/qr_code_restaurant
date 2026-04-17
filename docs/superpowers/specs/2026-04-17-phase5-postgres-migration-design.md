@@ -76,6 +76,8 @@
 | D50 | B2 Checkpoint | Stage 3c 第 3 步后硬性暂停，用户手动验证 7 个场景（a-g 独立 pass/fail） | |
 | D51 | 测试断言迁移 | `docs/superpowers/work-logs/` 下维护老测试 → 新测试映射表，"弱化"条目必须写 Why | |
 | D52 | 读写参数策略 | 写操作 repo 方法的 `db` 参数**必填**，读操作可保留默认值 | 防止写操作漏传 tx 破坏原子性；读操作漏传仅降级到非 tx 隔离，影响小 |
+| D53 | Repository 层形态 | 11 个语义化 repo 文件（一 entity 一文件，含该 entity 的业务方法），**不做通用 CRUD 适配器**。old `stores.ts` Phase D 不动，Phase E/F/G 逐域替换 import，Phase I 删除 | 生产代码 grep 显示 JsonStore 被同步链/非空断言/`session.orderIds` 专属字段深度嵌入——"生成通用适配器 + 加 await" 跑不起来，每个 call site 都要语义重写，不如直接去语义化 repo |
+| D54 | Phase D 切换层面 | **一次性切换是 storage 层（JSON → Postgres），业务层是渐进迁移**。Phase D 新增 Prisma repo 就位、`stores.ts` / JsonStore 不动、**应用照常启动**。Phase E/F/G 才逐域替换业务代码 import | 纠正 spec §9.5 原验收（"tsc -b 通过 + 基本登录跑通"）的空想——storage/业务层混为一谈。D54 把两层分开 |
 
 ---
 
@@ -1131,11 +1133,36 @@ ssh ec2 'docker exec qr-order-postgres psql qr_order \
 
 ### 9.5 Stage 2：Repository 层
 
-**choke point**——所有业务代码依赖。
+**定位**（D54）：一次性切换是 **storage 层**（JSON → Postgres），业务层是**渐进迁移**。Stage 2 只让 Prisma repository 就位，**不动任何业务代码 / 路由 / 控制器**。应用在 Stage 2 结束时**照常用 JsonStore 启动**。业务代码迁到 Prisma 是 Stage 3a/3b/3c 的事，逐域进行。
 
-**产出**：重写 `repositories/stores.ts`（JsonStore → Prisma delegate 封装），新建各实体 repo 文件。`json-store.ts` 保留不动。
+**产出**（D53）：11 个语义化 repository 文件——每个 entity 一个文件，含该 entity 的业务方法（`findSubmitted` / `findDraft` / `submitDraft` / `findBySessionId` / `resolveLicensedPermissions` 等）：
 
-**验收**：`tsc -b` 通过；全局 `grep "new JsonStore"` 只返回 json-store.ts 自身；基本登录功能跑通
+```
+server/src/repositories/
+├── store.ts             (Store entity)
+├── orders.ts            (B2 核心，含 findSubmitted / findDraft / submitDraft)
+├── sessions.ts
+├── payments.ts
+├── split-bills.ts
+├── menu.ts              (含 categories / menuItems / menuItemOptions)
+├── staff.ts
+├── roles.ts             (含 resolveLicensedPermissions helper)
+├── coupons.ts
+├── waitlist.ts
+└── platform-admin.ts    (PlatformAdmin + ModuleLicense)
+```
+
+**不做的事**：
+- 不重写 `stores.ts`（JsonStore singleton 保留，逐域迁移 import 在 Stage 3a/3b/3c）
+- 不做通用 CRUD 适配器（生产 grep 证据：call site 同步链 + 非空断言 + `session.orderIds` 专属字段，"加 await 就能跑"是空想）
+- 不删 `json-store.ts`（Phase 5 Stage 5 清理阶段才归档）
+
+**验收**（D54，覆盖原"tsc -b 通过 + 登录跑通"的空想）：
+
+1. **每个 Task（16-26）独立 verify**：本 task 新写的 repo 文件单独 tsc 过；不跑应用启动
+2. **整体 tsc**：Stage 2 全部完成后，server `tsc -b` **依然干净**（stores.ts 未动 → 无新错误）
+3. **应用冒烟（D54.3 执行位置）**：Stage 2 所有 task 完成后做**一次**完整冒烟——JsonStore 启动 + 演示账号登录跑通。**不必每个 repo task 都跑一次冒烟**（避免 11 次重复浪费）
+4. **应用全功能迁到 Prisma** 是 Stage 3c 结束的验收点，不是 Stage 2 的
 
 ### 9.6 Stage 3a：外围域（串行 A → B → C）
 
