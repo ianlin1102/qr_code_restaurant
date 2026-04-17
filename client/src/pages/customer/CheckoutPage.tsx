@@ -17,13 +17,15 @@ import { itemLineTotal } from '@/lib/pricing'
 import { api } from '@/services/api'
 import TipSelector, { type TipSelection } from '@/components/shared/TipSelector'
 import { notify } from '@/lib/notify'
-import { calcTip } from '@qr-order/shared/pricing'
+import { calcTipAmount } from '@qr-order/shared/pricing'
+import type { Store } from '@qr-order/shared'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 type Settlement = { type: 'by-item'; itemKeys: string[] } | { type: 'by-percent'; percent: number }
 type RouteState = {
   clientSecret?: string; amount?: number; tableId?: string
+  subtotal?: number; tax?: number
   items?: { menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]
   sessionId?: string; settlement?: Settlement
 } | null
@@ -128,6 +130,10 @@ export default function CheckoutPage() {
   const state = location.state as RouteState
   const clientSecret = state?.clientSecret
   const amount = state?.amount ?? 0
+  // Breakdown needed to compute tip on correct base (pretax vs posttax).
+  // Falls back to amount as base if breakdown missing (backward compat).
+  const subtotal = state?.subtotal ?? amount
+  const tax = state?.tax ?? 0
   const cartItems = useCartStore(s => s.items)
 
   const { t, i18n } = useTranslation('customer')
@@ -137,20 +143,28 @@ export default function CheckoutPage() {
   const [activeSecret, setActiveSecret] = useState(clientSecret)
   const [activeAmount, setActiveAmount] = useState(amount)
   const [loadingTip, setLoadingTip] = useState(false)
+  const [tipBase, setTipBase] = useState<'pretax' | 'posttax'>('pretax')
+
+  useEffect(() => {
+    if (!storeId) return
+    api.getStore(storeId).then((s: Store) => {
+      setTipBase(s.tipBase ?? 'pretax')
+    }).catch(() => {})
+  }, [storeId])
 
   useEffect(() => {
     if (clientSecret && amount > 0) applyTip({ type: 'percent', pct: 18 })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [tipBase])
 
   const applyTip = async (sel: TipSelection | null) => {
     setTipSelection(sel)
     if (!storeId || !state?.tableId) return
     let tip = 0
     if (sel?.type === 'percent') {
-      tip = calcTip(amount, 'percent', sel.pct)
+      tip = calcTipAmount(subtotal, tax, 'percent', sel.pct, tipBase)
     } else if (sel?.type === 'custom') {
-      tip = calcTip(amount, 'fixed', sel.amount)
+      tip = sel.amount
     }
     setLoadingTip(true)
     try {
@@ -204,7 +218,7 @@ export default function CheckoutPage() {
         )}
 
         <TipSelector
-          baseAmount={amount}
+          baseAmount={tipBase === 'posttax' ? subtotal + tax : subtotal}
           selected={tipSelection}
           onSelect={applyTip}
           loadingTip={loadingTip}

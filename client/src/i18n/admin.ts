@@ -198,6 +198,8 @@ export const adminT = {
       paymentModeDesc: '先付款：顾客下单前付款；后付款：顾客先下单，最后统一结账',
       taxRate: '税率 (%)', taxRateDesc: '结账时按此税率计算税费',
       serviceFeeRate: '服务费 (%)', serviceFeeRateDesc: '结账时按此比例收取服务费',
+      tipBase: '小费基数', tipBaseDesc: '税前：按菜品小计计算小费百分比；税后：按小计+税计算',
+      tipBasePretax: '税前', tipBasePosttax: '税后',
     },
     bill: {
       title: '账单', settle: '结账', split: '分账', applyCoupon: '应用优惠券',
@@ -512,6 +514,8 @@ export const adminT = {
       paymentMode: 'Payment Mode', payFirst: 'Pay First', payLater: 'Pay Later',
       paymentModeDesc: 'Pay First: customer pays before ordering; Pay Later: customer orders first, settles at the end',
       taxRate: 'Tax Rate (%)', taxRateDesc: 'Applied to subtotal at checkout',
+      tipBase: 'Tip Base', tipBaseDesc: 'Pretax: tip % on subtotal. Posttax: tip % on subtotal + tax.',
+      tipBasePretax: 'Pretax', tipBasePosttax: 'Posttax',
       serviceFeeRate: 'Service Fee (%)', serviceFeeRateDesc: 'Service charge applied to subtotal at checkout',
     },
     bill: {

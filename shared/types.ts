@@ -16,11 +16,12 @@ export interface Store {
   paymentMode?: 'pay-first' | 'pay-later'
   taxRate?: number               // e.g. 8.875 means 8.875%
   serviceFeeRate?: number        // e.g. 15 means 15%
+  tipBase?: 'pretax' | 'posttax' // tip percentage basis (default: pretax)
 }
 
 export type UpdateStoreRequest = Pick<Store, 'name'> & Partial<Pick<Store,
   'description' | 'openingHours' | 'announcement' | 'announcementEn' |
-  'autoAcceptOrders' | 'maxTables' | 'paymentMode' | 'taxRate' | 'serviceFeeRate'
+  'autoAcceptOrders' | 'maxTables' | 'paymentMode' | 'taxRate' | 'serviceFeeRate' | 'tipBase'
 >>
 
 // ===== User/Role =====
@@ -216,15 +217,11 @@ export interface Session {
   tableId: string
   status: 'active' | 'closed'
   orderIds: string[]
-  totalAmount: number          // sum of all order totals (cents)
-  totalPaid: number            // sum of all payment records (cents)
   couponId?: string
   couponCode?: string
   couponDiscountType?: DiscountType
   couponDiscountValue?: number
-  discountAmount: number
   settlementMode?: 'by-item' | 'by-percent'
-  paidItemIds?: string[]
   pendingCart?: Record<string, CartItem[]>  // deviceId → items, per-device shared cart
   cartVersion?: number           // incremented only on cart submission, for optimistic lock
   lastCartSubmitAt?: string      // ISO timestamp, set when cart is submitted as order
@@ -240,6 +237,8 @@ export interface Payment {
   amount: number               // cents (food + tax + tip, capped at remaining if overpayment)
   tipAmount?: number           // cents, tip portion (excluded from bill settlement)
   refundAmount?: number        // cents, auto-refunded excess due to concurrent overpayment
+  itemKeys?: string[]          // SSOT: which items this payment covers ("orderId:idx:qty" format)
+  percent?: number             // SSOT: audit label for by-percent payments (1-100)
   stripePaymentIntentId?: string
   paidBy?: string              // customer name or "waiter" for cash
   method?: 'stripe' | 'cash'

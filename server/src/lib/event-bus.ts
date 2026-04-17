@@ -9,6 +9,7 @@ export type AppEvent =
   | { type: 'split:changed'; storeId: string; sessionId: string }
   | { type: 'store:tables'; storeId: string }
   | { type: 'store:orders'; storeId: string }
+  | { type: 'store:waitlist'; storeId: string }
   | { type: 'table:waiter-called'; storeId: string; tableId: string }
 
 const bus = new EventEmitter()

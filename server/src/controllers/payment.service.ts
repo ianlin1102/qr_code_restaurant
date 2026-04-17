@@ -1,6 +1,7 @@
 import { getStripe } from '../lib/stripe.js'
 import { createOrder } from './order.service.js'
-import { getActiveSession, addPayment, confirmItemPayment, confirmPercentPayment, calcTax, calcServiceFee } from './session.service.js'
+import { getActiveSession, addPayment, calcTax, calcServiceFee } from './session.service.js'
+import { derivePaidState, deriveSessionTotalAmount, deriveSessionDiscount } from '../lib/session-state.js'
 import { invalidateConflictingSplits } from './split-bill.service.js'
 import { orderStore, sessionStore, paymentStore } from '../repositories/stores.js'
 import { emit } from '../lib/event-bus.js'
@@ -20,28 +21,30 @@ interface CheckoutRequest {
 export async function createPaymentIntent(req: CheckoutRequest) {
   const { getMenuItemById } = await import('./menu.service.js')
 
-  let totalPrice = 0
+  let subtotal = 0
   for (const item of req.items) {
     const menuItem = getMenuItemById(req.storeId, item.menuItemId)
     if (!menuItem || !menuItem.available) {
       return { error: `Menu item ${item.menuItemId} not available`, status: 400 }
     }
     const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
-    totalPrice += (menuItem.price + optAdjust) * item.quantity
+    subtotal += (menuItem.price + optAdjust) * item.quantity
   }
 
-  const tip = req.tipAmount && req.tipAmount > 0 ? req.tipAmount : 0
-  totalPrice += tip
-
-  if (totalPrice <= 0) {
+  if (subtotal <= 0) {
     return { error: 'Invalid order total', status: 400 }
   }
 
-  // Apply session discount if coupon was applied
+  // Apply session discount if coupon was applied (SSOT: derive)
   const session = getActiveSession(req.storeId, req.tableId)
-  const chargeAmount = session?.couponId
-    ? Math.max(0, totalPrice - (session.discountAmount ?? 0))
-    : totalPrice
+  const discountedSubtotal = session?.couponId
+    ? Math.max(0, subtotal - deriveSessionDiscount(session.id))
+    : subtotal
+
+  const tax = calcTax(req.storeId, discountedSubtotal)
+  const fee = calcServiceFee(req.storeId, discountedSubtotal)
+  const tip = req.tipAmount && req.tipAmount > 0 ? req.tipAmount : 0
+  const chargeAmount = discountedSubtotal + tax + fee + tip
 
   // Compact cart metadata for Stripe (500 char limit per value)
   const compactItems = req.items.map(i => ({
@@ -57,6 +60,7 @@ export async function createPaymentIntent(req: CheckoutRequest) {
     tableId: req.tableId,
     type: 'pay-first',
     ...(session ? { sessionId: session.id } : {}),
+    ...(tip > 0 ? { tipAmount: String(tip) } : {}),
   }
   if (cartData.length <= 500) {
     metadata.cartData = cartData
@@ -72,11 +76,17 @@ export async function createPaymentIntent(req: CheckoutRequest) {
   })
 
   logger.info(
-    { storeId: req.storeId, paymentIntentId: paymentIntent.id, chargeAmount, sessionId: session?.id },
+    { storeId: req.storeId, paymentIntentId: paymentIntent.id, subtotal: discountedSubtotal, tax, fee, tip, chargeAmount, sessionId: session?.id },
     'payment intent created (pay-first, no order yet)',
   )
 
-  return { clientSecret: paymentIntent.client_secret, amount: chargeAmount }
+  return {
+    clientSecret: paymentIntent.client_secret,
+    amount: chargeAmount,
+    subtotal: discountedSubtotal,
+    tax,
+    serviceFee: fee,
+  }
 }
 
 // ===== Pay-later: pay for existing session =====
@@ -101,11 +111,13 @@ export async function createPaymentIntentForSession(req: SessionCheckoutRequest)
     return { error: 'Session is already closed', status: 400 }
   }
 
-  const netDue = session.totalAmount - session.discountAmount
+  const sessionTotal = deriveSessionTotalAmount(req.sessionId)
+  const netDue = sessionTotal - deriveSessionDiscount(req.sessionId)
   const tax = calcTax(req.storeId, netDue)
   const fee = calcServiceFee(req.storeId, netDue)
   const totalWithTax = netDue + tax + fee
-  const remaining = totalWithTax - session.totalPaid
+  const { totalPaid } = derivePaidState(req.sessionId)
+  const remaining = totalWithTax - totalPaid
   const tip = req.tipAmount && req.tipAmount > 0 ? req.tipAmount : 0
   const chargeAmount = Math.min(req.amount, remaining) + tip
 
@@ -164,7 +176,17 @@ export async function handleWebhookEvent(
     // --- Session payment (pay-later or split) ---
     if (paymentType === 'session-payment' && sessionId) {
       const tipAmt = pi.metadata.tipAmount ? parseInt(pi.metadata.tipAmount, 10) : 0
-      const result = addPayment(storeId, sessionId, pi.amount, paidBy || 'customer', pi.id, tipAmt)
+      const { settlementType } = pi.metadata
+      const webhookItemKeys = settlementType === 'by-item' && pi.metadata.itemKeys
+        ? JSON.parse(pi.metadata.itemKeys) as string[]
+        : undefined
+      const webhookPercent = settlementType === 'by-percent' && pi.metadata.percent
+        ? parseInt(pi.metadata.percent, 10)
+        : undefined
+      const result = addPayment(
+        storeId, sessionId, pi.amount, paidBy || 'customer', pi.id, tipAmt,
+        webhookItemKeys, webhookPercent,
+      )
       if ('error' in result) {
         logger.error({ error: result.error, paymentIntentId: pi.id }, 'webhook: failed to record session payment')
         // Full refund if session was already fully paid
@@ -175,19 +197,11 @@ export async function handleWebhookEvent(
           logger.error({ paymentIntentId: pi.id, error: refundErr }, 'failed to auto-refund')
         }
       } else {
-        // Apply settlement side effects ONLY after payment confirmed
-        const { settlementType } = pi.metadata
-        if (settlementType === 'by-item' && pi.metadata.itemKeys) {
-          confirmItemPayment(sessionId, JSON.parse(pi.metadata.itemKeys))
-          emit({ type: 'session:summary', storeId, sessionId })
-          emit({ type: 'store:orders', storeId })
-        } else if (settlementType === 'by-percent') {
-          confirmPercentPayment(sessionId)
-          emit({ type: 'session:summary', storeId, sessionId })
-          emit({ type: 'store:orders', storeId })
-        } else {
-          emit({ type: 'session:summary', storeId, sessionId })
-          emit({ type: 'store:orders', storeId })
+        // addPayment already updated paidItemIds + settlementMode based on webhookItemKeys/webhookPercent.
+        // Just emit SSE and tag method.
+        emit({ type: 'session:summary', storeId, sessionId })
+        emit({ type: 'store:orders', storeId })
+        if (!settlementType) {
           emit({ type: 'store:tables', storeId })
         }
         // Tag as stripe payment method
@@ -255,7 +269,10 @@ export async function handleWebhookEvent(
     const sid = sessionId || result.sessionId
     if (sid) {
       const payFirstTip = pi.metadata.tipAmount ? parseInt(pi.metadata.tipAmount, 10) : 0
-      addPayment(storeId, sid, pi.amount, cart.customerName || 'customer', pi.id, payFirstTip)
+      const payResult = addPayment(storeId, sid, pi.amount, cart.customerName || 'customer', pi.id, payFirstTip)
+      if (!('error' in payResult) && payResult.payment) {
+        paymentStore.update(payResult.payment.id, { method: 'stripe' })
+      }
     }
 
     if (sid) {

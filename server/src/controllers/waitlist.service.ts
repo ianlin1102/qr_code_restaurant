@@ -1,5 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { JsonStore } from '../repositories/json-store.js'
+import { emit } from '../lib/event-bus.js'
 import type { WaitlistEntry } from '@qr-order/shared'
 
 const waitlistStore = new JsonStore<WaitlistEntry>('waitlist.json')
@@ -31,7 +32,9 @@ export function addEntry(
     createdAt: new Date().toISOString(),
   }
 
-  return waitlistStore.create(entry)
+  const created = waitlistStore.create(entry)
+  emit({ type: 'store:waitlist', storeId })
+  return created
 }
 
 export function updateEntry(
@@ -43,7 +46,9 @@ export function updateEntry(
   if (!entry || entry.storeId !== storeId) {
     return { error: 'Waitlist entry not found' }
   }
-  return waitlistStore.update(entryId, updates)!
+  const updated = waitlistStore.update(entryId, updates)!
+  emit({ type: 'store:waitlist', storeId })
+  return updated
 }
 
 export function removeEntry(
@@ -54,7 +59,9 @@ export function removeEntry(
   if (!entry || entry.storeId !== storeId) {
     return { error: 'Waitlist entry not found' }
   }
-  return waitlistStore.delete(entryId)
+  const deleted = waitlistStore.delete(entryId)
+  if (deleted) emit({ type: 'store:waitlist', storeId })
+  return deleted
 }
 
 export function seatEntry(
@@ -68,5 +75,7 @@ export function seatEntry(
   if (entry.status !== 'waiting') {
     return { error: 'Entry is not in waiting status' }
   }
-  return waitlistStore.update(entryId, { status: 'seated' })!
+  const updated = waitlistStore.update(entryId, { status: 'seated' })!
+  emit({ type: 'store:waitlist', storeId })
+  return updated
 }

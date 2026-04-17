@@ -23,6 +23,7 @@ export function updateStore(storeId: string, data: UpdateStoreRequest): Store | 
     paymentMode: data.paymentMode ?? store.paymentMode,
     taxRate: data.taxRate ?? store.taxRate,
     serviceFeeRate: data.serviceFeeRate ?? store.serviceFeeRate,
+    tipBase: data.tipBase ?? store.tipBase,
   })
 
   return updated!

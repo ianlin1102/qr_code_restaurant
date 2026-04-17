@@ -56,7 +56,6 @@ function setup() {
   const s = sessionStore.getById(sessionId)!
   sessionStore.update(sessionId, {
     orderIds: [...s.orderIds, orderId],
-    totalAmount: 4094,
   })
 }
 
@@ -147,9 +146,12 @@ describe('Gateway: mode locking (one-way: by-item → by-percent OK, by-percent 
 
 describe('Gateway: error codes', () => {
   it('SESSION_FULLY_PAID when remaining=0 (manually set paid state)', () => {
-    // Service auto-closes on full payment, so manually set totalPaid to simulate
-    // a state where session is paid but not yet closed
-    sessionStore.update(sessionId, { totalPaid: 4432 })
+    // Simulate fully paid by creating a Payment record (SSOT: totalPaid is
+    // derived from payments, not from session.totalPaid cache).
+    paymentStore.create({
+      id: uuid(), sessionId, storeId: STORE_ID,
+      amount: 4432, paidBy: 'test', createdAt: new Date().toISOString(),
+    })
     const r = executeSettlement(STORE_ID, sessionId, { type: 'cash-payment', amount: 100, receivedAmount: 100 })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('SESSION_FULLY_PAID')

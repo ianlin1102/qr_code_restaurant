@@ -20,6 +20,23 @@ export function calcTip(
   return Math.round(baseAmount * tipValue / 100)
 }
 
+/**
+ * Tip amount respecting store's tip-base preference.
+ * SSOT helper — use this everywhere instead of calcTip(amount, ...) when you
+ * have subtotal and tax separately.
+ */
+export function calcTipAmount(
+  subtotal: number,
+  tax: number,
+  tipType: 'percent' | 'fixed',
+  tipValue: number,
+  base: 'pretax' | 'posttax' = 'pretax',
+): number {
+  if (tipType === 'fixed') return tipValue
+  const basis = base === 'posttax' ? subtotal + tax : subtotal
+  return Math.round(basis * tipValue / 100)
+}
+
 /** Convenience: compute tax + service fee + total in one call */
 export function calcTaxAndFees(
   subtotal: number,

@@ -48,10 +48,7 @@ function createTestSession(): { sessionId: string; orderId: string; tableId: str
     orderNumber: 1, createdAt: new Date().toISOString(),
   }
   orderStore.create(order as any)
-  sessionStore.update(sessionId, {
-    orderIds: [order.id],
-    totalAmount: 4094,
-  })
+  sessionStore.update(sessionId, { orderIds: [order.id] })
   orderId = order.id
   return { sessionId, orderId, tableId }
 }

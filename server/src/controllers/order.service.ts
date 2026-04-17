@@ -3,6 +3,7 @@ import { getMenuItemById } from './menu.service.js'
 import { printOrder } from './printer.service.js'
 import { createSession, getActiveSession, addOrderToSession, recalcSessionTotal } from './session.service.js'
 import type { Order, OrderItem, CreateOrderRequest, OrderStatus } from '@qr-order/shared'
+import { orderItemsTotal } from '@qr-order/shared/pricing'
 import logger from '../lib/logger.js'
 import { orderStore, tableStore, storeStore, sessionStore } from '../repositories/stores.js'
 import { emit } from '../lib/event-bus.js'
@@ -47,8 +48,7 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
     }
   }
 
-  const orderItems = []
-  let totalPrice = 0
+  const orderItems: OrderItem[] = []
 
   for (const item of req.items) {
     if (typeof item.quantity !== 'number' || !Number.isFinite(item.quantity) || !Number.isInteger(item.quantity)) {
@@ -64,11 +64,6 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
     if (!Number.isFinite(menuItem.price)) {
       return { error: `Menu item ${item.menuItemId} has invalid price` }
     }
-    // Calculate price with option adjustments
-    const optionsAdjust = (item.selectedOptions ?? []).reduce((sum, o) => sum + o.priceAdjust, 0)
-    const unitPrice = menuItem.price + optionsAdjust
-    const lineTotal = unitPrice * item.quantity
-    totalPrice += lineTotal
     // Enrich selectedOptions with English names from menu item definitions
     const enrichedOptions = (item.selectedOptions ?? []).map(so => {
       const optDef = menuItem.options?.find(o => o.id === so.optionId)
@@ -101,6 +96,7 @@ export function createOrder(storeId: string, req: CreateOrderRequest): Order | {
   }
 
   const now = new Date().toISOString()
+  const totalPrice = orderItemsTotal(orderItems)
   const order: Order = {
     id: uuid(),
     orderNumber: generateOrderNumber(storeId),
@@ -210,16 +206,12 @@ export function deleteOrder(storeId: string, orderId: string): { success: true }
   const order = orderStore.getById(orderId)
   if (!order || order.storeId !== storeId) return { error: 'Order not found' }
 
-  // Remove from session and recalculate totals
+  // Remove from session (totalAmount is derived on read)
   if (order.sessionId) {
     const session = sessionStore.getById(order.sessionId)
     if (session) {
       const newOrderIds = session.orderIds.filter(id => id !== orderId)
-      const newTotal = newOrderIds
-        .map(id => orderStore.getById(id))
-        .filter(Boolean)
-        .reduce((sum, o) => sum + (o?.totalPrice ?? 0), 0)
-      sessionStore.update(session.id, { orderIds: newOrderIds, totalAmount: newTotal })
+      sessionStore.update(session.id, { orderIds: newOrderIds })
     }
   }
 
@@ -257,13 +249,7 @@ export function voidItem(
     ...(reason ? { voidReason: reason } : {}),
   }
 
-  // Recalculate order total excluding voided items
-  const totalPrice = items.reduce((sum, it) => {
-    if (it.voided) return sum
-    const optAdjust = (it.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
-    return sum + (it.price + optAdjust) * it.quantity
-  }, 0)
-
+  const totalPrice = orderItemsTotal(items)
   const updated = orderStore.update(orderId, { items, totalPrice, updatedAt: new Date().toISOString() })!
 
   if (order.sessionId) {
@@ -311,12 +297,7 @@ export async function updateOrderItems(storeId: string, orderId: string, items: 
     return item
   })
 
-  // Recalculate total
-  const totalPrice = enrichedItems.reduce((sum, item) => {
-    const optAdjust = (item.selectedOptions ?? []).reduce((s, o) => s + o.priceAdjust, 0)
-    return sum + (item.price + optAdjust) * item.quantity
-  }, 0)
-
+  const totalPrice = orderItemsTotal(enrichedItems)
   const updated = orderStore.update(orderId, {
     items: enrichedItems,
     totalPrice,

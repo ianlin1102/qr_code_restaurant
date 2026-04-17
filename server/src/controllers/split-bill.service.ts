@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid'
 import { splitBillStore, orderStore, sessionStore, storeStore } from '../repositories/stores.js'
 import { calcTaxAndFees, validateSplit } from '@qr-order/shared/pricing'
 import { getSessionSummary } from './session.service.js'
+import { derivePaidState } from '../lib/session-state.js'
 import { getMainBillSummary, calcByItemSubtotal } from './split-bill-summary.js'
 import { recalculateMode } from '../settlement/mode.js'
 import logger from '../lib/logger.js'
@@ -34,9 +35,10 @@ export function createSplitBill(
 
   let subtotal: number
   if (data.type === 'by-item') {
-    // B2: Check against paidItemIds — can't split already-paid items
+    // B2: Check against paidItemIds — can't split already-paid items (SSOT)
+    const { paidItemIds } = derivePaidState(sessionId)
     const paidQtyMap = new Map<string, number>()
-    for (const pid of session.paidItemIds ?? []) {
+    for (const pid of paidItemIds) {
       const parts = pid.split(':')
       const baseKey = `${parts[0]}:${parts[1]}`
       const qty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity

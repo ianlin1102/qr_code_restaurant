@@ -1,8 +1,8 @@
 // Layer 1: Item pricing
-export { unitPrice, lineTotal, subtotal } from './item'
+export { unitPrice, lineTotal, subtotal, orderItemsTotal } from './item'
 
 // Layer 2: Tax, fees, tip
-export { calcTax, calcServiceFee, calcTip, calcTaxAndFees } from './tax'
+export { calcTax, calcServiceFee, calcTip, calcTipAmount, calcTaxAndFees } from './tax'
 
 // Layer 3: Settlement
 export {

@@ -28,6 +28,7 @@ export default function StoreSettingsPage() {
   const [announcementEn, setAnnouncementEn] = useState('')
   const [taxRate, setTaxRate] = useState('')
   const [serviceFeeRate, setServiceFeeRate] = useState('')
+  const [tipBase, setTipBase] = useState<'pretax' | 'posttax'>('pretax')
 
   useEffect(() => {
     loadStore()
@@ -46,6 +47,7 @@ export default function StoreSettingsPage() {
       setAnnouncementEn(data.announcementEn ?? '')
       setTaxRate(data.taxRate != null ? String(data.taxRate) : '')
       setServiceFeeRate(data.serviceFeeRate != null ? String(data.serviceFeeRate) : '')
+      setTipBase(data.tipBase ?? 'pretax')
     } catch (err) {
       setMessage({ type: 'error', text: t.settings.loadFailed })
     } finally {
@@ -71,6 +73,7 @@ export default function StoreSettingsPage() {
         announcementEn: announcementEn.trim() || undefined,
         taxRate: taxRate ? Number(taxRate) : undefined,
         serviceFeeRate: serviceFeeRate ? Number(serviceFeeRate) : undefined,
+        tipBase,
       })
       setStore(updated)
       setMessage({ type: 'success', text: t.settings.saveSuccess })
@@ -205,6 +208,19 @@ export default function StoreSettingsPage() {
               className="text-base mt-1"
             />
             <p className="text-xs text-muted-foreground mt-1">{t.settings.serviceFeeRateDesc}</p>
+          </div>
+
+          <div className="flex items-start justify-between gap-4 py-2">
+            <div className="flex-1 min-w-0">
+              <label className="text-sm font-medium">{t.settings.tipBase || 'Tip Base'}</label>
+              <p className="text-xs text-muted-foreground">{t.settings.tipBaseDesc || 'Pretax: tip percentage on subtotal. Posttax: tip percentage on subtotal + tax.'}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 pt-0.5">
+              <Switch checked={tipBase === 'posttax'} onCheckedChange={v => setTipBase(v ? 'posttax' : 'pretax')} />
+              <span className="text-xs text-muted-foreground min-w-[60px]">
+                {tipBase === 'posttax' ? (t.settings.tipBasePosttax || 'Posttax') : (t.settings.tipBasePretax || 'Pretax')}
+              </span>
+            </div>
           </div>
 
           <div>

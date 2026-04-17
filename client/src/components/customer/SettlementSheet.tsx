@@ -135,7 +135,11 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
         : { type: 'by-percent' as const, percent }
       const { clientSecret, amount } = await api.createCheckoutForSession(storeId, session.id, calc.total, settlement)
       navigate(`/store/${storeId}/checkout`, {
-        state: { clientSecret, amount, tableId: session.tableId, sessionId: session.id, settlement },
+        state: {
+          clientSecret, amount,
+          subtotal: calc.subtotal, tax: calc.tax,
+          tableId: session.tableId, sessionId: session.id, settlement,
+        },
       })
     } catch (err) {
       notify.fromError(err, 'Payment failed')

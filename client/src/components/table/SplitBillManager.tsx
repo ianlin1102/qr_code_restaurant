@@ -143,7 +143,7 @@ export default function SplitBillManager({ open, onClose, storeId, sessionId }: 
             onSplit={() => setSheetOpen(true)} />
 
           {splits.map(s => (
-            <SplitCard key={s.id} split={s} ts={ts} allowed={allowed}
+            <SplitCard key={s.id} split={s} orders={session.orders ?? []} ts={ts} allowed={allowed}
               onPayCard={() => setPay(s.id, s.total, 'card')}
               onPayCash={() => setPay(s.id, s.total, 'cash')}
               onMerge={() => handleMerge(s.id)} />

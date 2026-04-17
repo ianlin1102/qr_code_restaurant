@@ -118,10 +118,11 @@ async function run() {
   // ── Test 3: Pay by items (pure calculation, no side effects) ──
   console.log('\n── Test 3: Pay by items (calculate only) ──')
   const itemKey = `${order1.id}:0`
-  const calcResult = await api<{ amount: number; tax: number; serviceFee: number }>(
+  const calcRaw = await api<{ ok: boolean; data: { amount: number; tax: number; serviceFee: number } }>(
     `/stores/${STORE_ID}/sessions/${summary.id}/pay-items`,
     { method: 'POST', body: JSON.stringify({ itemKeys: [itemKey] }) },
   )
+  const calcResult = calcRaw.data
   assert(calcResult.amount > 0, `Calculated amount: $${(calcResult.amount / 100).toFixed(2)}`)
 
   // Verify NO side effects — paidItemIds should still be empty
@@ -133,10 +134,11 @@ async function run() {
 
   // ── Test 4: Pay by percent (calculate only) ──
   console.log('\n── Test 4: Pay by percent (calculate only) ──')
-  const percentCalc = await api<{ amount: number; tax: number; serviceFee: number }>(
+  const percentRaw = await api<{ ok: boolean; data: { amount: number; tax: number; serviceFee: number } }>(
     `/stores/${STORE_ID}/sessions/${summary.id}/pay-percent`,
     { method: 'POST', body: JSON.stringify({ percent: 50 }) },
   )
+  const percentCalc = percentRaw.data
   assert(percentCalc.amount > 0, `50% amount: $${(percentCalc.amount / 100).toFixed(2)}`)
 
   // Still no side effects
@@ -155,22 +157,34 @@ async function run() {
   })
   console.log('  Both orders marked as served')
 
-  // ── Test 6: Cash payment (full amount) → should auto-close ──
-  console.log('\n── Test 6: Cash payment (admin) → auto-close ──')
+  // ── Test 6: Cash payment (full amount) → session paid but NOT auto-closed ──
+  console.log('\n── Test 6: Cash payment (admin) → fully paid, remains active ──')
   const fullAmount = afterPercent.remaining
-  const cashResult = await apiWithAuth<{ session: { status: string }; change: number }>(
+  const cashResult = await apiWithAuth<{ session?: { status: string }; change: number; data?: { change: number }; ok?: boolean }>(
     `/stores/${STORE_ID}/sessions/${summary.id}/cash-payment`,
     { method: 'POST', body: JSON.stringify({ amount: fullAmount, receivedAmount: fullAmount + 500 }) },
   )
-  assert(cashResult.change === 500, `Change: $${(cashResult.change / 100).toFixed(2)} (expected $5.00)`)
+  // Gateway responses are wrapped: { ok: true, data: { change, payment }, ... }
+  const change = cashResult.data?.change ?? cashResult.change
+  assert(change === 500, `Change: $${((change ?? 0) / 100).toFixed(2)} (expected $5.00)`)
 
-  // Check session is closed
+  // Session should be active + fully paid (admin close explicitly, no auto-close)
   const finalSummary = await api<SessionSummary>(
     `/stores/${STORE_ID}/sessions/${summary.id}/summary`,
   )
-  assert(finalSummary.status === 'closed', `Session status: ${finalSummary.status} (expected closed)`)
+  assert(finalSummary.status === 'active', `Session status: ${finalSummary.status} (expected active — auto-close disabled)`)
   assert(finalSummary.isPaid, `isPaid: ${finalSummary.isPaid}`)
   assert(finalSummary.remaining === 0, `remaining: ${finalSummary.remaining} (expected 0)`)
+
+  // ── Test 7: Explicit close session ──
+  console.log('\n── Test 7: Admin explicit close session ──')
+  await apiWithAuth(`/stores/${STORE_ID}/sessions/${summary.id}/close`, {
+    method: 'PATCH',
+  })
+  const closedSummary = await api<SessionSummary>(
+    `/stores/${STORE_ID}/sessions/${summary.id}/summary`,
+  )
+  assert(closedSummary.status === 'closed', `After close → status: ${closedSummary.status}`)
 
   // Check table is idle
   const finalTable = await apiWithAuth<Table[]>(`/stores/${STORE_ID}/tables`)

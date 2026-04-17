@@ -3,7 +3,25 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { formatPriceUSD } from '@/lib/format'
 import type { AllowedActions } from '@/services/api'
-import type { SplitBill } from '@qr-order/shared'
+import type { SplitBill, Order } from '@qr-order/shared'
+
+/** Resolve split's attribution to a human-readable summary. */
+function splitDetailText(split: SplitBill, orders: Order[]): string {
+  if (split.type === 'by-percent') return `${split.percent ?? 0}%`
+  if (split.type === 'by-item' && split.itemKeys?.length) {
+    const parts: string[] = []
+    for (const key of split.itemKeys) {
+      const [orderId, idxStr, qtyStr] = key.split(':')
+      const idx = parseInt(idxStr, 10)
+      const qty = parseInt(qtyStr, 10)
+      const order = orders.find(o => o.id === orderId)
+      const item = order?.items[idx]
+      if (item) parts.push(`${qty}× ${item.name}`)
+    }
+    return parts.join(', ') || '—'
+  }
+  return ''
+}
 
 type Ts = Record<string, string>
 
@@ -42,11 +60,12 @@ export function MainBillCard({ label, badge, total, ts, allowed, onPayCard, onPa
   )
 }
 
-export function SplitCard({ split, ts, allowed, onPayCard, onPayCash, onMerge }: {
-  split: SplitBill; ts: Ts; allowed?: AllowedActions | null
+export function SplitCard({ split, orders, ts, allowed, onPayCard, onPayCash, onMerge }: {
+  split: SplitBill; orders: Order[]; ts: Ts; allowed?: AllowedActions | null
   onPayCard: () => void; onPayCash: () => void; onMerge: () => void
 }) {
   const typeBadge = split.type === 'by-item' ? ts.byItemMode : ts.byPercentMode
+  const detail = splitDetailText(split, orders)
   return (
     <div className="border rounded-lg p-3 space-y-2">
       <div className="flex items-center justify-between">
@@ -59,6 +78,7 @@ export function SplitCard({ split, ts, allowed, onPayCard, onPayCash, onMerge }:
           )}
         </div>
       </div>
+      {detail && <p className="text-xs text-muted-foreground">{detail}</p>}
       <p className="text-lg font-bold">{formatPriceUSD(split.total)}</p>
       {split.status === 'paid' && (
         <p className="text-xs text-muted-foreground">

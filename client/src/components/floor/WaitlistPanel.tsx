@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { POLL } from '@/lib/intervals'
 import { minutesSince } from '@/lib/time-format'
+import { useStoreEvents } from '@/hooks/useStoreEvents'
 
 interface Props {
   storeId: string
@@ -30,11 +31,14 @@ export default function WaitlistPanel({ storeId }: Props) {
     }
   }, [storeId])
 
+  // SSE primary: refetch on store:waitlist event; polling as fallback
+  const { subscribe } = useStoreEvents(storeId)
   useEffect(() => {
     fetchWaitlist()
+    const unsubscribe = subscribe('store:waitlist', fetchWaitlist)
     const interval = setInterval(fetchWaitlist, POLL.ADMIN_FALLBACK)
-    return () => clearInterval(interval)
-  }, [fetchWaitlist])
+    return () => { unsubscribe(); clearInterval(interval) }
+  }, [fetchWaitlist, subscribe])
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault()

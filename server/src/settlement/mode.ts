@@ -1,5 +1,6 @@
 import { sessionStore } from '../repositories/stores.js'
 import { getSplitBills } from '../controllers/split-bill.service.js'
+import { derivePaidState } from '../lib/session-state.js'
 import logger from '../lib/logger.js'
 
 /**
@@ -13,12 +14,14 @@ export function recalculateMode(sessionId: string): void {
   const remainingSplits = getSplitBills(sessionId)
   const hasPercentSplits = remainingSplits.some(s => s.type === 'by-percent')
   const hasItemSplits = remainingSplits.some(s => s.type === 'by-item')
-  const hasPaidItems = (session.paidItemIds ?? []).length > 0
+  // SSOT: derive paid state from payments
+  const { totalPaid, paidItemIds } = derivePaidState(sessionId)
+  const hasPaidItems = paidItemIds.length > 0
 
   let newMode: 'by-item' | 'by-percent' | undefined
   if (hasPercentSplits) newMode = 'by-percent'
   else if (hasItemSplits || hasPaidItems) newMode = 'by-item'
-  else if (session.totalPaid > 0 || session.settlementMode === 'by-percent') newMode = session.settlementMode
+  else if (totalPaid > 0 || session.settlementMode === 'by-percent') newMode = session.settlementMode
   else newMode = undefined
 
   if (newMode !== session.settlementMode) {

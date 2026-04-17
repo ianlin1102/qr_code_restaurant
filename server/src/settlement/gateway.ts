@@ -9,6 +9,7 @@ import {
 } from '../repositories/stores'
 import { getSplitBills, buildAssignedQtyMap, getMainBillSummary } from '../controllers/split-bill.service'
 import { getSessionSummary } from '../controllers/session.service'
+import { derivePaidState } from '../lib/session-state'
 
 import { execute as payItems } from './actions/pay-items'
 import { execute as payPercent } from './actions/pay-percent'
@@ -30,9 +31,10 @@ function loadContext(storeId: string, sessionId: string): SettlementContext | nu
   const payments = paymentStore.getByField('sessionId', sessionId)
   const splits = getSplitBills(sessionId)
 
-  // Build paid qty map
+  // Build paid qty map (SSOT: derive from payments)
+  const { paidItemIds } = derivePaidState(sessionId)
   const paidQtyMap = new Map<string, number>()
-  for (const pid of session.paidItemIds ?? []) {
+  for (const pid of paidItemIds) {
     const parts = pid.split(':')
     const baseKey = `${parts[0]}:${parts[1]}`
     const qty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity

@@ -1,5 +1,6 @@
 import { sessionStore, orderStore, paymentStore, storeStore } from '../repositories/stores.js'
 import { closeSession, calcTax, calcServiceFee } from '../controllers/session.service.js'
+import { derivePaidState, deriveSessionTotalAmount, deriveSessionDiscount } from '../lib/session-state.js'
 import logger from '../lib/logger.js'
 
 const STALE_SESSION_CHECK_MS = 5 * 60 * 1000   // check every 5 minutes
@@ -18,12 +19,13 @@ export function autoCloseStaleSessionsOnce(): number {
     const store = storeStore.getById(session.storeId)
     if (!store) continue
 
-    const netDue = session.totalAmount - session.discountAmount
+    const netDue = deriveSessionTotalAmount(session.id) - deriveSessionDiscount(session.id)
     const tax = calcTax(session.storeId, netDue)
     const fee = calcServiceFee(session.storeId, netDue)
     const totalWithTax = netDue + tax + fee
 
-    if (session.totalPaid < totalWithTax) continue // not fully paid
+    const { totalPaid } = derivePaidState(session.id)
+    if (totalPaid < totalWithTax) continue // not fully paid
 
     // Find most recent order activity
     const orders = session.orderIds.map(id => orderStore.getById(id)).filter(Boolean)

@@ -141,9 +141,14 @@ export default function CartPage() {
     api.getTable(storeId, tableId).then(table => {
       if (table.paymentMode === 'pay-later') setPaymentMode('pay-later')
     }).catch(() => { /* keep default pay-first */ })
-    // Fetch active session for shared cart clearing
-    api.getActiveSession(storeId, tableId).then(s => {
-      if (s) setActiveSessionId(s.id)
+    // Fetch-or-create active session. Without a session, submit is blocked and
+    // the button shows as grey on first cart visit (menu flow doesn't create
+    // a session until user reaches bill/payment page).
+    api.getActiveSession(storeId, tableId).then(async s => {
+      if (s) return setActiveSessionId(s.id)
+      await api.createSession(storeId, tableId)
+      const fresh = await api.getActiveSession(storeId, tableId)
+      if (fresh) setActiveSessionId(fresh.id)
     }).catch(() => {})
   }, [storeId, tableId])
 
@@ -199,11 +204,11 @@ export default function CartPage() {
           ...(i.remark ? { remark: i.remark } : {}),
           ...(i.selectedOptions?.length ? { selectedOptions: i.selectedOptions } : {}),
         }))
-        const { clientSecret, amount } = await api.createCheckout(storeId, {
+        const { clientSecret, amount, subtotal, tax } = await api.createCheckout(storeId, {
           tableId: result.tableId, items: checkoutItems, customerName,
         })
         navigate(`/store/${storeId}/checkout`, { state: {
-          clientSecret, amount, tableId: result.tableId, items: checkoutItems,
+          clientSecret, amount, subtotal, tax, tableId: result.tableId, items: checkoutItems,
         } })
       }
     } catch (err) {

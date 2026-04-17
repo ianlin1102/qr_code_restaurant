@@ -1,6 +1,7 @@
 import { splitBillStore, sessionStore } from '../repositories/stores.js'
 import { getSplitBills, getMainBillSummary } from './split-bill.service.js'
 import { recalculateMode } from '../settlement/mode.js'
+import { derivePaidState } from '../lib/session-state.js'
 import logger from '../lib/logger.js'
 
 /**
@@ -15,8 +16,9 @@ export function invalidateConflictingSplits(sessionId: string, storeId: string):
   const session = sessionStore.getById(sessionId)
   if (!session) return 0
 
+  const { paidItemIds } = derivePaidState(sessionId)
   const paidQtyMap = new Map<string, number>()
-  for (const pid of session.paidItemIds ?? []) {
+  for (const pid of paidItemIds) {
     const parts = pid.split(':')
     const baseKey = `${parts[0]}:${parts[1]}`
     const qty = parts.length >= 3 ? parseInt(parts[2], 10) : Infinity

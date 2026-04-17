@@ -44,7 +44,10 @@ MVP 阶段：JSON 文件存储，迁移路径 → PostgreSQL（Prisma schema 已
 - **菜品行价格**: `(item.price + Σ opt.priceAdjust) * item.quantity`，永远不要用 `item.price * quantity`
 - **金额计算唯一数据源**: 所有金额显示从 server session summary 读取，前端不独立算税/remaining
 - **i18n 双系统**: 顾客端 react-i18next（JSON），管理端 `useT()` hook（admin.ts 内联）
-- **RBAC**: Permission 类型 9 种权限，JWT 携带 permissions 数组，NavItem 通过 perm 字段过滤
+- **RBAC**: Permission 类型 18 种权限（6 个模块：core/analytics/coupons/waitlist/staff-management/printer），JWT 携带 permissions 数组，NavItem 通过 perm 字段过滤。模块注册在 `shared/modules.ts`，`server/src/lib/module-permissions.ts` 按店铺许可过滤
+- **SSE 实时事件**: `event-bus.ts` 发布 AppEvent → `sse.ts` 路由到 SSE 客户端。两种作用域：session-scoped（顾客/结算页）和 store-scoped（管理端）。事件类型：`session:summary`、`order:created`、`order:updated`、`cart:updated`、`cart:submitted`、`split:changed`、`store:tables`、`store:orders`。SSE 为主通道，轮询为降级备用。nginx 需配置 `proxy_buffering off` + 长超时
+- **共享计算库**: `@qr-order/shared/pricing` 提供纯函数（unitPrice/lineTotal/calcTax/calcBillSummary/calcSplitByItem 等），server 和 client 共用，有 vitest 测试覆盖
+- **Session 付清不自动关闭**: 付清后不再自动 close session。安全网定时器（`auto-close.ts`）每 5 分钟检查，仅在付清且 15 分钟无活动后才自动关闭过期 session。管理员通过 `closeSession` action 显式关闭
 - **Docker**: `restart` 不重读代码/env，必须 `down && up -d --build`。本地 Stripe 需 `stripe listen --forward-to localhost:3001/api/webhook/stripe`
 
 ---
@@ -52,7 +55,7 @@ MVP 阶段：JSON 文件存储，迁移路径 → PostgreSQL（Prisma schema 已
 ## 防御规则（历史 Bug 总结）
 
 ### 结算操作必须经过 Settlement Gateway
-所有结算操作（payByItems, payByPercent, createSplit, paySplit, cashPayment 等）必须通过 `settlement/gateway.ts` 的 `executeSettlement()` 入口。不要直接从路由调用 service 函数。Gateway 负责校验、执行、计算 allowedActions、记录日志。Service 函数是 trusted internal，不做校验。
+所有结算操作必须通过 `settlement/gateway.ts` 的 `executeSettlement()` 入口。Gateway 负责加载 SettlementContext、分发到 `actions/` 下的具体 action（pay-items, pay-percent, cash-payment, add-payment, create-split, delete-split, pay-split, close-session, reopen-session）、重新计算 allowedActions、发射 SSE 事件、记录日志。不要直接从路由调用 service 函数。`settlement/rules.ts` 提供 check* 校验函数，`settlement/mode.ts` 在 split 删除/失效后重算 settlementMode，`settlement/allowed-actions.ts` 计算当前合法操作。
 
 ### 前端 UI 由 allowedActions 控制
 前端不自己判断操作是否合法，只读 API 响应中的 `allowedActions` 来显示/隐藏按钮。错误响应也带 `allowedActions`，收到就更新 UI。
@@ -68,6 +71,9 @@ MVP 阶段：JSON 文件存储，迁移路径 → PostgreSQL（Prisma schema 已
 
 ### Split 支付后更新 paidItemIds
 `paySplitBillCard/Cash` 支付后调用 `markSplitItemsPaid(sb)` 将 split 的 itemKeys 加入 session.paidItemIds。这样 by-item remaining 计算能反映 split 已付菜品。
+
+### 支付后自动失效冲突 Split
+`split-bill-invalidation.ts` 的 `invalidateConflictingSplits()` 在 webhook 确认支付后调用。by-item split 若 itemKeys 与已付菜品重叠则删除；by-percent split 若 remaining 金额变化导致 subtotal 偏差则删除。删除后调用 `recalculateMode()` 重算 settlementMode。
 
 ### payByPercent 不双重征税
 `payByPercent` 的 `remaining` 已含税。返回的 `amount` 直接按 remaining 比例切割，不额外算税。tax/serviceFee 是反推显示值。
@@ -88,6 +94,12 @@ MVP 阶段：JSON 文件存储，迁移路径 → PostgreSQL（Prisma schema 已
 ### 管理端 vs 顾客端 API
 管理端用 `getMenuItems`（含 staffOnly），顾客端用 `getMenu`（过滤 staffOnly）。
 
+### SSE + 轮询双通道
+前端 hooks 优先走 SSE（`useSessionEvents`/`useStoreEvents`），同时保留低频轮询作为降级。`useSettlementPoll` 整合两者：SSE 事件触发 `refresh()`，轮询间隔 10s（结算弹窗）或 30s（支付状态）。`useCartSync` 处理多设备共享购物车同步（push 本设备变更 + SSE/poll 其他设备变更）。
+
+### Settlement Gateway 发射 SSE 事件
+`executeSettlement()` 成功后自动 `emit()` 相关事件。所有结算操作发 `session:summary` + `store:orders`；split 相关操作额外发 `split:changed`；close/reopen 额外发 `store:tables`。不需要在 routes 手动发事件。
+
 ---
 
 ## 安全待修复（P0）
@@ -102,9 +114,9 @@ MVP 阶段：JSON 文件存储，迁移路径 → PostgreSQL（Prisma schema 已
 ## 技术债
 
 - Prisma 迁移未执行（仅 Store/StoreUser 已定义）
-- api.ts 超限需拆分
+- api.ts 超 500 行需拆分
 - 多个文件 >200 行待拆分
-- 自定义 Hooks 不完整（数据获取逻辑仍在页面中）
+- `useCartSync` 内有重复的 poll/SSE 处理逻辑需抽取
 - S3 bucket/URL 硬编码、货币硬编码 `'usd'`
 
-> Last updated: 2026-04-05
+> Last updated: 2026-04-09
