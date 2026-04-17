@@ -1007,6 +1007,30 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 **前置**：Task 7 完成。
 
+#### Phase E 事后补丁（2026-04-17）：`afterCommit` 机制
+
+Phase E plan 段 3a 决策点 D（Agent A）+ 段 3b 决策点 H（Agent B）**同一问题**：
+SSE `emit(...)` 必须在 `withTenantContext` 返回之后才发（**规则 2**），
+不能在 handler 跑 repo 调用的 tx 内。若无机制，Agent B `waitlist.service.ts`
+的 4 处 emit 挪到 route 层后仍会落在 tx 内——违规。
+
+**决议**（两个决策点共用依赖）：`tenantAwareRoute` / `platformAwareRoute`
+都提供 `res.locals.afterCommit(hook)` 注册函数——handler 登记的 hook 在 tx
+**成功 commit 之后**依次触发。若 tx 抛 → hook 永不触发（正确：事件和数据
+应该原子一致）。若 hook 本身抛 → log 但不阻断 response（tx 已 commit, 事件
+丢失是可接受的降级）。
+
+**使用模式**（Phase E Agent B waitlist 样板）：
+
+```ts
+router.post('/stores/:storeId/waitlist', tenantAwareRoute(async (req, res) => {
+  const entry = await addEntry(res.locals.storeId!, req.body, res.locals.tx!)
+  // emit 登记: tx commit 后触发，不在 tx 内
+  res.locals.afterCommit!(() => emit({ type: 'store:waitlist', storeId: res.locals.storeId! }))
+  res.json(entry)
+}))
+```
+
 - [ ] **Step 1：写完整文件**
 
 ```bash
@@ -1016,6 +1040,7 @@ cat > server/src/middleware/tenant-aware.ts <<'EOF'
 import type { Request, Response, NextFunction, RequestHandler } from 'express'
 import type { Prisma } from '@prisma/client'
 import { withTenantContext, withPlatformContext } from '../repositories/prisma-client.js'
+import logger from '../lib/logger.js'
 
 /**
  * Augment Express Response.locals to carry the transaction client
@@ -1026,6 +1051,19 @@ declare module 'express-serve-static-core' {
     tx?: Prisma.TransactionClient
     storeId?: string
     platformAdminId?: string
+    /**
+     * Register a callback to fire AFTER the request's tenant/platform tx
+     * commits successfully. Rule 2 enforcement path for SSE emit and
+     * similar post-commit side effects.
+     *
+     * Semantics:
+     *   - tx throws → hooks NEVER fire (correct: rollback = no events)
+     *   - hook throws → logged, other hooks still fire, response not broken
+     *   - hooks fire in registration order (FIFO)
+     *
+     * Undefined outside a tenant/platformAwareRoute scope.
+     */
+    afterCommit?: (hook: () => void | Promise<void>) => void
   }
 }
 
@@ -1036,12 +1074,20 @@ export type TenantAwareHandler = (req: Request, res: Response) => Promise<void>
  * - Reads storeId from req.params.storeId (required — route pattern must include :storeId)
  * - Opens tx + sets RLS store context
  * - Exposes tx on res.locals.tx for handler + repos to use
- * - Any exception propagates to Express error middleware
+ * - Exposes afterCommit(hook) on res.locals for rule-2-compliant emits
+ * - Any exception propagates to Express error middleware (tx auto-rollback)
  *
  * Usage:
  *   router.get('/orders', tenantAwareRoute(async (req, res) => {
  *     const orders = await orderRepo.findSubmitted({ storeId: res.locals.storeId }, res.locals.tx)
  *     res.json(orders)
+ *   }))
+ *
+ *   // With SSE emit (rule 2):
+ *   router.post('/orders', tenantAwareRoute(async (req, res) => {
+ *     const order = await orderRepo.createDraftOrder(..., res.locals.tx)
+ *     res.locals.afterCommit!(() => emit({ type: 'order:created', storeId, orderId: order.id }))
+ *     res.json(order)
  *   }))
  */
 export function tenantAwareRoute(handler: TenantAwareHandler): RequestHandler {
@@ -1051,12 +1097,24 @@ export function tenantAwareRoute(handler: TenantAwareHandler): RequestHandler {
       res.status(400).json({ error: 'storeId missing from route' })
       return
     }
+    const hooks: Array<() => void | Promise<void>> = []
     try {
       await withTenantContext(storeId, async (tx) => {
         res.locals.tx = tx
         res.locals.storeId = storeId
+        res.locals.afterCommit = (hook) => { hooks.push(hook) }
         await handler(req, res)
       })
+      // tx committed — fire hooks in registration order.
+      // Errors here are logged, not propagated: the response is already
+      // sent / sending, and the tx is durable. Event loss is degrade-only.
+      for (const hook of hooks) {
+        try {
+          await hook()
+        } catch (err) {
+          logger.error({ err }, 'afterCommit hook failed (tx already committed)')
+        }
+      }
     } catch (err) {
       next(err)
     }
@@ -1069,6 +1127,8 @@ export function tenantAwareRoute(handler: TenantAwareHandler): RequestHandler {
  *
  * The route middleware chain must have already verified PlatformAdmin JWT
  * and set res.locals.platformAdminId before this handler runs.
+ *
+ * Same afterCommit semantics as tenantAwareRoute.
  */
 export function platformAwareRoute(handler: TenantAwareHandler): RequestHandler {
   return async (req, res, next) => {
@@ -1076,11 +1136,20 @@ export function platformAwareRoute(handler: TenantAwareHandler): RequestHandler 
       res.status(403).json({ error: 'platform admin auth required' })
       return
     }
+    const hooks: Array<() => void | Promise<void>> = []
     try {
       await withPlatformContext(async (tx) => {
         res.locals.tx = tx
+        res.locals.afterCommit = (hook) => { hooks.push(hook) }
         await handler(req, res)
       })
+      for (const hook of hooks) {
+        try {
+          await hook()
+        } catch (err) {
+          logger.error({ err }, 'afterCommit hook failed (platform tx already committed)')
+        }
+      }
     } catch (err) {
       next(err)
     }
@@ -1108,7 +1177,11 @@ git commit -m "feat(phase-5): add tenantAwareRoute + platformAwareRoute decorato
   exposes tx via res.locals for handler + repos to consume
 - platformAwareRoute assumes platform JWT middleware already ran, opens
   withPlatformContext (SET LOCAL ROLE platform_admin, BYPASSRLS)
-- Response.locals typed to carry tx/storeId/platformAdminId
+- Response.locals typed to carry tx/storeId/platformAdminId/afterCommit
+- afterCommit(hook) registers rule-2-compliant post-commit callbacks:
+  SSE emit and similar side effects fire AFTER tx commits, never inside.
+  tx rollback → hooks never fire (event/data atomicity). hook throws →
+  logged but does not break response.
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
