@@ -558,6 +558,9 @@ export const orderRepo = {
     if (!order) throw new Error(`Order ${orderId} vanished mid-replace`)
 
     // Insert new set with position 0..N-1.
+    // Sequential inserts (N round-trips) rather than createMany —
+    // createMany doesn't support nested options.create. For typical
+    // cart sizes (≤15 items), the overhead is acceptable.
     for (let idx = 0; idx < items.length; idx++) {
       const i = items[idx]
       await tx.orderItem.create({
@@ -725,9 +728,796 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ---
 
-## 段 2 段 2a 暂停
+## 段 2 段 2a 完成
 
-Task 16 (`store.ts`) + Task 17 (`orders.ts`) 写完。
+Task 16 (`store.ts`) + Task 17 (`orders.ts`) verify 通过（对话中，2026-04-17）。
+Nit：`replaceDraftItems` 顺序插入循环已加 createMany 限制说明注释。
 
-**本段 verify 要求**：Task 17 的 `orders.ts` 是 Phase G Task 34（B2 重写）的地基，写错会连锁崩坏。**把 orders.ts 完整代码贴对话里等用户 verify 一次再继续 Task 18-22（段 2 段 2b）**。
+---
+
+## Task 18：写 `server/src/repositories/sessions.ts`
+
+**Files:**
+- Create: `server/src/repositories/sessions.ts`
+
+**前置**：Task 17 完成。
+
+**方法清单**：
+
+- `findById(id, db?)`：读单行
+- `findActiveByTable(tableId, db?)`：查桌号当前 open session（唯一）
+- `listByStore(db?)`：读当前租户所有 session（用于 admin 视图）
+- `createForTable(input, tx)`：**多步**——创建 session + 更新 `table.current_session_id`。原子性。`TransactionClient` 必填（D55）
+- `closeSession(id, tx)`：**多步**——`status='closed'` + `closed_at` + 清 `table.current_session_id`
+- `reopenSession(id, tx)`：**多步**——反向，重新 set `table.current_session_id`
+- `applyCouponSnapshot(id, snapshot, db)`：单步更新，flatten 字段（`coupon_code` / `coupon_type` / `coupon_value` / `coupon_applied_at`）
+- `updateSettlementMode(id, mode, db)`：单步写（by-item / by-percent / unset）
+
+- [ ] **Step 1：写文件**
+
+```bash
+cat > server/src/repositories/sessions.ts <<'EOF'
+/**
+ * Session entity repository.
+ *
+ * Session is THE source of truth for table occupancy + settlement mode +
+ * coupon snapshot. Has 1:N with orders (drafts + submitted) and payments.
+ *
+ * Coupon snapshot (D13-adjacent): flattened onto Session row at apply time
+ * (coupon_code / coupon_type / coupon_value / coupon_applied_at) — not a
+ * JSONB blob, not a FK. Keeps historical record of "what coupon was applied
+ * to this session" even if the Coupon row later changes.
+ *
+ * Multi-step methods (createForTable/close/reopen) touch both sessions and
+ * tables.current_session_id — tx mandatory per D55.
+ */
+
+import { Prisma } from '@prisma/client'
+import type { Session, SessionStatus } from '@prisma/client'
+import { prisma, type Db } from './prisma-client.js'
+
+export const sessionRepo = {
+  findById: (id: string, db: Db = prisma): Promise<Session | null> =>
+    db.session.findUnique({ where: { id } }),
+
+  /**
+   * Find the currently-open session for a table. At most one row expected
+   * (business invariant — enforced by application logic, not DB constraint).
+   */
+  findActiveByTable: (tableId: string, db: Db = prisma): Promise<Session | null> =>
+    db.session.findFirst({ where: { tableId, status: 'open' } }),
+
+  listByStore: (db: Db = prisma): Promise<Session[]> =>
+    db.session.findMany({ orderBy: { createdAt: 'desc' } }),
+
+  /**
+   * Atomic: create session + set table.current_session_id.
+   * Caller should first verify no existing open session for the table
+   * (findActiveByTable) — otherwise two open sessions collide at application level.
+   */
+  createForTable: async (
+    input: { storeId: string; tableId: string },
+    tx: Prisma.TransactionClient
+  ): Promise<Session> => {
+    const session = await tx.session.create({
+      data: {
+        storeId: input.storeId,
+        tableId: input.tableId,
+        status: 'open',
+        settlementMode: 'unset',
+      },
+    })
+    await tx.table.update({
+      where: { id: input.tableId },
+      data: { currentSessionId: session.id },
+    })
+    return session
+  },
+
+  /**
+   * Close: status='closed', closedAt=now, table.current_session_id=null.
+   * Does NOT verify "fully paid" — that's service-layer concern (settlement gateway).
+   */
+  closeSession: async (id: string, tx: Prisma.TransactionClient): Promise<Session> => {
+    const closed = await tx.session.update({
+      where: { id },
+      data: { status: 'closed', closedAt: new Date() },
+    })
+    await tx.table.update({
+      where: { id: closed.tableId },
+      data: { currentSessionId: null },
+    })
+    return closed
+  },
+
+  reopenSession: async (id: string, tx: Prisma.TransactionClient): Promise<Session> => {
+    const reopened = await tx.session.update({
+      where: { id },
+      data: { status: 'open', closedAt: null },
+    })
+    await tx.table.update({
+      where: { id: reopened.tableId },
+      data: { currentSessionId: reopened.id },
+    })
+    return reopened
+  },
+
+  /**
+   * Single-step: flatten coupon fields onto session row.
+   * Snapshot semantics — if the referenced Coupon later changes, session keeps
+   * the original values (couponType / couponValue frozen at apply time).
+   */
+  applyCouponSnapshot: (
+    id: string,
+    snapshot: {
+      couponCode: string
+      couponType: string
+      couponValue: number
+    },
+    db: Db
+  ): Promise<Session> =>
+    db.session.update({
+      where: { id },
+      data: {
+        couponCode: snapshot.couponCode,
+        couponType: snapshot.couponType,
+        couponValue: snapshot.couponValue,
+        couponAppliedAt: new Date(),
+      },
+    }),
+
+  updateSettlementMode: (
+    id: string,
+    mode: 'unset' | 'by-item' | 'by-percent',
+    db: Db
+  ): Promise<Session> =>
+    db.session.update({ where: { id }, data: { settlementMode: mode } }),
+}
+EOF
+```
+
+- [ ] **Step 2：tsc + commit**
+
+```bash
+cd server && ./node_modules/.bin/tsc --noEmit src/repositories/sessions.ts 2>&1 | head
+cd "$(git rev-parse --show-toplevel)"
+git add server/src/repositories/sessions.ts
+git commit -m "feat(phase-5): add sessions repository
+
+Task 18: session CRUD + lifecycle (create/close/reopen) + coupon snapshot +
+settlementMode update. Multi-step lifecycle methods require TransactionClient
+(D55) since they atomically update both sessions and tables.current_session_id.
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+---
+
+## Task 19：写 `server/src/repositories/payments.ts`
+
+**Files:**
+- Create: `server/src/repositories/payments.ts`
+
+**前置**：Task 18 完成。
+
+**方法清单**（D56 落地 — FK + paidQuantity 模型）：
+
+- `create(input, tx)`：**多步**——Payment + PaymentItem[]（含 orderItemId FK + paidQuantity）。原子
+- `findById(id, db?)`：含 items relation
+- `findBySessionId(sessionId, db?)`：本 session 所有支付
+- `findByStripeId(stripePaymentIntentId, db?)`：webhook 幂等用
+- `confirmStripe(stripePaymentIntentId, db)`：webhook 确认——`status='pending' → 'confirmed'`
+- `sumConfirmed(sessionId, db?)`：聚合本 session confirmed 支付总额
+- `derivePaidQuantityByOrderItem(sessionId, db?)`：**D56 核心**——返回 `Map<orderItemId, paidQty>`，替代 legacy `derivePaidState` 的 `paidItemIds` 字符串集合
+
+- [ ] **Step 1：写文件**
+
+```bash
+cat > server/src/repositories/payments.ts <<'EOF'
+/**
+ * Payment entity repository (D56 FK model).
+ *
+ * PaymentItem is the normalized replacement for legacy Payment.itemKeys
+ * string array — each row is (paymentId, orderItemId FK, paidQuantity).
+ * Never emits or accepts the legacy "orderId:idx:qty" string here — that's
+ * the API boundary's concern (see server/src/lib/legacy-itemkey.ts, Phase G task).
+ *
+ * derivePaidQuantityByOrderItem replaces legacy derivePaidState.paidItemIds
+ * with a Map<orderItemId, qty> aggregate — used by settlement to skip
+ * already-paid items during FIFO / split creation.
+ */
+
+import { Prisma } from '@prisma/client'
+import type { Payment, PaymentItem } from '@prisma/client'
+import { prisma, type Db } from './prisma-client.js'
+
+type PaymentWithItems = Payment & { items: PaymentItem[] }
+
+export const paymentRepo = {
+  findById: (id: string, db: Db = prisma): Promise<PaymentWithItems | null> =>
+    db.payment.findUnique({
+      where: { id },
+      include: { items: true },
+    }) as Promise<PaymentWithItems | null>,
+
+  findBySessionId: (sessionId: string, db: Db = prisma): Promise<PaymentWithItems[]> =>
+    db.payment.findMany({
+      where: { sessionId },
+      include: { items: true },
+      orderBy: { createdAt: 'asc' },
+    }) as Promise<PaymentWithItems[]>,
+
+  findByStripeId: (
+    stripePaymentIntentId: string,
+    db: Db = prisma
+  ): Promise<PaymentWithItems | null> =>
+    db.payment.findFirst({
+      where: { stripePaymentIntentId },
+      include: { items: true },
+    }) as Promise<PaymentWithItems | null>,
+
+  /**
+   * Atomic: create Payment + its PaymentItem[] in one tx.
+   * Multi-step (insert Payment, then N inserts for items) — TransactionClient required.
+   * Single-step Prisma nested create would work too, but we use explicit two-phase
+   * to match Task 17 replaceDraftItems style + allow future per-item validation.
+   */
+  create: async (
+    input: {
+      storeId: string
+      sessionId: string
+      method: string            // 'stripe' | 'cash'
+      amount: number            // cents, excludes tip
+      tipAmount?: number
+      taxAmount?: number
+      stripePaymentIntentId?: string
+      status: 'pending' | 'confirmed' | 'refunded'
+      items: { orderItemId: string; paidQuantity: number }[]
+    },
+    tx: Prisma.TransactionClient
+  ): Promise<PaymentWithItems> => {
+    const payment = await tx.payment.create({
+      data: {
+        storeId: input.storeId,
+        sessionId: input.sessionId,
+        method: input.method,
+        amount: input.amount,
+        tipAmount: input.tipAmount ?? 0,
+        taxAmount: input.taxAmount ?? 0,
+        stripePaymentIntentId: input.stripePaymentIntentId ?? null,
+        status: input.status,
+        items: {
+          create: input.items.map(i => ({
+            storeId: input.storeId,
+            orderItemId: i.orderItemId,
+            paidQuantity: i.paidQuantity,
+          })),
+        },
+      },
+      include: { items: true },
+    })
+    return payment as PaymentWithItems
+  },
+
+  /**
+   * Webhook handler: mark a pending Payment as confirmed.
+   * Idempotent — if already confirmed, returns existing row.
+   * Throws if Payment with given stripe ID doesn't exist.
+   */
+  confirmStripe: async (
+    stripePaymentIntentId: string,
+    tx: Prisma.TransactionClient
+  ): Promise<PaymentWithItems> => {
+    const existing = await tx.payment.findFirst({
+      where: { stripePaymentIntentId },
+      include: { items: true },
+    })
+    if (!existing) throw new Error(`No Payment with stripe id ${stripePaymentIntentId}`)
+    if (existing.status === 'confirmed') return existing as PaymentWithItems
+
+    const confirmed = await tx.payment.update({
+      where: { id: existing.id },
+      data: { status: 'confirmed' },
+      include: { items: true },
+    })
+    return confirmed as PaymentWithItems
+  },
+
+  /**
+   * Sum of confirmed payment amounts (excludes tip, per project convention).
+   */
+  sumConfirmed: async (sessionId: string, db: Db = prisma): Promise<number> => {
+    const agg = await db.payment.aggregate({
+      where: { sessionId, status: 'confirmed' },
+      _sum: { amount: true },
+    })
+    return agg._sum.amount ?? 0
+  },
+
+  /**
+   * D56 core: paid quantity aggregation keyed by orderItemId.
+   * Only counts items from CONFIRMED payments.
+   *
+   * Used by settlement gateway to:
+   *   - skip already-paid items in FIFO attribution
+   *   - validate split requests don't overlap paid quantity
+   *   - compute "remaining" for by-item mode
+   *
+   * Returns Map<orderItemId, totalPaidQty>.
+   */
+  derivePaidQuantityByOrderItem: async (
+    sessionId: string,
+    db: Db = prisma
+  ): Promise<Map<string, number>> => {
+    const rows = await db.paymentItem.findMany({
+      where: {
+        payment: { sessionId, status: 'confirmed' },
+      },
+      select: { orderItemId: true, paidQuantity: true },
+    })
+    const map = new Map<string, number>()
+    for (const r of rows) {
+      map.set(r.orderItemId, (map.get(r.orderItemId) ?? 0) + r.paidQuantity)
+    }
+    return map
+  },
+}
+
+export type { PaymentWithItems }
+EOF
+```
+
+- [ ] **Step 2：tsc + commit**
+
+```bash
+cd server && ./node_modules/.bin/tsc --noEmit src/repositories/payments.ts 2>&1 | head
+cd "$(git rev-parse --show-toplevel)"
+git add server/src/repositories/payments.ts
+git commit -m "feat(phase-5): add payments repository (D56 FK model)
+
+Task 19: Payment + PaymentItem CRUD with (orderItemId FK + paidQuantity).
+derivePaidQuantityByOrderItem replaces legacy derivePaidState.paidItemIds
+string aggregation — returns Map<orderItemId, paidQty> for settlement logic.
+
+Legacy itemKey string format (orderId:idx:qty) lives only at API boundary
+(Phase G legacy-itemkey.ts helper); this repo is pure FK.
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+---
+
+## Task 20：写 `server/src/repositories/split-bills.ts`
+
+**Files:**
+- Create: `server/src/repositories/split-bills.ts`
+
+**前置**：Task 19 完成。
+
+**方法清单**（D56 FK 模型）：
+
+- `create(input, tx)`：**多步**——SplitBill + SplitBillItem[]（by-item 才有 items，by-percent items 为空）
+- `findById(id, db?)`：含 items
+- `findActive(sessionId, db?)`：`status='active'` 的 splits
+- `markPaid(id, tx)`：单步——`status='paid'`
+- `delete(id, db)`：**物理删除**（和现有 deleteSplitBill 语义一致，active split 取消即删）
+- `sumAssignedQuantityByOrderItem(sessionId, db?)`：**active splits** 的已分配量聚合——for 冲突检测
+
+- [ ] **Step 1：写文件**
+
+```bash
+cat > server/src/repositories/split-bills.ts <<'EOF'
+/**
+ * SplitBill entity repository (D56 FK model).
+ *
+ * SplitBillItem is (splitBillId, orderItemId FK, quantity) — the D56
+ * replacement for legacy itemKey string encoding.
+ *
+ * Conflict detection (for settlement gateway's createSplit):
+ *   available(orderItemId) = orderItem.quantity
+ *                          - derivePaidQuantityByOrderItem(orderItemId)
+ *                          - sumAssignedQuantityByOrderItem(orderItemId)
+ *   requested ≤ available → accept; otherwise reject
+ *
+ * Invalidation (physical delete via `delete`): when a payment lands that
+ * overlaps an active split's items, the settlement gateway calls delete(id)
+ * on conflicting splits. Historical splits aren't preserved — the payment
+ * itself is the historical record of what was paid.
+ */
+
+import { Prisma } from '@prisma/client'
+import type { SplitBill, SplitBillItem } from '@prisma/client'
+import { prisma, type Db } from './prisma-client.js'
+
+type SplitBillWithItems = SplitBill & { items: SplitBillItem[] }
+
+export const splitBillRepo = {
+  findById: (id: string, db: Db = prisma): Promise<SplitBillWithItems | null> =>
+    db.splitBill.findUnique({
+      where: { id },
+      include: { items: true },
+    }) as Promise<SplitBillWithItems | null>,
+
+  findActive: (sessionId: string, db: Db = prisma): Promise<SplitBillWithItems[]> =>
+    db.splitBill.findMany({
+      where: { sessionId, status: 'active' },
+      include: { items: true },
+      orderBy: { createdAt: 'asc' },
+    }) as Promise<SplitBillWithItems[]>,
+
+  /**
+   * Create SplitBill + items (by-item only; by-percent passes empty items[]).
+   * Multi-step — TransactionClient required (D55).
+   * Caller (settlement gateway) is responsible for pre-validating conflicts
+   * via derivePaidQuantityByOrderItem + sumAssignedQuantityByOrderItem.
+   */
+  create: async (
+    input: {
+      storeId: string
+      sessionId: string
+      type: 'by-item' | 'by-percent'
+      percent?: number
+      subtotal: number
+      tax: number
+      tip?: number
+      amount: number
+      items: { orderItemId: string; quantity: number }[]
+    },
+    tx: Prisma.TransactionClient
+  ): Promise<SplitBillWithItems> => {
+    const created = await tx.splitBill.create({
+      data: {
+        storeId: input.storeId,
+        sessionId: input.sessionId,
+        type: input.type,
+        percent: input.percent ?? null,
+        subtotal: input.subtotal,
+        tax: input.tax,
+        tip: input.tip ?? 0,
+        amount: input.amount,
+        status: 'active',
+        items: {
+          create: input.items.map(i => ({
+            storeId: input.storeId,
+            orderItemId: i.orderItemId,
+            quantity: i.quantity,
+          })),
+        },
+      },
+      include: { items: true },
+    })
+    return created as SplitBillWithItems
+  },
+
+  markPaid: (id: string, tx: Prisma.TransactionClient): Promise<SplitBill> =>
+    tx.splitBill.update({ where: { id }, data: { status: 'paid' } }),
+
+  /**
+   * Physical delete. Matches legacy deleteSplitBill semantics — cancelled
+   * splits leave no DB trace (payment rows carry audit instead).
+   * Cascade deletes SplitBillItem via FK.
+   */
+  delete: (id: string, db: Db): Promise<SplitBill> =>
+    db.splitBill.delete({ where: { id } }),
+
+  /**
+   * Sum of quantity assigned to ACTIVE splits, keyed by orderItemId.
+   * Used by settlement gateway to check "how much of each orderItem is
+   * already reserved by other active splits?" before accepting a new split.
+   *
+   * Returns Map<orderItemId, totalAssignedQty>.
+   */
+  sumAssignedQuantityByOrderItem: async (
+    sessionId: string,
+    db: Db = prisma
+  ): Promise<Map<string, number>> => {
+    const rows = await db.splitBillItem.findMany({
+      where: {
+        splitBill: { sessionId, status: 'active' },
+      },
+      select: { orderItemId: true, quantity: true },
+    })
+    const map = new Map<string, number>()
+    for (const r of rows) {
+      map.set(r.orderItemId, (map.get(r.orderItemId) ?? 0) + r.quantity)
+    }
+    return map
+  },
+}
+
+export type { SplitBillWithItems }
+EOF
+```
+
+- [ ] **Step 2：tsc + commit**
+
+```bash
+cd server && ./node_modules/.bin/tsc --noEmit src/repositories/split-bills.ts 2>&1 | head
+cd "$(git rev-parse --show-toplevel)"
+git add server/src/repositories/split-bills.ts
+git commit -m "feat(phase-5): add split-bills repository (D56 FK model)
+
+Task 20: SplitBill + SplitBillItem with (orderItemId FK + quantity).
+sumAssignedQuantityByOrderItem pairs with payments.derivePaidQuantityByOrderItem
+for settlement gateway's conflict detection.
+
+Physical delete for cancellation (matches legacy deleteSplitBill).
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+---
+
+## Task 21：写 `server/src/repositories/menu.ts`
+
+**Files:**
+- Create: `server/src/repositories/menu.ts`
+
+**前置**：Task 20 完成。
+
+**方法清单**（涵盖 Category + MenuItem + MenuItemOption 三实体）：
+
+- `listMenu(db?)`：读当前租户菜单——categories + 嵌套 menuItems（按 sortOrder）+ 嵌套 options
+- `findCategory(id, db?)` / `findItem(id, db?)`：基础 read
+- `upsertCategory(data, db)` / `upsertItem(data, db)` / `upsertOption(data, db)`：单步写
+- `setItemAvailability(id, isAvailable, db)`：单步
+- `replaceItemOptions(itemId, options, tx)`：多步——wipe + re-insert，matches orders.ts replaceDraftItems 模式
+
+- [ ] **Step 1：写文件**
+
+```bash
+cat > server/src/repositories/menu.ts <<'EOF'
+/**
+ * Menu domain repository — bundles Category + MenuItem + MenuItemOption.
+ *
+ * Single file (not three) because these always query together: listMenu
+ * returns Category[] with nested menuItems with nested options. Splitting
+ * would force every caller to do 3 joins manually.
+ *
+ * Options model: when an admin edits an item's options, the whole set is
+ * replaced (replaceItemOptions) — matching the cart replaceDraftItems
+ * pattern. Keeps callers simple; tiny option arrays make the DELETE+INSERT
+ * cost trivial.
+ */
+
+import { Prisma } from '@prisma/client'
+import type { Category, MenuItem, MenuItemOption } from '@prisma/client'
+import { prisma, type Db } from './prisma-client.js'
+
+type MenuItemWithOptions = MenuItem & { options: MenuItemOption[] }
+type CategoryWithItems = Category & { menuItems: MenuItemWithOptions[] }
+
+export const menuRepo = {
+  /**
+   * Full menu for current tenant, ordered + nested.
+   * Inactive categories hidden; unavailable items included (caller filters).
+   */
+  listMenu: (db: Db = prisma): Promise<CategoryWithItems[]> =>
+    db.category.findMany({
+      where: { isActive: true },
+      include: {
+        menuItems: {
+          include: { options: { orderBy: { sortOrder: 'asc' } } },
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+      orderBy: { sortOrder: 'asc' },
+    }) as Promise<CategoryWithItems[]>,
+
+  findCategory: (id: string, db: Db = prisma): Promise<Category | null> =>
+    db.category.findUnique({ where: { id } }),
+
+  findItem: (id: string, db: Db = prisma): Promise<MenuItemWithOptions | null> =>
+    db.menuItem.findUnique({
+      where: { id },
+      include: { options: { orderBy: { sortOrder: 'asc' } } },
+    }) as Promise<MenuItemWithOptions | null>,
+
+  upsertCategory: (data: Prisma.CategoryUncheckedCreateInput, db: Db): Promise<Category> =>
+    db.category.upsert({
+      where: { id: data.id ?? '' },
+      create: data,
+      update: { name: data.name, sortOrder: data.sortOrder, isActive: data.isActive },
+    }),
+
+  upsertItem: (data: Prisma.MenuItemUncheckedCreateInput, db: Db): Promise<MenuItem> =>
+    db.menuItem.upsert({
+      where: { id: data.id ?? '' },
+      create: data,
+      update: {
+        categoryId: data.categoryId,
+        name: data.name,
+        description: data.description,
+        imageUrl: data.imageUrl,
+        price: data.price,
+        isAvailable: data.isAvailable,
+        isStaffOnly: data.isStaffOnly,
+        sortOrder: data.sortOrder,
+      },
+    }),
+
+  setItemAvailability: (id: string, isAvailable: boolean, db: Db): Promise<MenuItem> =>
+    db.menuItem.update({ where: { id }, data: { isAvailable } }),
+
+  /**
+   * Whole-set replace for an item's options. Multi-step — TransactionClient
+   * required. Matches replaceDraftItems pattern (wipe + re-insert).
+   */
+  replaceItemOptions: async (
+    itemId: string,
+    options: {
+      groupName: string
+      name: string
+      priceAdjust: number
+      isDefault?: boolean
+      sortOrder?: number
+    }[],
+    tx: Prisma.TransactionClient
+  ): Promise<MenuItemWithOptions> => {
+    const item = await tx.menuItem.findUnique({
+      where: { id: itemId },
+      select: { storeId: true },
+    })
+    if (!item) throw new Error(`MenuItem ${itemId} not found`)
+
+    await tx.menuItemOption.deleteMany({ where: { menuItemId: itemId } })
+
+    for (const opt of options) {
+      await tx.menuItemOption.create({
+        data: {
+          storeId: item.storeId,
+          menuItemId: itemId,
+          groupName: opt.groupName,
+          name: opt.name,
+          priceAdjust: opt.priceAdjust,
+          isDefault: opt.isDefault ?? false,
+          sortOrder: opt.sortOrder ?? 0,
+        },
+      })
+    }
+
+    const updated = await tx.menuItem.findUnique({
+      where: { id: itemId },
+      include: { options: { orderBy: { sortOrder: 'asc' } } },
+    })
+    return updated as MenuItemWithOptions
+  },
+}
+
+export type { CategoryWithItems, MenuItemWithOptions }
+EOF
+```
+
+- [ ] **Step 2：tsc + commit**
+
+```bash
+cd server && ./node_modules/.bin/tsc --noEmit src/repositories/menu.ts 2>&1 | head
+cd "$(git rev-parse --show-toplevel)"
+git add server/src/repositories/menu.ts
+git commit -m "feat(phase-5): add menu repository (Category + MenuItem + MenuItemOption)
+
+Task 21: single-file bundle for the three menu entities.
+listMenu returns nested Category[] > MenuItem[] > Option[] in one round-trip.
+replaceItemOptions follows replaceDraftItems pattern for option edits.
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+---
+
+## Task 22：写 `server/src/repositories/staff.ts`
+
+**Files:**
+- Create: `server/src/repositories/staff.ts`
+
+**前置**：Task 21 完成。
+
+**方法清单**：
+
+- `findById(id, db?)`：含 role relation
+- `findByUsername(username, db?)`：login 用（RLS 已保证本租户）
+- `listAll(db?)`
+- `create(data, db)`：单步
+- `updateRole(staffId, roleId, db)`：单步
+- `setClockPin(staffId, clockPin, db)`：单步
+- `setPassword(staffId, passwordHash, db)`：单步——**字段名 passwordHash 不是 password**（D56 的同类事实修正——schema 字段名已在 Phase B Task 2 修正）
+
+- [ ] **Step 1：写文件**
+
+```bash
+cat > server/src/repositories/staff.ts <<'EOF'
+/**
+ * Staff entity repository.
+ *
+ * Field name note: legacy JsonStore used `password`; Prisma schema uses
+ * `passwordHash`. This repo surfaces the Prisma name — controller-layer
+ * auth.service must assign bcrypt(password) to passwordHash, not password.
+ *
+ * RLS note: findByUsername doesn't need explicit storeId because the
+ * tenant context (app.current_store_id) restricts rows at DB level.
+ */
+
+import type { Staff, Role } from '@prisma/client'
+import { prisma, type Db } from './prisma-client.js'
+
+type StaffWithRole = Staff & { role: Role | null }
+
+export const staffRepo = {
+  findById: (id: string, db: Db = prisma): Promise<StaffWithRole | null> =>
+    db.staff.findUnique({
+      where: { id },
+      include: { role: true },
+    }) as Promise<StaffWithRole | null>,
+
+  findByUsername: (username: string, db: Db = prisma): Promise<StaffWithRole | null> =>
+    db.staff.findFirst({
+      where: { username },
+      include: { role: true },
+    }) as Promise<StaffWithRole | null>,
+
+  listAll: (db: Db = prisma): Promise<StaffWithRole[]> =>
+    db.staff.findMany({
+      include: { role: true },
+      orderBy: { createdAt: 'asc' },
+    }) as Promise<StaffWithRole[]>,
+
+  create: (
+    data: {
+      storeId: string
+      username: string
+      passwordHash: string
+      roleId?: string
+      clockPin?: string
+      displayName?: string
+    },
+    db: Db
+  ): Promise<Staff> =>
+    db.staff.create({
+      data: {
+        storeId: data.storeId,
+        username: data.username,
+        passwordHash: data.passwordHash,
+        roleId: data.roleId ?? null,
+        clockPin: data.clockPin ?? null,
+        displayName: data.displayName ?? null,
+      },
+    }),
+
+  updateRole: (staffId: string, roleId: string, db: Db): Promise<Staff> =>
+    db.staff.update({ where: { id: staffId }, data: { roleId } }),
+
+  setClockPin: (staffId: string, clockPin: string, db: Db): Promise<Staff> =>
+    db.staff.update({ where: { id: staffId }, data: { clockPin } }),
+
+  setPassword: (staffId: string, passwordHash: string, db: Db): Promise<Staff> =>
+    db.staff.update({ where: { id: staffId }, data: { passwordHash } }),
+}
+
+export type { StaffWithRole }
+EOF
+```
+
+- [ ] **Step 2：tsc + commit**
+
+```bash
+cd server && ./node_modules/.bin/tsc --noEmit src/repositories/staff.ts 2>&1 | head
+cd "$(git rev-parse --show-toplevel)"
+git add server/src/repositories/staff.ts
+git commit -m "feat(phase-5): add staff repository
+
+Task 22: basic CRUD + findByUsername (login) + role/clockPin/password setters.
+Field rename: legacy 'password' → Prisma 'passwordHash' (D56-adjacent fix).
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+---
+
+## 段 2 段 2b 完成
+
+Task 18-22 全部写完（sessions / payments / split-bills / menu / staff）。
+
+**用户 spot check 建议**：Task 19 payments.ts（D56 FK + derivePaidQuantityByOrderItem 是核心）+ 随机一个 Task 18/20/21/22 即可。其他信汇报。
+
+下一步：**段 2 段 2c**（Task 23-26：roles + coupons + waitlist + platform-admin）。Task 23 的 `resolveLicensedPermissions` helper 影响多处，Task 26 platform-admin 走 BYPASSRLS，两个要重点 verify。
 
