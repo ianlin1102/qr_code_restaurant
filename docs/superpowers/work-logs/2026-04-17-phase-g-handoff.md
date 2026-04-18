@@ -284,3 +284,40 @@ router.get('/:sessionId/cart', (req, res) => {
 - **方案 2**：server 端 `flatMap(order => order.items)` 回到 `CartItem[]` flat shape（即选项 A 的核心映射逻辑）
 
 **选项 A/B 核心权衡**：A 维持"单 flatten 数组 + 单 cartVersion"语义（隐藏多 draft order 结构），B 暴露多 draft order 结构让前端显式处理。选项 A 兼容成本集中在 server（映射 + 多 version 如何汇总成单 version 需要设计），选项 B 成本散在前端多文件。
+
+---
+
+## Phase G Task 41 handoff: D62 候选 webhook 幂等
+
+**发现来源**：Phase G C4a grep（`38e198b8`, 2026-04-17）
+
+**当前状态**：webhook.routes.ts 纯转发（25 行，0 业务），无显式幂等处理。
+重放同 PaymentIntent 会重复 addPayment，真钱风险。
+
+**D62 候选方案**（Task 41 webhook plan 时正式决议）：
+
+- **候选 A**：processed_webhook_events 表
+  - 表结构：event_id (PK) + processed_at + event_type
+  - 处理：webhook 入口先查表，已处理则直接 return
+  - 需额外：过期清理策略（Stripe 事件保留 30 天）
+  - 事务边界：查表 + 处理 + 插表 原子事务
+
+- **候选 B**：stripe_payment_intent_id UNIQUE on Payment
+  - 在 Payment 表加 UNIQUE 约束
+  - 重复 insert 触发 DB 层冲突 → catch 后认定已处理
+  - 0 应用层代码
+  - 依赖：Stripe PaymentIntent ID 天然幂等（同一支付意图重试同一 ID）
+
+**Ian 倾向 B**，理由：
+
+1. DB 层强制，0 应用层代码
+2. 无需额外过期清理策略
+3. Stripe PaymentIntent ID 天然幂等
+4. processed_webhook_events 需事务边界设计 + 与 webhook handler 交互顺序
+
+**非当前决议**：Task 41 webhook plan 写作时 Ian 正式判，可能结合当时 grep 发现调整。
+
+**Task 41 实施依赖**：
+
+- 若选 B，Phase B Task 2 schema 需回填 `@@unique` 约束或新 migration 文件
+- 若选 A，新建 processed_webhook_events 表 migration
