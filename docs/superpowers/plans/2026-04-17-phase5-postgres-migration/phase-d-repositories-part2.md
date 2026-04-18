@@ -744,6 +744,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - `findAdminByEmail(email, tx)`：平台管理员登录查询
 - `findAdminById(id, tx)`：session 解码后验证
 - `createAdmin(data, tx)`：初始化平台管理员（seed 用）
+- `updateLastLoginAt(id, at, tx)`：**(Phase F 回填 F-1)** login 成功时副作用写——`PlatformAdmin.lastLoginAt` 字段更新（Task 30 `loginPlatformAdmin` 需要）
 - `listAllStores(tx)`：**BYPASSRLS**——列所有租户的 Store（平台运维仪表盘用）
   - 与 `store.ts` 的 `listAll` 冗余但语义明确：`listAllStores` 在 platform 上下文；`storeRepo.listAll` 在 tenant 上下文下只返回本租户 1 行
 - `grantModules(storeId, modules, grantedBy, tx)`：全量覆盖 Store 的 ModuleLicense.modules（upsert）
@@ -827,6 +828,21 @@ export const platformAdminRepo = {
         passwordHash: data.passwordHash,
         displayName: data.displayName ?? null,
       },
+    }),
+
+  /**
+   * Phase F 回填 F-1: login 成功副作用，更新 lastLoginAt。
+   * 单步写——tx 从 platformAwareRoute 进来。
+   * 失败非关键（审计由 PlatformAuditLog 独立记录）——但语义保证 login 事务一致性.
+   */
+  updateLastLoginAt: (
+    id: string,
+    at: Date,
+    tx: Prisma.TransactionClient
+  ): Promise<PlatformAdmin> =>
+    tx.platformAdmin.update({
+      where: { id },
+      data: { lastLoginAt: at },
     }),
 
   /**
