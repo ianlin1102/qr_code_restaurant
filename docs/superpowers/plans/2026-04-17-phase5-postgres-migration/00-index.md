@@ -147,6 +147,7 @@
 - **Task 4**：RLS policy 除 `USING` 外加了 `WITH CHECK`（spec §4.5 / §5.4 只提了 `USING`）。`WITH CHECK` 控制 INSERT/UPDATE 新值，防"漏写 store_id 的 insert 被接受"。加强但不冲突
 - **Task 6**：`withTenantContext` 用 `set_config()` + 参数化（`$executeRaw` 标签模板），不再字符串拼接。spec §5.4 示例代码用的是 `$executeRawUnsafe`——plan 升级了防御。`withPlatformContext` 同步改用 `tx.$executeRaw\`SET LOCAL ROLE platform_admin\``（style parity）
 - **Task 2**：`Order.status` / `Session.status` / `Payment.status` / `SplitBill.status` 用 Prisma enum，DB 层强制（spec §4.1 schema 示例用的是 `String`）
+- **D58**：pay-first 流 B2 draft 生命周期**路径 X**（submit 不删 draft，webhook 转 submitted）。Phase G 段 2 新增，5 条决策理由登记在 `phase-g-session-cart-b2.md` §5.2。路径 Y 反论保留登记（超时清理 YAGNI），路径 Z 排除（`findDraft` 传染性复杂度）。spec 回填时进 D1-D57 决策登记表，编号 **D58**。
 
 批 2 完成后建一个 commit `docs(phase-5): reconcile spec with plan-stage enhancements` 把待回填的三条补回 spec。
 
@@ -162,7 +163,7 @@
 | D | 2 | [phase-d-repositories.md](./phase-d-repositories.md)（Task 16-22）+ [phase-d-repositories-part2.md](./phase-d-repositories-part2.md)（Task 23-26） | 11（Task 16-26） | Phase C 全部完成 |
 | E | 3a | [phase-e-agent-a.md](./phase-e-agent-a.md)（Task 27, 349 行）+ [phase-e-agent-b.md](./phase-e-agent-b.md)（Task 28, 428 行）+ [phase-e-agent-c.md](./phase-e-agent-c.md)（Task 29, 298 行） | 3（Task 27-29，按 agent 切分，每 agent 一文件） | Phase D |
 | F | 3b | [phase-f-platform-admin.md](./phase-f-platform-admin.md)（Task 30-31, 496 行） | 2（Task 30-31, 单文件——全新 agent D 工作包 zero overlap） | Phase D（可和 E 并行） |
-| G | 3c | _（批 2 待写）_ | 11（Task 32-42，含 B2 checkpoint） | Phase E/F |
+| G | 3c | [phase-g-session-order.md](./phase-g-session-order.md)（Task 32-33, 415 行）+ [phase-g-session-cart-b2.md](./phase-g-session-cart-b2.md)（Task 34, 565 行, 含 D58）+ [phase-g-b2-checkpoint.md](./phase-g-b2-checkpoint.md)（Task 35, 478 行） | 11（Task 32-42，段 1-3 完成 = Task 32-35 / 段 4-5 下 session = Task 36-42） | Phase E/F |
 | H | 4 | _（批 2 待写）_ | 3（Task 43-45） | Phase G |
 | I | 5 | _（批 2 待写）_ | 2（Task 46-47） | Phase H |
 | J | 6 | _（批 2 待写）_ | 5（Task 48-51，含 49a/49b 拆分） | Phase I |
@@ -204,6 +205,16 @@
 | 13 | 写 `fixtures.ts` |
 | 14 | 写 `rls-coverage.test.ts` + `tenant-isolation.test.ts` |
 | 15 | 写 `module-registry.test.ts` |
+
+### Phase G 段 1-3：Stage 3c 核心业务链（本 session 2026-04-17 完成，段 4-5 留下 session）
+
+| Task | 内容 |
+|---|---|
+| 32 | `session-crud.ts` 迁移（16 JsonStore → 0，0 emit，8 exports async 化）→ [phase-g-session-order.md](./phase-g-session-order.md) |
+| 33 | `order.service.ts` 迁移（20 JsonStore → 0 + **11 emit → afterCommit**，5 function return `{data, events[]}` 模式）→ 同上文件 |
+| 34 | `session-cart.ts` **B2 重写**（整文件重写，从 `session.pendingCart` → draft Order，含 **D58 路径 X 决议**）→ [phase-g-session-cart-b2.md](./phase-g-session-cart-b2.md) |
+| 35 | B2 Manual Checkpoint (D50) **7 场景** a-g 双层结构（intent + concrete steps + failure mode + pass criteria + tag `phase5-b2-checkpoint`）→ [phase-g-b2-checkpoint.md](./phase-g-b2-checkpoint.md) |
+| 36-42 | payment / settlement gateway / split-bill / webhook / session-payment 收尾 + legacy-itemkey.ts 实现 **（下 session 写）** |
 
 ### Phase D：Stage 2 Repository 层 → [phase-d-repositories.md](./phase-d-repositories.md)（16-22）+ [phase-d-repositories-part2.md](./phase-d-repositories-part2.md)（23-26）
 
