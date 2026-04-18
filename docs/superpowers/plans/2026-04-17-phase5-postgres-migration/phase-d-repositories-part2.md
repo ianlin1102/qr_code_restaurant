@@ -1014,3 +1014,146 @@ Task 23-26 全部写完（roles / coupons / waitlist / platform-admin）。
 ## 下一步
 
 Phase D 结束，进入 **Phase E（Stage 3a）**——待批 2 展开。Phase E 开始涉及 controller 层迁移，每个 controller 从 `stores.ts.XXXStore` 换到 `repositories/XXX.ts.XXXRepo`。迁移路径在 spec §9.5 Stage 3a。
+
+---
+
+## Phase F 回填附录（2026-04-17 事后补丁）
+
+Phase F plan 写作期 DP-PF-4 决议 A（持久化审计日志）触发 Phase D 新增
+repo 文件。和 Phase E 回填附录的 printerRepo 同模式——作为独立新文件
+归入 Phase D 产出清单（不占 Task 编号，00-index.md 的 Phase D 任务数
+不改）。
+
+### Phase F 回填项 F-3：`platformAuditLogRepo` 新文件
+
+**Files:**
+- Create: `server/src/repositories/platform-audit-log.ts`
+
+**设计职责**：PlatformAuditLog entity 的最小 repo。和 `platformAdminRepo` 一样走 **`withPlatformContext`（BYPASSRLS）**——审计本身跨租户。
+
+**方法清单**：
+- `record(action, adminId, targetStoreId?, payload, metadata?, tx)`：写一条审计记录（**核心方法**，每个敏感 platform 操作都调）
+- `findByAdmin(adminId, filter?, tx)`：按 adminId 查（"某 admin 全部操作"）
+- `findByStore(targetStoreId, filter?, tx)`：按 targetStoreId 查（"某 store 被 platform 操作过的历史"）
+- `list(filter, tx)`：通用查询（DP-PF-2 `platform:audit:read` 权限后的 cross-tenant 查询）
+
+**Prisma schema 依赖**：Phase B Task 2 回填的 `PlatformAuditLog` 模型（commit `4813750d`——Phase F 收尾第 1 个 commit）。
+
+**实施模板**：
+
+```bash
+cat > server/src/repositories/platform-audit-log.ts <<'EOF'
+/**
+ * PlatformAuditLog entity repository — BYPASSRLS operations.
+ *
+ * Every method requires a tx from withPlatformContext. platform_audit_log
+ * table has NO RLS policy (by design, see phase-b Task 4 note) — platform
+ * admins need cross-tenant visibility for audit review.
+ *
+ * Write path: record() called from Task 31 platform-store.service.ts for
+ * each sensitive action (login / modules:grant / modules:revoke /
+ * impersonate / admins:manage).
+ *
+ * Read path: list() / findBy* called from GET /api/platform/audit, gated
+ * by platform:audit:read permission (DP-PF-2).
+ */
+
+import { Prisma } from '@prisma/client'
+import type { PlatformAuditLog } from '@prisma/client'
+
+export const platformAuditLogRepo = {
+  /**
+   * Record a platform audit event. payload is action-specific JSON.
+   * Rule 3: write op — tx mandatory.
+   */
+  record: (
+    data: {
+      action: string
+      adminId: string
+      targetStoreId?: string | null
+      payload: Prisma.InputJsonValue
+      ipAddress?: string | null
+      userAgent?: string | null
+    },
+    tx: Prisma.TransactionClient
+  ): Promise<PlatformAuditLog> =>
+    tx.platformAuditLog.create({
+      data: {
+        action: data.action,
+        adminId: data.adminId,
+        targetStoreId: data.targetStoreId ?? null,
+        payload: data.payload,
+        ipAddress: data.ipAddress ?? null,
+        userAgent: data.userAgent ?? null,
+      },
+    }),
+
+  findByAdmin: (
+    adminId: string,
+    filter: { from?: Date; to?: Date; action?: string } = {},
+    tx: Prisma.TransactionClient
+  ): Promise<PlatformAuditLog[]> =>
+    tx.platformAuditLog.findMany({
+      where: {
+        adminId,
+        ...(filter.from && { createdAt: { gte: filter.from } }),
+        ...(filter.to && { createdAt: { lte: filter.to } }),
+        ...(filter.action && { action: filter.action }),
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+
+  findByStore: (
+    targetStoreId: string,
+    filter: { from?: Date; to?: Date; action?: string } = {},
+    tx: Prisma.TransactionClient
+  ): Promise<PlatformAuditLog[]> =>
+    tx.platformAuditLog.findMany({
+      where: {
+        targetStoreId,
+        ...(filter.from && { createdAt: { gte: filter.from } }),
+        ...(filter.to && { createdAt: { lte: filter.to } }),
+        ...(filter.action && { action: filter.action }),
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+
+  /**
+   * General list with combined filters. Used by the audit UI.
+   */
+  list: (
+    filter: {
+      adminId?: string
+      targetStoreId?: string
+      action?: string
+      from?: Date
+      to?: Date
+      limit?: number
+    },
+    tx: Prisma.TransactionClient
+  ): Promise<PlatformAuditLog[]> =>
+    tx.platformAuditLog.findMany({
+      where: {
+        ...(filter.adminId && { adminId: filter.adminId }),
+        ...(filter.targetStoreId && { targetStoreId: filter.targetStoreId }),
+        ...(filter.action && { action: filter.action }),
+        ...(filter.from && { createdAt: { gte: filter.from } }),
+        ...(filter.to && { createdAt: { lte: filter.to } }),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: filter.limit ?? 100,
+    }),
+}
+EOF
+```
+
+**Phase D 验收命令更新**（现在 13 repo，12 → 13）：
+
+```bash
+for f in server/src/repositories/{store,orders,sessions,payments,split-bills,menu,staff,roles,coupons,waitlist,platform-admin,printer,platform-audit-log}.ts; do
+  cd server && ./node_modules/.bin/tsc --noEmit $f 2>&1 | grep -E "error TS" && echo "FAIL: $f" || echo "OK: $f"
+  cd ..
+done
+```
+
+**不归入 platformAdminRepo 的理由**：platformAdminRepo 是身份 CRUD（identity），platformAuditLogRepo 是事件流（append-only log）——语义分离清楚。append-only 语义让 log repo 无 `update` / `delete` 方法是有意的（对应 DP-PF-4 合规要求：审计不可改）。
