@@ -30,6 +30,8 @@
 
 ### Task 2：写完整 `prisma/schema.prisma`
 
+> **Phase F 回填（2026-04-17，DP-PF-4 决议 A）**：本 Task schema 含 `PlatformAuditLog` 模型（见 lines ~129 附近）。实施时需同步在 `Store` 模型加反向关系字段 `platformAuditLogs PlatformAuditLog[]`（Prisma 双向关系要求）。**RLS 处理**：Task 4 RLS migration 写作时明示不为 `platform_audit_log` 加 policy（platform-scope audit 跨租户；platform_admin BYPASSRLS 直读）。
+
 **Files:**
 - Modify: `server/prisma/schema.prisma`（当前只有 Store + StoreUser，全部重写）
 
@@ -123,7 +125,35 @@ model PlatformAdmin {
   lastLoginAt  DateTime? @map("last_login_at")
   createdAt    DateTime  @default(now()) @map("created_at")
 
+  auditLogs    PlatformAuditLog[]  // Phase F 回填：审计日志反向关系（DP-PF-4）
+
   @@map("platform_admins")
+}
+
+/// Phase F 回填（2026-04-17，DP-PF-4 决议 A）：
+/// 平台管理员操作审计日志。跨租户——不启用 RLS policy（platform_admin BYPASSRLS）。
+/// Phase B Task 4 (RLS + roles migration) 必须显式**不**为此表加 RLS policy；
+/// 注释说明：`-- platform_audit_log intentionally no RLS: platform-scope audit`
+///
+/// 由 Task 31 platform-store.service.ts 写入（每个敏感操作：login / grant / revoke /
+/// impersonate / admin 管理）。由 GET /api/platform/audit 读取（需
+/// platform:audit:read permission，DP-PF-2）。
+model PlatformAuditLog {
+  id            String        @id @default(uuid())
+  adminId       String        @map("admin_id")
+  admin         PlatformAdmin @relation(fields: [adminId], references: [id], onDelete: Restrict)
+  action        String        // 'login' / 'modules:grant' / 'modules:revoke' / 'impersonate' / ...
+  targetStoreId String?       @map("target_store_id")
+  targetStore   Store?        @relation(fields: [targetStoreId], references: [id], onDelete: SetNull)
+  payload       Json          // action-specific detail (granted modules, impersonated session id, etc.)
+  ipAddress     String?       @map("ip_address")
+  userAgent     String?       @map("user_agent")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@index([adminId, createdAt])
+  @@index([targetStoreId, createdAt])
+  @@index([action])
+  @@map("platform_audit_log")
 }
 
 model ModuleLicense {
