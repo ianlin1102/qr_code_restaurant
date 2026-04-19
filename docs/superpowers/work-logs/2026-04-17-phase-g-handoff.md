@@ -321,3 +321,15 @@ router.get('/:sessionId/cart', (req, res) => {
 
 - 若选 B，Phase B Task 2 schema 需回填 `@@unique` 约束或新 migration 文件
 - 若选 A，新建 processed_webhook_events 表 migration
+
+**D62 候选 B 落地依赖**（2026-04-19 段 5 范围校对 `20e69b30` 发现）：
+
+当前 Phase B schema（`phase-b-infrastructure.md` line 379）`Payment.stripePaymentIntentId` 字段是 `@@index` 不是 `@@unique`。
+候选 B 落地需要 Phase B schema 增量 migration：
+
+- 新建 `prisma/migrations/2026XXXXXXXX_payment_stripe_unique/migration.sql`
+- 迁移内容：`ALTER TABLE "Payment" DROP INDEX "stripePaymentIntentId_idx"`；`ADD UNIQUE INDEX ...`
+- Task 41 plan 写作时必须包含此 migration 设计
+
+此发现**不改变候选 B vs A 的比较**（B 仍然比 A 简单），但增加 B 的落地成本约 1 个 migration 文件 + rollback 设计。
+Task 41 plan 写作时，Ian 拍板 D62 候选时可考虑此 "~50 行 migration vs ~100 行 processed_webhook_events 表 + 清理逻辑" 的成本对比。
