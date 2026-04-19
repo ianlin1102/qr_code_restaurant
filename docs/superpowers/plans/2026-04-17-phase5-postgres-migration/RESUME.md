@@ -1,7 +1,7 @@
 # Phase 5 Resume — Context Handoff
 
 Created: 2026-04-17, post-段 2b（new file, no prior version existed — grep-verified）
-Updated: 2026-04-19, **Phase G plan 5/5 段全部完成**（Task 32-42 写作完毕,实施未启动）
+Updated: 2026-04-19, **Phase G plan 5/5 完成 + Phase H Task 43 完成 + G 实施 SOP 就绪**
 
 ## 当前位置
 
@@ -39,7 +39,19 @@ Updated: 2026-04-19, **Phase G plan 5/5 段全部完成**（Task 32-42 写作完
 
 **Phase G plan 写作完毕,后续是实施阶段**(本对话范围之外)。
 
+**Phase H Task 43 完成**(`phase-h-test-mapping.md` 215 行,映射表结构 + 4 文件前置分类 + D51 三类判定 + D64/D65/D66 候选预警)。
+
+**Phase G 实施 SOP 就绪**(`work-logs/2026-04-17-phase-g-atomic-commit-sop.md` 212 行,7 stages 执行 checklist + verify 命令 + commit message 模板 + 4 Case rollback)。
+
+**Phase H 进度 1/3**,Task 44/45 延后到 Phase G 实施期间/后。
+
 ## 近期关键 commit
+
+**Phase H session commit 链(2026-04-19,Task 43 + SOP)**:
+
+- `4f63f5a4` — docs(phase-5): Phase G three-party atomic commit SOP
+- `1ac058b0` — plan: Phase H Task 43 D65 revision (remove bias, disambiguate X/Y)
+- `6ab0a4ae` — plan(phase-h): task 43 - test mapping work-log structure + D51 judgment principles
 
 **Phase G session 3 commit 链(2026-04-19,段 5 收尾)**:
 
@@ -74,6 +86,8 @@ C6b1 (actions paymentItems FK signature) + C6b2 (split-bill 域 service paymentI
 
 **Task 39 routes 跟进**:三方 land 后,routes 改造可独立 land。
 **Task 41 webhook 独立**:无 itemKey signature 依赖,任意时机 land(D62 schema migration + helper 自足)。
+
+**SOP 已完整**:`work-logs/2026-04-17-phase-g-atomic-commit-sop.md`(§2 前置清单 + §3 staging/verify + §4 message 模板 + §5 Case A/B/C/D rollback + §6 Task 41/Task 39 独立性 + §7 7 stages checklist)
 
 ### 2. Phase A-1 EC2 备份(必须首项)
 
@@ -118,6 +132,13 @@ C6b1 (actions paymentItems FK signature) + C6b2 (split-bill 域 service paymentI
 - DP-PF-1 跨 Agent D 边界改共享 `auth.middleware.ts` —— 实施期必须 Ian 亲批
 - DP-PF-4 / F-2 的 Phase B Task 4 RLS migration 必须显式不为 `platform_audit_log` 加 RLS
 - DP-PF-3 方案 A 的 frontend handoff —— Phase F 只做 backend
+
+### 9. Phase H Task 44/45(低优先,可与 Phase G 实施交替)
+
+- **Task 44**:修复工作流 + 模板 + 4 文件入口 + D51 判定树细化(~300 行)
+- **Task 45**:`pnpm test` 全绿验收 + baseline tag + `_archive` 归档 + D58-D63 进 spec reconcile(~150 行)
+- **节奏**:Task 44 可插空碎片 session,Task 45 天然在 Phase G 实施完成后
+- **D64/D65/D66 候选决议**:Task 44 实施期 Ian 拍板升格
 
 ## 对 3d 决议的认知更新(Phase G session 1 修正,保留供实施期参考)
 
@@ -186,3 +207,5 @@ Task 36(payment.service + payment.routes)+ Task 37(settlement gateway + derivePa
 18. **`phase-g-webhook.md`** —— Phase G 段 5 Task 41(webhook B2 + **D62 决议**)
 19. **`phase-g-session-payment-settlement.md`** —— Phase G 段 5 Task 42(段 5 末尾 + 三方原子 commit 协调声明)
 20. work-logs(C5a / C6a / C2a / C4a / segment-5-scope-check):前置 grep 证据,实施期复核用
+21. **`phase-h-test-mapping.md`** —— Phase H Task 43(映射表结构 + D51 三类判定 + D64-D66 候选预警)
+22. **`work-logs/2026-04-17-phase-g-atomic-commit-sop.md`** —— Phase G 实施 SOP(Phase A-1 备份后,Phase G 实施期第一个要打开的文件)
