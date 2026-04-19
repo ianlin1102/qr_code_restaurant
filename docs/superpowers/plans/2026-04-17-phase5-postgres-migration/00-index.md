@@ -151,6 +151,7 @@
 - **D59**：PaymentIntent.metadata SSOT 模型——metadata 存 `{draftId, version}` pointer 不存 cartData 快照。Phase G 段 4 新增，5 条理由登记 `phase-g-payment-service.md` §6。spec 回填编号 **D59**。
 - **D60**：R-X1 金额漂移处理——webhook 时 `expectedVersion` 校验（非 create 时），mismatch → refund + alert + SSE，不重建 PaymentIntent。Phase G 段 4 新增，4 条理由登记 `phase-g-payment-service.md` §6。spec 回填编号 **D60**。
 - **D61**：payment 域 legacy itemKey 薄层深度——严格限制 controller 边界（入口 `parseItemKey` / 出口 `formatItemKey`），service 层全 FK 模型（`orderItemId + quantity`），禁 string/FK 混用。Phase G 段 4 新增，3 条理由登记 `phase-g-payment-service.md` §6。spec 回填编号 **D61**。
+- **D63**：derivePaidState 签名 FK 化——`{ totalPaid: number, paidItemIds: string[] }` → `{ totalPaid: number, paidItems: { orderItemId: string, paidQty: number }[] }`。Phase G 段 5 新增，5 条决策理由登记 `phase-g-settlement-gateway.md` §5。理由 1 锚 D61（settlement 域延伸）/ 理由 2 锚 handoff §2 闭合 / 理由 3 锚 D56 先例对齐 / 理由 4 legacy-itemkey.ts 模式预防（双字段过渡 = 永久兼容层风险）/ 理由 5 规则 7 应用产物（基于 11 调用点 grep 数据形成）。settlement 域成立性自查全过（C6b2 §6）。spec 回填编号 **D63**。
 
 批 2 完成后建一个 commit `docs(phase-5): reconcile spec with plan-stage enhancements` 把待回填的三条补回 spec。
 
@@ -166,7 +167,7 @@
 | D | 2 | [phase-d-repositories.md](./phase-d-repositories.md)（Task 16-22）+ [phase-d-repositories-part2.md](./phase-d-repositories-part2.md)（Task 23-26） | 11（Task 16-26） | Phase C 全部完成 |
 | E | 3a | [phase-e-agent-a.md](./phase-e-agent-a.md)（Task 27, 349 行）+ [phase-e-agent-b.md](./phase-e-agent-b.md)（Task 28, 428 行）+ [phase-e-agent-c.md](./phase-e-agent-c.md)（Task 29, 298 行） | 3（Task 27-29，按 agent 切分，每 agent 一文件） | Phase D |
 | F | 3b | [phase-f-platform-admin.md](./phase-f-platform-admin.md)（Task 30-31, 496 行） | 2（Task 30-31, 单文件——全新 agent D 工作包 zero overlap） | Phase D（可和 E 并行） |
-| G | 3c | [phase-g-session-order.md](./phase-g-session-order.md)（Task 32-33, 415 行）+ [phase-g-session-cart-b2.md](./phase-g-session-cart-b2.md)（Task 34, 565 行, 含 D58）+ [phase-g-b2-checkpoint.md](./phase-g-b2-checkpoint.md)（Task 35, 478 行）+ [phase-g-payment-service.md](./phase-g-payment-service.md)（Task 36, 435 行, 含 D59/D60/D61） | 11（Task 32-42，段 1-3 + 段 4 Task 36 完成 / 段 4 余 Task 37-38 + 段 5 Task 39-42 下 session） | Phase E/F |
+| G | 3c | [phase-g-session-order.md](./phase-g-session-order.md)（Task 32-33, 415 行）+ [phase-g-session-cart-b2.md](./phase-g-session-cart-b2.md)（Task 34, 565 行, 含 D58）+ [phase-g-b2-checkpoint.md](./phase-g-b2-checkpoint.md)（Task 35, 478 行）+ [phase-g-payment-service.md](./phase-g-payment-service.md)（Task 36, 435 行, 含 D59/D60/D61）+ [phase-g-settlement-gateway.md](./phase-g-settlement-gateway.md)（Task 37 part 1, 368 行, 含 **D63**）+ [phase-g-settlement-gateway-part2.md](./phase-g-settlement-gateway-part2.md)（Task 37 part 2, 411 行, derivePaidState FK + 11 调用方原子切）+ [phase-g-settlement-actions.md](./phase-g-settlement-actions.md)（Task 38 part 1, 412 行, actions + rules）+ [phase-g-settlement-split-bill.md](./phase-g-settlement-split-bill.md)（Task 38 part 2, 419 行, split-bill 4 文件） | 11（Task 32-42，段 1-3 + 段 4-6 Task 36-38 完成 / **段 5 余 Task 39-42 下 Usage 窗口**） | Phase E/F |
 | H | 4 | _（批 2 待写）_ | 3（Task 43-45） | Phase G |
 | I | 5 | _（批 2 待写）_ | 2（Task 46-47） | Phase H |
 | J | 6 | _（批 2 待写）_ | 5（Task 48-51，含 49a/49b 拆分） | Phase I |
@@ -218,7 +219,9 @@
 | 34 | `session-cart.ts` **B2 重写**（整文件重写，从 `session.pendingCart` → draft Order，含 **D58 路径 X 决议**）→ [phase-g-session-cart-b2.md](./phase-g-session-cart-b2.md) |
 | 35 | B2 Manual Checkpoint (D50) **7 场景** a-g 双层结构（intent + concrete steps + failure mode + pass criteria + tag `phase5-b2-checkpoint`）→ [phase-g-b2-checkpoint.md](./phase-g-b2-checkpoint.md) |
 | 36 | `payment.service.ts` B2 适配（5 JsonStore → Prisma + metadata 改 `{draftId, version}` pointer + webhook submitDraft 改造 + itemKey controller 边界薄层）+ **D59/D60/D61 决议 inline**（D62 候选 Task 41 handoff）→ [phase-g-payment-service.md](./phase-g-payment-service.md) |
-| 37-42 | session-payment / split-bill / webhook / settlement gateway / 等 **（下 session 写）** |
+| 37 | `settlement/gateway.ts` B2 适配（C5b 拆分两文件）：part 1 = gateway B2 主体（4 JsonStore + 4 emit afterCommit + splitBillStore 死 import 清理 G5-1）+ **D63 决议**（derivePaidState 签名 FK 化）+ handoff §2 11 处归属表 / part 2 = derivePaidState FK + 11 调用方原子切 + handoff §2 8 消除 → [phase-g-settlement-gateway.md](./phase-g-settlement-gateway.md) + [phase-g-settlement-gateway-part2.md](./phase-g-settlement-gateway-part2.md) |
+| 38 | `settlement/actions/*.ts` + split-bill 域 5 文件 B2 重构（C6b 拆分两文件 + C6a 前置 grep）：part 1 = actions 9 文件 signature FK + rules.ts（checkPaymentItems FK + .split(':') 消除 + orderRepo 切换）+ Task 38 ↔ Task 42 耦合声明 / part 2 = split-bill 4 文件深度改造（5 .split(':') 消除 + 28 JsonStore + manual capture metadata 独立 lifecycle 声明） → [phase-g-settlement-actions.md](./phase-g-settlement-actions.md) + [phase-g-settlement-split-bill.md](./phase-g-settlement-split-bill.md) |
+| 39-42 | webhook plan / session-payment 收尾 / session-settlement 非 derivePaidState 部分 / 其他 **（下 Usage 窗口写）** |
 
 ### Phase D：Stage 2 Repository 层 → [phase-d-repositories.md](./phase-d-repositories.md)（16-22）+ [phase-d-repositories-part2.md](./phase-d-repositories-part2.md)（23-26）
 
