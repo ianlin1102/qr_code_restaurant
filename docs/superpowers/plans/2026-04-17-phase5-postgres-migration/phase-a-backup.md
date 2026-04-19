@@ -1,5 +1,27 @@
 # Phase 5 Plan — Phase A：Stage -1 备份 EC2 演示数据
 
+## ⚠️ Phase A-1 SKIPPED — Ian calibration 2026-04-19
+
+**决策**：Phase A-1 完全 skip，直接进 Phase B。
+
+**原假设**（plan 写作时）：EC2 Postgres + server/data/*.json 有实质价值需备份
+
+**实际**（2026-04-19 Ian calibration）：
+- EC2 Postgres 数据 = 早期技术栈探索的测试数据，无价值
+- server/data/*.json = git tracked，git commit 即自动备份；JSON 中 S3 图片 URL 等参考价值可从 git main 直接读取
+- 无真实用户（只有 Ian 本人 + Stripe 测试卡号测试）
+- 无生产数据
+
+**暴露机制**：本对话 Ian 直觉触发（github commit 就是备份）→ 规则 7 应用到 plan 核心假设 → 追问"这些数据真的需要备份吗" → Ian confirm 无价值
+
+**关联事件**：Phase 5 第 3 次 spec 级事实假设错误（前两次：itemKey 模型 / Task 16 stores.ts 方向性）
+
+**不回滚原 plan 内容**：原 Task 1a/1b/1c 定义保留作 reference，以防未来基础设施变化（真有生产数据时）需要备份操作 —— 但 Phase 5 不执行。
+
+[原 plan 内容从此保留 ↓ ↓ ↓]
+
+---
+
 > **如何使用本文件**
 >
 > - 全局规则（增量 migration、SSE emit 时机、repo 签名、commit 粒度、agent 独占、验证铁律）见 [`00-index.md`](./00-index.md#全局规则所有-task-遵守)

@@ -163,8 +163,8 @@
 
 | Phase | Stage | 文件 | Task 数 | 前置 |
 |---|---|---|---|---|
-| A | -1 | [phase-a-backup.md](./phase-a-backup.md) | 3（1a/1b/1c） | 无 |
-| B | 0 | [phase-b-infrastructure.md](./phase-b-infrastructure.md) | 10（Task 2-10） | Phase A 全部完成（1c 必须先跑） |
+| A | -1 | [phase-a-backup.md](./phase-a-backup.md) | ~~3~~ **0（SKIPPED）** | 无 |
+| B | 0 | [phase-b-infrastructure.md](./phase-b-infrastructure.md) | 10（Task 2-10） | ~~Phase A 全部完成~~ **无**（Phase A skip） |
 | C | 1 | [phase-c-test-db.md](./phase-c-test-db.md) | 5（Task 11-15） | Phase B 全部完成 |
 | D | 2 | [phase-d-repositories.md](./phase-d-repositories.md)（Task 16-22）+ [phase-d-repositories-part2.md](./phase-d-repositories-part2.md)（Task 23-26） | 11（Task 16-26） | Phase C 全部完成 |
 | E | 3a | [phase-e-agent-a.md](./phase-e-agent-a.md)（Task 27, 349 行）+ [phase-e-agent-b.md](./phase-e-agent-b.md)（Task 28, 428 行）+ [phase-e-agent-c.md](./phase-e-agent-c.md)（Task 29, 298 行） | 3（Task 27-29，按 agent 切分，每 agent 一文件） | Phase D |
@@ -174,6 +174,8 @@
 | I | 5 | _（批 2 待写）_ | 2（Task 46-47） | Phase H |
 | J | 6 | _（批 2 待写）_ | 5（Task 48-51，含 49a/49b 拆分） | Phase I |
 | K | 7 | _（批 2 待写）_ | 1（Task 52） | Phase J |
+
+> **Phase A SKIPPED**（Ian calibration 2026-04-19）：原假设 EC2 有价值数据需备份，实际为早期测试数据无价值。详见 [phase-a-backup.md 顶部 skip 区块](./phase-a-backup.md)。Phase B 可直接启动，无前置依赖。
 
 ---
 
