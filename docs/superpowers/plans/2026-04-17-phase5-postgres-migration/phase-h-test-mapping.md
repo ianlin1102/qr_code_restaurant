@@ -1,241 +1,215 @@
-# Phase 5 Plan — Phase H 段 1:测试映射表结构 + D51 判定原则(Task 43)
+# Phase 5 Plan — Phase H 段 1:Task 43 映射表结构 + 4 文件前置分类 + D51 判定原则
+
+> **重写说明**(2026-04-19 第二轮):本文件按 Ian 精确指令重写,覆盖 commit `6ab0a4ae` 初版。差异:加 §6 D64+ 候选预警 / §2 粒度选项不给倾向(规则 7 反向应用)/ D51 判定 3 类(等价/加强/弱化)非 4 类 / spec §9.9 原文 quote。
 
 > **如何使用本文件**
 >
 > - 全局规则见 [`00-index.md`](./00-index.md#全局规则所有-task-遵守)
-> - 前置:Phase G 全 plan 完成(`059c7613` 收尾) + Phase G 实施未启动(本 task 仅 plan,实施期串行在 Phase G 完成后)
-> - 参考:
->   - spec `docs/superpowers/specs/2026-04-17-phase5-postgres-migration-design.md` §9.9 Stage 4 + D50/D51
->   - Phase H ground truth(2026-04-19 Ian 调查):4 文件 / 1361 行 / 211 cases / JsonStore 测试中 0 直接耦合
->   - 段 3 plan `phase-g-b2-checkpoint.md`(D50 7 场景模板,Phase H 实施期参考)
-> - spec 锚点:§9.9 Stage 4(集成测试修复 + 断言映射表)
-
----
-
-## 范围声明
-
-- **本 task 范围(Task 43)**:
-  - 建立映射表 work-log 文件:`docs/superpowers/work-logs/2026-04-17-phase5-test-migration-map.md`(spec §9.9 已指定路径)
-  - 4 测试文件前置 domain 分类(基于 35 top-level describe blocks grep)
-  - D51 等价/加强/弱化判定原则 + Why 门槛 plan 内定义
-- **不在本 task 范围**(Task 44+ 后续):
-  - 实际填写每个 describe block 的等价/加强/弱化判定(Task 44 起逐文件填表)
-  - 写新测试代码(Task 45+ 实施)
-  - 老测试 archive(`server/_archive/tests-2026-04/` mv,Phase H 实施期)
-  - Git tag `pre-phase5-tests-baseline`(Phase H 实施 Stage 4 起点)
-
----
-
-## 规则 7 段 1 task 43 强化条款
-
-1. **每处"测试行为"断言必须 grep / 读文件 verify**——本 plan 4 文件 35 describe 数据 100% 来自 2026-04-19 grep
-2. **D50/D51 引用必须锚 spec 原文行号**——D50 spec line 76 / D51 spec line 77 / §9.9 spec line 1312-1331
-3. **Phase H ground truth 数据必须复用 2026-04-19 调查**——不重复 grep,直接引用 Ian 提供的数字
-
-违反本条款的写作 → 停下自查修正,不 push。
+> - 前置:Phase G plan 全部完成(`059c7613`)
+> - 参考:spec `docs/superpowers/specs/2026-04-17-phase5-postgres-migration-design.md` §9.9 + D48/D50/D51 / 2026-04-19 ground truth
+> - 规模上限:250 行软上限(规则 8 适用)
 
 ## Pending commits 清单(规则 8.1)
 
-- [x] Phase G 收尾:`059c7613`
-- [ ] **Task 43 plan:本文件**
+- [ ] **Task 43 plan rewrite:本文件**
 
 ---
 
-## Task 43:映射表结构 + D51 判定原则
+## 1. Phase H 概述
 
-**Files (本 task 范围)**:
-- Create: `docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-h-test-mapping.md`(本文件)
-- 后续 Task 44+ Create: `docs/superpowers/work-logs/2026-04-17-phase5-test-migration-map.md`(映射表 work-log,Task 44 实际建立)
+### spec §9.9 Stage 4 原文(line 1312-1322,完整 quote)
 
-**前置**:
-- Phase G plan 全部完成(`059c7613`)
-- Phase H ground truth 完成(2026-04-19 Ian 调查)
+> ### 9.9 Stage 4:集成测试修复 + 断言映射表(D51)
+>
+> **断言映射表**:`docs/superpowers/work-logs/2026-04-17-phase5-test-migration-map.md`
+>
+> 每个老测试断言 → 新测试断言的映射,标注"等价 / 加强 / 弱化"。"弱化"必须写 Why(如"Phase 4 SSOT 删除字段,改为派生验证等价覆盖")。没 Why 的弱化禁止合并。
+>
+> **两层保护**:
+> - Git tag `pre-phase5-tests-baseline` 打在 Stage 4 开始前
+> - 物理保留 `server/_archive/tests-2026-04/*.test.ts.bak`(统一到 `server/_archive/` 根目录)
+>
+> **验收**:`pnpm test` 全绿 + 映射表 review 通过
 
-### Task 完成 3 道门
+### 决策锚
 
-1. 本 plan 文件已 commit + push
-2. §2 映射表结构设计 review 通过(Ian)
-3. §4 D51 判定原则 review 通过(Ian)
+- **D51**(spec line 77,本 phase 核心):测试断言迁移映射表,"弱化"条目必须写 Why
+- **D50**(spec line 76):B2 Checkpoint,Stage 3c 第 3 步后硬性暂停,7 场景 a-g 独立 pass/fail —— Phase G 段 3 plan `phase-g-b2-checkpoint.md` 已规划,**未执行**(Phase G 实施未启动)
+- **D48**(spec line 74):JsonStore 软删除到 `_archive/*.bak`,EC2 稳定 7 天后物理删 —— Phase H 测试归档遵循同规则:`server/_archive/tests-2026-04/*.test.ts.bak`
 
----
+### Phase H Task 43-45 范围总述
 
-### 1. Phase H 定义(spec §9.9 + D50/D51 摘要)
+- **Task 43(本)**:映射表 work-log 结构设计 + 4 文件前置分类 + D51 判定原则文档化
+- **Task 44**:按映射表结构实际填表(逐文件,实施期与新测试编写并行)
+- **Task 45**:Ian review 弱化 Why + Stage 4 verification(`pnpm test` 全绿 + map review 通过)
 
-**spec §9.9 Stage 4 摘要**(line 1312-1331):
-- 名称:集成测试修复 + 断言映射表(D51)
-- 文件路径:`docs/superpowers/work-logs/2026-04-17-phase5-test-migration-map.md`
-- Git tag `pre-phase5-tests-baseline` 打在 Stage 4 开始前
-- 老集成测试 mv 到 `server/_archive/tests-2026-04/`
+(Phase H 总 3 task,本 plan 不展开 44/45 细节。)
 
-**D50 决策锚**(spec line 76):
-> B2 Checkpoint:Stage 3c 第 3 步后硬性暂停,用户手动验证 7 个场景(a-g 独立 pass/fail)
+## 2. 映射表结构设计
 
-**与 Phase H 关系**:D50 在 Phase G 段 3 实施(Task 35 plan `phase-g-b2-checkpoint.md`),**Phase H 在 D50 通过后启动**(B2 行为已稳定才迁移测试)。
+### 目标文件
 
-**D51 决策锚**(spec line 77):
-> 测试断言迁移:`docs/superpowers/work-logs/` 下维护老测试 → 新测试映射表,"弱化"条目必须写 Why
+`docs/superpowers/work-logs/2026-04-17-phase5-test-migration-map.md`(spec §9.9 line 1314 已指定)
 
-**与本 task 关系**:本 task 落地 D51 的"映射表结构 + 弱化 Why 门槛"机制,Task 44+ 按此结构填表。
+### ⚠️ 条目粒度选项(规则 7 反向应用,CC 不给倾向)
 
----
+**选项 A:每断言一行**(粒度细)
+- 优点:追溯度高,每 `expect(...)` 单独判定 / 每 Why 单独 review
+- 缺点:表格行数多(可能 500+),可读性下降,相关断言分散
 
-### 2. 映射表 work-log 结构设计
+**选项 B:每 `it()` block 一 section**(粒度粗)
+- 优点:可读性高,语义内聚(一个 it 测一个场景),合并相关断言
+- 缺点:细粒度断言判定混在 section level,弱化 Why 可能不精确到具体断言
 
-**文件路径**(spec §9.9 已指定):`docs/superpowers/work-logs/2026-04-17-phase5-test-migration-map.md`
+**选项 C:混合(默认 B,弱化条目升级为 A)**
+- 优点:常规情况下可读 + 弱化条目细致追溯
+- 缺点:格式不统一,review 需要 context-switch
 
-**顶层结构**(Markdown):
+**CC 数据驱动,不给倾向**:粒度选择属设计偏好,Ian 拍。Task 44 实施期填表前必须先确认选项。
+
+### 字段定义表格(任一粒度通用)
+
+| 字段 | 必填 | 说明 | 示例 |
+|---|---|---|---|
+| `老测试路径` | ✅ | 文件 + describe 链 + it(粒度按选项)| `settlement-gateway.test.ts > Gateway: response structure > should include allowedActions` |
+| `判定` | ✅ | 等价 / 加强 / 弱化 / N/A(已删) | `弱化` |
+| `新测试路径` | ✅ | 新测试文件 + describe + it,或"待写" | `settlement-gateway.test.ts > Gateway: response > tx-aware` |
+| `Why` | 弱化必填 | 锚 D# 编号 + 一句话(规则 7) | `D63: paidItemIds 删除改 paidItems 派生,断言改业务行为` |
+| `备注` | ❌ | 实施期 caller 改造 / 测试 fixture 变化 | `需 G7-7 fixture helper` |
+
+### Work-log 头部 metadata 模板
 
 ```markdown
-# Phase 5 Test Migration Map (D51 落地)
+# Phase 5 Test Migration Map (D51)
 
-Created: <实施期日期>
-Source: 4 files / 1361 lines / 211 cases (2026-04-19 ground truth)
-Target: 新测试结构(Phase C tenant-isolation + Phase H 业务测试 split)
+Created: <Task 44 实施期日期>
+Phase linkage: Stage 4 / Phase H
+Decision anchor: spec §9.9 + D51
 
-## 全局统计
+## 使用说明
 
-- 老测试总数:211 cases
-- 等价迁移:N cases
-- 加强迁移:N cases(覆盖 B2 新场景)
-- 弱化迁移:N cases(必须写 Why,见各 §)
-- 删除:N cases(实施 detail 不再适用)
+每个老测试 case 一行(粒度按 [选项 A/B/C 待 Ian 拍]),判定 4 类(等价/加强/弱化/N/A)。
+弱化必须写 Why,锚 D# 编号 + 一句话。无 Why 的弱化禁止合并(spec §9.9 强制)。
 
-## §1 module-permissions.test.ts(权限域,3 describe / 12 cases)
+## D51 linkage
 
-| 老 describe.it 路径 | 判定 | 新位置 | Why(弱化必填) |
-|---|---|---|---|
-| `getStoreModulePermissions > <case>` | 等价 | ... | — |
-| ... | ... | ... | ... |
-
-## §2 settlement-gateway.test.ts(settlement 域,8 describe / 40 cases)
-
-(同结构表)
-
-## §3 split-billing-integration.test.ts(billing 域,10 describe / 45 cases)
-
-(同结构表)
-
-## §4 sanitize.test.ts(输入校验工具,14 describe / 114 cases)
-
-(同结构表)
-
-## §5 删除条目汇总(可选独立小节)
-
-需要审计的"删除"条目集中列出,便于 Ian review。
-
-## §6 弱化条目 Why 汇总(必需独立小节)
-
-所有"弱化"条目的 Why 集中可读,便于一次审计是否合理。
+本文件是 D51 落地载体。判定原则见 phase-h-test-mapping.md §4。
 ```
 
-**字段定义**:
-- **老 describe.it 路径**:`<top-level describe name> > <inner describe / it name>`,精确到单个 case(避免 ambiguity)
-- **判定**:`等价` / `加强` / `弱化` / `删除`(4 选 1,见 §4 D51 判定原则)
-- **新位置**:目标测试文件 + describe / it 路径,或"待写"(Task 45+ 实施期填)
-- **Why(弱化必填)**:弱化条目的理由,门槛见 §4
+### 样例行 3 个
 
----
+```markdown
+| `sanitize.test.ts > sanitizeAmount > rejects NaN` | 等价 | 同 | — | 纯 lib,无 DB 迁移影响 |
+| `module-permissions.test.ts > getStoreModulePermissions > licensed only` | 加强 | `tenant-isolation.test.ts > permissions > RLS-aware` | — | D5 RLS 加 storeId 校验 |
+| `split-billing-integration.test.ts > Session setup > creates with cartVersion=0` | 弱化 | `billing.test.ts > session > creates draft order` | D58: pendingCart 删除改 draft Order, B2 路径 X | session 字段 cartVersion 已删 |
+```
 
-### 3. 4 文件前置 domain 分类
+## 3. 4 文件前置分类
 
-(数据源:2026-04-19 grep,top-level describe blocks)
+(数据来源:2026-04-19 ground truth grep + 本 task 前置 view describe 结构)
 
-| 文件 | 行数 | top-level describe 数 | 总 cases | Domain |
-|---|---|---|---|---|
-| `module-permissions.test.ts` | 106 | **3** | 12 | 权限模块(`getStoreModulePermissions` / `getStoreModules` / `resolvePermissions`) |
-| `settlement-gateway.test.ts` | 402 | **8** | 40 | Settlement gateway 全方位(response 结构 / allowedActions / mode locking / error codes × 2 / split ops / allowedActions transitions / full settlement flow) |
-| `split-billing-integration.test.ts` | 477 | **10** | 45 | Billing 集成(session 设置 / payByPercent / payByItems / mode locking / waiter split / eager invalidation / tip B1 / remaining item-based / mixed flow / edge cases) |
-| `sanitize.test.ts` | 376 | **14** | 114 | 输入校验工具(8 sanitize 函数 + 6 edge / injection sub-suites) |
+### 3.1 `module-permissions.test.ts`(106 行 / 12 cases / 3 describes)
 
-**总计**:**35 top-level describe blocks / 211 cases / 1361 行**
+- **describes**:`getStoreModulePermissions` / `getStoreModules` / `resolvePermissions with module intersection`
+- **预期影响**:加强(权限计算路径加 RLS context + tenantContext wrap),Phase F module 系统可能调整 caller signature
+- **B2 字段引用**:0(ground truth)
+- **难度**:**小** —— 12 cases 全 unit-level,无跨文件耦合
 
-**预期 domain → 新测试位置映射**:
-- 权限模块 → Phase C `tenant-isolation.test.ts` 扩展 + Phase H 新建 `permissions.test.ts`(可选拆分)
-- Settlement gateway → Phase H 新建 `settlement-gateway.test.ts`(C5b1 注释:扩展现有,不新建)+ Phase C RLS smoke
-- Billing 集成 → Phase H 新建 `billing-integration.test.ts`(C6b2 §10 测试更新已含 `split-billing-integration.test.ts` 改造)
-- 输入校验 → 不变(`sanitize.test.ts` 是纯 lib 测试,与 Phase 5 数据库迁移无关,**默认全 等价**)
+### 3.2 `settlement-gateway.test.ts`(402 行 / 40 cases / 8 describes)
 
----
+- **describes**:`response structure` / `allowedActions` / `mode locking` / `error codes` / `split operations` / `error codes (extended)` / `allowedActions transitions` / `full settlement flow`
+- **预期影响**:全方位影响——D58 (pendingCart 删除) / D63 (paidItems FK) / Task 37 gateway async + tx + 4 emit afterCommit / Task 38 actions FK signature
+- **B2 字段引用**:1(ground truth `session.pendingCart|cartVersion|totalPaid` 唯一命中文件)
+- **难度**:**大** —— 40 cases 跨 8 describe,gateway 全方位重构 + B2 字段消除
 
-### 4. D51 等价/加强/弱化判定原则 + Why 门槛
+### 3.3 `split-billing-integration.test.ts`(477 行 / 45 cases / 10 describes)
 
-#### 4.1 判定 4 类定义
+- **describes**:`Session setup` / `payByPercent` / `payByItems` / `Settlement mode locking` / `Waiter split creation` / `Eager split invalidation` / `Split payment - tip handling (B1)` / `Remaining calculation (item-based)` / `Mixed flow: customer + waiter` / `Edge cases`
+- **预期影响**:大幅加强 + 部分弱化——D63 derivePaidState FK / Task 38 split-bill 4 文件 / Task 42 session-payment FK / 9 处 `confirmItemPayment` 调用 (C6b2 §10 + Task 42 §5 已声明 FK 切换)
+- **B2 字段引用**:0 直接 grep(but 9 处 itemKey 字符串调用)
+- **难度**:**大** —— 45 cases 跨 10 describe,billing 全链 FK 切换 + 测试 fixture 改 FK
 
-**等价(equivalent)**:
-- 老测试断言新代码下**同语义同验证目标**
-- 新代码行为与老代码完全一致(只是 storage 层 JsonStore → Prisma)
-- **示例**:`expect(session.totalPaid).toBe(amount)` —— B2 后 totalPaid 是派生值(D63 paidItems 求和),但断言值不变 → 等价
+### 3.4 `sanitize.test.ts`(376 行 / 114 cases / 14 describes)
 
-**加强(strengthened)**:
-- 新测试覆盖**老测试未覆盖的 B2 新场景**
-- 通常因 D58/D59/D60/D61/D62/D63 引入新行为(新 error code / 新字段 / 新 race condition)
-- **示例**:webhook D62 重放幂等(老测试无,Task 41 plan §5 测试矩阵 case 4)→ 加强
+- **describes**:14 个(8 sanitize 函数 × edge / injection sub-suites)
+- **预期影响**:等价(全)—— 纯 lib 测试,与 DB 迁移无关
+- **B2 字段引用**:0
+- **难度**:**小** —— 默认全等价,验证流程 task
 
-**弱化(weakened)**:
-- 新测试**断言强度低于老测试**
-- 通常因 implementation detail 改变,老测试断言不再适用,但语义验证仍需保留
-- **必须写 Why**(D51 强制)
-- **示例**:老测试断言 `session.pendingCart` 字段值,B2 后字段已删除(改 draft Order),新测试无法直接验证字段——改为间接验证(查 draft order items)→ 弱化,Why = "字段已删除,改为业务行为验证"
+## 4. D51 判定原则
 
-**删除(deleted)**:
-- 老测试验证**已不再存在的代码路径**
-- 通常因 D63 / B2 重构后 implementation 路径消失
-- **示例**:老测试 `session.cartVersion` 乐观锁路径,B2 改为 Order.version → 老测试场景无对应新路径,删除
+### 4.1 三类判定 + 示例
 
-#### 4.2 Why 门槛(弱化条目必填)
+**等价(equivalent)**:schema 字段改名 / 类型迁移 / 但行为不变
+- **示例**:`session.cartVersion` → `order.version`(D58 路径 X 后,cart 移到 draft Order,version 字段保留同语义)
+- 断言强度不变,仅字段名 / 路径变化
+
+**加强(strengthened)**:新增 RLS context / tx 边界 / tenant isolation / FK 约束
+- **示例**:加 `withTenantContext` wrap + 验证跨租户拒绝(D5 RLS)
+- 新断言增强 implementation guarantee,语义验证不缩减
+
+**弱化(weakened)**:SSOT 派生覆盖,断言粒度降低
+- **示例**:`session.totalPaid` 字段删除,改 `derivePaidState(sessionId, tx).totalPaid` 派生(D63)。直接字段断言 → 派生函数调用断言
+- 断言强度从"字段直接验证"降为"派生函数返回验证"
+
+### 4.2 Why 门槛(弱化必填)
 
 **Why 必须包含**:
-1. **被弱化的具体断言**(老测试代码片段,1-3 行)
-2. **弱化原因**(implementation 路径变化的具体描述,引用 D58-D63 决议或 plan 章节锚点)
-3. **新测试的等价验证**(如何用新断言保持语义验证强度,即使 implementation 不同)
+1. **锚 D# 编号**(D58 / D63 等 plan 阶段决议,或 spec D1-D52 历史决议)
+2. **一句话解释**(implementation 路径变化的精炼表达,1-2 行)
 
-**Why 反模式**(自动 review 不通过):
-- ❌ "新代码 implementation 不同,断言无法保持"(无具体说明)
-- ❌ "测试不重要"(implementation detail 不重要,但语义验证重要)
-- ❌ "B2 改了所以弱化"(无具体 plan 章节锚点)
+**反模式**(自动 review fail):
+- ❌ 空 Why
+- ❌ "大概等价就行"(无 D# 锚点)
+- ❌ "B2 改了所以弱化"(事后合理化,不指明具体决议)
+- ❌ 多段长 Why 不能精炼(说明判定本身不清晰)
 
-**Why 正例**:
-> 老测试断言 `session.pendingCart[0].menuItemId === 'X'`(line 142)。B2 后 `pendingCart` 字段已删除(D58 路径 X,Task 34 plan §3),改为 draft Order。新测试改为 `(await orderRepo.findDrafts(sessionId, tx))[0].items[0].menuItemId === 'X'` —— 业务语义(顾客已加 X 到 cart)等价验证,只是数据存储位置变化。
+### 4.3 Why 不过线后果
 
-#### 4.3 判定流程(Task 44+ 实施期填表指引)
+**Task 44 合并 PR 拒绝**(spec §9.9 line 1316 强制:"没 Why 的弱化禁止合并")。
 
-每个老 describe.it 走以下流程:
+具体执行:
+- Task 44 实施期 PR review:Ian + CC 双方对照映射表,弱化条目逐条 verify Why
+- 不过线条目 → blocker comment,要求改写 Why 或重新判定 4 类
+- 整 PR block 直到所有弱化 Why 过线
 
-1. **读老测试代码**(2-5 行片段)
-2. **判断验证目标**(业务行为 vs implementation detail)
-3. **找新代码对应路径**(grep / Phase G plan 章节)
-4. **判定 4 类**:
-   - 新代码完全保留老语义 + 断言可直接用 → **等价**
-   - 新代码引入新场景需要额外验证 → **加强**(可能拆多个新 cases)
-   - 老断言 implementation 不可用,但语义验证仍需保留 → **弱化**(写 Why)
-   - 老验证路径已消失 → **删除**
-5. **填映射表表格**
+## 5. Task 43 完成条件
 
-**Ian review 触发**:**所有"弱化"条目** + **>10% 总比例的"删除"条目** 必须 Ian 拍板(防止过度简化)
+- [ ] **本 plan 文件 commit**(纯文档,不涉及 tsc/test)
+- [ ] 映射表 work-log **文件结构设计**已在本 plan §2 文档化(实际文件待 Task 44 建立)
+- [ ] **4 文件前置分类**已在本 plan §3 文档化(基于 ground truth + describe view)
+- [ ] **D51 判定原则**已在本 plan §4 文档化(3 类 + Why 门槛 + 反模式)
+- [ ] **D64+ 候选预警**已在本 plan §6 登记(实施期 Ian 拍板)
+
+**注意**:本 task 仅 plan,**不建立映射表 work-log 文件**(那是 Task 44 范围)。
+
+## 6. D64+ 候选预警(实施期 Ian 拍板)
+
+plan 阶段已浮现的待决议,Ian 在 Task 44 实施期前拍板:
+
+### D64 候选:映射表条目粒度
+
+- **候选 A**:每断言一行 / **候选 B**:每 it() block 一行 / **候选 C**:混合
+- **决议时机**:Task 44 实施前(填表前必须先选定)
+- **升格条件**:Ian 选定后,本预警升格为 D64,登记 spec § 1 决策表
+
+### D65 候选:`pre-phase5-tests-baseline` tag 打点时机
+
+- **候选 X**:Phase G 实施**未完成**阶段(plan 完成,新测试未写,Phase G 代码未 land)
+  - **trade-off**:tag 早打,baseline 反映 Phase G plan 完成状态;但 B2 行为未实测验证
+- **候选 Y**:Phase G 实施**已完成**阶段(B2 checkpoint 7 场景 pass + `phase5-b2-checkpoint` tag 已打)
+  - **trade-off**:tag 晚打,baseline 反映 B2 行为已实测稳定;但等 Phase G 实施 land(可能跨多 Usage 窗口)
+- **决议时机**:Task 44 实施期 / Phase G 实施完成时
+
+### D66 候选:归档路径子分类
+
+- spec §9.9 line 1320 + §9.10 line 1328 已确立 `server/_archive/tests-2026-04/` 路径 + `.bak` 后缀
+- D48 + Phase G session 2 Ian 也确立 `server/_archive/` 根目录 + 子分类
+- **可能不需新决议**:已有 D48 + spec §9.10 完整覆盖,Task 44 实施期 verify 即可
+- **若有冲突**(归档路径与现有 plan 不一致)→ 升格 D66
+
+(本 plan 不展开 D64-D66 候选的 5 条理由,Ian 实施期拍板时正式登记。)
 
 ---
 
-### 5. Phase D 回填 + Task 44+ 预告
-
-**Phase D 回填**:本 task 0 新增回填(plan 工作,无 repo 方法依赖)
-
-**Task 44+ 预告**:
-- **Task 44**:按 §3 表逐文件填映射表 4 个 describe block(从 sanitize.test.ts 开始,默认全等价,工作量小,验证流程)
-- **Task 45**:按 §3 表填 module-permissions.test.ts 12 cases
-- **Task 46**:按 §3 表填 settlement-gateway.test.ts 40 cases
-- **Task 47**:按 §3 表填 split-billing-integration.test.ts 45 cases
-- **Task 48**:Ian review 弱化 Why 汇总 + 删除条目审计 + Stage 4 启动 prerequisite(`pre-phase5-tests-baseline` tag + 老测试 archive)
-
-**Phase H 总 task 估算**:Task 43-48 共 6 task(plan 5 + Ian checkpoint 1)
-
----
-
-### 6. commit(本 plan 落地)
-
-```bash
-git add docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-h-test-mapping.md
-git commit -m "plan(phase-h): task 43 - test mapping work-log structure + D51 judgment principles"
-git push origin main
-```
-
-**不更新 RESUME / 00-index** —— 等 Phase H 全 task 完成后一次性同步。
+**End of Task 43 plan.**
