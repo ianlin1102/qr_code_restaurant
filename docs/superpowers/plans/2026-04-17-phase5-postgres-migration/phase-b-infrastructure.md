@@ -535,33 +535,35 @@ model Printer {
 }
 ```
 
-- [ ] **Step 2.5：staff.json dirty record 清理(Q2=b 实施期前置)**
+- [ ] **Step 2.5:staff.json store-demo-002 全删(Q2=b 实施期前置,衍生 2 = γ alignment)**
 
-> **Plan 修订 #2 引入**:本 sub-step 配合 Staff.roleId NOT NULL 设计。grep evidence `f180204b` §2-3 显示 staff.json 3 records 需清理,否则 Task 3 `prisma migrate` 生成 SQL 无法 apply(NOT NULL + onDelete: Restrict 约束破坏)。
+> **Plan 修订 #2 引入 + 衍生 2 = γ narrow**:本 sub-step 配合 Staff.roleId NOT NULL 设计。grep evidence `f180204b` §2-3 显示 staff.json 3 records 需清理。**衍生 2 = γ 决议**(Ian 批):`store-demo-002` 整体数据 Phase I 重建,backfill record 1 是浪费工作 → 本 sub-step narrow 为"删 store-demo-002 全部 staff records"(record 1 + record 2 同批删),无需 migrate。
 
 ```bash
-# Record 1: admin/store-demo-002/role=owner/roleId=null → migrate 填 FK
-# Record 2: ian/store-demo-002/role=staff/roleId=null → 删除(dirty, 无对应 role)
+# Record 1: admin/store-demo-002/role=owner/roleId=null → 删除(Phase I 重建)
+# Record 2: ian/store-demo-002/role=staff/roleId=null → 删除(dirty, 与 record 1 同批)
 # Record 3: ian/store-demo-001/role=waiter/roleId=已填 → 保留不变
 ```
 
 **精确数据清理脚本**(Task 2 实施期跑,不在 plan 修订 commit):
 
 ```bash
-# Step A: 删除 record 2(dirty data,role="staff" 无对应 roles.json 记录)
-jq '[.[] | select(.id != "8bec0727-ab89-4c95-9133-96ee20756044")]' server/data/staff.json > /tmp/staff-cleaned.json
+# Step A: 删除 store-demo-002 全部 staff records(record 1 + record 2 同批)
+jq '[.[] | select(.storeId != "store-demo-002")]' server/data/staff.json > /tmp/staff-cleaned.json
 mv /tmp/staff-cleaned.json server/data/staff.json
 
-# Step B: migrate record 1 填 roleId
-jq 'map(if .id == "staff-owner-001" then .roleId = "store-demo-002-role-owner" else . end)' server/data/staff.json > /tmp/staff-migrated.json
-mv /tmp/staff-migrated.json server/data/staff.json
-
-# Step C: verify
-jq '[.[] | {id, username, role, roleId}]' server/data/staff.json
-# 期望:record 1 roleId 有值 / record 2 消失 / record 3 不变
+# Step B: verify store-demo-002 清空 + 剩余仅 record 3
+jq 'map(select(.storeId == "store-demo-002")) | length' server/data/staff.json
+# 期望输出:0
+jq '[.[] | {id, username, storeId, role, roleId}]' server/data/staff.json
+# 期望:仅 1 record = ian/store-demo-001/waiter(record 3,roleId 已填)
 ```
 
-**D71 候选**:若 Ian 后续决议 "Seed-as-SSOT"(删除 store-demo-002 全部 JSON 数据),本 sub-step 可简化为 "删除 store-demo-002 staff records"(2 条同时删,无需 migrate)。**本次 plan 修订不预设 D71**,保守路径先清理 dirty。
+**中间状态**:`store-demo-002` 暂无 staff,Phase I 起草时新建 task 重建(衍生 2 = γ delegate)。record 3 在 `store-demo-001`,不受影响,不阻塞其他 store 的测试。
+
+**衍生 2 = γ delegate**:`store-demo-002` 其他 JSON 数据(categories / menu-items / tables / coupons / orders / sessions / payments / split-bills)本 sub-step **不清理**,Phase I 统一处理(新 task:store-demo-002 全 store JSON 清理 + seed.ts 重建依赖)。
+
+**D71 标注**(历史候选,γ 决议后固化):衍生 2 = γ 是 D71 "Seed-as-SSOT" 的实施路径之一(仅清 staff.store-demo-002,其他 JSON Phase I)。D71 spec 升格保留 Phase H Task 45。
 
 **Task 7 shared/types.ts 同步**:Staff.roleId NOT NULL 需连锁改 5 处 `roleId?` signature(grep `f180204b` §2-3):
 - `shared/types.ts:62` `roleId?: string` → `roleId: string`
