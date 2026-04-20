@@ -94,3 +94,60 @@ export async function withSystemContext<T>(
 ): Promise<T> {
   return systemPrisma.$transaction(async (tx) => fn(tx))
 }
+
+/**
+ * Like withTenantContext, but also exposes a registerAfterCommit(hook)
+ * function that the callback can use to enqueue post-commit side effects.
+ *
+ * For non-Express scenarios where tenantAwareRoute cannot be used:
+ *   - Webhook handlers (e.g., Stripe payment_intent.succeeded → SSE emit)
+ *   - Cron jobs that need tenant scope + post-commit notifications
+ *   - Tests that need to assert hook ordering
+ *
+ * Semantics (mirror tenantAwareRoute in middleware/tenant-aware.ts):
+ *   - tx commits successfully → hooks fire in registration order (FIFO)
+ *   - tx throws → hooks NEVER fire (rollback = no events; atomicity)
+ *   - hook throws → logged via console.error, does NOT stop other hooks,
+ *     does NOT propagate (tx is already durable; event loss is degrade-only)
+ *
+ * Why a separate helper instead of extending withTenantContext signature:
+ *   Blast radius = 0 — existing withTenantContext call sites untouched.
+ *   withTenantContext stays the minimal primitive; *AndHooks layers on top.
+ *
+ * Why console.error instead of logger:
+ *   prisma-client.ts intentionally has no logger dependency (DB primitive layer).
+ *   tenantAwareRoute (Express middleware layer) uses logger; this helper mirrors
+ *   the prisma-client.ts style. Phase H/I may unify logging strategy.
+ *
+ * @see Phase G Task 41 webhook D62 — primary consumer (Stripe payment_intent.succeeded)
+ * @see middleware/tenant-aware.ts tenantAwareRoute — Express-bound equivalent
+ */
+export async function withTenantContextAndHooks<T>(
+  storeId: string,
+  fn: (
+    tx: Prisma.TransactionClient,
+    registerAfterCommit: (hook: () => void | Promise<void>) => void
+  ) => Promise<T>
+): Promise<T> {
+  const hooks: Array<() => void | Promise<void>> = []
+  const registerAfterCommit = (hook: () => void | Promise<void>): void => {
+    hooks.push(hook)
+  }
+  const result = await withTenantContext(storeId, async (tx) =>
+    fn(tx, registerAfterCommit)
+  )
+  // tx committed — fire hooks in registration order.
+  // Errors here are logged, not propagated: caller already moved on,
+  // tx is durable, event loss is degrade-only.
+  for (const hook of hooks) {
+    try {
+      await hook()
+    } catch (err) {
+      console.error(
+        'withTenantContextAndHooks: afterCommit hook failed (tx already committed)',
+        err
+      )
+    }
+  }
+  return result
+}
