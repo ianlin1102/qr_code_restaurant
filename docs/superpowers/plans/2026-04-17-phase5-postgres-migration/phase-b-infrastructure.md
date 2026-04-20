@@ -98,6 +98,11 @@ model Store {
   announcementEn String?        @map("announcement_en")
   logo           String?
   tipBase        String         @default("pretax")
+  taxRate        Float?         @map("tax_rate")             // e.g. 8.875 means 8.875%
+  serviceFeeRate Float?         @map("service_fee_rate")     // e.g. 15 means 15%
+  autoAcceptOrders Boolean      @default(false) @map("auto_accept_orders")
+  maxTables      Int?           @map("max_tables")           // 租户自设上限,平台不强制(M3/D69)
+  paymentMode    String?        @map("payment_mode")         // 'pay-first' | 'pay-later'
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt      @map("updated_at")
 
@@ -193,8 +198,12 @@ model Staff {
   store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   username     String
   passwordHash String   @map("password_hash")
-  roleId       String?  @map("role_id")
-  role         Role?    @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  // Q2=b: Staff.role FK 切换(legacy `role: String` 已在 plan schema 早期去除)。
+  // 本次修订将 `roleId` 设 NOT NULL + onDelete Restrict,配合实施期数据清理
+  // (见 Task 2 Step 2.5)。Grep evidence f180204b §2.5:5 处代码 `roleId?`
+  // signature 需 Phase B 后期(Task 7 shared/types)同步去 ?。
+  roleId       String   @map("role_id")
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
   clockPin     String?  @map("clock_pin")
   displayName  String?  @map("display_name")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -211,10 +220,16 @@ model Table {
   id                String   @id @default(uuid())
   storeId           String   @map("store_id")
   store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  label             String
+  // Mode C δ 桶 1(rename label→name 对齐 JSON + types.ts,补 5 字段)
+  name              String                                        // was `label`(legacy drift)
+  nameEn            String?  @map("name_en")                      // i18n C3 延伸
+  number            Int                                           // display number(e.g. 1, 2, 3)
+  enabled           Boolean  @default(true)
+  status            String   @default("idle")                     // 'idle' | 'occupied' | 'cleaning' | 'bill-requested'
   qrCode            String   @unique @map("qr_code")
   capacity          Int?
   currentSessionId  String?  @map("current_session_id")
+  waiterCalledAt    DateTime? @map("waiter_called_at")            // customer Call Waiter,admin ack 时 clear
   createdAt         DateTime @default(now()) @map("created_at")
 
   sessions          Session[]
@@ -230,6 +245,7 @@ model Category {
   store      Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
   name       String
   nameEn     String?    @map("name_en")
+  quickTags  String[]   @default([]) @map("quick_tags")    // Mode C δ 桶 1: postgres 原生数组
   sortOrder  Int        @default(0) @map("sort_order")
   isActive   Boolean    @default(true) @map("is_active")
   createdAt  DateTime   @default(now()) @map("created_at")
@@ -251,8 +267,9 @@ model MenuItem {
   description   String?
   descriptionEn String?             @map("description_en")
   imageUrl      String?             @map("image_url")
-  price        Int
-  isAvailable  Boolean             @default(true)  @map("is_available")
+  price         Int
+  originalPrice Int?                @map("original_price")   // Mode C δ 桶 1: 降价前原价,可选
+  isAvailable   Boolean             @default(true)  @map("is_available")
   isStaffOnly  Boolean             @default(false) @map("is_staff_only")
   sortOrder    Int                 @default(0)     @map("sort_order")
   createdAt    DateTime            @default(now()) @map("created_at")
@@ -313,6 +330,10 @@ model Order {
   store               Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
   tableId             String       @map("table_id")
   table               Table        @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  // Mode C δ 桶 1 + D68: Order snapshot 哲学。tableName/tableNameEn 下单时冻结,
+  // 历史订单不受 Table.name 后续改动影响(e.g. 桌子改名不破坏订单历史显示)
+  tableName           String       @map("table_name")
+  tableNameEn         String?      @map("table_name_en")
   sessionId           String?      @map("session_id")
   session             Session?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
   status              OrderStatus
@@ -458,6 +479,7 @@ model Coupon {
   code           String
   discountType   String    @map("discount_type")
   discountValue  Int       @map("discount_value")
+  minOrderAmount Int?      @map("min_order_amount")    // Mode C δ 桶 1: M4 PASS grep f180204b
   maxUses        Int?      @map("max_uses")
   currentUses    Int       @default(0) @map("current_uses")
   expiresAt      DateTime? @map("expires_at")
@@ -513,6 +535,43 @@ model Printer {
 }
 ```
 
+- [ ] **Step 2.5：staff.json dirty record 清理(Q2=b 实施期前置)**
+
+> **Plan 修订 #2 引入**:本 sub-step 配合 Staff.roleId NOT NULL 设计。grep evidence `f180204b` §2-3 显示 staff.json 3 records 需清理,否则 Task 3 `prisma migrate` 生成 SQL 无法 apply(NOT NULL + onDelete: Restrict 约束破坏)。
+
+```bash
+# Record 1: admin/store-demo-002/role=owner/roleId=null → migrate 填 FK
+# Record 2: ian/store-demo-002/role=staff/roleId=null → 删除(dirty, 无对应 role)
+# Record 3: ian/store-demo-001/role=waiter/roleId=已填 → 保留不变
+```
+
+**精确数据清理脚本**(Task 2 实施期跑,不在 plan 修订 commit):
+
+```bash
+# Step A: 删除 record 2(dirty data,role="staff" 无对应 roles.json 记录)
+jq '[.[] | select(.id != "8bec0727-ab89-4c95-9133-96ee20756044")]' server/data/staff.json > /tmp/staff-cleaned.json
+mv /tmp/staff-cleaned.json server/data/staff.json
+
+# Step B: migrate record 1 填 roleId
+jq 'map(if .id == "staff-owner-001" then .roleId = "store-demo-002-role-owner" else . end)' server/data/staff.json > /tmp/staff-migrated.json
+mv /tmp/staff-migrated.json server/data/staff.json
+
+# Step C: verify
+jq '[.[] | {id, username, role, roleId}]' server/data/staff.json
+# 期望:record 1 roleId 有值 / record 2 消失 / record 3 不变
+```
+
+**D71 候选**:若 Ian 后续决议 "Seed-as-SSOT"(删除 store-demo-002 全部 JSON 数据),本 sub-step 可简化为 "删除 store-demo-002 staff records"(2 条同时删,无需 migrate)。**本次 plan 修订不预设 D71**,保守路径先清理 dirty。
+
+**Task 7 shared/types.ts 同步**:Staff.roleId NOT NULL 需连锁改 5 处 `roleId?` signature(grep `f180204b` §2-3):
+- `shared/types.ts:62` `roleId?: string` → `roleId: string`
+- `server/src/controllers/staff.service.ts:13, 58` 接口 + `matchingRole?.id` 处理
+- `server/src/controllers/auth.service.ts:32` `as string | undefined` → `as string`
+- `server/src/repositories/stores.ts:14` JsonStore 类型
+- `server/src/middleware/permission.middleware.ts:19` 读取
+
+以上 Task 7 改动**不在本 Task 2 plan 修订范围**,Phase B Task 7 实施时同步。
+
 - [ ] **Step 3：格式化 + 验证 schema 语法**
 
 ```bash
@@ -551,6 +610,14 @@ git commit -m "feat(phase-5): rewrite prisma schema for 15 entities + B2
 - i18n fields (11 *En fields across Store/Category/MenuItem/MenuItemOption
   /OrderItem/OrderItemOption/Role) preserved per Phase B pre-grep evidence
   4f6517e1 (grep: 5/5 fields are live, not dead)
+- Mode C δ resolution 桶 1 (16 fields): Table rename label→name + 5 new
+  (nameEn/number/enabled/status/waiterCalledAt); Store +5 (taxRate/
+   serviceFeeRate/autoAcceptOrders/maxTables/paymentMode); Order +2
+  (tableName/tableNameEn per D68 snapshot); Coupon +1 (minOrderAmount
+   per M4 PASS); MenuItem +1 (originalPrice); Category +1 (quickTags)
+- Staff.roleId NOT NULL + onDelete Restrict (Q2=b landing);
+  Task 2 Step 2.5 清理 staff.json dirty record 2 + migrate record 1
+- D67-D70 候选标注 inline (Phase H Task 45 升格 spec)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
@@ -562,6 +629,35 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 > **i18n *En 字段(11 个)**：C3 grep 证据(`4f6517e1` §Step 1-3)显示 5/5 *En 字段全活字段(`nameEn` r44/w111 含 60 seed / `descriptionEn` r6/w19 / `announcementEn` r16/w8 / `optionNameEn` r2/w5 / `choiceNameEn` r9/w5)+ `client/src/lib/i18n-utils.ts` `localized()`/`localizedDesc()`/`optionLabel()` 切换核心。故 α 保留全部。字段落位:Store×3 / Category×1 / MenuItem×2 / MenuItemOption×1 / OrderItem×1 / OrderItemOption×2 / Role×1 = 11。
 >
 > **规则 7.2 `[NEEDS IAN CONFIRMATION]`**:MenuItemOption 仅 `nameEn`(无 `groupNameEn`),但 OrderItemOption 有 `groupNameEn` + `nameEn`。Logic 上 OrderItemOption 的 `groupNameEn` 需来自 MenuItemOption 源数据 —— 若 MenuItemOption 无 `groupNameEn`,则 OrderItemOption.groupNameEn denormalize 无源。是否给 MenuItemOption 也加 `groupNameEn`(变 12 字段)?本次 plan 修订按 Ian 11 字段版本落地,不自行扩充。
+
+> **Plan 修订追加 #2(2026-04-19,Mode C δ resolution)**:基于 Phase B Task 2 M4 + Q2 grep(commit `f180204b`)+ Ian chat instance δ 分桶决议,本 Task 2 schema 补入 Mode C 桶 1 共 **16 字段**:
+>
+> | Entity | 新增字段(数)| 依据 |
+> |---|---|---|
+> | **Table** | rename `label→name`, +`nameEn`, +`number`, +`enabled`, +`status`, +`waiterCalledAt` (6) | JSON/types.ts ground truth + C3 i18n 延伸 |
+> | **Store** | +`taxRate`, +`serviceFeeRate`, +`autoAcceptOrders`, +`maxTables`, +`paymentMode` (5) | JSON 4 record 全用 + types.ts 定义 |
+> | **Order** | +`tableName`, +`tableNameEn` (2) | D68 Order snapshot 哲学 |
+> | **Coupon** | +`minOrderAmount` (1) | M4 PASS(grep f180204b §2-3)|
+> | **MenuItem** | +`originalPrice` (1) | types.ts 有,降价前原价 |
+> | **Category** | +`quickTags` (1) | JSON/types.ts 有,UI 快速标签 |
+>
+> **Staff.role Q2=b 落地**(grep f180204b §2-3):
+> - Legacy `role: String` 已在 plan 早期去除(无需改动)
+> - `roleId` 由 `String?` + `onDelete: SetNull` → `String`(NOT NULL)+ `onDelete: Restrict`
+> - **CC 倾向选 NOT NULL**(非 nullable)理由:(1)Q2=b 核心意图是切 FK,保 nullable 就没切完;(2)代码 blast radius ~5 处 `roleId?` signature,Phase B Task 7 同步去 ?;(3)record 1 一次性 migrate 是单次成本,保留 nullable 是持续维护成本
+> - **Task 2 Step 2.5 sub-step**(见下方):实施期清理 staff.json dirty records
+>
+> **D67-D71 候选 inline 标注**(不进 spec,Phase H Task 45 升格):
+> - **D67**:反向 drift 处理原则 —— types.ts 有 JSON 无时,以 types.ts 为准补进 schema(M1)
+> - **D68**:Order snapshot 哲学 —— tableName/tableNameEn 下单时冻结,历史订单不受后续桌名改动影响(M2)
+> - **D69**:maxTables 留 Store 级,租户自设上限,平台不强制限额(M3)
+> - **D70**:Coupon schema 完整补入,业务启用独立决策(M4)
+> - **D71 候选**:Seed-as-SSOT(Ian 待议:删除 store-demo-002 全部 JSON 数据,seed.ts 作为 demo 数据唯一真相源)—— 本次不决议,留 Phase B 实施后期
+
+> **桶 2/3/4 显式 delegate**(避免 scope creep):
+> - **桶 2**(Floor plan 6 字段 `x / y / width / height / shape / zone`)→ **Phase I/J 补**,本 Task 2 不含
+> - **桶 3**(Deprecated 3 字段:`Table.currentBillId` / `Table.currentOrderId` / `Table.paymentMode`)→ **不补**,Store 级 paymentMode 已够
+> - **桶 4**(次要扩展 6 字段:`Waitlist.estimatedWait/notifiedAt` / `Printer.address` 拆分 / `MenuItem.dietary/isRecommended/quickTags` / `Category.hideQuickTags`)→ **Phase H/I 补**
 
 ---
 
