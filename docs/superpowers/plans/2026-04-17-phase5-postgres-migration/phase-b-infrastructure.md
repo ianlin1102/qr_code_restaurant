@@ -985,6 +985,11 @@ export const prisma = new PrismaClient({
  * System worker Prisma client — connects as system_worker (BYPASSRLS).
  * For cron jobs, webhook retry queues, cross-tenant cleanup tasks.
  * Uses separate connection pool — won't interfere with app_user capacity.
+ *
+ * @cross-phase: SYSTEM_DATABASE_URL must be defined in docker-compose.yml (Task 10).
+ * If undefined, systemPrisma instantiation succeeds but any DB operation throws
+ * connection error. Verify in Task 10 implementation: env vars include both
+ * DATABASE_URL (app_user) and SYSTEM_DATABASE_URL (system_worker).
  */
 export const systemPrisma = new PrismaClient({
   datasources: { db: { url: process.env.SYSTEM_DATABASE_URL } },
@@ -1013,10 +1018,16 @@ function assertUuid(value: string): void {
  *      so no SQL injection even if assertUuid were bypassed
  *
  * set_config(name, value, is_local=true) is equivalent to SET LOCAL and resets
- * at tx commit/rollback. RLS policies cast current_setting(...) ::uuid at query time.
+ * at tx commit/rollback. RLS policies compare current_setting(...)::text
+ * against store_id::text at query time (Task 4 β decision: explicit text alignment,
+ * not UUID cast — store_id column is TEXT per Prisma String @default(uuid())).
  *
  * @param storeId - tenant UUID (validated + parameterized)
  * @param fn - callback receiving transaction client
+ *
+ * @see Phase D Task 8 — withTenantContextAndHooks (G7-4) extends this signature
+ *      with afterCommit hook registration (required by Phase G Task 41 webhook
+ *      D62 implementation). Current signature stays stable; *AndHooks wraps it.
  */
 export async function withTenantContext<T>(
   storeId: string,
