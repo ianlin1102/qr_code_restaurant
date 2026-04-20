@@ -537,7 +537,11 @@ model Printer {
 
 - [ ] **Step 2.5:staff.json store-demo-002 全删(Q2=b 实施期前置,衍生 2 = γ alignment)**
 
-> **Plan 修订 #2 引入 + 衍生 2 = γ narrow**:本 sub-step 配合 Staff.roleId NOT NULL 设计。grep evidence `f180204b` §2-3 显示 staff.json 3 records 需清理。**衍生 2 = γ 决议**(Ian 批):`store-demo-002` 整体数据 Phase I 重建,backfill record 1 是浪费工作 → 本 sub-step narrow 为"删 store-demo-002 全部 staff records"(record 1 + record 2 同批删),无需 migrate。
+> **Plan 修订 #3(2026-04-19, β refinement, Task 3 L1 verify 99b43a08 §3.1 修正)**:本 sub-step 是 **Phase H `import-legacy-json.ts` 前置**,**非 Task 3 `prisma migrate apply` 前置**。Task 3 migrate 对 **空 postgres 表** CREATE,不读 JSON 数据 → Staff.roleId NOT NULL + onDelete Restrict 在空表直接生效,与 JSON 数据状态无关。**真约束对象**:Phase H `import-legacy-json.ts` 将 JSON INSERT 到 postgres 时,若 staff.json 含 `roleId=null` + NOT NULL 约束 → INSERT 失败。Step 2.5 清 JSON 就是为了保 Phase H import 不 crash。
+>
+> **时机**:Step 2.5 可在 Task 2 schema 写完后任意时刻跑(甚至延后到 Phase H 实施前),**不阻塞 Task 3 / Task 4 / Task 5**。
+>
+> **Plan 修订 #2 引入 + 衍生 2 = γ narrow**:grep evidence `f180204b` §2-3 显示 staff.json 3 records 需清理。**衍生 2 = γ 决议**(Ian 批):`store-demo-002` 整体数据 Phase I 重建,backfill record 1 是浪费工作 → 本 sub-step narrow 为"删 store-demo-002 全部 staff records"(record 1 + record 2 同批删),无需 migrate。
 
 ```bash
 # Record 1: admin/store-demo-002/role=owner/roleId=null → 删除(Phase I 重建)
@@ -672,6 +676,22 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 **前置**:Task 2 完成。**需要本地 postgres + 已应用 `20260309182624_init`**(Phase 5 前本地已跑过;若干净环境,先 `prisma migrate deploy` 应用旧 init 建立 baseline)。
 
+- [ ] **Step 0:verify applied DB rows state(安全预检,Plan 修订 #3 新增,锚 `99b43a08` §3.2)**
+
+migrate 前确认 applied `stores` / `store_users` 表 row count,判定 `ALTER TABLE ... ADD COLUMN` 对 existing rows 的影响面。
+
+```bash
+# 假设本地 DATABASE_URL 已指向已 applied init 的 postgres
+psql "$DATABASE_URL" -c "SELECT count(*) AS stores_count FROM stores;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS store_users_count FROM store_users;"
+```
+
+**预期状态**:
+- **空表**(count=0 / 0)→ ALTER ADD COLUMN 对 0 rows 零副作用,**安全继续**
+- **有遗留数据**(count>0)→ Prisma 自动为新列应用 schema `@default(...)` 填充 existing rows。若任一新列无 default 且 NOT NULL → migrate apply 会失败。**规则 8 暂停汇报 Ian 判**(清数据 vs 加 default vs skip Task 3)。
+
+Task 3 scope 假设 **dev 环境空表**。实际遗留数据场景由 Ian 判处理路径。
+
 - [ ] **Step 1：起临时 postgres 用于 migration 生成**
 
 ```bash
@@ -756,6 +776,18 @@ CREATE TABLE "menu_items" (...);
 - 所有 `@@unique` 生成 CREATE UNIQUE INDEX(含 G7-5 `payment_stripe_intent_unique`)
 - 所有 `@@id` / FK 生成 PRIMARY KEY / ADD CONSTRAINT
 - 4 enum 生成 `CREATE TYPE "OrderStatus" AS ENUM (...)` 等
+
+> **Step 4 审核失败 rollback(Plan 修订 #3 新增,锚 `99b43a08` §3.3)**:若 Step 4 发现生成 SQL 有问题,**不 commit**,执行:
+>
+> ```bash
+> # 丢弃本次生成的 migration 目录
+> rm -rf server/prisma/migrations/20260417000001_extend_schema/
+> # 重置临时 postgres 到 baseline(可选,更彻底)
+> cd server && pnpm prisma migrate reset --force
+> # 修 schema.prisma 后重跑 Step 3
+> ```
+>
+> Prisma 无 auto down migration,**本地 dev 回滚 = reset DB + 重跑**。Phase B scope 仅 dev/test,production migration 策略在 Phase K 处理。
 
 - [ ] **Step 5：清理临时容器（migration 已经生成到文件）**
 
