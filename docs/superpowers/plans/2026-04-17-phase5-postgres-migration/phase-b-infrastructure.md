@@ -1320,6 +1320,30 @@ router.post('/stores/:storeId/waitlist', tenantAwareRoute(async (req, res) => {
 }))
 ```
 
+#### β refinement(2026-04-19,Plan 修订 #5,锚 `053befcd` §3-5)
+
+**G7-4 `withTenantContextAndHooks` helper**(必需级,Phase G Task 41 webhook 依赖):
+
+- **实际文件位置**:`server/src/repositories/prisma-client.ts`(Task 6 产物,与 `withTenantContext` 同文件 + 新增 export)—— 物理位置跨 Task 6/8,本 plan 修订按 Ian 指令归 Task 8 scope
+- **函数签名**:
+  ```ts
+  withTenantContextAndHooks<T>(
+    storeId: string,
+    fn: (tx: Prisma.TransactionClient, registerAfterCommit: (hook: () => Promise<void>) => void) => Promise<T>
+  ): Promise<T>
+  ```
+- **调用约定**:fn 内可调 `registerAfterCommit(asyncHook)`;tx commit 成功 → 按注册顺序串行执行 hooks(错误 log 不阻断);tx rollback → hooks 不触发(规则 2 同机制)
+- **实现**:复用 Task 6 `withTenantContext` 开 tx + Phase E `afterCommit` 机制(本 Task 8 Step 1 line 1394 已实现 hook push),只是抽象为非 Express 场景可用的 helper
+- **Blast radius**:0(纯新增 export,不升级 `withTenantContext` 原签名)
+- **实施期 split**:
+  - Task 8 实施时新增 helper + 单元测试(hook 注册 / commit 后执行 / rollback 不触发 3 场景)
+  - Phase G Task 41 webhook handler 直接 `import` 使用
+- **G7-4 vs `tenantAwareRoute` 关系**:同机制异用途 —— `tenantAwareRoute` 用于 Express routes(绑 HTTP req/res);G7-4 用于 webhook / cron / 测试 / 其他非 Express 场景(纯 tx 语义)
+
+**G7-6 `paymentRepo.attachItems` reference**(非 Task 8 scope):Phase D Task 19 repo 层实施,锚 `phase-g-session-payment-settlement.md:436`。Task 8 不处理,Phase D Task 19 plan verify 独立启动。
+
+---
+
 - [ ] **Step 1：写完整文件**
 
 ```bash
