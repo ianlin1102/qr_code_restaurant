@@ -1,64 +1,90 @@
-import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { DEMO_STORE, DEMO_PLATFORM_ADMIN_EMAIL, SEEDER_GRANTED_BY } from './seed-data/store.js'
+
+// MODULES lives in shared workspace. For seed we just hard-list keys to avoid
+// pulling the whole modules.ts into Prisma's seed context (which uses tsx).
+// If you add a new module, update this list AND shared/modules.ts.
+const ALL_MODULES = [
+  'core',
+  'analytics',
+  'coupons',
+  'waitlist',
+  'printer',
+  'staff-management',
+]
 
 const prisma = new PrismaClient()
 
-async function upsertUser(
-  storeId: string,
-  username: string,
-  password: string,
-  role: 'owner' | 'staff',
-) {
-  const hashed = await bcrypt.hash(password, 10)
-  const user = await prisma.storeUser.upsert({
-    where: { storeId_username: { storeId, username } },
-    update: { password: hashed },
-    create: { storeId, username, password: hashed, role },
-  })
-  console.log(`  ${user.username} / ${password} (${user.role})`)
-  return user
-}
-
 async function main() {
-  // === Store 1: 示例餐厅 ===
-  const store1 = await prisma.store.upsert({
-    where: { id: 'store-demo-001' },
-    update: {},
-    create: {
-      id: 'store-demo-001',
-      name: '示例餐厅',
-      description: '这是一家示例餐厅',
-      openingHours: '10:00 - 22:00',
-      announcement: '欢迎光临！',
-    },
-  })
-  console.log(`Store: ${store1.id} (${store1.name})`)
-  await upsertUser(store1.id, 'admin', 'admin123', 'owner')
-  await upsertUser(store1.id, 'staff1', 'staff123', 'staff')
-  await upsertUser(store1.id, 'staff2', 'staff123', 'staff')
+  console.log('[seed] Starting…')
 
-  // === Store 2: 火锅世界 ===
-  const store2 = await prisma.store.upsert({
-    where: { id: 'store-demo-002' },
-    update: {},
+  // ---- Step 1: Reset super-admin password (idempotent) ----
+  // The admin row is inserted by migration 20260417000003_seed_platform_admin.
+  // Here we ensure the password is synced to DEMO_PLATFORM_ADMIN_PASSWORD env,
+  // if set. Otherwise leave the migration's 'changeme' placeholder.
+  const adminPassword = process.env.DEMO_PLATFORM_ADMIN_PASSWORD
+  if (adminPassword) {
+    // Upsert (not update) — if migration 20260417000003 rolled back or was
+    // manually cleared, update would throw "Record not found". Seed must be
+    // runnable against any DB state.
+    const hash = await bcrypt.hash(adminPassword, 10)
+    await prisma.platformAdmin.upsert({
+      where: { email: DEMO_PLATFORM_ADMIN_EMAIL },
+      create: {
+        email: DEMO_PLATFORM_ADMIN_EMAIL,
+        passwordHash: hash,
+        role: 'super-admin',
+        isActive: true,
+      },
+      update: { passwordHash: hash },
+    })
+    console.log('[seed] Super-admin password reset from DEMO_PLATFORM_ADMIN_PASSWORD env')
+  } else {
+    console.log('[seed] Super-admin password left as migration default ("changeme") — change immediately')
+  }
+
+  // ---- Step 2: Demo store (upsert) ----
+  const demoStore = await prisma.store.upsert({
+    where: { id: DEMO_STORE.id },
     create: {
-      id: 'store-demo-002',
-      name: '火锅世界',
-      description: '正宗重庆火锅',
-      openingHours: '11:00 - 23:00',
-      announcement: '新店开业，全场八折！',
+      id: DEMO_STORE.id,
+      name: DEMO_STORE.name,
+      description: DEMO_STORE.description,
+      tipBase: DEMO_STORE.tipBase,
+    },
+    update: {
+      name: DEMO_STORE.name,
+      description: DEMO_STORE.description,
     },
   })
-  console.log(`Store: ${store2.id} (${store2.name})`)
-  await upsertUser(store2.id, 'admin', 'admin123', 'owner')
-  await upsertUser(store2.id, 'staff1', 'staff123', 'staff')
-  await upsertUser(store2.id, 'staff2', 'staff123', 'staff')
+  console.log(`[seed] Demo store: ${demoStore.id}`)
+
+  // ---- Step 3: Module license ----
+  // Dev: grant all modules for full feature testing.
+  // Prod: only 'core' (new stores in prod default to core per D19).
+  const modules = process.env.NODE_ENV === 'production' ? ['core'] : ALL_MODULES
+  await prisma.moduleLicense.upsert({
+    where: { storeId: demoStore.id },
+    create: {
+      storeId: demoStore.id,
+      modules,
+      grantedAt: new Date(),
+      grantedBy: SEEDER_GRANTED_BY,
+    },
+    update: {
+      modules,
+    },
+  })
+  console.log(`[seed] Module license: ${modules.join(', ')}`)
+
+  console.log('[seed] Phase 9a complete — roles/staff/menu/tables pending (Task 9b)')
 }
 
 main()
+  .then(() => prisma.$disconnect())
   .catch((e) => {
-    console.error(e)
+    console.error('[seed] FAILED:', e)
+    prisma.$disconnect()
     process.exit(1)
   })
-  .finally(() => prisma.$disconnect())

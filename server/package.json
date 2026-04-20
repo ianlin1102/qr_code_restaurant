@@ -26,6 +26,9 @@
     "stripe": "^20.4.1",
     "uuid": "^11.0.0"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
