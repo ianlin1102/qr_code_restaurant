@@ -88,15 +88,18 @@ enum SplitBillStatus {
 // ========== 租户 & 权限 ==========
 
 model Store {
-  id            String         @id @default(uuid())
-  name          String
-  description   String?
-  openingHours  String?        @map("opening_hours")
-  announcement  String?
-  logo          String?
-  tipBase       String         @default("pretax")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt      @map("updated_at")
+  id             String         @id @default(uuid())
+  name           String
+  nameEn         String?        @map("name_en")
+  description    String?
+  descriptionEn  String?        @map("description_en")
+  openingHours   String?        @map("opening_hours")
+  announcement   String?
+  announcementEn String?        @map("announcement_en")
+  logo           String?
+  tipBase        String         @default("pretax")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt      @map("updated_at")
 
   moduleLicense ModuleLicense?
   staff         Staff[]
@@ -173,6 +176,7 @@ model Role {
   storeId     String   @map("store_id")
   store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   name        String
+  nameEn      String?  @map("name_en")
   permissions String[]
   isSystem    Boolean  @default(false) @map("is_system")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -225,6 +229,7 @@ model Category {
   storeId    String     @map("store_id")
   store      Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
   name       String
+  nameEn     String?    @map("name_en")
   sortOrder  Int        @default(0) @map("sort_order")
   isActive   Boolean    @default(true) @map("is_active")
   createdAt  DateTime   @default(now()) @map("created_at")
@@ -236,14 +241,16 @@ model Category {
 }
 
 model MenuItem {
-  id           String              @id @default(uuid())
-  storeId      String              @map("store_id")
-  store        Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  categoryId   String              @map("category_id")
-  category     Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  name         String
-  description  String?
-  imageUrl     String?             @map("image_url")
+  id            String              @id @default(uuid())
+  storeId       String              @map("store_id")
+  store         Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId    String              @map("category_id")
+  category      Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name          String
+  nameEn        String?             @map("name_en")
+  description   String?
+  descriptionEn String?             @map("description_en")
+  imageUrl      String?             @map("image_url")
   price        Int
   isAvailable  Boolean             @default(true)  @map("is_available")
   isStaffOnly  Boolean             @default(false) @map("is_staff_only")
@@ -264,6 +271,7 @@ model MenuItemOption {
   menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
   groupName   String   @map("group_name")
   name        String
+  nameEn      String?  @map("name_en")
   priceAdjust Int      @default(0) @map("price_adjust")
   isDefault   Boolean  @default(false) @map("is_default")
   sortOrder   Int      @default(0) @map("sort_order")
@@ -330,6 +338,7 @@ model OrderItem {
   menuItemId String   @map("menu_item_id")
   position   Int                          // D57: caller 填 0-indexed，@@unique 保证稳定 idx 契约
   name       String
+  nameEn     String?  @map("name_en")     // i18n: denormalize from MenuItem.nameEn at order time
   unitPrice  Int      @map("unit_price")
   quantity   Int
   note       String?
@@ -350,7 +359,9 @@ model OrderItemOption {
   orderItemId  String    @map("order_item_id")
   orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   groupName    String    @map("group_name")
+  groupNameEn  String?   @map("group_name_en")   // i18n: maps to legacy optionNameEn
   name         String
+  nameEn       String?   @map("name_en")         // i18n: maps to legacy choiceNameEn
   priceAdjust  Int       @default(0) @map("price_adjust")
 
   @@map("order_item_options")
@@ -376,7 +387,13 @@ model Payment {
 
   @@index([storeId, createdAt])
   @@index([sessionId])
-  @@index([stripePaymentIntentId])
+  // G7-5 / D62: webhook idempotency guard — unique on nullable column.
+  // Postgres default NULL-distinct semantics: multiple NULL rows allowed,
+  // non-NULL values must be unique. Behaviorally equivalent to partial
+  // unique `WHERE stripe_payment_intent_id IS NOT NULL` that handoff §D62
+  // originally specified. Prisma 6 schema DSL does not support partial
+  // unique constraints; postgres default NULL-distinct is the native path.
+  @@unique([stripePaymentIntentId], map: "payment_stripe_intent_unique")
   @@map("payments")
 }
 
@@ -529,18 +546,33 @@ git commit -m "feat(phase-5): rewrite prisma schema for 15 entities + B2
 - PlatformAdmin separate from Staff for three-tier permission model
 - Prisma enums (OrderStatus, SessionStatus, PaymentStatus, SplitBillStatus)
   enforce state machines at DB level, mirror shared/types.ts discriminants
+- G7-5 / D62 webhook idempotency: Payment.stripePaymentIntentId @@unique
+  (postgres NULL-distinct gives partial-unique behavior natively)
+- i18n fields (11 *En fields across Store/Category/MenuItem/MenuItemOption
+  /OrderItem/OrderItemOption/Role) preserved per Phase B pre-grep evidence
+  4f6517e1 (grep: 5/5 fields are live, not dead)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
+> **Plan 修订追加（2026-04-19）**：本 Task 2 在 Phase B 前置 grep `4f6517e1` 基础上加入 2 项 Ian 批准的决议：
+>
+> **G7-5 落地(α Path)**：`Payment.stripePaymentIntentId` 用 `@@unique` 替代原 `@@index`。Prisma 6 DSL 不支持 partial `@@unique`,改用 postgres 默认 NULL-distinct 语义(多 NULL 允许,非 NULL 唯一)—— 语义等价于 handoff §D62 原指定的 `WHERE stripe_payment_intent_id IS NOT NULL` partial。
+>
+> **i18n *En 字段(11 个)**：C3 grep 证据(`4f6517e1` §Step 1-3)显示 5/5 *En 字段全活字段(`nameEn` r44/w111 含 60 seed / `descriptionEn` r6/w19 / `announcementEn` r16/w8 / `optionNameEn` r2/w5 / `choiceNameEn` r9/w5)+ `client/src/lib/i18n-utils.ts` `localized()`/`localizedDesc()`/`optionLabel()` 切换核心。故 α 保留全部。字段落位:Store×3 / Category×1 / MenuItem×2 / MenuItemOption×1 / OrderItem×1 / OrderItemOption×2 / Role×1 = 11。
+>
+> **规则 7.2 `[NEEDS IAN CONFIRMATION]`**:MenuItemOption 仅 `nameEn`(无 `groupNameEn`),但 OrderItemOption 有 `groupNameEn` + `nameEn`。Logic 上 OrderItemOption 的 `groupNameEn` 需来自 MenuItemOption 源数据 —— 若 MenuItemOption 无 `groupNameEn`,则 OrderItemOption.groupNameEn denormalize 无源。是否给 MenuItemOption 也加 `groupNameEn`(变 12 字段)?本次 plan 修订按 Ian 11 字段版本落地,不自行扩充。
+
 ---
 
-### Task 3：生成 init migration
+### Task 3：生成 extend_schema 增量 migration（β Path）
+
+> **Plan 修订(2026-04-19,Ian calibration)**:本 Task 从原"生成 init migration"改为"生成 extend_schema 增量 migration"。原因:本地 DB 已应用 `20260309182624_init`(Phase 5 前,含 Store + StoreUser),规则 1 增量 migration 铁律禁止改已发布 migration。Task 2 重写 schema 后,`prisma migrate dev` 自动生成从 applied state → new schema 的 diff migration,内容是 ALTER TABLE stores(+columns)+ DROP TABLE store_users + CREATE TABLE for ~20 new tables(categories / menu_items / sessions / orders / payments / split_bills / staff / roles / platform_admins / ...)。
 
 **Files:**
-- Create: `server/prisma/migrations/20260417000001_init/migration.sql`（Prisma 自动生成）
+- Create: `server/prisma/migrations/20260417000001_extend_schema/migration.sql`（Prisma 自动生成增量 diff）
 
-**前置**：Task 2 完成。**需要一个本地 postgres**（Task 10 的 docker-compose 还没写，用临时容器）。
+**前置**:Task 2 完成。**需要本地 postgres + 已应用 `20260309182624_init`**(Phase 5 前本地已跑过;若干净环境,先 `prisma migrate deploy` 应用旧 init 建立 baseline)。
 
 - [ ] **Step 1：起临时 postgres 用于 migration 生成**
 
@@ -565,56 +597,67 @@ echo $DATABASE_URL
 
 **不要写进 .env**——这是临时的。
 
-- [ ] **Step 3：生成 migration**
+- [ ] **Step 3：生成增量 migration**
 
 ```bash
-pnpm prisma migrate dev --name init --create-only
+pnpm prisma migrate dev --name extend_schema --create-only
 ```
 
-`--create-only` 只生成 SQL 不执行。预期输出：
+`--create-only` 只生成 SQL 不执行。Prisma 从 applied state(旧 init Store+StoreUser)diff 到 new schema(21 models),产出 ALTER/DROP/CREATE 混合 SQL。预期输出：
 ```
 Prisma Migrate created the following migration from new schema changes:
 migrations/
-  └─ 20260417000001_init/
+  └─ 20260417000001_extend_schema/
     └─ migration.sql
 
 You can now edit it and apply it by running prisma migrate deploy.
 ```
 
-如果时间戳不是 `20260417000001`（Prisma 用当前时间），**手动重命名目录**到 `20260417000001_init`，保证 spec 中的命名一致性。
+如果时间戳不是 `20260417000001`（Prisma 用当前时间），**手动重命名目录**到 `20260417000001_extend_schema`，保证 spec 中的命名一致性(与 Task 4 `20260417000002_rls_and_roles` + Task 5 `20260417000003_seed_platform_admin` 连续编号)。
 
 ```bash
-# 如果 Prisma 用了不同时间戳（例如 20260417_102334_init）
+# 如果 Prisma 用了不同时间戳（例如 20260417_102334_extend_schema）
 cd server/prisma/migrations
-mv <prisma-generated-name> 20260417000001_init
+mv <prisma-generated-name> 20260417000001_extend_schema
 ls -la
+# 预期：20260309182624_init/ + 20260417000001_extend_schema/ 两个目录
 ```
 
-- [ ] **Step 4：审核生成的 SQL**
+- [ ] **Step 4：审核生成的增量 SQL**
 
 ```bash
-cat server/prisma/migrations/20260417000001_init/migration.sql | head -60
+cat server/prisma/migrations/20260417000001_extend_schema/migration.sql | head -100
 ```
 
-预期开头类似：
+预期开头类似(β 增量混合 SQL)：
 ```sql
--- CreateTable
-CREATE TABLE "stores" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    ...
-    CONSTRAINT "stores_pkey" PRIMARY KEY ("id")
-);
--- CreateTable
-CREATE TABLE "platform_admins" (
-    ...
+-- AlterTable (existing stores gets new columns)
+ALTER TABLE "stores" ADD COLUMN "name_en" TEXT;
+ALTER TABLE "stores" ADD COLUMN "description_en" TEXT;
+ALTER TABLE "stores" ADD COLUMN "announcement_en" TEXT;
+ALTER TABLE "stores" ADD COLUMN "tip_base" TEXT NOT NULL DEFAULT 'pretax';
+...
+
+-- DropTable (old StoreUser replaced by Staff)
+DROP TABLE "StoreUser";
+
+-- CreateTable (new entities)
+CREATE TABLE "platform_admins" (...);
+CREATE TABLE "platform_audit_log" (...);
+CREATE TABLE "module_licenses" (...);
+CREATE TABLE "categories" (...);
+CREATE TABLE "menu_items" (...);
+...
 ```
 
-检查：
-- 21 张表（15 主 + 6 子）全部 CREATE
-- 所有 `@@index` 生成了 CREATE INDEX
-- 所有 `@@unique` 生成了 CREATE UNIQUE INDEX
-- 所有外键生成了 ALTER TABLE ADD CONSTRAINT
+检查(β 增量特定):
+- `stores` 表有 ALTER TABLE ADD COLUMN(i18n + tipBase 新字段)
+- `StoreUser` 表 DROP(被 Staff 替代)
+- ~20 张新表 CREATE(21 model - Store 已存在 = 20 新表)
+- 所有 `@@index` 生成 CREATE INDEX
+- 所有 `@@unique` 生成 CREATE UNIQUE INDEX(含 G7-5 `payment_stripe_intent_unique`)
+- 所有 `@@id` / FK 生成 PRIMARY KEY / ADD CONSTRAINT
+- 4 enum 生成 `CREATE TYPE "OrderStatus" AS ENUM (...)` 等
 
 - [ ] **Step 5：清理临时容器（migration 已经生成到文件）**
 
@@ -627,8 +670,19 @@ unset DATABASE_URL
 - [ ] **Step 6：commit migration**
 
 ```bash
-git add server/prisma/migrations/20260417000001_init/
-git commit -m "feat(phase-5): generate init migration for all entities
+git add server/prisma/migrations/20260417000001_extend_schema/
+git commit -m "feat(phase-5): generate extend_schema incremental migration
+
+β 增量 path: 在旧 20260309182624_init (Store + StoreUser) 基础上扩展到
+完整 21 model schema (15 主表 + 6 子表 + 4 status enum)。
+规则 1 增量铁律:不改已发布 init,新增 migration 推进 schema。
+
+Contains (Prisma-generated diff):
+- ALTER TABLE stores: i18n + tipBase + updatedAt columns
+- DROP TABLE StoreUser (replaced by Staff)
+- CREATE TABLE for 20 new entities
+- CREATE TYPE for 4 status enums
+- Indexes: all @@index + @@unique from schema
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
@@ -1227,6 +1281,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **前置**：Task 8 完成。
 
 **本 task 只做前 3 步**（super admin 已经由 migration 插入，seed 这里是 idempotent update；demo store；ModuleLicense）。后 3 步（roles / owner staff / menu / tables）在 Task 9b。
+
+> **Plan 修订(2026-04-19,Ian calibration)**:本 Task 9a/9b **新 seed 从零写**(非 patch 旧 seed),但必须**参考旧 `server/prisma/seed.ts`(1879 bytes,Phase 5 前遗留)的测试数据内容** —— 有价值部分(菜品 / 账号 / 桌号 demo 数据)迁移到新 seed,确保开发/演示连续性。不复用旧 seed 代码结构(JsonStore 时代,与 Prisma seed 语义不兼容)。
+>
+> **旧 `seed.ts` 归档**:不在本 plan 处理,Phase I 清理阶段归档到 `_archive/`(详 spec §9.10)。Task 9a 实施时备份 `cp server/prisma/seed.ts server/prisma/seed.ts.pre-phase5` 即可,Phase I 统一归档。
 
 - [ ] **Step 1：创建 seed-data 目录 + demo store 常量**
 
