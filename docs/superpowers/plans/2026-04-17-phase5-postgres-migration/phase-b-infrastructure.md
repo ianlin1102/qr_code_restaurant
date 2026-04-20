@@ -1108,6 +1108,63 @@ head -50 shared/types.ts
 
 记下里面已有的 `Order` / `OrderStatus` 定义（如果有）。
 
+- [ ] **Step 1.5:Order.tableNameEn 补齐(D68 snapshot 哲学 shared 载体)**
+
+> **锚 `b9baa7e4` §5 修订 3**:Task 2 schema 已含 `Order.tableNameEn`(line 333-336,D68 snapshot 哲学),shared/types.ts Order interface **未同步**。Phase G Task 34 frontend 渲染 + Order snapshot 序列化依赖此字段,Task 7 β refinement 补齐。
+
+**shared/types.ts Order interface 修订** (line ~200 附近,与 tableName 相邻):
+
+```ts
+// 原(大概位置):
+export interface Order {
+  id: string
+  storeId: string
+  sessionId: string
+  tableId: string
+  tableName: string         // D68 snapshot
+  // ... 其他字段
+}
+
+// 改为:
+export interface Order {
+  id: string
+  storeId: string
+  sessionId: string
+  tableId: string
+  tableName: string         // D68 snapshot
+  tableNameEn?: string      // ← 新增:D68 snapshot 哲学,下单时冻结英文桌名,历史订单不受后续改名影响
+  // ... 其他字段
+}
+```
+
+**设计一致性**:
+- 与 Task 2 schema `Order.tableNameEn String? @map("table_name_en")` 对齐(optional,非所有 store 启用 i18n)
+- 与 `Table.nameEn` / `Category.nameEn` / `MenuItem.nameEn` 等 *En 字段模式一致
+- 前端取值:`order.tableNameEn ?? order.tableName`(fallback 模式)
+
+- [ ] **Step 1.6:Table.status union vs schema enum 精度对齐(精度提升,非阻塞)**
+
+> **锚 `b9baa7e4` §5 修订 4**:Task 2 schema `TableStatus` enum 与 types.ts `Table.status` string literal union 需对齐。当前 types.ts 若用 `string` 宽类型或 union 值与 schema 不一致,TS 编译器无法在前端捕获 invalid status 赋值。
+
+**Verify 步骤(CC 实施期先 grep,再决定是否修)**:
+
+```bash
+# 1. 读 Task 2 schema TableStatus enum 值
+grep -A 10 "^enum TableStatus" server/prisma/schema.prisma
+# 期望: idle / occupied / (其他值待 Task 2 schema 确认)
+
+# 2. 读 types.ts Table.status 当前定义
+grep -B 2 -A 2 "status" shared/types.ts | grep -B 2 -A 2 "Table"
+# 期望: status: 'idle' | 'occupied' | ... 或 status: string
+```
+
+**修订策略**(CC 实施期根据 grep 结果判):
+- 若 types.ts Table.status 已是 string literal union 且值与 schema enum 一致 → **不修**(精度已达)
+- 若 types.ts Table.status 是 `string` 宽类型 → **改为 string literal union**,值严格对齐 schema enum
+- 若 types.ts Table.status union 值与 schema enum 不一致(例如 types.ts 多 'reserved' 而 schema 没) → **规则 8 暂停**,α/β/γ/δ 决议以哪个为准
+
+**blast radius 低**:Table.status 不在 JWT payload / API response 核心路径, 类型精度提升不触发 breaking。CC 实施期 grep 后无需 Ian 决议即可 inline 修(除非 union 值冲突)。
+
 - [ ] **Step 1.7:StoreUser + JWT RoleDefinition 切换(β 决议 5,Plan 修订 #4)**
 
 > **锚 `b9baa7e4` §4 发现 2,Ian 决议 5**:强切换 — `StoreUser.role` / `JwtPayload.role` / `AuthUser.role` 从 `string` 改 `RoleDefinition`。**不向后兼容旧 JWT**,deploy 当下全员 re-login(Phase J 部署纪律)。
@@ -1245,6 +1302,46 @@ cd client && ./node_modules/.bin/tsc -b 2>&1 | tee /tmp/tsc-client.log | head; c
 - Phase B 阶段 client 出现新 `OrderStatus` case 不全的编译错误是**允许的**——B2 代码还没写（Phase G Task 34 的职责），client 的 switch 必然还没加 `case 'draft'` 分支
 - **不允许**的：因为本次改动引入的非 OrderStatus 相关错误（比如把 `OrderStatus` 类型名改错了）
 
+- [ ] **Step 4.5:Staff.role blast radius 清单(给 Phase E Task 27-29 + Phase G Task 34 的 entry point)**
+
+> **锚 `b9baa7e4` §5 修订 5**:Step 1.7 StoreUser/JwtPayload/AuthUser `role: string → RoleDefinition` 切换的 blast radius 预估 ~20 处(server 10 + shared 5 + client TBD)。Step 4 client/server tsc 会报大量新 error,Task 7 阶段**不修**(Phase B 允许 pre-existing OrderStatus 类 error,见 Step 4 commit 规则),但需**写入 TODO work-log 供 Phase E Task 27-29 / Phase G Task 34 消费**。
+
+```bash
+# Grep server/src 所有 .role 引用(role FK 切换 blast)
+cat > docs/superpowers/work-logs/2026-04-20-phase5-staff-role-blast-radius.md <<'HEADER'
+# Phase 5 — Staff.role blast radius handoff to Phase E Task 27-29 / Phase G Task 34
+
+Phase B Task 7 Step 1.7 切换 StoreUser/JwtPayload/AuthUser `role: string → RoleDefinition`
+(β 决议 5, 锚 b9baa7e4 §4 发现 2)。以下 server/client 站点有 `.role` 引用或依赖,
+必须在 Phase E/G 实施时更新为 `role.name` 或 `role: RoleDefinition` 消费模式。
+
+**Action for downstream tasks**:
+- Phase E Task 27-29: server routes/middleware/services 全量扫 .role 引用
+- Phase G Task 34: client session-cart + auth store 状态改造
+
+## Server-side sites found
+
+HEADER
+
+# Grep server/src 所有 req.user.role / JwtPayload.role / StoreUser.role 等引用
+grep -rn "\.role\b" server/src --include="*.ts" | \
+  grep -v "roleDefinition\|roleId\|role_id\|roleName" | \
+  head -100 >> docs/superpowers/work-logs/2026-04-20-phase5-staff-role-blast-radius.md || true
+
+echo -e "\n## Client-side sites (Phase G Task 34 scope)\n" \
+  >> docs/superpowers/work-logs/2026-04-20-phase5-staff-role-blast-radius.md
+
+grep -rn "\.role\b" client/src --include="*.ts" --include="*.tsx" 2>/dev/null | \
+  grep -v "roleDefinition\|roleId\|role_id" | \
+  head -50 >> docs/superpowers/work-logs/2026-04-20-phase5-staff-role-blast-radius.md || true
+
+wc -l docs/superpowers/work-logs/2026-04-20-phase5-staff-role-blast-radius.md
+```
+
+**期望**: work-log 几十行,记录每个 `.role` 引用的 `file:line` + 上下文。Phase E / G 实施时先读这个 work-log。
+
+**不在本 Task 7 scope**:具体 `.role → .role.name` 改写(Phase E/G 消费期处理)。
+
 - [ ] **Step 5：扫 client 所有 OrderStatus switch，写入 TODO 清单供 Phase G Task 34 消费**
 
 ```bash
@@ -1285,7 +1382,9 @@ wc -l docs/superpowers/work-logs/2026-04-17-phase5-client-orderstatus-todos.md
 - [ ] **Step 6：commit**
 
 ```bash
-git add shared/types.ts docs/superpowers/work-logs/2026-04-17-phase5-client-orderstatus-todos.md
+git add shared/types.ts \
+        docs/superpowers/work-logs/2026-04-17-phase5-client-orderstatus-todos.md \
+        docs/superpowers/work-logs/2026-04-20-phase5-staff-role-blast-radius.md
 git commit -m "feat(phase-5): add DraftOrder/SubmittedOrder discriminants for B2
 
 OrderStatus now includes 'draft' (cart = orders WHERE status='draft' after B2).
@@ -1294,6 +1393,11 @@ Settlement/FIFO/summary functions should accept SubmittedOrder[] to compile-time
 reject drafts.
 
 Client sites with OrderStatus switches logged to work-logs/ for Phase G Task 34.
+
+β refinement additions:
+- Step 1.5: Order.tableNameEn added to types.ts (D68 snapshot shared 载体)
+- Step 1.6: Table.status union vs schema enum 精度对齐 (grep-driven, 非强制改)
+- Step 4.5: Staff.role blast radius work-log to docs/superpowers/work-logs/
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
