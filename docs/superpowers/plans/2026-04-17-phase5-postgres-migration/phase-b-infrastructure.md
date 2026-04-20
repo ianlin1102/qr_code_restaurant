@@ -1894,7 +1894,8 @@ pnpm prisma db seed
 
 预期输出：
 ```
-Applying migration `20260417000001_init`
+Applying migration `20260417000001_extend_schema`
+... (plus any pre-existing migrations already applied, e.g. `20260309182624_init`)
 Applying migration `20260417000002_rls_and_roles`
 Applying migration `20260417000003_seed_platform_admin`
 
