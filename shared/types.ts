@@ -57,12 +57,9 @@ export interface StoreUser {
   id: string
   storeId: string
   username: string
-  password: string
-  // legacy `role: string` removed per Phase B Task 7 β refinement (77baab58).
-  // Staff.role 移除 only — roleId? / JwtPayload / AuthUser / OrderStatus 改动
-  // 延后 Task 7 实施期处理(5 延后项:Order.tableNameEn / Table.status union /
-  // blast radius / JWT RoleDefinition / OrderStatus 5 值)。
-  roleId?: string           // new: references RoleDefinition.id
+  password: string          // hash
+  role: RoleDefinition      // β 决议 5: string → RoleDefinition (denormalized FK; consume via role.name)
+  roleId: string            // β 决议 5: required (NOT NULL, 对齐 Task 2 schema staff.role_id)
   clockPin?: string         // 4-digit PIN for clock-in/out
   createdAt: string
 }
@@ -176,10 +173,16 @@ export interface CartItem {
 }
 
 // ===== Orders =====
-// Kitchen flow: pending → confirmed → preparing → served
-// Payment: paid (pay-first confirmed via Stripe)
-// Abnormal: closed (cancelled/void)
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'served' | 'paid' | 'closed'
+// Phase 5 OrderStatus: 5 values (was 6; 'confirmed'/'paid'/'closed' merged or derived).
+// Kitchen flow: draft → pending → preparing → served
+// Draft: B2 cart (status='draft', not yet submitted).
+// Voided: cancelled/refunded (replaces legacy 'closed' order semantics).
+// Derived states (not in status):
+//   已支付 = order.session.payments.some(p => p.status === 'confirmed' && covers(p, order))
+//   已关闭 = order.session.status === 'closed'
+//   已接单 = order.status === 'preparing' || order.status === 'served'
+// 'confirmed' merged into 'preparing' (kitchen semantics equivalent).
+export type OrderStatus = 'draft' | 'pending' | 'preparing' | 'served' | 'voided'
 
 export interface OrderItem {
   menuItemId: string
@@ -202,6 +205,7 @@ export interface Order {
   tableId: string
   sessionId: string
   tableName: string
+  tableNameEn?: string         // D68 snapshot: 下单时冻结英文桌名, 历史订单不受后续改名影响
   items: OrderItem[]
   totalPrice: number
   status: OrderStatus
@@ -273,16 +277,16 @@ export interface SplitBill {
 export interface JwtPayload {
   userId: string
   storeId: string
-  role: string              // legacy
-  roleId?: string
+  role: RoleDefinition      // β 决议 5: string → RoleDefinition (D73 JWT 不向后兼容, deploy 全员 re-login)
+  roleId: string
   permissions?: Permission[]
 }
 
 export interface AuthUser {
   id: string
   username: string
-  role: string
-  roleId?: string
+  role: RoleDefinition      // β 决议 5: string → RoleDefinition
+  roleId: string
   permissions?: Permission[]
   storeId: string
 }
@@ -370,4 +374,29 @@ export interface CreateOrderRequest {
 export interface MenuResponse {
   store: Pick<Store, 'id' | 'name' | 'logo' | 'description' | 'openingHours' | 'announcement' | 'announcementEn'>
   categories: (Category & { items: MenuItem[] })[]
+}
+
+// ========== B2: Draft/Submitted 判别联合 ==========
+// 设计原因：Cart 并入 Order 后，draft 状态的 order 不应流入 FIFO / summary / settlement。
+// 类型判别让编译器在函数签名层阻止 draft 混入。
+// Repository 层的 findSubmitted 默认排除 draft，findDraft 是显式 opt-in。
+// 详见 docs/superpowers/specs/2026-04-17-phase5-postgres-migration-design.md §5.2
+
+export type DraftOrder = Order & { status: 'draft' }
+export type SubmittedOrder = Order & { status: Exclude<OrderStatus, 'draft'> }
+
+export function isDraft(o: Order): o is DraftOrder {
+  return o.status === 'draft'
+}
+
+export function isSubmitted(o: Order): o is SubmittedOrder {
+  return o.status !== 'draft'
+}
+
+/**
+ * Active order filter — used in kitchen/KDS views.
+ * Excludes both draft (not submitted yet) and voided/closed states.
+ */
+export function isActiveOrder(o: Order): boolean {
+  return o.status === 'pending' || o.status === 'preparing'
 }
