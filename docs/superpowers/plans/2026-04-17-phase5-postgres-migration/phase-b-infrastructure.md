@@ -1444,15 +1444,16 @@ router.post('/stores/:storeId/waitlist', tenantAwareRoute(async (req, res) => {
   ```ts
   withTenantContextAndHooks<T>(
     storeId: string,
-    fn: (tx: Prisma.TransactionClient, registerAfterCommit: (hook: () => Promise<void>) => void) => Promise<T>
+    fn: (tx: Prisma.TransactionClient, registerAfterCommit: (hook: () => void | Promise<void>) => void) => Promise<T>
   ): Promise<T>
   ```
 - **调用约定**:fn 内可调 `registerAfterCommit(asyncHook)`;tx commit 成功 → 按注册顺序串行执行 hooks(错误 log 不阻断);tx rollback → hooks 不触发(规则 2 同机制)
+- **hook 类型一致性**:`() => void | Promise<void>` 与 `tenantAwareRoute` Locals.afterCommit 类型一致(本 plan Step 1 line ~1494),允许 emit 函数 return void 或 Promise
 - **实现**:复用 Task 6 `withTenantContext` 开 tx + Phase E `afterCommit` 机制(本 Task 8 Step 1 line 1394 已实现 hook push),只是抽象为非 Express 场景可用的 helper
 - **Blast radius**:0(纯新增 export,不升级 `withTenantContext` 原签名)
 - **实施期 split**:
-  - Task 8 实施时新增 helper + 单元测试(hook 注册 / commit 后执行 / rollback 不触发 3 场景)
-  - Phase G Task 41 webhook handler 直接 `import` 使用
+  - Task 8 实施时新增 helper(单元测试 defer Phase H test infra 就绪后实施 — Phase B 阶段无 test infra,本 task 仅 tsc verify 即可,见 Step 2)
+  - Phase G Task 41 webhook handler 直接 `import { withTenantContextAndHooks }` 使用
 - **G7-4 vs `tenantAwareRoute` 关系**:同机制异用途 —— `tenantAwareRoute` 用于 Express routes(绑 HTTP req/res);G7-4 用于 webhook / cron / 测试 / 其他非 Express 场景(纯 tx 语义)
 
 **G7-6 `paymentRepo.attachItems` reference**(非 Task 8 scope):Phase D Task 19 repo 层实施,锚 `phase-g-session-payment-settlement.md:436`。Task 8 不处理,Phase D Task 19 plan verify 独立启动。
@@ -1585,22 +1586,105 @@ export function platformAwareRoute(handler: TenantAwareHandler): RequestHandler 
 }
 EOF
 ```
+- [ ] **Step 1.5:扩展 prisma-client.ts 加 `withTenantContextAndHooks` (G7-4)**
 
-- [ ] **Step 2：tsc 验证**
+物理位置:`server/src/repositories/prisma-client.ts`(Task 6 产物,与 `withTenantContext` 同文件)。
+本步用 `cat >> ... <<'EOF'` append 模式追加新 export,**不改原有内容**(Blast radius = 0,withTenantContext 现有签名 + 0 个调用点不动)。
+
+```bash
+cat >> server/src/repositories/prisma-client.ts <<'EOF'
+
+/**
+ * Like withTenantContext, but also exposes a registerAfterCommit(hook)
+ * function that the callback can use to enqueue post-commit side effects.
+ *
+ * For non-Express scenarios where tenantAwareRoute cannot be used:
+ *   - Webhook handlers (e.g., Stripe payment_intent.succeeded → SSE emit)
+ *   - Cron jobs that need tenant scope + post-commit notifications
+ *   - Tests that need to assert hook ordering
+ *
+ * Semantics (mirror tenantAwareRoute in middleware/tenant-aware.ts):
+ *   - tx commits successfully → hooks fire in registration order (FIFO)
+ *   - tx throws → hooks NEVER fire (rollback = no events; atomicity)
+ *   - hook throws → logged via console.error, does NOT stop other hooks,
+ *     does NOT propagate (tx is already durable; event loss is degrade-only)
+ *
+ * Why a separate helper instead of extending withTenantContext signature:
+ *   Blast radius = 0 — existing withTenantContext call sites untouched.
+ *   withTenantContext stays the minimal primitive; *AndHooks layers on top.
+ *
+ * Why console.error instead of logger:
+ *   prisma-client.ts intentionally has no logger dependency (DB primitive layer).
+ *   tenantAwareRoute (Express middleware layer) uses logger; this helper mirrors
+ *   the prisma-client.ts style. Phase H/I may unify logging strategy.
+ *
+ * @see Phase G Task 41 webhook D62 — primary consumer (Stripe payment_intent.succeeded)
+ * @see middleware/tenant-aware.ts tenantAwareRoute — Express-bound equivalent
+ */
+export async function withTenantContextAndHooks<T>(
+  storeId: string,
+  fn: (
+    tx: Prisma.TransactionClient,
+    registerAfterCommit: (hook: () => void | Promise<void>) => void
+  ) => Promise<T>
+): Promise<T> {
+  const hooks: Array<() => void | Promise<void>> = []
+  const registerAfterCommit = (hook: () => void | Promise<void>): void => {
+    hooks.push(hook)
+  }
+  const result = await withTenantContext(storeId, async (tx) =>
+    fn(tx, registerAfterCommit)
+  )
+  // tx committed — fire hooks in registration order.
+  // Errors here are logged, not propagated: caller already moved on,
+  // tx is durable, event loss is degrade-only.
+  for (const hook of hooks) {
+    try {
+      await hook()
+    } catch (err) {
+      console.error(
+        'withTenantContextAndHooks: afterCommit hook failed (tx already committed)',
+        err
+      )
+    }
+  }
+  return result
+}
+EOF
+```
+
+**Verify**:
+
+```bash
+grep -n "^export async function withTenantContextAndHooks" server/src/repositories/prisma-client.ts
+# 预期: 1 行 match (新增 export)
+
+wc -l server/src/repositories/prisma-client.ts
+# 预期: 现 99 行 + 新增 ~50 行 = ~149 行(±5 行容忍)
+```
+
+
+- [ ] **Step 2:tsc 验证 (0 NEW errors,本 task 文件范围)**
 
 ```bash
 cd server
-./node_modules/.bin/tsc --noEmit 2>&1 | grep -E "tenant-aware|prisma-client" | head
+./node_modules/.bin/tsc --noEmit 2>&1 | tee /tmp/tsc-task8.log
+
+# 显式 count 本 task 文件错误 (tenant-aware.ts 新建 + prisma-client.ts append)
+grep -cE "src/middleware/tenant-aware\.ts|src/repositories/prisma-client\.ts" /tmp/tsc-task8.log
+# 预期: 0
 ```
 
-预期：和这两个文件相关的错误 0。
+**说明**:其他文件 baseline errors (Phase B 阶段未消化) 允许存在,Phase G/H 处理。
+本 step 仅 verify Task 8 新增/修改的 2 个文件无新增 type error。
 
-- [ ] **Step 3：commit**
+- [ ] **Step 3:commit**
 
 ```bash
-git add server/src/middleware/tenant-aware.ts
-git commit -m "feat(phase-5): add tenantAwareRoute + platformAwareRoute decorators
+git add server/src/middleware/tenant-aware.ts server/src/repositories/prisma-client.ts
+git commit -m "feat(phase-5): add tenantAwareRoute/platformAwareRoute + G7-4 helper
 
+middleware/tenant-aware.ts (NEW):
 - tenantAwareRoute extracts storeId from route params, opens withTenantContext,
   exposes tx via res.locals for handler + repos to consume
 - platformAwareRoute assumes platform JWT middleware already ran, opens
@@ -1609,7 +1693,13 @@ git commit -m "feat(phase-5): add tenantAwareRoute + platformAwareRoute decorato
 - afterCommit(hook) registers rule-2-compliant post-commit callbacks:
   SSE emit and similar side effects fire AFTER tx commits, never inside.
   tx rollback → hooks never fire (event/data atomicity). hook throws →
-  logged but does not break response.
+  logged via logger.error but does not break response.
+
+repositories/prisma-client.ts (APPEND):
+- withTenantContextAndHooks (G7-4) — non-Express equivalent of tenantAwareRoute
+  for webhook handlers, cron jobs, tests. Same FIFO + tx-throws-skip-hooks +
+  hook-throws-logged-not-propagated semantics. Wraps withTenantContext
+  (blast radius = 0). Phase G Task 41 webhook D62 primary consumer.
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
