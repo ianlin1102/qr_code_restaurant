@@ -1097,6 +1097,81 @@ head -50 shared/types.ts
 
 记下里面已有的 `Order` / `OrderStatus` 定义（如果有）。
 
+- [ ] **Step 1.7:StoreUser + JWT RoleDefinition 切换(β 决议 5,Plan 修订 #4)**
+
+> **锚 `b9baa7e4` §4 发现 2,Ian 决议 5**:强切换 — `StoreUser.role` / `JwtPayload.role` / `AuthUser.role` 从 `string` 改 `RoleDefinition`。**不向后兼容旧 JWT**,deploy 当下全员 re-login(Phase J 部署纪律)。
+
+**shared/types.ts 3 处改动**:
+
+```ts
+// StoreUser (line ~56-65)
+export interface StoreUser {
+  id: string
+  storeId: string
+  username: string
+  password: string  // hash
+  role: RoleDefinition       // ← 改:string → RoleDefinition(denormalized FK)
+  roleId: string             // ← 改:roleId?: string → roleId: string(NOT NULL,对齐 Task 2 schema)
+  clockPin?: string
+  createdAt: string
+}
+
+// JwtPayload (line ~270-276)
+export interface JwtPayload {
+  userId: string
+  storeId: string
+  role: RoleDefinition       // ← 改:string → RoleDefinition
+  roleId: string             // ← 改:roleId?: string → roleId: string
+  permissions?: Permission[]
+}
+
+// AuthUser (line ~278-285)
+export interface AuthUser {
+  id: string
+  username: string
+  role: RoleDefinition       // ← 改:string → RoleDefinition
+  roleId: string             // ← 改:roleId?: string → roleId: string
+  permissions?: Permission[]
+  storeId: string
+}
+```
+
+**前端取值约定**:`StoreUser.role.name` 替代旧 `StoreUser.role`(string)。Phase B Task 7 实施期 CC 自扫 blast radius(类 OrderStatus TODO 模板)。
+
+**D73 候选**(Phase H Task 45 升格 spec):**JWT 不向后兼容部署纪律** —— 决议 5 直接改 JWT payload 形状,旧 token 失效。Phase J 部署前须 `pnpm seed` 重置 + 全员 re-login 通知,dev/staging 环境可 `localStorage.clear()` 快速重置。
+
+- [ ] **Step 1.8:OrderStatus 5 值映射 + 派生公式(β 决议 2,Plan 修订 #4)**
+
+> **锚 `b9baa7e4` §4 发现 1,Ian 决议 2**:OrderStatus types.ts 现 6 值 → schema 5 值。3 旧值映射到其他位置:
+
+| types.ts 原 | Task 2 schema | 映射 / 派生 |
+|---|---|---|
+| `pending` | `pending` | 直接保留 ✅ |
+| `preparing` | `preparing` | 直接保留 ✅ |
+| `served` | `served` | 直接保留 ✅ |
+| **`confirmed`** | — | **合并到 `preparing`**(语义等价:厨房已接单/制作中)|
+| **`paid`** | — | **派生 `Payment.status === 'confirmed'`**(SSOT 移到 Payment 表)|
+| **`closed`** | — | **派生 `Session.status === 'closed'`**(Order 是 atomic 单元,生命周期 by Session)|
+| — | **`draft`** | 新增(B2 cart 并入)|
+| — | **`voided`** | 新增(replace `closed` 语义)|
+
+**shared/types.ts OrderStatus 重定义**:
+
+```ts
+// 旧: export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'served' | 'paid' | 'closed'
+// 新(和 Task 2 schema enum OrderStatus 对齐):
+export type OrderStatus = 'draft' | 'pending' | 'preparing' | 'served' | 'voided'
+
+// 派生公式注释(供 Phase G UI 实施参考):
+// 已支付 = order.session.payments.some(p => p.status === 'confirmed' && covers(p, order))
+// 已关闭 = order.session.status === 'closed'
+// 已接单 = order.status === 'preparing' || order.status === 'served'
+```
+
+**D72 候选**(Phase H Task 45 升格 spec):**派生状态前端展示策略** —— OrderStatus 减熵后,UI "已支付 / 已关闭" 状态需多源拼接。Phase G Task 34 frontend 改动 + Phase H Task 44 测试用例覆盖。
+
+**决议 6 明确**(不做):**不引入 `OrderItemStatus`**。Phase 5 OrderItem 无独立状态机,voided 场景通过 `OrderItem.voidedAt / voidedBy / voidReason` 标记(types.ts line 189-192 已有),不新建 enum。
+
 - [ ] **Step 2：在 shared/types.ts 末尾追加 B2 判别联合**
 
 如果现有 `OrderStatus` 定义不包含 `'draft'`，先**修改**：
