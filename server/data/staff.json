@@ -1,21 +1,5 @@
 [
   {
-    "id": "staff-owner-001",
-    "storeId": "store-demo-002",
-    "username": "admin",
-    "password": "$2b$10$C//xy17Vr.tMp/1mNQIYp.5o3yV5a1kO/Z65365bkwasVbeVC7oHq",
-    "role": "owner",
-    "createdAt": "2026-03-01T00:00:00.000Z"
-  },
-  {
-    "id": "8bec0727-ab89-4c95-9133-96ee20756044",
-    "storeId": "store-demo-002",
-    "username": "ian",
-    "password": "$2b$10$5ldv2Y84JVzthqwMCZtHHuVn9pH5I/mX1gsnEeO55l.X6AHksxy/e",
-    "role": "staff",
-    "createdAt": "2026-03-24T03:11:56.512Z"
-  },
-  {
     "id": "38c21f57-d51e-48b6-8d1f-41e63219a309",
     "storeId": "store-demo-001",
     "username": "ian",

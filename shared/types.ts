@@ -58,7 +58,10 @@ export interface StoreUser {
   storeId: string
   username: string
   password: string
-  role: string              // legacy field, kept for backward compat
+  // legacy `role: string` removed per Phase B Task 7 β refinement (77baab58).
+  // Staff.role 移除 only — roleId? / JwtPayload / AuthUser / OrderStatus 改动
+  // 延后 Task 7 实施期处理(5 延后项:Order.tableNameEn / Table.status union /
+  // blast radius / JWT RoleDefinition / OrderStatus 5 值)。
   roleId?: string           // new: references RoleDefinition.id
   clockPin?: string         // 4-digit PIN for clock-in/out
   createdAt: string

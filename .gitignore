@@ -44,3 +44,4 @@ server/.zencoder/
 server/.codebuddy/
 server/skills/
 server/skills-lock.json
+server/prisma/schema.prisma.pre-phase5

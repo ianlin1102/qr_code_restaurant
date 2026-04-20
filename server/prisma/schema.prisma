@@ -7,29 +7,465 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ========== Enums（DB 层强制状态机，和 shared/types.ts 判别联合一一对应） ==========
+
+enum OrderStatus {
+  draft
+  pending
+  preparing
+  served
+  voided
+}
+
+enum SessionStatus {
+  open
+  closed
+}
+
+enum PaymentStatus {
+  pending
+  confirmed
+  refunded
+}
+
+enum SplitBillStatus {
+  active
+  paid
+}
+
+// ========== 租户 & 权限 ==========
+
 model Store {
-  id           String      @id @default(uuid())
-  name         String
-  description  String?
-  openingHours String?     @map("opening_hours")
-  announcement String?
-  logo         String?
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  users        StoreUser[]
+  id             String         @id @default(uuid())
+  name           String
+  nameEn         String?        @map("name_en")
+  description    String?
+  descriptionEn  String?        @map("description_en")
+  openingHours   String?        @map("opening_hours")
+  announcement   String?
+  announcementEn String?        @map("announcement_en")
+  logo           String?
+  tipBase        String         @default("pretax")
+  taxRate        Float?         @map("tax_rate")
+  serviceFeeRate Float?         @map("service_fee_rate")
+  autoAcceptOrders Boolean      @default(false) @map("auto_accept_orders")
+  maxTables      Int?           @map("max_tables")
+  paymentMode    String?        @map("payment_mode")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt      @map("updated_at")
+
+  moduleLicense ModuleLicense?
+  staff         Staff[]
+  roles         Role[]
+  tables        Table[]
+  categories    Category[]
+  menuItems     MenuItem[]
+  sessions      Session[]
+  orders        Order[]
+  payments      Payment[]
+  splitBills    SplitBill[]
+  coupons       Coupon[]
+  waitlist      WaitlistEntry[]
+  timeEntries   TimeEntry[]
+  printers      Printer[]
+  platformAuditLogs PlatformAuditLog[]
 
   @@map("stores")
 }
 
-model StoreUser {
+model PlatformAdmin {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         String
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  auditLogs    PlatformAuditLog[]
+
+  @@map("platform_admins")
+}
+
+/// Phase F 回填（2026-04-17，DP-PF-4）：平台管理员操作审计日志。
+/// 跨租户——不启用 RLS policy（platform_admin BYPASSRLS）。
+model PlatformAuditLog {
+  id            String        @id @default(uuid())
+  adminId       String        @map("admin_id")
+  admin         PlatformAdmin @relation(fields: [adminId], references: [id], onDelete: Restrict)
+  action        String
+  targetStoreId String?       @map("target_store_id")
+  targetStore   Store?        @relation(fields: [targetStoreId], references: [id], onDelete: SetNull)
+  payload       Json
+  ipAddress     String?       @map("ip_address")
+  userAgent     String?       @map("user_agent")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@index([adminId, createdAt])
+  @@index([targetStoreId, createdAt])
+  @@index([action])
+  @@map("platform_audit_log")
+}
+
+model ModuleLicense {
   id        String   @id @default(uuid())
-  username  String
-  password  String
-  role      String   @default("staff")
-  storeId   String   @map("store_id")
-  store     Store    @relation(fields: [storeId], references: [id])
-  createdAt DateTime @default(now()) @map("created_at")
+  storeId   String   @unique @map("store_id")
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  modules   String[]
+  grantedAt DateTime @map("granted_at")
+  grantedBy String   @map("granted_by")
+  note      String?
+
+  @@map("module_licenses")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  storeId     String   @map("store_id")
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name        String
+  nameEn      String?  @map("name_en")
+  permissions String[]
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  staff       Staff[]
+
+  @@unique([storeId, name])
+  @@map("roles")
+}
+
+model Staff {
+  id           String   @id @default(uuid())
+  storeId      String   @map("store_id")
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  username     String
+  passwordHash String   @map("password_hash")
+  // Q2=b: Staff.role FK（legacy `role: String` 已在 plan schema 早期去除）。
+  // roleId NOT NULL + onDelete Restrict，配合实施期 staff.json Step 2.5 清理。
+  roleId       String   @map("role_id")
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  clockPin     String?  @map("clock_pin")
+  displayName  String?  @map("display_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  timeEntries  TimeEntry[]
 
   @@unique([storeId, username])
-  @@map("store_users")
+  @@map("staff")
+}
+
+// ========== 店铺配置 ==========
+
+model Table {
+  id                String   @id @default(uuid())
+  storeId           String   @map("store_id")
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  // Mode C δ 桶 1（rename label→name 对齐 JSON + types.ts，补 5 字段）
+  name              String
+  nameEn            String?  @map("name_en")
+  number            Int
+  enabled           Boolean  @default(true)
+  status            String   @default("idle")
+  qrCode            String   @unique @map("qr_code")
+  capacity          Int?
+  currentSessionId  String?  @map("current_session_id")
+  waiterCalledAt    DateTime? @map("waiter_called_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  sessions          Session[]
+  orders            Order[]
+
+  @@index([storeId])
+  @@map("tables")
+}
+
+model Category {
+  id         String     @id @default(uuid())
+  storeId    String     @map("store_id")
+  store      Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name       String
+  nameEn     String?    @map("name_en")
+  quickTags  String[]   @default([]) @map("quick_tags")
+  sortOrder  Int        @default(0) @map("sort_order")
+  isActive   Boolean    @default(true) @map("is_active")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  menuItems  MenuItem[]
+
+  @@index([storeId])
+  @@map("categories")
+}
+
+model MenuItem {
+  id            String              @id @default(uuid())
+  storeId       String              @map("store_id")
+  store         Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId    String              @map("category_id")
+  category      Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name          String
+  nameEn        String?             @map("name_en")
+  description   String?
+  descriptionEn String?             @map("description_en")
+  imageUrl      String?             @map("image_url")
+  price         Int
+  originalPrice Int?                @map("original_price")
+  isAvailable   Boolean             @default(true)  @map("is_available")
+  isStaffOnly   Boolean             @default(false) @map("is_staff_only")
+  sortOrder     Int                 @default(0)     @map("sort_order")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt      @map("updated_at")
+
+  options       MenuItemOption[]
+
+  @@index([storeId, categoryId])
+  @@map("menu_items")
+}
+
+model MenuItemOption {
+  id          String   @id @default(uuid())
+  storeId     String   @map("store_id")
+  menuItemId  String   @map("menu_item_id")
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  groupName   String   @map("group_name")
+  name        String
+  nameEn      String?  @map("name_en")
+  priceAdjust Int      @default(0) @map("price_adjust")
+  isDefault   Boolean  @default(false) @map("is_default")
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  @@index([menuItemId])
+  @@map("menu_item_options")
+}
+
+// ========== 业务核心（B2） ==========
+
+model Session {
+  id              String        @id @default(uuid())
+  storeId         String        @map("store_id")
+  store           Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  tableId         String        @map("table_id")
+  table           Table         @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  status          SessionStatus
+  settlementMode  String        @default("unset") @map("settlement_mode")
+  couponCode      String?   @map("coupon_code")
+  couponType      String?   @map("coupon_type")
+  couponValue     Int?      @map("coupon_value")
+  couponAppliedAt DateTime? @map("coupon_applied_at")
+  closedAt        DateTime? @map("closed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt      @map("updated_at")
+
+  orders          Order[]
+  payments        Payment[]
+  splitBills      SplitBill[]
+
+  @@index([storeId, status])
+  @@index([tableId])
+  @@map("sessions")
+}
+
+model Order {
+  id                  String       @id @default(uuid())
+  storeId             String       @map("store_id")
+  store               Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  tableId             String       @map("table_id")
+  table               Table        @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  // Mode C δ 桶 1 + D68：Order snapshot 哲学，tableName/tableNameEn 下单时冻结
+  tableName           String       @map("table_name")
+  tableNameEn         String?      @map("table_name_en")
+  sessionId           String?      @map("session_id")
+  session             Session?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  status              OrderStatus
+  deviceId            String?      @map("device_id")
+  version             Int       @default(0)
+  lastCartActivityAt  DateTime? @map("last_cart_activity_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt      @map("updated_at")
+
+  items               OrderItem[]
+
+  @@index([storeId, status])
+  @@index([sessionId])
+  @@index([storeId, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  storeId    String   @map("store_id")
+  orderId    String   @map("order_id")
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String   @map("menu_item_id")
+  position   Int
+  name       String
+  nameEn     String?  @map("name_en")
+  unitPrice  Int      @map("unit_price")
+  quantity   Int
+  note       String?
+
+  options        OrderItemOption[]
+  paymentItems   PaymentItem[]
+  splitBillItems SplitBillItem[]
+
+  @@unique([orderId, position])
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("order_items")
+}
+
+model OrderItemOption {
+  id           String    @id @default(uuid())
+  storeId      String    @map("store_id")
+  orderItemId  String    @map("order_item_id")
+  orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  groupName    String    @map("group_name")
+  groupNameEn  String?   @map("group_name_en")
+  name         String
+  nameEn       String?   @map("name_en")
+  priceAdjust  Int       @default(0) @map("price_adjust")
+
+  @@map("order_item_options")
+}
+
+// ========== 支付 ==========
+
+model Payment {
+  id                    String        @id @default(uuid())
+  storeId               String        @map("store_id")
+  store                 Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sessionId             String        @map("session_id")
+  session               Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  method                String
+  amount                Int
+  tipAmount             Int           @default(0) @map("tip_amount")
+  taxAmount             Int           @default(0) @map("tax_amount")
+  stripePaymentIntentId String?       @map("stripe_payment_intent_id")
+  status                PaymentStatus
+  createdAt             DateTime      @default(now()) @map("created_at")
+
+  items                 PaymentItem[]
+
+  @@index([storeId, createdAt])
+  @@index([sessionId])
+  // G7-5 / D62: webhook idempotency guard. Postgres default NULL-distinct
+  // semantics gives partial-unique behavior natively (Prisma 6 DSL limitation).
+  @@unique([stripePaymentIntentId], map: "payment_stripe_intent_unique")
+  @@map("payments")
+}
+
+model PaymentItem {
+  id           String     @id @default(uuid())
+  storeId      String     @map("store_id")
+  paymentId    String     @map("payment_id")
+  payment      Payment    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderItemId  String     @map("order_item_id")
+  orderItem    OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  paidQuantity Int        @map("paid_quantity")
+
+  @@index([paymentId])
+  @@index([orderItemId])
+  @@map("payment_items")
+}
+
+// ========== 分账 ==========
+
+model SplitBill {
+  id                    String          @id @default(uuid())
+  storeId               String          @map("store_id")
+  store                 Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sessionId             String          @map("session_id")
+  session               Session         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  type                  String
+  percent               Int?
+  subtotal              Int
+  tax                   Int
+  tip                   Int             @default(0)
+  amount                Int
+  status                SplitBillStatus
+  stripePaymentIntentId String?         @map("stripe_payment_intent_id")
+  createdAt             DateTime        @default(now()) @map("created_at")
+
+  items SplitBillItem[]
+
+  @@index([sessionId, status])
+  @@map("split_bills")
+}
+
+model SplitBillItem {
+  id           String     @id @default(uuid())
+  storeId      String     @map("store_id")
+  splitBillId  String     @map("split_bill_id")
+  splitBill    SplitBill  @relation(fields: [splitBillId], references: [id], onDelete: Cascade)
+  orderItemId  String     @map("order_item_id")
+  orderItem    OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  quantity     Int        @default(1)
+
+  @@index([splitBillId])
+  @@index([orderItemId])
+  @@map("split_bill_items")
+}
+
+// ========== 外围 ==========
+
+model Coupon {
+  id             String    @id @default(uuid())
+  storeId        String    @map("store_id")
+  store          Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  code           String
+  discountType   String    @map("discount_type")
+  discountValue  Int       @map("discount_value")
+  minOrderAmount Int?      @map("min_order_amount")
+  maxUses        Int?      @map("max_uses")
+  currentUses    Int       @default(0) @map("current_uses")
+  expiresAt      DateTime? @map("expires_at")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@unique([storeId, code])
+  @@index([storeId, isActive])
+  @@map("coupons")
+}
+
+model WaitlistEntry {
+  id         String    @id @default(uuid())
+  storeId    String    @map("store_id")
+  store      Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name       String
+  phone      String
+  partySize  Int       @map("party_size")
+  status     String
+  notifiedAt DateTime? @map("notified_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([storeId, status])
+  @@map("waitlist_entries")
+}
+
+model TimeEntry {
+  id          String    @id @default(uuid())
+  storeId     String    @map("store_id")
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  staffId     String    @map("staff_id")
+  staff       Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  clockInAt   DateTime  @map("clock_in_at")
+  clockOutAt  DateTime? @map("clock_out_at")
+
+  @@index([storeId, staffId])
+  @@map("time_entries")
+}
+
+model Printer {
+  id        String   @id @default(uuid())
+  storeId   String   @map("store_id")
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name      String
+  type      String
+  host      String?
+  port      Int?
+  isEnabled Boolean  @default(true) @map("is_enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([storeId])
+  @@map("printers")
 }
