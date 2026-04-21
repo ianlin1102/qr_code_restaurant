@@ -169,6 +169,22 @@
   - 维护机制: live 增量维护(与 Archive/Digest/Snapshot 三文件对齐,A 路径)
   - 配套 Pre-Flight Checklist 扩展: 任何 plan 内 literal 出现在已有 migration / docker-compose / package.json / seed 其他位置时,必先 grep cross-phase 实证
 
+### Phase C Batch 2 plan patch v5 `ca863caa` 前后新增(2 项)
+
+- **D85** 同 plan 跨 Task 基础假定 consistency check(候选)
+  - 原则: 同 plan 跨 Task plan writer 对 infra 身份 / state / assumption 保持一致性
+  - 触发事件: Phase C Batch 2 Task 14 L1 review catch Task 11/12 vs Task 14 testDb 身份 assumption drift (Task 11/12 隐含 testDb = postgres superuser vs Task 14 假定 testDb = app_user), `ca863caa` dual-URL forward-fix 修复
+  - 与 D79 家族关系: D79 code-level 假设 verify, D85 plan-level assumption consistency, 同 "plan 写作期 sanity check" 家族不同层次
+  - 升格时机: Phase H Task 45
+
+- **D86** Spec async-executable 原则(候选)
+  - 原则: 系统治理 robustness 不依赖桥梁节点 session 连续性; Plan Opus spec 任何时间点可执行, Stage 0 repo 状态 pre-check 防 temporal drift silent apply
+  - 触发事件: Ian 2026-04-21 meta observation (响应 `ca863caa` plan patch v5 spec 产出流程)
+  - 具体落地: 所有 CC 执行消息最前必含 Stage 0 pre-check (关键文件 + HEAD SHA anchor + fail-loud drift); Language-layer enforcement (禁 session-relative 指示词, 用日期 / SHA / 具体事件 locate)
+  - 首次登记自违反附注: `ca863caa` commit body 含 "本对话 Ian meta observation" session-relative 措辞, Ian 2026-04-21 拦截, 归 Archive #26 (Category 1 子类). `ca863caa` 不 amend (D77), D86 Digest 正式登记 body 应用修正语言.
+  - 与家族关系: Archive #14 reader-side stale (D86 producer-side) / D79 code contract (D86 repo state contract) / D84 spatial cross-phase coupling (D86 temporal drift), 三向 orthogonal
+  - 升格时机: Phase H Task 45
+
 **全文**: 见 `phase-5-governance-digest.md` §6。
 
 **D74 精细化最新**(Task 9a/9b/10 延伸):
@@ -303,7 +319,7 @@
 | Prisma Client types | 已最新 | Task 9a Stage 4c regenerate,post-schema |
 | tsc baseline | 103 errors(pristine HEAD,v3/v4 drift 修正) | Phase B Task 每次 verify "touched files 内 0 new errors" |
 | ESLint `no-floating-promises` baseline | 0 errors | Task 10 Stage 6 验证 |
-| HEAD == origin/main | ✅ `43ff7850` | Phase C Batch 1 closure;A 路径切换后首次增量 Edit |
+| HEAD == origin/main | ✅ `ca863caa` | Phase C Batch 2 plan patch v5 (dual-URL model for L1 最严 RLS); 治理 v4.4 批 commit land 后此值会进一步更新, Snapshot §8 HEAD SHA drift 归 §7.9 pattern 每对话收尾增量 Edit 同步 |
 
 ### Shell 环境状态
 
@@ -491,6 +507,13 @@ Ian 观察:Archive / Digest / Snapshot 本对话的 spec 文字经 CC 多轮 Edi
   - Digest §7 Pre-Flight Checklist 应用方式段加 framework major version bump field-level fate note(vitest 4 singleFork 实例,教训内化不新编号)
   - §10 本条目
   - 目的: 本对话 50+ turn 产生的 3 项教训外化到三件套,新 Plan Opus 启动 Batch 2 读到完整治理状态,避免 #14 stale handoff
+- **2026-04-21 v4.4 批 (Phase C Batch 2 plan patch v5 `ca863caa` 后续治理更新)**:
+  - §6 Phase C Batch 2 段追加 D85 + D86 (D 候选 18 → 20)
+  - §10 本条目
+  - 同期 Digest §6 新增 D85 + D86 body 完整条目 / §7 追加 Language-layer self-check 条款 / §10 追加 v4.4 批修订 / §8 Cat 1 成员 9 → 10
+  - 同期 Archive §1 count 24 → 25 / §2 Cat 1 成员 9 → 10 含 #26 "同对话规则循环"子类 / §3.4 末尾追加 #26 (D86 语言层自违反) / §4 Ian 7 → 8 / §5 mapping 追加 #26 / §7 追加 v4.4 批修订
+  - 触发事件: Ian 2026-04-21 meta observation (`ca863caa` commit body 语言层自违反拦截) + Phase C Batch 2 Task 14 L1 review catch (`ca863caa` dual-URL 修复) → D85 + D86 候选登记
+  - `ca863caa` 已 push 不 amend (D77), D86 Digest 登记 body 应用修正语言作 live demo
 
 ---
 
