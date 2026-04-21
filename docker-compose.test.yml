@@ -1,0 +1,21 @@
+# 独立 Postgres 用于 vitest 集成测试。
+# 数据放 tmpfs（内存），测试结束容器停掉一切蒸发。
+# 端口 5433（和 dev postgres 5432 错开，允许同时跑）。
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: qr-order-postgres-test
+    environment:
+      POSTGRES_DB: qr_order_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "qr_order_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 15

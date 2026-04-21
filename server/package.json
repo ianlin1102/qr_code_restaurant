@@ -7,8 +7,12 @@
     "start": "tsx src/server.ts",
     "seed": "tsx src/seed.ts",
     "print-urls": "tsx src/scripts/print-table-urls.ts",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --exclude 'src/__tests__/integration/**'",
+    "test:watch": "vitest --exclude 'src/__tests__/integration/**'",
+    "test:db:up": "cd .. && docker compose -f docker-compose.test.yml up -d postgres-test && docker compose -f docker-compose.test.yml exec -T postgres-test bash -c 'until pg_isready -U postgres; do sleep 1; done'",
+    "test:db:down": "cd .. && docker compose -f docker-compose.test.yml down",
+    "test:db:migrate": "TEST_DATABASE_URL=$TEST_DATABASE_URL pnpm prisma migrate deploy",
+    "test:integration": "pnpm test:db:up && TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/qr_order_test DATABASE_URL=postgresql://postgres:test@localhost:5433/qr_order_test vitest run 'src/__tests__/integration/**'"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1008.0",
