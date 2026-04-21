@@ -303,7 +303,7 @@
 | Prisma Client types | 已最新 | Task 9a Stage 4c regenerate,post-schema |
 | tsc baseline | 103 errors(pristine HEAD,v3/v4 drift 修正) | Phase B Task 每次 verify "touched files 内 0 new errors" |
 | ESLint `no-floating-promises` baseline | 0 errors | Task 10 Stage 6 验证 |
-| HEAD == origin/main | ✅ Phase C Batch 1 closure commit | A 路径切换后首次增量 Edit;具体 SHA 见 `git log -1` |
+| HEAD == origin/main | ✅ `43ff7850` | Phase C Batch 1 closure;A 路径切换后首次增量 Edit |
 
 ### Shell 环境状态
 
@@ -315,52 +315,139 @@
 
 ## 9. 下一对话第一件事(Phase C Batch 2 启动)
 
-### 9.1 Phase C Batch 2 scope
+### 9.1 Batch 2 scope
 
-Batch 2 = **Task 14**(`integration/rls-coverage.test.ts` + `integration/tenant-isolation.test.ts`,L1 **最严** review —— RLS policy 全表覆盖 + A2 set_config strict mode 防御 + WITH CHECK reversal INSERT 拒绝 三重防御验证)
+**Task 14 only**。Task 15 不纳入本 Batch,L1 最严单独跑。
 
-**启动前置**:
-- HEAD 对齐 Phase C Batch 1 closure commit(本 commit)
-- Task 11/12/13 已 land(`f538941b` / `a55da4ae` / `57894f8f`)
-- Task 13 fixtures.ts 作基础(seedStoreWithMenu 供 tenant A/B cross-store 测试)
-- fix commit `0b070a92` DB name align 已 land
-- docs patch v2/v3/v4 plan 修订全 land(`e13f7f37` / `ffcc7cdc` / `61f8964e`)
+Task 14 产出:
+- `server/src/__tests__/integration/rls-coverage.test.ts`(所有 store_id 表 RLS enabled + policy 覆盖验证)
+- `server/src/__tests__/integration/tenant-isolation.test.ts`(A2 set_config strict mode + cross-tenant 拒绝 + WITH CHECK reversal INSERT 拒绝,三重防御)
 
-**不重写 plan**: phase-c-test-db.md Task 14 段 plan 完整,Batch 2 做:
-- Stage 0 carry-forward verify(Batch 1 已验:schema / migration literal / prisma-client GUC / vitest 4 syntax / DB name align)
-- Task 14 plan heredoc verify(Opus L1 针对 rls-coverage.test.ts + tenant-isolation.test.ts 的每 assertion 对 schema / policy / RLS 机制的字面量对齐)
-- 实施
-
-**L1 review 维度(Task 14 特别强)**:
-- RLS policy 表达式字面量(`store_id::text = current_setting('app.current_store_id')::text`)
-- A2 set_config strict mode 验证(`testDb.order.findMany()` without tenant context 必抛 unrecognized configuration 或等价)
-- WITH CHECK 反向 INSERT 拒绝(tenant A context 内 insert storeId=B 必 reject)
-- pg_policies 元查询(`policyname = 'tenant_isolation'` 字面量对齐 Task 4 migration)
-- platform_admin BYPASSRLS role 命名(对齐 Task 4 migration)
+**L1 最严理由**:RLS / A2 set_config / WITH CHECK 是 Phase 5 整体 tenant 安全基础的回归防御层。任一 literal drift 或 assertion 错误,测试通过但实际防御失效 = silent security hole。L1 review 维度逐字段对齐 schema / migration / prisma-client.ts 实际实现。
 
 ### 9.2 启动 ritual
 
-1. **读**: 本 Snapshot + Governance Digest + Fabrication Archive + `phase-c-test-db.md` Task 14 段(完整)+ Batch 1 对话 handoff(CC 上轮汇报 + 本 commit)
-2. **Grep verify**: `git log -10 --format="%h %s"` 确认 commit 链含 本 closure / `57894f8f` / `0b070a92` / `61f8964e` / `a55da4ae` / `f538941b`
-3. **环境 verify**: `docker ps` 对齐 §8 全 stack(`qr-order-pg` / `qr-order-server` / `qr-order-nginx` / `qr-order-adminer` / `postgres-seed-test` 5 容器 Up;`qr-order-postgres-test` Batch 1 收尾已 down,Batch 2 启动时重起)
-4. **L1 维度**: Task 14 L1 最严,按 9.1 列的 5 维度逐项 verify plan heredoc
-5. **Cross-phase literal grep**(D84 激活,响应 #25): Task 14 plan 内任何 RLS policy literal / role literal / GUC literal,grep 对齐 Phase B migrations 实际 literal
+1. **读**(按顺序):
+   - 本 Snapshot(live 增量维护 A 路径,HEAD `43ff7850`)
+   - `phase-5-fabrication-archive.md`(24 条,最新 #25 Cross-phase invariant 盲点)
+   - `phase-5-governance-digest.md`(含 D84 候选 + Pre-Flight Checklist 第 5 行 Cross-phase literal coupling)
+   - `docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md` Task 14 段
+   - Batch 1 Closure commit `43ff7850` body(含 #25 完整归档 + D84 登记 + A 路径切换说明)
 
-### 9.3 规则应用提醒(Phase C Batch 1 实施经验 informed)
+2. **Grep verify**(Stage 0 carry-forward ritual):
 
-- **Opus Spec Pre-Flight Checklist**(Digest §7): 所有"期望/应该/不存在/成对 / Cross-phase literal coupling"断言需 grep fact base(Cross-phase 第 5 行 Batch 1 新增,响应 #25)
-- **D74 双向校准**: 预估行数主动分桶
-- **D82 候选**: Phase C 不 touch schema,无 prisma generate 需求
-- **D83 定性约束**: verify 用"expected 结构出现 / unexpected 未出现",不用 ±N%
-- **#14/#22 防御**: Snapshot §8 每对话收尾增量 Edit(A 路径)
-- **#20 防御**: Stage 0 grep schema / migration 用 `grep -A N` 完整 dump,不用 narrow pattern
-- **#21 防御**: reasoning 出现"不大惊小怪 / shorthand" → 立即 suspect
-- **#23/#24 防御**: 本对话登记或 handoff 引用既有规则,CoT 扫一遍主动应用
-- **#25 防御 + D84 候选激活**: Task 14 plan 内 cross-phase literal(RLS policy / role name / GUC)必 grep Phase B migration 对齐
+       git log -10 --format="%h %s"
 
-### 9.4 不启动原则
+   确认 commit 链含:`43ff7850`(Batch 1 closure)/ `57894f8f`(Task 13)/ `0b070a92`(fix)/ `61f8964e`(v4)/ `ffcc7cdc`(v3)/ `a55da4ae`(Task 12)/ `e13f7f37`(v2)/ `f538941b`(Task 11)
 
-不直接实施 Phase C Task 14。先 L1 verify + Ian 明批 "GO"。
+3. **环境 verify**:
+
+       docker ps --format "{{.Names}}\t{{.Status}}"
+
+   预期 5 容器 Up:`qr-order-pg` / `qr-order-server` / `qr-order-nginx` / `qr-order-adminer` / `postgres-seed-test`。`qr-order-postgres-test` 应为 **下**(Batch 1 Task 13 Step 6.3 后 `pnpm test:db:down` 清场);Batch 2 启动时通过 Task 14 执行期 `pnpm test:db:up` 重起。
+
+### 9.3 Stage 0 carry-forward(Batch 1 已 verify,无需重跑)
+
+Batch 1 已验证、Batch 2 可直接信任的 fact base:
+
+- **Mode C δ 桶 1 RESOLVED**(Task 2 `75fd9084`,16 MVP 字段)
+- **tsc baseline 103**(pristine HEAD,D83 改用相对约束 "touched files 内 0 new errors")
+- **ESLint 9 flat + no-floating-promises = 0**(Task 10 验证)
+- **Prisma Client types 最新**(Task 9a Stage 4c regenerate + Phase C Task 12 globalSetup 4 migrations applied clean 实证)
+- **5 dev 容器 state 对齐** §8(Batch 1 期间未改)
+- **vitest 4.1.2 config 已 adapt**(pool:'forks' + maxWorkers:1 + isolate:false,docs patch v2 land)
+- **γ3c 目录隔离生效**(`src/__tests__/integration/` + CLI `--exclude` 分流双向 verify pass)
+- **DB name align**(test 容器用 `qr_order` 与 Phase B rls_and_roles migration line 16 `GRANT CONNECT ON DATABASE qr_order` 对齐,docs v4 + fix `0b070a92` land)
+- **@types/bcryptjs 不存在**(#17 教训,bcryptjs v3+ bundled types)
+
+**Batch 2 Stage 0 只需做 Task 14 新增 grep**(详 9.5)。
+
+### 9.4 第一动作 — Task 14 L1 verify work-log
+
+Plan Opus 启动后第一个产出 **不是** CC 执行消息,而是 **L1 verify work-log commit**(docs commit,与 Batch 1 Batch 1 closure 同性质但 scope 窄)。
+
+work-log 建议路径:`docs/superpowers/work-logs/2026-04-21-phase-c-batch-2-task-14-l1-verify.md`(日期按实际启动日)
+
+work-log 内容 5 维度(对应 9.5 grep 结果 + Task 14 plan heredoc 逐字段对比):
+1. **RLS policy 表达式 literal 对齐**
+2. **A2 set_config strict mode 验证机制**
+3. **WITH CHECK reversal INSERT 拒绝路径**
+4. **pg_policies / pg_tables 元查询 literal 对齐**
+5. **platform_admin BYPASSRLS role 命名对齐**
+
+work-log commit land 后 Ian 明批 "Task 14 GO" → 起 CC 执行消息。
+
+### 9.5 关键 grep 清单(Batch 2 新增,L1 verify 依据)
+
+Task 14 plan 含大量 SQL / schema / migration literal assertion。L1 verify 必须对每 literal grep fact base,不凭 plan 文字推断。
+
+**G-T14.1 — RLS policy 表达式**(Task 4 migration 实际):
+
+    grep -B 2 -A 5 "CREATE POLICY\|USING.*store_id\|WITH CHECK" \
+      server/prisma/migrations/20260417000002_rls_and_roles/migration.sql
+
+Fact base:每个 policy 的 USING / WITH CHECK 表达式 literal(`store_id::text = current_setting('app.current_store_id')::text` 或类似)对齐 Task 14 `rls-coverage.test.ts` 元查询 assertion。
+
+**G-T14.2 — A2 set_config 实现**(prisma-client.ts 实际):
+
+    grep -B 2 -A 10 "set_config\|current_setting\|current_store_id" \
+      server/src/repositories/prisma-client.ts
+
+Fact base:prisma-client.ts 实际使用的 GUC 变量名 + strict mode 行为。对齐 Task 14 `tenant-isolation.test.ts` 裸 query 抛错 assertion 的 error message regex。
+
+**G-T14.3 — pg_policies / pg_tables 元查询对齐**:
+
+    grep -nE "pg_policies|pg_tables|pg_class|relrowsecurity|policyname" \
+      docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md
+
+Fact base:Task 14 `rls-coverage.test.ts` 的 pg_* 系统表查询的 column name(policyname / tablename / qual / with_check / relrowsecurity)与 PostgreSQL 16 文档对齐,avoid fabricated column name。
+
+**G-T14.4 — platform_admin role 命名**(Task 4 migration):
+
+    grep -E "CREATE ROLE|GRANT|platform_admin" \
+      server/prisma/migrations/20260417000002_rls_and_roles/migration.sql
+
+Fact base:实际 role 命名对齐 Task 14 `SET LOCAL ROLE platform_admin` literal。Batch 1 已部分 verify(role 命名 `app_user / platform_admin / system_worker` 确认),但 Task 14 L1 需贴具体 GRANT 范围 + BYPASSRLS 语义。
+
+**G-T14.5 — WITH CHECK reversal mechanism**:
+
+    grep -A 3 "WITH CHECK" server/prisma/migrations/20260417000002_rls_and_roles/migration.sql
+
+Fact base:WITH CHECK 表达式与 USING 表达式是否一致(Task 4 β 决议双侧 `::text` cast)。Task 14 `tenant-isolation.test.ts` 的 "tenant A context 内 insert storeId=B 必 reject" assertion 依赖此对称性。
+
+**G-T14.6 — Cross-phase literal coupling 激活**(D84 / #25 防御):
+
+    grep -nE "qr_order\b|app_user\b|platform_admin\b|system_worker\b|app\.current_store_id|tenant_isolation" \
+      docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md | \
+      head -40
+
+Fact base:plan Task 14 段内任何 DB name / role / GUC / policy 命名 literal,grep Phase B migration 对齐。任一 drift → 规则 8 暂停 Opus 判。
+
+### 9.6 规则应用提醒(Batch 1 实施经验 informed)
+
+- **Opus Spec Pre-Flight Checklist**(Digest §7,含第 5 行 Cross-phase literal coupling,#25 防御激活)
+- **D74 双向校准**:预估行数分桶
+- **D83 定性约束**:verify 用 "expected 结构出现 / unexpected 未出现",不用 ±N%
+- **#14/#22 防御**:Snapshot §8 每对话收尾增量 Edit(A 路径)
+- **#20 完整 dump**:Stage 0 grep schema / migration 用 `grep -A N` 完整 dump
+- **#21 措辞防御**:reasoning 出现 "不大惊小怪 / shorthand / 小 drift" → 立即 suspect
+- **#23/#24 激活**:本对话登记 + handoff 引用既有规则,CoT 主动扫应用
+- **#25 / D84 激活**:plan 内 cross-phase literal 必 grep Phase B migration 对齐
+
+### 9.7 不启动原则
+
+新 Plan Opus 启动后:
+1. 读完 ritual(9.2)→ CoT 输出 Batch 2 scope 理解 + Batch 1 carry-forward ack
+2. 做 Stage 0 Task 14 新增 grep(9.5)→ 产出 L1 verify work-log(9.4)
+3. work-log commit land + Ian 明批 "Task 14 GO" → 起 CC 执行消息
+
+**不直接起 CC 执行消息**。work-log → Ian review → CC 三步走,对应 L1 最严级别。
+
+### 9.8 本对话 sanity check 注记(Ian 留言)
+
+Ian 观察:Archive / Digest / Snapshot 本对话的 spec 文字经 CC 多轮 Edit,可能有字符漂(全角 vs 半角 / 中文 vs 英文引号)。CC 报 21/21 Edit success 是 **工具执行成功**,不是 **语义 identical verify**。
+
+低风险(不影响 live 指令语义),本对话不回查。新 Plan Opus 启动读 ritual 时若发现字符漂,自行 Edit 修正即可,不触发规则 8。
 
 ---
 
@@ -386,6 +473,18 @@ Batch 2 = **Task 14**(`integration/rls-coverage.test.ts` + `integration/tenant-i
   - §7 pending drifts §7.9/7.10/7.11/7.12 追加(Batch 1 启动期未 land 的 3 条 + 本批新 7.12)
   - §8 HEAD SHA 更新
   - §9 完整替换为 Phase C Batch 2 启动指引(含 D84 激活 + #25 防御 + L1 维度 5 项)
+- **2026-04-21 D2 下对话启动指引补丁**(本对话收尾,不含 Batch 2 内容):
+  - §8 HEAD SHA verify `43ff7850`(Batch 1 closure)
+  - §9 整节重写:"下一对话目标" 从泛化 "Phase C Batch 2 启动" 具体化为:
+    - §9.1 Batch 2 scope = Task 14 only(Task 15 不纳入,L1 最严单独跑)
+    - §9.2 启动 ritual(读取顺序 / grep verify / 环境 verify)
+    - §9.3 Stage 0 carry-forward 清单(Batch 1 已验证,Batch 2 直接信任)
+    - §9.4 第一动作 = L1 verify work-log commit(非 CC 执行消息)
+    - §9.5 关键 grep 清单 G-T14.1-6(含 Cross-phase literal coupling #25/D84 激活)
+    - §9.6-9.7 规则应用 + 不启动原则
+    - §9.8 字符漂 sanity check 注记(低风险,新 Opus 自查)
+  - 目的: 新 Plan Opus 启动降 ritual overhead + L1 最严级别的三步走(work-log → Ian review → CC)
+  - Path drift 教训(本对话 spec 用 `docs/superpowers/phase5/`,实际 `docs/superpowers/archive/`)内化:Phase H Task 45 reconcile 时定归属(Pre-Flight Checklist 新条款 vs D84 扩展 vs 合并),本对话不落档
 
 ---
 
