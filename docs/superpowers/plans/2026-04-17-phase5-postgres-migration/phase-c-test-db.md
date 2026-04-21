@@ -667,10 +667,10 @@ describe('tenant isolation — RLS strict mode', () => {
       const b = await seedStoreWithMenu(tx, { name: 'Store B' })
       // 各自建一个 order
       await tx.order.create({
-        data: { storeId: a.store.id, tableId: a.table.id, status: 'pending' as any, version: 0 },
+        data: { storeId: a.store.id, tableId: a.table.id, tableName: a.table.name, status: 'pending' as any, version: 0 },
       })
       await tx.order.create({
-        data: { storeId: b.store.id, tableId: b.table.id, status: 'pending' as any, version: 0 },
+        data: { storeId: b.store.id, tableId: b.table.id, tableName: b.table.name, status: 'pending' as any, version: 0 },
       })
       return { storeA: a.store, storeB: b.store }
     })
@@ -699,6 +699,7 @@ describe('tenant isolation — RLS strict mode', () => {
           data: {
             storeId: storeB.id,  // ❌ 不匹配
             tableId: '00000000-0000-0000-0000-000000000000',
+            tableName: 'placeholder-table',
             status: 'pending' as any,
             version: 0,
           },
