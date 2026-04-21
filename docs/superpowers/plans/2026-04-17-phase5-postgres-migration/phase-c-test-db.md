@@ -44,7 +44,7 @@ services:
     image: postgres:16-alpine
     container_name: qr-order-postgres-test
     environment:
-      POSTGRES_DB: qr_order_test
+      POSTGRES_DB: qr_order
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: test
     ports:
@@ -52,7 +52,7 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "qr_order_test"]
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "qr_order"]
       interval: 2s
       timeout: 2s
       retries: 15
@@ -71,7 +71,7 @@ EOF
     "test:db:up": "cd .. && docker compose -f docker-compose.test.yml up -d postgres-test && docker compose -f docker-compose.test.yml exec -T postgres-test bash -c 'until pg_isready -U postgres; do sleep 1; done'",
     "test:db:down": "cd .. && docker compose -f docker-compose.test.yml down",
     "test:db:migrate": "TEST_DATABASE_URL=$TEST_DATABASE_URL pnpm prisma migrate deploy",
-    "test:integration": "pnpm test:db:up && TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/qr_order_test DATABASE_URL=postgresql://postgres:test@localhost:5433/qr_order_test vitest run 'src/__tests__/integration/**'"
+    "test:integration": "pnpm test:db:up && TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/qr_order DATABASE_URL=postgresql://postgres:test@localhost:5433/qr_order vitest run 'src/__tests__/integration/**'"
   }
 }
 ```
@@ -79,6 +79,7 @@ EOF
 **关键**：
 - `test:db:up` 等 pg_ready 再返回（避免 race）
 - `test:integration` 脚本把 `DATABASE_URL` 和 `TEST_DATABASE_URL` 都指到测试库——`setup.ts` 会用 TEST_DATABASE_URL 跑 migrate
+- **DB 名沿用 prod `qr_order`**：Phase B migration `20260417000002_rls_and_roles/migration.sql` line 16 `GRANT CONNECT ON DATABASE qr_order ...` 硬编码此 literal，test 环境必须 align（规则 1 增量 migration 铁律 — prod migration 已 apply 不可变）。测试隔离靠 port 5433 + tmpfs + 独立 container `qr-order-postgres-test`，不靠 DB name 差异。此约束是 **Cross-Phase Invariant 首批条目**（D84 候选，Phase 5 收尾 handoff 第四份文件 land）。
 
 **分流设计（γ3c 目录隔离）**：
 - Phase C 新 test 全部落 `src/__tests__/integration/` 子目录（fixtures.ts / setup.ts / global-setup.ts / *.test.ts 全在此）
