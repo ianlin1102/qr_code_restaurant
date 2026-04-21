@@ -159,6 +159,13 @@ Task 36(payment.service + payment.routes)+ Task 37(settlement gateway + derivePa
 
 **Task 编号悬空诚实标记**(Phase G session 3,B.2 处理):Task 39+40 合并到 Task 39,Task 40 悬空。编号跳跃(39 → 41)比假装连续更诚实,锚点指向 scope-check work-log `20e69b30`。
 
+**Heredoc `!` history expansion**:即使 `<<'PYEOF'` 单引号定界,zsh 对含 `!` 字符串的 heredoc 仍可能 history-expand,导致 `if (!x)` 被写入文件时变成 `if (\!x)` → esbuild/tsc SyntaxError。
+**症状**: Python 编译阶段可能先报 `SyntaxWarning: invalid escape sequence '\!'`,此警告出现必须立即 diff 检查。
+**预防**:
+- Python/Bash heredoc 写入 TS 代码时避免裸 `!`:`if (!x)` → `if (x == null)` / `if (Boolean(x) === false)` 等价写法
+- 或写入后 sanity grep: `grep -c '\\!' file.ts` 必须 == 0
+**发现事件**: Task 9b Stage 4 seed.ts patch,`if (!ownerRole)` 被转 `if (\!ownerRole)`,用 Edit 工具原子替换修复。
+
 ## Self-review checklist(CC 交付前自己答完)
 
 - 规则 2:repo 层无 `emit(` 调用?emit 通过 `res.locals.afterCommit` 在 tx commit 后发?
