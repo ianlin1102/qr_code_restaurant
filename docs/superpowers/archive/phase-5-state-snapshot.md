@@ -1,22 +1,23 @@
 # Phase 5 State Snapshot
 
 > **读者**: 下一个 Opus chat instance
-> **性质**: **覆盖式**文档,每对话启动前由 Ian(或上轮 Opus 收尾)全文重写,**不累积历史时点**
-> **使用方式**: 每对话启动必读附件之一。提供"当前项目实时状态"的唯一 source of truth
+> **性质**: **live 增量维护**文档,每对话收尾增量 Edit 更新,Phase 封顶(Phase B/C/D... 封顶)时 Opus 全文 regen 一次
+> **使用方式**: 每对话启动必读附件之一。提供"当前项目实时状态"的唯一 source of truth;Phase 封顶 regen 作节奏里程碑 + fabrication 风险集中点(Opus 注意力预算充分)
 > **配套文件**:
 > - `phase-5-governance-digest.md` — 治理体系静态参考(累积)
 > - `phase-5-fabrication-archive.md` — Fabrication 历史(累积)
 >
-> **覆盖机制要点**: 本文件最新版即最终版。任何"当前状态"问题读本文件;读 Archive 可查历史 fabrication;读 Digest 查规则。**Mode C stale handoff 类 fabrication**(Archive #14)**+ Snapshot 环境状态片面**(Archive #22)的防御就来自覆盖式机制 —— 文字写于特定时点,但本文件永远是 live。
+> **机制要点**: 本文件最新版即最终版。任何"当前状态"问题读本文件;读 Archive 可查历史 fabrication;读 Digest 查规则。**Mode C stale handoff 类 fabrication**(Archive #14)**+ Snapshot 环境状态片面**(Archive #22)的防御来自 **live 增量维护**机制(每对话收尾更新,Phase 封顶 regen) —— 文字任意时点写,本文件整体永远 live;增量式避免 regen 过程成为 fabrication 高发时点(响应 #24 原型教训)。
 
 ---
 
 ## 1. 当前时点
 
-- **最后更新**: 2026-04-21(Phase B Task 10 完成后 v2 regen)
-- **最后 commit on main**: `55fff0da`(Task 10 impl + Phase B acceptance)
+- **最后更新**: 2026-04-21(Phase C Batch 1 Task 13 完成 + 本 commit 收尾)
+- **最后 commit on main**: Phase C Batch 1 closure commit(Archive #25 + D84 + A 路径切换 + Snapshot 增量;见 `git log -1` 取 SHA)
 - **Phase B 状态**: **10/10 完成 ✅**
-- **下一对话目标**: **Phase C Task 11+(测试 DB 实施)** —— plan 已完整(`phase-c-test-db.md`),不写新 plan,做 L1/L2 verify + 执行
+- **Phase C 状态**: **Batch 1 完成 (3/5 task: Task 11/12/13)**
+- **下一对话目标**: **Phase C Batch 2(Task 14 — rls-coverage.test.ts + tenant-isolation.test.ts,L1 最严 RLS / A2 set_config strict / WITH CHECK reversal 三重防御验证)** —— plan Task 14 段完整,不写新 plan,做 Stage 0 carry-forward + 实施
 
 ---
 
@@ -26,7 +27,7 @@
 |---|---|---|---|
 | A | ~~备份~~ SKIPPED(Ian calibration 2026-04-19) | N/A | N/A |
 | B | 基础设施(schema + migration + seed + docker + ESLint) | ✅ 完整 | ✅ **10/10 完成** |
-| C | 测试 DB | ✅ 完整 | ⏸️ **下一步** |
+| C | 测试 DB | ✅ 完整 | 🟢 **Batch 1 完成 (3/5 task)** |
 | D | Repository(11 个语义化 repo) | ✅ 完整 | ⏸️ 未启动 |
 | E | 外围域(3 agent) | ✅ 完整 | ⏸️ 未启动 |
 | F | Platform Admin | ✅ 完整 | ⏸️ 未启动 |
@@ -41,6 +42,19 @@
 ---
 
 ## 3. 最近 commit 链(按时间倒序)
+
+### Phase C Batch 1 对话(2026-04-21,8 commit + 3 规则 8 暂停 resolved)
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| (本 commit) | docs | Phase C Batch 1 收尾(Archive #25 + D84 候选 + Pre-Flight §7 扩展 + Snapshot A 路径切换 + Snapshot 增量) |
+| `57894f8f` | feat | Task 13 impl(integration/fixtures.ts + fixtures.test.ts,platform_admin context BYPASSRLS seed + 3 tests passed) |
+| `0b070a92` | fix | DB name cross-phase align(docker-compose.test.yml + package.json qr_order_test → qr_order,#25 root cause fix,D77 forward-fix 不 amend) |
+| `61f8964e` | docs | Phase C plan patch v4(DB name align + Cross-Phase Invariant 注释) |
+| `ffcc7cdc` | docs | Phase C plan patch v3(fixtures.test.ts table.label → table.name,Mode C δ 桶 1 read-side spill-over) |
+| `a55da4ae` | feat | Task 12 impl(vitest.config + integration/setup.ts + global-setup.ts + γ3c 目录隔离 + testDb null-guard defense-in-depth) |
+| `e13f7f37` | docs | Phase C plan patch v2(vitest 4 adapt: singleFork → maxWorkers:1 + isolate:false) |
+| `f538941b` | feat | Task 11 impl(docker-compose.test.yml + package.json test:db:* scripts + γ3c CLI 分流) |
 
 ### Phase B Task 10 对话(2026-04-20 晚 / 2026-04-21 凌晨,2 commit)
 
@@ -112,7 +126,7 @@
 
 ## 6. D 候选累积清单(Phase H Task 45 升格队列)
 
-**累积 17 项**,按来源分段:
+**累积 18 项**,按来源分段:
 
 ### v1 既有(7 项)
 
@@ -145,6 +159,15 @@
   - 原则: plan 内 "Total N tsc errors unchanged / wc -l == N / literal count == N" 类绝对数字硬约束,改用相对约束(touched files 内 0 new errors / ±tol 范围 / `grep -c` live verify)
   - 触发事件: Task 9b Stage 4 发现 plan 声明 tsc baseline = 102,实际 pristine HEAD = 103
   - 与 D74 / D78 同属"期望数量"类治理规则家族
+
+### Phase C Batch 1 对话新增(1 项)
+
+- **D84** Cross-Phase Invariants handoff 第四份文件(候选)
+  - 原则: 跨 phase 共享 literal(DB name / role name / container name / port / schema identifier / migration literal)外化到独立 handoff 文件,Opus plan 写作 / CC Stage 0 / Ian review 三方 read-reference,不凭印象
+  - 触发事件: Fabrication #25(Task 11 plan `qr_order_test` 与 Phase B migration `qr_order` 跨 phase literal drift)
+  - 首批条目: `DB name = qr_order`(migration `20260417000002_rls_and_roles:16` GRANT CONNECT 硬编码,规则 1 不可变)
+  - 维护机制: live 增量维护(与 Archive/Digest/Snapshot 三文件对齐,A 路径)
+  - 配套 Pre-Flight Checklist 扩展: 任何 plan 内 literal 出现在已有 migration / docker-compose / package.json / seed 其他位置时,必先 grep cross-phase 实证
 
 **全文**: 见 `phase-5-governance-digest.md` §6。
 
@@ -219,6 +242,38 @@
 - **处理**: Phase H/I/J 清理时一起(`docker compose down postgres + volume rm` + 用 qr-order-pg 跑 Phase 5 schema 的决策时机)
 - **外化锚**: Task 10 Stage 8 用新 `postgres-seed-test` 跑验收,qr-order-pg 未 touch
 
+### 7.9 Snapshot §8 HEAD SHA drift(阶段性)
+
+- **位置**: §8 环境状态表 "HEAD == origin/main" 行
+- **问题**: 上对话 Snapshot v2 生成时 HEAD 是 `55fff0da`,后续 handoff 同步 commit `10c4eb93` 及 Phase C Batch 1 8 commit 陆续 land。覆盖式哲学下未即时 regen,drift 累积。
+- **处理**: A 路径切换后,每对话收尾增量 Edit §8 HEAD SHA(已在本 commit §3.8 同步)。Phase 封顶时 Opus regen §8 其他字段作里程碑
+- **外化锚**: Archive #22 + A 路径切换 + 本 commit
+
+### 7.10 postgres-seed-test container 归宿延后(Phase C 期间并存)
+
+- **位置**: `postgres-seed-test:15432`(Task 10 Stage 1 建,Phase B acceptance 证据容器)vs Phase C Task 11 新建 `qr-order-postgres-test:5433`(γ3c tmpfs 测试容器)
+- **并存关系**: 不同 port / 不同 volume / 不同 container name,Phase C 期间并存不冲突
+- **处理**: Phase C 完成后 Phase I/J 清理 reconcile,决定 `postgres-seed-test` 去留(建议归档为 frozen acceptance 证据,不拆)
+- **外化锚**: Task 10 commit body + Phase C Batch 1 启动期 Opus 登记
+
+### 7.11 phase-c-test-db.md prisma-client.ts 路径 mental model drift
+
+- **位置**: plan Task 12 setup.ts heredoc 内 import mental model 假设 `server/src/db/prisma-client.ts`(plan 作者 mental model)
+- **实际 repo 位置**: `server/src/repositories/prisma-client.ts`(Stage 0 G4 grep 实证)
+- **Phase C blocking**: NOT blocking — plan Task 12 setup.ts 实际 `new PrismaClient(...)` 独立 instance,不 import project 的 prisma-client
+- **Phase D blocking**: verify required — Phase D repos 实际 import production client 时必 verify path
+- **处理**: Phase D 启动时 Stage 0 显式 confirm import path;Phase H Task 45 reconcile plan 文字
+- **外化锚**: Phase C Batch 1 Stage 0 G4 grep
+
+### 7.12 Task 11 f538941b docker-compose.test.yml / package.json stale literal(已 forward-fix)
+
+- **位置**: Task 11 commit `f538941b`(docker-compose.test.yml line 9 POSTGRES_DB + line 16 healthcheck + server/package.json test:integration 行)
+- **内容**: stale `qr_order_test` literal(plan 自造,与 Phase B migration `qr_order` 跨 phase drift,#25)
+- **处理**: 已由 fix commit `0b070a92` forward-fix(D77 不 amend 已 push commit,D77 纪律 applied)
+- **HEAD 当前状态**: 正确 literal `qr_order`,fix commit 已 land
+- **spec reconcile**: Phase H Task 45 统一 Task 11 commit body note / 或纳入 D84 Cross-Phase Invariants 文件作 invariant example
+- **外化锚**: `0b070a92` commit body + #25 Archive + D84 候选
+
 ---
 
 ## 8. 环境状态(全 stack,响应 #22)
@@ -248,7 +303,7 @@
 | Prisma Client types | 已最新 | Task 9a Stage 4c regenerate,post-schema |
 | tsc baseline | 103 errors(pristine HEAD,v3/v4 drift 修正) | Phase B Task 每次 verify "touched files 内 0 new errors" |
 | ESLint `no-floating-promises` baseline | 0 errors | Task 10 Stage 6 验证 |
-| HEAD == origin/main | ✅ `55fff0da` | 本 Snapshot v2 生成时一致 |
+| HEAD == origin/main | ✅ Phase C Batch 1 closure commit | A 路径切换后首次增量 Edit;具体 SHA 见 `git log -1` |
 
 ### Shell 环境状态
 
@@ -258,45 +313,61 @@
 
 ---
 
-## 9. 下一对话第一件事(Phase C 启动)
+## 9. 下一对话第一件事(Phase C Batch 2 启动)
 
-### 9.1 Phase C scope(plan 已完整)
+### 9.1 Phase C Batch 2 scope
 
-Phase C = **测试 DB 实施**。`phase-c-test-db.md` plan 完整,下 Opus **不重写 plan**,做:
+Batch 2 = **Task 14**(`integration/rls-coverage.test.ts` + `integration/tenant-isolation.test.ts`,L1 **最严** review —— RLS policy 全表覆盖 + A2 set_config strict mode 防御 + WITH CHECK reversal INSERT 拒绝 三重防御验证)
 
-1. **L1 或 L2 verify** `phase-c-test-db.md` 对齐当前 repo state(Mode C δ 桶 1 已 RESOLVED / tsc baseline 103 / ESLint 已装 / Prisma Client 最新)
-2. 若 plan 有 drift → α/β/γ/δ 决议 + plan patch commit + 重新 verify
-3. CC 启动消息 + Stage 0 pre-flight grep + 执行
+**启动前置**:
+- HEAD 对齐 Phase C Batch 1 closure commit(本 commit)
+- Task 11/12/13 已 land(`f538941b` / `a55da4ae` / `57894f8f`)
+- Task 13 fixtures.ts 作基础(seedStoreWithMenu 供 tenant A/B cross-store 测试)
+- fix commit `0b070a92` DB name align 已 land
+- docs patch v2/v3/v4 plan 修订全 land(`e13f7f37` / `ffcc7cdc` / `61f8964e`)
 
-**若 Ian 说 "开始 Phase C 的 Plan" 意图是重写 plan**(而非上面的实施流程),下 Opus 必须显式 clarify,不凭字面推断(Fabrication #19/#21 同类防御)。
+**不重写 plan**: phase-c-test-db.md Task 14 段 plan 完整,Batch 2 做:
+- Stage 0 carry-forward verify(Batch 1 已验:schema / migration literal / prisma-client GUC / vitest 4 syntax / DB name align)
+- Task 14 plan heredoc verify(Opus L1 针对 rls-coverage.test.ts + tenant-isolation.test.ts 的每 assertion 对 schema / policy / RLS 机制的字面量对齐)
+- 实施
+
+**L1 review 维度(Task 14 特别强)**:
+- RLS policy 表达式字面量(`store_id::text = current_setting('app.current_store_id')::text`)
+- A2 set_config strict mode 验证(`testDb.order.findMany()` without tenant context 必抛 unrecognized configuration 或等价)
+- WITH CHECK 反向 INSERT 拒绝(tenant A context 内 insert storeId=B 必 reject)
+- pg_policies 元查询(`policyname = 'tenant_isolation'` 字面量对齐 Task 4 migration)
+- platform_admin BYPASSRLS role 命名(对齐 Task 4 migration)
 
 ### 9.2 启动 ritual
 
-1. **读**: 本 Snapshot + Governance Digest + `phase-c-test-db.md`(完整)+ 相关 work-log(若有)
-2. **Grep verify**: `git log -10 --format="%h %s"` 确认 commit 链含 `55fff0da`(Task 10)+ `714d61b1`(Task 9b)+ `d11205cf`(handoff 3-file)
-3. **环境 verify**: `docker ps` 确认本 Snapshot §8 全 stack 状态对齐(Ian 若本地关过某些容器 → §8 stale,重新校准)
-4. **L1/L2 判断**: Phase C Task 11 复杂度未知,读 plan 后决定
+1. **读**: 本 Snapshot + Governance Digest + Fabrication Archive + `phase-c-test-db.md` Task 14 段(完整)+ Batch 1 对话 handoff(CC 上轮汇报 + 本 commit)
+2. **Grep verify**: `git log -10 --format="%h %s"` 确认 commit 链含 本 closure / `57894f8f` / `0b070a92` / `61f8964e` / `a55da4ae` / `f538941b`
+3. **环境 verify**: `docker ps` 对齐 §8 全 stack(`qr-order-pg` / `qr-order-server` / `qr-order-nginx` / `qr-order-adminer` / `postgres-seed-test` 5 容器 Up;`qr-order-postgres-test` Batch 1 收尾已 down,Batch 2 启动时重起)
+4. **L1 维度**: Task 14 L1 最严,按 9.1 列的 5 维度逐项 verify plan heredoc
+5. **Cross-phase literal grep**(D84 激活,响应 #25): Task 14 plan 内任何 RLS policy literal / role literal / GUC literal,grep 对齐 Phase B migrations 实际 literal
 
-### 9.3 规则应用提醒(Phase B 实施经验 informed)
+### 9.3 规则应用提醒(Phase C Batch 1 实施经验 informed)
 
-- **Opus Spec Pre-Flight Checklist**(Digest §7): 所有"期望/应该/不存在/成对"断言需 grep fact base
-- **D74 双向校准**: 预估行数主动分桶应用系数
-- **D82 候选**: 若 Phase C 涉及 schema touch,必含 `pnpm prisma generate` step
-- **D83 候选**: tsc baseline 用"touched files 内 0 new errors"相对约束,不看 Total
-- **#14/#22 防御**: 启动第一条消息 grep verify commit 链 + 环境 state,不凭本 Snapshot 文字推断
-- **#20 防御**: Stage 0 grep schema 用 `grep -A N "^model X "` 完整 dump + 对 plan heredoc 做手动对比,不用 narrow `grep -E "a|b|c"` pattern
-- **#21 防御**: Opus reasoning 出现"不大惊小怪 / shorthand / 小 drift"措辞 → 立即 suspect,显式消除 downstream interpret 空间
+- **Opus Spec Pre-Flight Checklist**(Digest §7): 所有"期望/应该/不存在/成对 / Cross-phase literal coupling"断言需 grep fact base(Cross-phase 第 5 行 Batch 1 新增,响应 #25)
+- **D74 双向校准**: 预估行数主动分桶
+- **D82 候选**: Phase C 不 touch schema,无 prisma generate 需求
+- **D83 定性约束**: verify 用"expected 结构出现 / unexpected 未出现",不用 ±N%
+- **#14/#22 防御**: Snapshot §8 每对话收尾增量 Edit(A 路径)
+- **#20 防御**: Stage 0 grep schema / migration 用 `grep -A N` 完整 dump,不用 narrow pattern
+- **#21 防御**: reasoning 出现"不大惊小怪 / shorthand" → 立即 suspect
+- **#23/#24 防御**: 本对话登记或 handoff 引用既有规则,CoT 扫一遍主动应用
+- **#25 防御 + D84 候选激活**: Task 14 plan 内 cross-phase literal(RLS policy / role name / GUC)必 grep Phase B migration 对齐
 
 ### 9.4 不启动原则
 
-不直接实施 Phase C Task 11。先 L1/L2 verify + Ian 明批 "GO"。
+不直接实施 Phase C Task 14。先 L1 verify + Ian 明批 "GO"。
 
 ---
 
 ## 10. 当前修订轨迹
 
 - **2026-04-20 首版**: Task 8 impl + Task 9a 完整。
-- **2026-04-21 v2 regen**(本版本,Phase B Task 10 完成后):
+- **2026-04-21 v2 regen**(Phase B Task 10 完成后):
   - §1 时点更新 2026-04-21 / commit `55fff0da` / Phase B 10/10
   - §2 Phase B 实施状态 → 完成
   - §3 commit 链更新(Task 10 / 9b 对话 + 更早批次)
@@ -305,7 +376,17 @@ Phase C = **测试 DB 实施**。`phase-c-test-db.md` plan 完整,下 Opus **不
   - §7 pending drifts 加 §7.6(Task 9b plan heredoc drift / #20)+ §7.7(Task 10 compose drift)+ §7.8(qr-order-pg legacy data)
   - §8 环境状态全 stack 覆盖(响应 #22)—— 从单容器表改为全容器 table
   - §9 下一步改为 Phase C 启动指引
+- **2026-04-21 A 路径切换 + Phase C Batch 1 收尾增量 Edit**(本 commit):
+  - 顶部声明从"覆盖式,每对话全文重写"改为"live 增量维护,Phase 封顶 regen"
+  - 理由: regen 过程本身是 fabrication 高发时点(#24 原型教训),增量式对齐 Archive/Digest 三文件机制一致性,Phase 封顶 regen 作里程碑节奏点。覆盖式哲学实际已 drift(§7 pending drifts 一直累积,从未 regen 清过)—— A 路径是承认现实,不是改变实践
+  - §1 commit 更新 HEAD SHA / Phase C 状态 Batch 1 完成(3/5 task)
+  - §2 Phase C 行状态 Batch 1 完成
+  - §3 commit 链追加 Phase C Batch 1 对话 8 commit
+  - §6 D 候选 17 → 18(加 D84)
+  - §7 pending drifts §7.9/7.10/7.11/7.12 追加(Batch 1 启动期未 land 的 3 条 + 本批新 7.12)
+  - §8 HEAD SHA 更新
+  - §9 完整替换为 Phase C Batch 2 启动指引(含 D84 激活 + #25 防御 + L1 维度 5 项)
 
 ---
 
-*Phase 5 State Snapshot · 覆盖式,每对话更新 · v2 2026-04-21(Phase B 封顶)· 与 Governance Digest + Fabrication Archive 配套*
+*Phase 5 State Snapshot · live 增量维护,每对话收尾更新,Phase 封顶 regen · 与 Governance Digest + Fabrication Archive 配套*
