@@ -144,14 +144,17 @@ export default defineConfig({
     // 集成测试跑起来需要一点时间（migrate、truncate）
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    // 单进程跑，避免多 worker 争抢同一个测试 DB
+    // 单进程跑,避免多 worker 争抢同一个测试 DB
+    // vitest 4 migration: poolOptions 拍扁到顶级,singleFork 字段 deprecated
+    // 完整等价 singleFork: maxWorkers: 1(单 worker) + isolate: false(同 worker module cache 不 re-init,保持 testDb 单例)
     pool: 'forks',
-    poolOptions: { forks: { singleFork: true } },
+    maxWorkers: 1,
+    isolate: false,
   },
 })
 ```
 
-**关键**：`singleFork: true`——所有测试共享一个 Prisma client 连接池，避免多 worker 对同一个 DB 并发 TRUNCATE 引发死锁。
+**关键**：`maxWorkers: 1 + isolate: false`——所有测试共享一个 Prisma client 连接池，避免多 worker 对同一个 DB 并发 TRUNCATE 引发死锁。v3 语义用 `poolOptions: { forks: { singleFork: true } }`，vitest 4 拆分为两顶级字段。
 
 - [ ] **Step 3：写 `global-setup.ts`（整套测试跑一次）**
 
@@ -268,15 +271,23 @@ pnpm test --run 2>&1 | tail -20
 pnpm test:db:down
 ```
 
-预期：
+预期(vitest 4 behavior,Phase C patch v2):
 ```
-[global-setup] Applying migrations to test DB…
-[global-setup] Migrations applied.
+No test files found, exiting with code 1
 
-No test files found
+filter:  src/__tests__/integration/**
+include: src/lib/__tests__/**/*.test.ts, src/__tests__/**/*.test.ts
+exclude: **/node_modules/**, **/.git/**
 ```
 
-没 test 文件正常，只是验证 setup 能跑通、migrate 没挂、TRUNCATE 没抛错（反正没有行要 truncate）。
+**vitest 4 note**: vitest 4 在 filter 命中 0 test files 时 skip globalSetup 直接 exit 1。plan 原语义"dry run 验 globalSetup 能跑"由此降级为"verify 配置 parse 成功 + filter 生效 + no panic"。真正的 globalSetup migrate 触发延迟到 Task 13 fixtures.test.ts 首次 land 时自然验证。
+
+定性 acceptance:
+- 出现 `No test files found` + `filter: src/__tests__/integration/**` + `include: ...` 三行
+- 不出现 Prisma error / config parse error / TypeError
+- exit 1 是 vitest 4 expected,不是 failure signal
+
+若以上任一不符 → 规则 8 暂停,Opus 判。
 
 - [ ] **Step 6：commit**
 
@@ -287,7 +298,7 @@ git add server/vitest.config.ts \
 git commit -m "feat(phase-5): vitest setup with test DB + tenant helpers
 
 - global-setup.ts applies Prisma migrations to test DB once
-- setup.ts TRUNCATE CASCADE before each test, singleFork pool
+- setup.ts TRUNCATE CASCADE before each test, single-worker forks pool (maxWorkers: 1 + isolate: false)
 - withTestTenant / withTestPlatform mirror production wrappers
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
