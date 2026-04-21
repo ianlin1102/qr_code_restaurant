@@ -443,7 +443,7 @@ describe('fixtures', () => {
     })
     expect(menuItems).toHaveLength(2)
     expect(menuItems[0].price).toBe(1000)
-    expect(table.label).toBe('T1')
+    expect(table.name).toBe('T1')
   })
 
   it('seedFullTenant includes owner + roles', async () => {
