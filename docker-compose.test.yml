@@ -7,7 +7,7 @@ services:
     image: postgres:16-alpine
     container_name: qr-order-postgres-test
     environment:
-      POSTGRES_DB: qr_order_test
+      POSTGRES_DB: qr_order
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: test
     ports:
@@ -15,7 +15,7 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "qr_order_test"]
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "qr_order"]
       interval: 2s
       timeout: 2s
       retries: 15
