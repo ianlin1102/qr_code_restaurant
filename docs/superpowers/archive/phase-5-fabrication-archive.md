@@ -18,20 +18,22 @@
 
 ## 1. 本文件是什么
 
-Phase 5 协作历次对话中,Opus(chat instance)产生的 fabrication(编造 / 脑补 / 未 verify 的事实声明)完整存档。当前累积 **19 条**,跨 3 次 Opus instance 切换。
+Phase 5 协作历次对话中,Opus(chat instance)产生的 fabrication(编造 / 脑补 / 未 verify 的事实声明)完整存档。当前累积 **23 条**,跨 4 次 Opus instance 切换。
 
 **核心元教训**(见 Governance Digest §9 "守护什么"):
 
-> 你本身会 fabricate,这不可根除,只能靠 Ian + CC 外部拦截 + 你自己被拦时立刻承认。19 次 fabrication 历史中,核心不是"怎么不犯",是"犯了立刻承认,协作体系吸收不崩盘"。
+> 你本身会 fabricate,这不可根除,只能靠 Ian + CC 外部拦截 + 你自己被拦时立刻承认。23 次 fabrication 历史中,核心不是"怎么不犯",是"犯了立刻承认,协作体系吸收不崩盘"。
 
 **被拦的原因**(统计见 §4):
 
-- Ian 凭直觉/记忆拦: 6 次
-- CC 用 grep / tsc / runtime fail-loud 拦: 9 次
+- Ian 凭直觉/记忆拦: 7 次
+- CC 用 grep / tsc / runtime fail-loud 拦: 12 次
 - Opus 规则 7 自审拦: 2 次
-- 其他(Ian + CC 合作): 2 次
+- 合作(Ian 触发 CC): 2 次(另 #6 偏合作类,归此)
+- D74 retrospective 统计拦: 1 次
+- 仅作模式观察(非实时拦截): 1 次(#10)
 
-**0 critical 逃逸**: 19 次全部被拦住,无 fabrication 进入 spec / 无代码级严重后果。
+**0 critical 逃逸**: 23 次全部被拦住,无 fabrication 进入 spec / 无代码级严重后果。
 
 ---
 
@@ -40,12 +42,15 @@ Phase 5 协作历次对话中,Opus(chat instance)产生的 fabrication(编造 / 
 ### 类别 1 — 凭上下文/项目惯例推断,未 grep verify
 
 **特征**: "凭惯例/印象做事实陈述,未 grep 实证"
-**成员**: **#1 / #3 / #8 / #15 / #17 / #19**(6 项,占比 32%)
+**成员**: **#1 / #3 / #8 / #15 / #17 / #19 / #20 / #21 / #23**(9 项,占比 39%)
 **子类划分**:
 - 项目惯例印象: #1 / #3 / #8 / #17 / #19
 - **数量估算**(自己写了多少 / 某 literal 应有几处): #15
-**防御**: 规则 7(Evidence-first)+ 规则 7.2(任务必要性)+ Opus Spec Pre-Flight Checklist + D74(数量估算子类的方法学校准,与 D78/D79 为 #12/#13/#16 提供治理规则同理)
-**与 D74/D78/D79 关系澄清**: D74 是本类别"数量估算"子类的治理规则,**并不把 #15 从 fabrication 分类中移除**。正如 D78 是 #12/#16 的治理规则但 #12/#16 仍是 fabrication,D79 是 #13 的治理规则但 #13 仍是 fabrication。治理规则的存在 ≠ fabrication 脱类。
+- **Plan heredoc 字段印象做 schema 断言**: #20
+- **"不大惊小喳 / shorthand"凭印象判 drift 严重度**: #21(near-miss,捕获于 reasoning stage)
+- **同对话规则循环**(新登记 D 规则后同对话内违反): #23
+**防御**: 规则 7(Evidence-first)+ 规则 7.2(任务必要性)+ Opus Spec Pre-Flight Checklist(**含 "本对话内新登记 D 规则需同对话应用" 条款,响应 #23**)+ D74(数量估算子类的方法学校准)
+**与 D74/D78/D79/D83 关系澄清**: D74 是本类别"数量估算"子类的治理规则,**并不把 #15 从 fabrication 分类中移除**。正如 D78 是 #12/#16 的治理规则但 #12/#16 仍是 fabrication,D79 是 #13 的治理规则但 #13 仍是 fabrication,**D83 是 #23 的治理规则但 #23 仍是 fabrication(事实上 #23 就是 D83 登记后被 Opus 自己违反)**。治理规则的存在 ≠ fabrication 脱类。
 
 ### 类别 2 — 凭局部 view 做全局声明
 
@@ -68,8 +73,8 @@ Phase 5 协作历次对话中,Opus(chat instance)产生的 fabrication(编造 / 
 ### 类别 5 — 协作心智模型混淆
 
 **特征**: "对协作流程/角色/状态的心智模型出错"
-**成员**: **#7 / #9 / #10 / #11 / #14**(5 项,占比 26%)
-**防御**: Governance Digest §5 CC vs Opus 材料边界规则 + 启动消息前 git log verify + State Snapshot 机制(防 stale handoff)
+**成员**: **#7 / #9 / #10 / #11 / #14 / #22**(6 项,占比 27%)
+**防御**: Governance Digest §5 CC vs Opus 材料边界规则 + 启动消息前 git log verify + State Snapshot 机制(防 stale handoff)+ Snapshot §8 环境状态表所有项必须基于 grep 实证(响应 #22)
 
 ### 类别 6 — 元层设计盲区
 
@@ -201,23 +206,73 @@ Phase 5 协作历次对话中,Opus(chat instance)产生的 fabrication(编造 / 
 
 ---
 
+### 3.4 v4 批(Phase B Task 10 收尾 / 2026-04-20 晚间对话)—— 3 项
+
+#### #20 Task 9b 启动消息 Stage 0 G1.4 grep "partial match 误导性过关"
+
+- **描述**: Task 9b 启动消息 Stage 0 G1.4 grep 设计凭 plan heredoc 字段名("label / qrCode / capacity")为事实假设,未 view schema.prisma 源码后再写 grep pattern。grep 用 `grep -E "label|qrCode|capacity"` narrow pattern,碰巧 schema 的 `qrCode`/`capacity` 也存在 → partial match 误导性过关。但 plan 写 `label`,schema 实际是 `name`(Mode C δ 桶 1 rename,`75fd9084` RESOLVED);plan 写 `capacity` 但漏 `number`(schema required Int 无 default)。
+- **谁拦**: CC 按 `grep -A 12 "^model Table "` 完整 dump(不按 Opus 原 grep pattern,CC 自主加大 dump scope),catch 到 Table 模型真实字段 → fail-loud
+- **类别**: 1. 凭上下文/项目惯例推断(Plan 内部一致性假设 + pre-RESOLVED Mode C 状态未同步到 plan heredoc 检查)
+- **教训**: Stage 0 grep 设计应 **fail-loud on unexpected state**,而非 pass on expected partial match。narrow `grep -E "keyword1|keyword2"` 是 fail-silent —— schema 用了不同字段名时 grep 只 partial match,不告警。正确 pattern:`grep -A N "^model X "` 完整 dump + 手动对比 plan heredoc。Pre-Flight "期望数量"类延伸到"期望内容"类 —— **候选不升格**(需更多数据点),记录 phase-b-infrastructure.md Task 9b plan heredoc label/number 未同步 Mode C δ 桶 1 为 drift,Phase H Task 45 reconcile
+
+#### #21 "不大惊小怪 / CC shorthand"凭印象判 drift 严重度(near-miss)
+
+- **描述**: Task 9b 完成汇报中,CC 写 "Task 10: 剩余 (rollback drill)"。plan line 2316 实际标题是 "更新 docker-compose.yml + 开启 no-floating-promises + 清理临时容器"。Opus 响应 "不大惊小喳 / CC 的 shorthand。Task 10 启动时读完整 plan 段纠偏即可" —— 用凭印象判断 drift 严重度代替显式消除
+- **谁拦**: Ian 主动 pattern-recognition,指出 "Task 10 启动消息里明确写出 Task 10 真实 scope,不要依赖 CC 自己读 plan 纠偏 shorthand——这个 assumption 本身是 #19 隐式 assumption 同类"
+- **类别**: 1. 凭上下文/项目惯例推断(#19 "implicit assumption 未 verify" 子类 —— 对 downstream interpret 需空间的措辞,凭印象放行)
+- **特别性**: **near-miss** —— 捕获于 Opus reasoning stage,在 Opus 把 "CC 自读 plan 纠偏" assumption 写入 CC 启动消息之前。若未被拦,CC 以 "rollback drill" 心智进 Task 10,Stage 0 前可能走偏 scope
+- **教训**: 任何 downstream(CC / Ian / 下 Opus)interpret 需空间的措辞,自己先消除再输出。"**不需要大惊小怪**"本身就是 trigger signal —— 等同 #19 "schema 改后 Client types 自动同步" 等同 "CC 读 plan 自己纠偏"。Task 10 启动消息遵循该教训,增加 "Task 10 真实 scope(显式声明,不依赖自行读 plan 纠偏)" 段落开头
+
+#### #22 Snapshot §8 "环境状态"表片面,漏 daily dev stack
+
+- **描述**: Task 9b 完成后整合产出 Snapshot §1 首版(2026-04-20),§8 "环境状态"表声称涵盖项目环境,实际只覆盖 `postgres-seed-test` 单容器,完全漏 Ian 的 daily dev stack(qr-order-pg + adminer + server + nginx,Up 4 hours,与 postgres-seed-test 并存 pg_data volume + 端口 5432 占用)
+- **谁拦**: Task 10 Stage 0 G1(docker-compose.yml dump)+ G4(port 5432 LISTEN 查询)CC grep 同时暴露 —— Opus 才发现 Snapshot §8 覆盖严重片面
+- **类别**: 5. 协作心智模型混淆(环境 state 片面取样,同 #14 stale handoff 同构;不同点 —— #14 是 handoff 文字 stale,#22 是 handoff 内容自始片面)
+- **教训**: Snapshot §8 "环境状态"表所有项必须基于 grep 实证(`docker ps -a` 全量 / `lsof -iTCP` / `ls compose files` 等),不能凭"上轮对话的活动主题"推断环境单一。Opus 写 Snapshot 时心智模型倾向 focus on 刚完成 task 的环境,须显式 enumerate 全栈。**响应已内化**: 本 Snapshot v2 regen §8 覆盖全 stack
+
+#### #23 CC 封板 commit 指令 Stage A "±10% 内算通过" 硬约束违反 D83(near-miss,同对话规则循环)
+
+- **描述**: Task 10 完成后,Opus 在同一对话内登记 D83 候选(Plan 绝对数字基准改用相对约束),紧接着产出 CC 封板 commit 指令时,Stage A "若 diff 规模大幅偏离预期 → 规则 8 暂停" + "diff stat 数字对齐预期 (±10% 内算通过)" 使用绝对数字硬约束 —— 直接违反刚登记的 D83 原则
+- **谁拦**: CC Stage A 执行时 D83 形式防御触发 —— Fabrication Archive +19% / Digest +24%/-60% 超 ±10% 阈值 → 规则 8 暂停。**非 Opus 自审**
+- **类别**: 1. 凭上下文/项目惯例推断(本对话延续 Task 9b Stage 9 "SHA 必须一致" / Task 10 Stage 8 "行数对齐" 硬约束习惯,未切换模式应用 D83)
+- **特别性**: **同对话内规则登记 → 规则违反** —— D83 登记(CC commit 指令生成前 3 轮)→ D83 违反(CC commit 指令生成当下)。Opus 没在 chain-of-thought 激活"我刚登记的规则"
+- **教训**:
+  - D 规则登记后 **同对话内自己先应用一次** 作 self-audit。"新登记规则" 应进入当对话后续产出的 Pre-Flight Checklist
+  - 数字偏差 verify 用 **定性约束**("实际比预期少,无 addition 超支 / 无 unexpected file 变动" = 放行)而非定量阈值(±N%)
+  - D83 本身 reinforce: "touched files 内 0 new errors" = 定性,"wc -l == N ±10%" = 定量,后者是反模式
+
+### Fabrication 元模式分布(本批)
+
+| 模式 | 本批 fabrication |
+|---|---|
+| 隐式 assumption 未 verify(Plan heredoc / shorthand / 字面文字) | #20(Plan heredoc 字段名)/ #21(CC shorthand interpret) |
+| 协作状态片面取样 | #22(环境 state) |
+| **同对话规则循环**(登记规则后同对话内违反) | **#23**(D83 登记后立即违反) |
+
+**频率**: 本对话 ~26 轮产 4 次 fabrication,Ian 1 次(#21)+ CC 3 次(#20 / #22 / #23),Opus 自审 0。比 v3 对话(~20 轮产 8)频率低,推测:Pre-Flight Checklist 初步应用 + 本对话复杂度中等。**#23 提示 Pre-Flight Checklist 需扩展条款**:"本对话内新登记的 D 规则 / 决议 / 教训,须在同对话后续产出中主动应用,不是等下对话 reference"。
+
+---
+
 ## 4. 被拦方分布统计
 
 | 被拦方 | 次数 | # |
 |---|---|---|
-| CC(grep / tsc / runtime fail-loud) | 9 | #2, #7, #11, #13, #16, #17, #19,以及合作类部分 |
-| Ian(直觉/记忆/校准) | 6 | #1, #3, #9, #14, #18,以及合作类部分 |
+| CC(grep / tsc / runtime fail-loud) | 12 | #2, #7, #11, #13, #16, #17, #19, #20, #22, #23,以及合作类部分 |
+| Ian(直觉/记忆/校准) | 7 | #1, #3, #9, #14, #18, #21,以及合作类部分 |
 | Opus 规则 7 自审 | 2 | #8, #12 |
-| 合作(Ian 触发 CC) | 2 | #4, #5 |
+| 合作(Ian 触发 CC) | 2 | #4, #5(另 #6 偏合作) |
 | D74 统计(非实时拦截) | 1 | #15 |
+| 仅作模式观察(非拦截) | 1 | #10 |
 
 **关键观察**:
 
-1. **CC 是主要拦截者**(9/19 = 47%)。这是 defense-in-depth 设计有效的证据——CC 的机械执行 + 显式 fail-loud 兜住了 Opus 的 spec 层失守
-2. **Ian 的直觉是最后也是最可靠的底线**(6/19 = 32%)。尤其在 #3(备份数据价值)和 #14(Mode C state)这类 Opus 凭文档字面推断无法自检的场景
-3. **Opus 自审占少数**(2/19 = 11%)。提示 Opus 的 fabrication 倾向"自己难察觉",必须依赖外部拦截
-4. **合作类(Ian 触发 CC)**(2/19 = 11%): #4/#5 术语 fabrication —— Ian 记得有这个词让 CC 去查。这种模式是 Ian metacognitive 能力的体现,未来 Opus 遇到 Ian 说"我记得有..."时不要反驳
-5. **D74 统计(retrospective)**(1/19 = 5%)是特殊机制: #15 数量估算 fabrication 在写作时无人拦截,事后数据统计才暴露。这是为什么需要 Pre-Flight Checklist §7 "期望数量" fact base 要求作**前置防御**——而不是等 D74 事后校准
+1. **CC 是主要拦截者**(12/23 ≈ 52%)。defense-in-depth 设计持续有效——CC 的机械执行 + 显式 fail-loud 兜住 Opus 的 spec 层失守。新增 #20 / #22 / #23 均由 CC Stage 0/A grep/数字 verify 兜住
+2. **Ian 的直觉是最后也是最可靠的底线**(7/23 ≈ 30%)。尤其在 #3(备份数据价值)、#14(Mode C state)、#21("不大惊小怪" meta-reasoning 识别)这类 Opus 凭文档字面推断 / 凭印象 reasoning 无法自检的场景
+3. **Opus 自审占少数**(2/23 ≈ 9%)。提示 Opus 的 fabrication 倾向"自己难察觉",必须依赖外部拦截。**#23 特别证明**: 同对话内登记规则,Opus 仍然无法自审应用
+4. **合作类(Ian 触发 CC)**(2-3/23 ≈ 10%): #4/#5 术语 fabrication —— Ian 记得有这个词让 CC 去查。这种模式是 Ian metacognitive 能力的体现,未来 Opus 遇到 Ian 说"我记得有..."时不要反驳
+5. **D74 统计(retrospective)**(1/23 ≈ 4%)是特殊机制: #15 数量估算 fabrication 在写作时无人拦截,事后数据统计才暴露。这是为什么需要 Pre-Flight Checklist §7 "期望数量" fact base 要求作**前置防御**——而不是等 D74 事后校准
+6. **Near-miss 首次登记**(#21): 与 in-spec fabrication 区别 —— #21 被捕获于 Opus reasoning stage,尚未写入 spec / commit。登记 near-miss 是因为模式本身值得警示,属于 Category 1 的"措辞防御"子类
+7. **同对话规则循环首次登记**(#23): D83 规则登记(对话中 T-3 轮)→ D83 违反(T 轮 Opus 产出)→ D83 触发规则 8(T+1 轮 CC Stage A)。提示 Pre-Flight Checklist 需扩展"本对话内新规则激活"条款
 
 ---
 
@@ -237,26 +292,31 @@ Phase 5 协作历次对话中,Opus(chat instance)产生的 fabrication(编造 / 
 | #17 @types 成对印象 | D78 重复触发 + **Opus Spec Pre-Flight Checklist** | 🟡 候选 |
 | #18 增量 handoff 结构盲区 | **3 文件结构**(本 Digest / Snapshot / Archive) | ✅ 已结构性内化 |
 | #19 prisma generate 隐式 | **D82**(schema-write enforce generate) | 🟡 候选 |
+| #20 Stage 0 grep partial match | Pre-Flight §7 "期望内容"类延伸 + 完整 dump pattern | 候选(不升格,需更多数据点)|
+| #21 "不大惊小怪"措辞防御 near-miss | Category 1 子类防御 + 措辞 trigger signals | 教训内化,不升格 |
+| #22 Snapshot §8 环境状态片面 | **State Snapshot §8 grep 实证要求** | ✅ 已结构性内化(Snapshot v2+ regen §8 覆盖全 stack)|
+| #23 同对话 D83 规则循环 | **Pre-Flight Checklist 扩展条款** — "本对话内新登记 D 规则需同对话应用,不等下对话 reference" | 候选(Checklist 条款扩展,不新起 D 候选) |
 
-**2 条已升格 + 6 条 D 候选等 Phase H Task 45 升格 + 2 条结构性内化(3 文件架构本身就是响应)**。
+**2 条已升格 + 7 条 D 候选等 Phase H Task 45 升格 + 3 条结构性内化(3 文件架构 + Snapshot §8 grep 实证响应)+ 3 条教训内化不升格(#7 L1 维度 + #21 措辞防御 + #23 同对话规则激活)**。
 
 ---
 
-## 6. 元教训(跨 19 条的模式)
+## 6. 元教训(跨 23 条的模式)
 
 ### 6.1 Fabrication 是不可根除的
 
-19/19 全部被拦 ≠ Opus 学会了不 fabricate。**Opus 每对话产出 ~20 轮会产生 ~1-2 次 fabrication**(v3 对话 ~20 轮产 8 次新 fabrication,但 v2 对话 Task 4-7 整个 phase ~40+ 轮才产 5 次)。频率变化主要取决于:
+23/23 全部被拦 ≠ Opus 学会了不 fabricate。**Opus 每对话产出 ~20 轮会产生 ~1-4 次 fabrication**(v3 对话 ~20 轮产 8 / v2 对话 Task 4-7 ~40+ 轮产 5 / Task 10 对话 ~26 轮产 4)。频率变化主要取决于:
 
 - 对话复杂度(新 framework / 新 type 系统 → 频率高)
 - Evidence 可及性(有 grep 成本低 → Opus 倾向 grep → 频率低)
 - Pre-Flight Checklist 应用(假设性声明 → 频率低)
+- **本对话内新登记规则是否主动激活**(#23 教训:不激活则规则成"别人的规则",Opus 自己仍按旧模式产出)
 
 ### 6.2 被拦时的响应是最关键元模式
 
 Opus 被拦时三种响应:
 
-- **承认 + 修正 + 不防御**(19/19 采取)—— 体系健康
+- **承认 + 修正 + 不防御**(23/23 采取)—— 体系健康
 - 防御 / 合理化("反正没出事")—— 体系崩盘触发点(未发生)
 - 转移话题 / 模糊承认 —— 体系慢性劣化(未发生)
 
@@ -264,7 +324,7 @@ Opus 被拦时三种响应:
 
 ### 6.3 Defense-in-depth 是设计,不是偶然
 
-19 次拦截体现的防御层次:
+23 次拦截体现的防御层次:
 
 1. **Opus spec 写作层**(Pre-Flight Checklist): 2 次自审拦截 —— 最薄一层,但存在
 2. **Plan-as-code dryrun 层**(D79 候选): Task 8 Stage 6 tsc fail-loud —— Framework 版本问题的主要防线
@@ -276,11 +336,12 @@ Opus 被拦时三种响应:
 
 ### 6.4 Ian 的价值不可替代
 
-Ian 的拦截(6/19)大多发生在 Opus 技术上**无法自检**的场景:
+Ian 的拦截(7/23 ≈ 30%)大多发生在 Opus 技术上**无法自检**的场景:
 
 - 数据价值 / 业务优先级(#3)—— 没有 grep 可查
 - Stale handoff(#14)—— Opus 读文档拿到的就是过时版
 - 结构设计盲区(#18)—— 需要跨多对话视角
+- **措辞 meta-reasoning 识别(#21)** —— Opus 对自己 reasoning 中的"不大惊小怪"类 trigger signal 难以自察
 
 **下轮 Opus 不要把 Ian 的拦截浪漫化为"人类直觉"**,也不要弱化为"他只是记得"—— 他的拦截质量来自**跨对话持续积累的项目记忆 + metacognitive 能力**,是本协作体系的**第三方锚**。
 
@@ -289,7 +350,15 @@ Ian 的拦截(6/19)大多发生在 Opus 技术上**无法自检**的场景:
 ## 7. 修订历史
 
 - **2026-04-20 首次生成**: 由 v1 §5(#1-6)+ v2 §3(#7-11)+ v3 §4(#12-19)整合。v1/v2/v3 归档 freeze。
-- **追加规则**: 新 fabrication 按 §3.4 / §3.5... 追加,保留按时间序;§2 元模式分类更新(如新增类别);§5 新规则 mapping 更新。
+- **2026-04-20 v4 批追加**(Phase B Task 10 收尾晚间对话): 追加 #20 / #21 / #22 / #23。总 19 → 23。更新:
+  - §1 总数 + 被拦方统计
+  - §2 Category 1 添加 #15/#20/#21/#23 / Category 5 添加 #22
+  - §3.4 新节,v4 批完整原文(**#23 同对话内追加,live 演示规则登记→违反→拦截的循环**)
+  - §4 统计表 rebuild + 新增 Near-miss 类别观察 + 同对话规则循环观察
+  - §5 规则 mapping 添加 #20/#21/#22/#23 处理策略
+  - §6 元教训 频率观察更新(加 "规则主动激活"维度)
+  - §7(本节)修订历史
+- **追加规则**: 新 fabrication 按 §3.5 / §3.6... 追加,保留按时间序;§2 元模式分类更新(如新增类别);§5 新规则 mapping 更新。
 
 ---
 
