@@ -250,9 +250,22 @@ import { beforeEach, afterAll } from 'vitest'
 import { PrismaClient, Prisma } from '@prisma/client'
 
 const testDbUrl = process.env.TEST_DATABASE_URL
+const testAdminUrl = process.env.TEST_ADMIN_DATABASE_URL
 
 /**
  * Shared Prisma client for integration tests.
+ *
+ * Dual-URL model (plan patch v5, L1 最严 review catch + plan patch v7
+ * D85 家族 drift #3 forward-fix):
+ *   testDb  = app_user runtime (RLS subject, tests connect as this)
+ *   adminDb = postgres superuser (beforeEach TRUNCATE infra, bypass RLS +
+ *             privilege cascade)
+ *
+ * Why separate adminDb for TRUNCATE: app_user lacks TRUNCATE privilege
+ * (migration 20260417000002_rls_and_roles GRANTs only SELECT/INSERT/UPDATE/DELETE,
+ * intentionally least-privilege for prod runtime). Test setup TRUNCATE is
+ * infra cleanup not test subject behavior — use admin identity (same pattern
+ * as global-setup.ts ALTER ROLE).
  *
  * Main routing for Phase C is via package.json CLI (--exclude / positional include):
  *   pnpm test             → --exclude 'src/__tests__/integration/**'  (no integration test loads)
@@ -265,22 +278,27 @@ export const testDb: PrismaClient = testDbUrl
   ? new PrismaClient({ datasources: { db: { url: testDbUrl } } })
   : (null as unknown as PrismaClient)
 
+const adminDb: PrismaClient | null = testAdminUrl
+  ? new PrismaClient({ datasources: { db: { url: testAdminUrl } } })
+  : null
+
 beforeEach(async () => {
-  if (!testDb) return // non-integration run — no DB to truncate
-  // TRUNCATE all non-Prisma-meta tables. RESTART IDENTITY CASCADE resets
-  // sequences and follows FKs. Fast — tmpfs + in-memory WAL.
-  const tables = await testDb.$queryRaw<Array<{ tablename: string }>>`
+  if (!testDb || !adminDb) return // non-integration run — no DB to truncate
+  // TRUNCATE all non-Prisma-meta tables via admin identity (app_user lacks
+  // TRUNCATE privilege). RESTART IDENTITY CASCADE resets sequences and
+  // follows FKs. Fast — tmpfs + in-memory WAL.
+  const tables = await adminDb.$queryRaw<Array<{ tablename: string }>>`
     SELECT tablename FROM pg_tables
     WHERE schemaname='public' AND tablename NOT LIKE '_prisma%'
   `
   for (const { tablename } of tables) {
-    await testDb.$executeRawUnsafe(`TRUNCATE TABLE "${tablename}" RESTART IDENTITY CASCADE`)
+    await adminDb.$executeRawUnsafe(`TRUNCATE TABLE "${tablename}" RESTART IDENTITY CASCADE`)
   }
 })
 
 afterAll(async () => {
-  if (!testDb) return
-  await testDb.$disconnect()
+  if (testDb) await testDb.$disconnect()
+  if (adminDb) await adminDb.$disconnect()
 })
 
 /**
@@ -351,6 +369,16 @@ exclude: **/node_modules/**, **/.git/**
 Password WHATWG URL 提取（非 regex）：Node `new URL()` 的 decoding 合约与 Prisma connection-string parser 对齐, URL password 含 `%XX` 编码字符时 decode 到 raw DB-storage 形式。regex 提取会漏 URL encoding 层 → ALTER ROLE 存编码形式 vs Prisma 发送 decoded 形式 → 未来改 password 含特殊字符时 silent 连不上。
 
 Cross-Phase Invariant 对齐（规则 1 铁律）：migration `20260417000002_rls_and_roles` line 3 `CREATE ROLE app_user LOGIN PASSWORD 'placeholder_set_by_env'` 不可变。test env 通过 `global-setup.ts` `ALTER ROLE` 覆盖 password, 不动 migration。Phase J Task 48 prod deploy 走同模式（ALTER ROLE with env-injected password）, test 与 prod 机制同构。
+
+**setup.ts dual-URL 消费**（plan patch v7, D85 家族 drift #3 forward-fix）：
+
+- `testDb` 消费 `TEST_DATABASE_URL`（app_user 身份, RLS subject, tests 消费）
+- `adminDb` 消费 `TEST_ADMIN_DATABASE_URL`（postgres superuser, beforeEach TRUNCATE 跑此身份）
+- `afterAll` 双 disconnect
+
+为何 beforeEach TRUNCATE 用 admin 身份：app_user 无 TRUNCATE privilege（migration `20260417000002_rls_and_roles` line 19 `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES` 刻意 least-privilege, 不含 TRUNCATE — prod server runtime 身份 = app_user, TRUNCATE production table 是反模式）。Test setup TRUNCATE 是 **infra cleanup 非 test subject 行为**, admin 身份跑合理。与 `global-setup.ts` `ALTER ROLE` 用 admin identity 是同一架构模式。
+
+D85 家族 drift 第 3 数据点（Phase H Task 45 升格 reconcile 时作 live evidence）：plan patch v5 `ca863caa` 修 RLS evaluation 身份（testDb postgres → app_user）, 未 cover `beforeEach` TRUNCATE privilege cascade — plan-as-code 全 lifecycle 链路未 dryrun。D85 升格 definition 延伸: **infra identity 变更 plan 必须 plan-as-code dryrun 全 beforeEach / fixture / lifecycle 链路**, 与 D79 Plan-as-code dryrun 强耦合延伸而非独立。
 
 - [ ] **Step 6：commit**
 
