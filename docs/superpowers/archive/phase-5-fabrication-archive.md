@@ -263,6 +263,24 @@ Phase 5 协作历次对话中,Opus(chat instance)产生的 fabrication(编造 / 
   - `DB name = qr_order`(migration `20260417000002_rls_and_roles:16` GRANT CONNECT 硬编码,规则 1 增量 migration 铁律不可变)
   - 其他条目 Phase C/D/E/F/G 实施期识别后追加
 
+---
+
+**#25 subclass 注解 (path drift 变体,不独立编号)**
+
+**事件**: 本对话 Phase C Batch 1 收尾多轮 docs commit spec,Plan Opus 多次用 `docs/superpowers/phase5/` 作 handoff 三文件路径,实际是 `docs/superpowers/archive/`。CC Edit 时按实际 grep 定位处理,未触发规则 8 (工具级 mechanical 自主校正,非 α/β/γ/δ 级判断)。
+
+**Opus 行为层同构**: 和 #25 主 body 的 DB name cross-phase drift **完全同构** —— 都是 "Plan Opus 写 spec 前未 grep 外部 artifact 的字面量"。前者未 grep Phase B migration SQL 里的 `qr_order`,后者未 grep repo 实际 docs 目录结构。evidence search scope 层盲点。
+
+**升格层区分**(影响 D84 收录范围,不影响行为层归类):
+- **硬 invariant**(DB name / role name / migration literal): 改则 runtime 炸,规则 1 增量 migration 铁律不可变 → 进 D84 handoff 文件
+- **convention**(repo 文件路径 / 目录组织): 可以 git mv,改了要更新引用但不炸 → **不进 D84**;更适合 Pre-Flight Checklist 新条款 "spec 内文件路径 claim 先 grep repo 结构" (Phase H Task 45 reconcile 定)
+
+**归类**: 与 #24 作为 #23 的 attention 层跨对话变体以 subclass 注解存在同构 —— **本 path drift 作为 #25 的 evidence search scope 层 convention 变体以 subclass 注解存在,不独立编号**。
+
+**Archive §1 count 不变**(仍 24 条)。累积在此 subclass 下比独立散点编号更易读,防信号稀释。
+
+**教训内化 + 激活**: 本对话末次 CC 补丁 spec 中 dogfood — Edit 目标文件路径必先 grep verify,不凭 Opus 印象。
+
 ### Fabrication 元模式分布(本批)
 
 | 模式 | 本批 fabrication |

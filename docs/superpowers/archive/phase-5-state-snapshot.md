@@ -485,6 +485,12 @@ Ian 观察:Archive / Digest / Snapshot 本对话的 spec 文字经 CC 多轮 Edi
     - §9.8 字符漂 sanity check 注记(低风险,新 Opus 自查)
   - 目的: 新 Plan Opus 启动降 ritual overhead + L1 最严级别的三步走(work-log → Ian review → CC)
   - Path drift 教训(本对话 spec 用 `docs/superpowers/phase5/`,实际 `docs/superpowers/archive/`)内化:Phase H Task 45 reconcile 时定归属(Pre-Flight Checklist 新条款 vs D84 扩展 vs 合并),本对话不落档
+- **2026-04-21 本对话末次增量更新**(Batch 1 收尾 + D2 补丁后教训外化,docs 专项 commit):
+  - Archive #25 body 追加 path drift subclass 注解(行为层同构 #25 主 body,升格层硬 invariant vs convention 区分;归类同 #24 作为 #23 subclass,**Archive count 仍 24 不变**)
+  - Digest §6 D84 body 加 definition note(收录范围严格限 硬 invariant;convention 类 drift 归入 Pre-Flight Checklist 新条款,Phase H Task 45 reconcile)
+  - Digest §7 Pre-Flight Checklist 应用方式段加 framework major version bump field-level fate note(vitest 4 singleFork 实例,教训内化不新编号)
+  - §10 本条目
+  - 目的: 本对话 50+ turn 产生的 3 项教训外化到三件套,新 Plan Opus 启动 Batch 2 读到完整治理状态,避免 #14 stale handoff
 
 ---
 
