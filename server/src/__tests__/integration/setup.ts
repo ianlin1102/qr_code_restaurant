@@ -2,9 +2,22 @@ import { beforeEach, afterAll } from 'vitest'
 import { PrismaClient, Prisma } from '@prisma/client'
 
 const testDbUrl = process.env.TEST_DATABASE_URL
+const testAdminUrl = process.env.TEST_ADMIN_DATABASE_URL
 
 /**
  * Shared Prisma client for integration tests.
+ *
+ * Dual-URL model (plan patch v5, L1 最严 review catch + plan patch v7
+ * D85 家族 drift #3 forward-fix):
+ *   testDb  = app_user runtime (RLS subject, tests connect as this)
+ *   adminDb = postgres superuser (beforeEach TRUNCATE infra, bypass RLS +
+ *             privilege cascade)
+ *
+ * Why separate adminDb for TRUNCATE: app_user lacks TRUNCATE privilege
+ * (migration 20260417000002_rls_and_roles GRANTs only SELECT/INSERT/UPDATE/DELETE,
+ * intentionally least-privilege for prod runtime). Test setup TRUNCATE is
+ * infra cleanup not test subject behavior — use admin identity (same pattern
+ * as global-setup.ts ALTER ROLE).
  *
  * Main routing for Phase C is via package.json CLI (--exclude / positional include):
  *   pnpm test             → --exclude 'src/__tests__/integration/**'  (no integration test loads)
@@ -17,22 +30,27 @@ export const testDb: PrismaClient = testDbUrl
   ? new PrismaClient({ datasources: { db: { url: testDbUrl } } })
   : (null as unknown as PrismaClient)
 
+const adminDb: PrismaClient | null = testAdminUrl
+  ? new PrismaClient({ datasources: { db: { url: testAdminUrl } } })
+  : null
+
 beforeEach(async () => {
-  if (!testDb) return // non-integration run — no DB to truncate
-  // TRUNCATE all non-Prisma-meta tables. RESTART IDENTITY CASCADE resets
-  // sequences and follows FKs. Fast — tmpfs + in-memory WAL.
-  const tables = await testDb.$queryRaw<Array<{ tablename: string }>>`
+  if (!testDb || !adminDb) return // non-integration run — no DB to truncate
+  // TRUNCATE all non-Prisma-meta tables via admin identity (app_user lacks
+  // TRUNCATE privilege). RESTART IDENTITY CASCADE resets sequences and
+  // follows FKs. Fast — tmpfs + in-memory WAL.
+  const tables = await adminDb.$queryRaw<Array<{ tablename: string }>>`
     SELECT tablename FROM pg_tables
     WHERE schemaname='public' AND tablename NOT LIKE '_prisma%'
   `
   for (const { tablename } of tables) {
-    await testDb.$executeRawUnsafe(`TRUNCATE TABLE "${tablename}" RESTART IDENTITY CASCADE`)
+    await adminDb.$executeRawUnsafe(`TRUNCATE TABLE "${tablename}" RESTART IDENTITY CASCADE`)
   }
 })
 
 afterAll(async () => {
-  if (!testDb) return
-  await testDb.$disconnect()
+  if (testDb) await testDb.$disconnect()
+  if (adminDb) await adminDb.$disconnect()
 })
 
 /**
