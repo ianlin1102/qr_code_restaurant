@@ -784,7 +784,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 **前置**：Task 14 完成；`shared/modules.ts` 存在（设计阶段已确认是单一注册中心，spec §4.4）。
 
-**目的**：防止"代码里用了 `requirePermission('xxx')` 但 `MODULES` 里没声明"这种幽灵权限。CI 挂住这类问题。
+**目的**：防止"代码里用了 `requirePermission('xxx')` 但 `MODULE_REGISTRY` 里没声明"这种幽灵权限。CI 挂住这类问题。
 
 - [ ] **Step 1：读 shared/modules.ts 确认 API**
 
@@ -792,7 +792,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 cat shared/modules.ts 2>/dev/null | head -50
 ```
 
-如果文件不存在或结构不同，按 spec §4.4 的预期导出：`MODULES` 和 `ALL_PERMISSIONS`。
+实际 exports (2026-04-21 G-T15.1 verify, HEAD `364c0bf6`): `MODULE_REGISTRY` (object, 6 modules × 14 permissions) + `ALL_MODULE_PERMISSIONS` (flatMap generated) + `ModuleId` type + `getModulePermissions` helper。spec §4.4 aspirational naming (`MODULES` / `ALL_PERMISSIONS`) 未被采用，入 Phase H Task 45 reconcile queue。
 
 - [ ] **Step 2：写测试**
 
@@ -800,17 +800,17 @@ cat shared/modules.ts 2>/dev/null | head -50
 cat > server/src/__tests__/integration/module-registry.test.ts <<'EOF'
 import { describe, it, expect } from 'vitest'
 import { execSync } from 'node:child_process'
-import { ALL_PERMISSIONS } from '@qr-order/shared/modules'
+import { ALL_MODULE_PERMISSIONS } from '@qr-order/shared/modules'
 
 /**
  * Ghost permission guard — scans codebase for requirePermission('xxx') calls
- * and verifies every referenced permission string is registered in MODULES.
+ * and verifies every referenced permission string is registered in MODULE_REGISTRY.
  * If someone adds a new route with requirePermission('orders:refund') but
  * forgets to extend shared/modules.ts, this test fails in CI.
  */
 describe('module registry', () => {
   it('every requirePermission() call references a registered permission', () => {
-    const registered = new Set(ALL_PERMISSIONS as readonly string[])
+    const registered = new Set(ALL_MODULE_PERMISSIONS as readonly string[])
 
     // grep for requirePermission('...') + resolvePermission('...') + requireModule('...')
     // across server/src — handles both single and double quotes.
@@ -836,12 +836,12 @@ describe('module registry', () => {
     expect(ghosts).toEqual([])
   })
 
-  it('MODULES export has expected shape', async () => {
+  it('MODULE_REGISTRY export has expected shape', async () => {
     const mod = await import('@qr-order/shared/modules')
-    expect(mod.MODULES).toBeDefined()
-    expect(mod.ALL_PERMISSIONS).toBeDefined()
-    expect(Array.isArray(mod.ALL_PERMISSIONS)).toBe(true)
-    expect(mod.ALL_PERMISSIONS.length).toBeGreaterThan(0)
+    expect(mod.MODULE_REGISTRY).toBeDefined()
+    expect(mod.ALL_MODULE_PERMISSIONS).toBeDefined()
+    expect(Array.isArray(mod.ALL_MODULE_PERMISSIONS)).toBe(true)
+    expect(mod.ALL_MODULE_PERMISSIONS.length).toBeGreaterThan(0)
   })
 })
 EOF
@@ -858,13 +858,13 @@ pnpm test:integration module-registry 2>&1 | tail -15
 ```
  ✓ module-registry.test.ts  (2 tests)
    ✓ every requirePermission() call references a registered permission
-   ✓ MODULES export has expected shape
+   ✓ MODULE_REGISTRY export has expected shape
 
 Test Files  1 passed (1)
      Tests  2 passed (2)
 ```
 
-**若第一个测试挂**：说明现有代码里有 requirePermission 引用了 MODULES 没声明的权限——现状就是幽灵权限。记录 ghost 清单给 Phase E 的 role/permission 迁移处理（是否补进 MODULES 还是改代码由 Phase E 决定）。
+**若第一个测试挂**：说明现有代码里有 requirePermission 引用了 MODULE_REGISTRY 没声明的权限——现状就是幽灵权限。记录 ghost 清单给 Phase E 的 role/permission 迁移处理（是否补进 MODULE_REGISTRY 还是改代码由 Phase E 决定）。
 
 这种情况下**不回滚测试**——让测试红着，作为 Phase E 的显式 TODO。但如果现在就能确认是打字错误，直接在 `shared/modules.ts` 里加上对应权限让测试过。
 
@@ -875,7 +875,7 @@ git add server/src/__tests__/integration/module-registry.test.ts
 git commit -m "test(phase-5): ghost permission guard
 
 Scans server/src for requirePermission() calls and verifies each
-permission string is registered in shared/modules.ts MODULES.
+permission string is registered in shared/modules.ts MODULE_REGISTRY.
 Prevents drift where code references a permission no one declared.
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
