@@ -13,11 +13,11 @@
 
 ## 1. 当前时点
 
-- **最后更新**: 2026-04-21(Phase C Batch 1 Task 13 完成 + 本 commit 收尾)
-- **最后 commit on main**: Phase C Batch 1 closure commit(Archive #25 + D84 + A 路径切换 + Snapshot 增量;见 `git log -1` 取 SHA)
+- **最后更新**: 2026-04-21 (Phase C Batch 2 closure — Task 14 feat land + governance v4.4 + plan v5/v6/v7 forward-fixes)
+- **最后 commit on main**: `308f7d54` feat(phase-5): Phase C Batch 2 Task 14 — RLS coverage + tenant isolation tests + dual-URL + adminDb TRUNCATE (6/6 tests pass 1.19s)
 - **Phase B 状态**: **10/10 完成 ✅**
-- **Phase C 状态**: **Batch 1 完成 (3/5 task: Task 11/12/13)**
-- **下一对话目标**: **Phase C Batch 2(Task 14 — rls-coverage.test.ts + tenant-isolation.test.ts,L1 最严 RLS / A2 set_config strict / WITH CHECK reversal 三重防御验证)** —— plan Task 14 段完整,不写新 plan,做 Stage 0 carry-forward + 实施
+- **Phase C 状态**: **Batch 1 + Batch 2 完成 (4/5 task: Task 11/12/13/14)**; Batch 3 = Task 15 (module-registry.test.ts, L1 最严单独跑)
+- **下一对话目标**: **Phase C Batch 3 (Task 15 — module-registry.test.ts 幽灵权限检测, L1 最严单独 batch)** —— plan Task 15 段完整 (phase-c-test-db.md lines 689-end), 不写新 plan, 做 Stage 0 carry-forward + Task 15 L1 verify work-log + 实施
 
 ---
 
@@ -27,7 +27,7 @@
 |---|---|---|---|
 | A | ~~备份~~ SKIPPED(Ian calibration 2026-04-19) | N/A | N/A |
 | B | 基础设施(schema + migration + seed + docker + ESLint) | ✅ 完整 | ✅ **10/10 完成** |
-| C | 测试 DB | ✅ 完整 | 🟢 **Batch 1 完成 (3/5 task)** |
+| C | 测试 DB | ✅ 完整 | 🟢 **Batch 1 + Batch 2 完成 (4/5 task)**; Batch 3 = Task 15 待跑 |
 | D | Repository(11 个语义化 repo) | ✅ 完整 | ⏸️ 未启动 |
 | E | 外围域(3 agent) | ✅ 完整 | ⏸️ 未启动 |
 | F | Platform Admin | ✅ 完整 | ⏸️ 未启动 |
@@ -42,6 +42,17 @@
 ---
 
 ## 3. 最近 commit 链(按时间倒序)
+
+### Phase C Batch 2 对话 (2026-04-21, 6 commits + 3 规则 8 暂停 resolved + 0 critical fabrication 逃逸)
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| `308f7d54` | feat | Phase C Batch 2 Task 14 impl — RLS coverage (2 tests) + tenant isolation (4 tests) + dual-URL + adminDb TRUNCATE + L1 5 维度 all runtime Pass (6/6 pass, 1.19s) |
+| `f49139a0` | docs | plan patch v7 — setup.ts beforeEach TRUNCATE adminDb (D85 家族 drift #3 forward-fix, app_user lacks TRUNCATE privilege) |
+| `0a4696eb` | docs | plan patch v6 — Task 14 tenant-isolation tableName 补齐 (D85 家族 drift #2 forward-fix, Phase B Order schema tableName required) |
+| `efa3d2e9` | docs | Task 14 L1 verify work-log 新建 + Snapshot §10 同步 (5 维度 verdict 表 + γ 方案事实依据 + 治理事件登记回顾) |
+| `0da7456a` | docs | governance v4.4 — D85 + D86 登记 + Archive #26 追加 (同对话规则循环子类, D86 语言层自违反首次登记) |
+| `ca863caa` | docs | plan patch v5 — dual-URL model for L1 最严 RLS (Task 14 L1 review catch testDb=postgres superuser BYPASSRLS 盲点) |
 
 ### Phase C Batch 1 对话(2026-04-21,8 commit + 3 规则 8 暂停 resolved)
 
@@ -319,7 +330,7 @@
 | Prisma Client types | 已最新 | Task 9a Stage 4c regenerate,post-schema |
 | tsc baseline | 103 errors(pristine HEAD,v3/v4 drift 修正) | Phase B Task 每次 verify "touched files 内 0 new errors" |
 | ESLint `no-floating-promises` baseline | 0 errors | Task 10 Stage 6 验证 |
-| HEAD == origin/main | ✅ `ca863caa` | Phase C Batch 2 plan patch v5 (dual-URL model for L1 最严 RLS); 治理 v4.4 批 commit land 后此值会进一步更新, Snapshot §8 HEAD SHA drift 归 §7.9 pattern 每对话收尾增量 Edit 同步 |
+| HEAD == origin/main | ✅ `308f7d54` | Phase C Batch 2 closure — Task 14 feat commit (RLS coverage + tenant isolation + dual-URL + adminDb TRUNCATE, 6/6 tests runtime pass). Snapshot §8 HEAD SHA 每对话收尾增量 Edit 同步 (§7.9 pattern). |
 
 ### Shell 环境状态
 
@@ -329,141 +340,135 @@
 
 ---
 
-## 9. 下一对话第一件事(Phase C Batch 2 启动)
+## 9. 下一对话第一件事 (Phase C Batch 3 启动 — Task 15 only)
 
-### 9.1 Batch 2 scope
+### 9.1 Batch 3 scope
 
-**Task 14 only**。Task 15 不纳入本 Batch,L1 最严单独跑。
+**Task 15 only** (L1 最严单独 batch — Snapshot §9.1 Batch 2 同原则延续). Task 16/17 不在 Phase C scope (Phase C = Task 11-15, Batch 4 无).
 
-Task 14 产出:
-- `server/src/__tests__/integration/rls-coverage.test.ts`(所有 store_id 表 RLS enabled + policy 覆盖验证)
-- `server/src/__tests__/integration/tenant-isolation.test.ts`(A2 set_config strict mode + cross-tenant 拒绝 + WITH CHECK reversal INSERT 拒绝,三重防御)
+Task 15 产出:
+- `server/src/__tests__/integration/module-registry.test.ts` (幽灵权限检测: 验证 shared/modules.ts 单一注册中心 + role × module × action 组合无 orphan / no ghost)
 
-**L1 最严理由**:RLS / A2 set_config / WITH CHECK 是 Phase 5 整体 tenant 安全基础的回归防御层。任一 literal drift 或 assertion 错误,测试通过但实际防御失效 = silent security hole。L1 review 维度逐字段对齐 schema / migration / prisma-client.ts 实际实现。
+**L1 最严理由**: 幽灵权限 = 某 role 有某 module 某 action 权限但实际代码无对应 handler / 某 handler 存在但无 role 声明 → silent privilege gap. L1 review 逐字段对齐 shared/modules.ts registry + 实际 router / handler.
 
 ### 9.2 启动 ritual
 
-1. **读**(按顺序):
-   - 本 Snapshot(live 增量维护 A 路径,HEAD `43ff7850`)
-   - `phase-5-fabrication-archive.md`(24 条,最新 #25 Cross-phase invariant 盲点)
-   - `phase-5-governance-digest.md`(含 D84 候选 + Pre-Flight Checklist 第 5 行 Cross-phase literal coupling)
-   - `docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md` Task 14 段
-   - Batch 1 Closure commit `43ff7850` body(含 #25 完整归档 + D84 登记 + A 路径切换说明)
+1. **读** (按顺序):
+   - 本 Snapshot (live 增量, HEAD `308f7d54`)
+   - `phase-5-fabrication-archive.md` (25 条, 最新 #26 D86 语言层自违反)
+   - `phase-5-governance-digest.md` (含 D85 + D86 + Pre-Flight §7 Language-layer self-check 条款)
+   - `docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md` Task 15 段 (lines 689-end, v5/v6/v7 baseline)
+   - `docs/superpowers/work-logs/2026-04-21-phase-c-batch-2-task-14-l1-verify.md` (Batch 2 live 参考)
+   - Phase C Batch 2 closure commit `308f7d54` body (6/6 tests runtime pass anchor)
 
-2. **Grep verify**(Stage 0 carry-forward ritual):
+2. **Grep verify** (Stage 0 carry-forward ritual):
 
        git log -10 --format="%h %s"
 
-   确认 commit 链含:`43ff7850`(Batch 1 closure)/ `57894f8f`(Task 13)/ `0b070a92`(fix)/ `61f8964e`(v4)/ `ffcc7cdc`(v3)/ `a55da4ae`(Task 12)/ `e13f7f37`(v2)/ `f538941b`(Task 11)
+   确认 commit 链含: `308f7d54` (Batch 2 Task 14 feat) / `f49139a0` (v7) / `0a4696eb` (v6) / `efa3d2e9` (work-log) / `0da7456a` (governance v4.4) / `ca863caa` (v5) / Batch 1 8 commits.
 
 3. **环境 verify**:
 
        docker ps --format "{{.Names}}\t{{.Status}}"
 
-   预期 5 容器 Up:`qr-order-pg` / `qr-order-server` / `qr-order-nginx` / `qr-order-adminer` / `postgres-seed-test`。`qr-order-postgres-test` 应为 **下**(Batch 1 Task 13 Step 6.3 后 `pnpm test:db:down` 清场);Batch 2 启动时通过 Task 14 执行期 `pnpm test:db:up` 重起。
+   预期 5 dev 容器 Up. `qr-order-postgres-test` 应为下 (Batch 2 Step 8 清场 `pnpm test:db:down`). Batch 3 Task 15 执行期 `pnpm test:db:up` 重起.
 
-### 9.3 Stage 0 carry-forward(Batch 1 已 verify,无需重跑)
+### 9.3 Stage 0 carry-forward (Batch 1 + Batch 2 已 verify, Batch 3 直接信任)
 
-Batch 1 已验证、Batch 2 可直接信任的 fact base:
+Batch 1 carry-forward (原 §9.3 Batch 1 清单延用) + Batch 2 新增 carry-forward:
 
-- **Mode C δ 桶 1 RESOLVED**(Task 2 `75fd9084`,16 MVP 字段)
-- **tsc baseline 103**(pristine HEAD,D83 改用相对约束 "touched files 内 0 new errors")
-- **ESLint 9 flat + no-floating-promises = 0**(Task 10 验证)
-- **Prisma Client types 最新**(Task 9a Stage 4c regenerate + Phase C Task 12 globalSetup 4 migrations applied clean 实证)
-- **5 dev 容器 state 对齐** §8(Batch 1 期间未改)
-- **vitest 4.1.2 config 已 adapt**(pool:'forks' + maxWorkers:1 + isolate:false,docs patch v2 land)
-- **γ3c 目录隔离生效**(`src/__tests__/integration/` + CLI `--exclude` 分流双向 verify pass)
-- **DB name align**(test 容器用 `qr_order` 与 Phase B rls_and_roles migration line 16 `GRANT CONNECT ON DATABASE qr_order` 对齐,docs v4 + fix `0b070a92` land)
-- **@types/bcryptjs 不存在**(#17 教训,bcryptjs v3+ bundled types)
+**Batch 2 新增 verified fact base**:
+- **Dual-URL 测试身份模型** live (`ca863caa` + `f49139a0` + `308f7d54` land):
+  - `TEST_ADMIN_DATABASE_URL` = postgres superuser (global-setup migrate + ALTER ROLE + setup.ts adminDb beforeEach TRUNCATE)
+  - `TEST_DATABASE_URL` = app_user runtime (testDb RLS subject)
+  - `DATABASE_URL` = postgres double-guard
+- **setup.ts adminDb pattern** live: `beforeEach` 用 adminDb TRUNCATE (app_user 无 TRUNCATE privilege, least-privilege 原则不动 migration)
+- **global-setup.ts ALTER ROLE app_user password 机制** live (WHATWG URL parser, 与 Prisma connection-string 同 decoding 合约)
+- **Task 14 2 test files 存在**: `rls-coverage.test.ts` (51 lines) + `tenant-isolation.test.ts` (77 lines, tableName v6 baseline)
+- **Phase B Order schema tableName required** (`75fd9084` Mode C δ 桶 1 + Task 14 plan v6 forward-fix 确认) — Task 15 若涉 Order create 需加 tableName
+- **app_user privilege live**: SELECT/INSERT/UPDATE/DELETE on public tables, NO TRUNCATE, NOT BYPASSRLS, NOT SUPERUSER
+- **platform_admin / system_worker**: BYPASSRLS via attribute (非 privilege), SET LOCAL ROLE 切换生效
+- **testDb connect as app_user identity** (PG 16 default postgres = SUPERUSER BYPASSRLS, 不能用)
+- **L1 5 维度 Task 14 all Pass runtime verify** (guardian 功能完整 — 未来 RLS 相关 migration drift / prisma-client.ts set_config 语义变更由 Task 14 CI guard 兜住)
 
-**Batch 2 Stage 0 只需做 Task 14 新增 grep**(详 9.5)。
+**Batch 3 Stage 0 只需做 Task 15 新增 grep** (详 9.5).
 
-### 9.4 第一动作 — Task 14 L1 verify work-log
+### 9.4 第一动作 — Task 15 L1 verify work-log
 
-Plan Opus 启动后第一个产出 **不是** CC 执行消息,而是 **L1 verify work-log commit**(docs commit,与 Batch 1 Batch 1 closure 同性质但 scope 窄)。
+Plan Opus 启动后第一个产出 **不是** CC 执行消息, 而是 **L1 verify work-log commit** (同 Batch 2 efa3d2e9 pattern, scope 窄 focused Task 15).
 
-work-log 建议路径:`docs/superpowers/work-logs/2026-04-21-phase-c-batch-2-task-14-l1-verify.md`(日期按实际启动日)
+work-log 建议路径: `docs/superpowers/work-logs/2026-04-22-phase-c-batch-3-task-15-l1-verify.md` (日期按实际启动日).
 
-work-log 内容 5 维度(对应 9.5 grep 结果 + Task 14 plan heredoc 逐字段对比):
-1. **RLS policy 表达式 literal 对齐**
-2. **A2 set_config strict mode 验证机制**
-3. **WITH CHECK reversal INSERT 拒绝路径**
-4. **pg_policies / pg_tables 元查询 literal 对齐**
-5. **platform_admin BYPASSRLS role 命名对齐**
+work-log 内容 5 维度 (对应 9.5 grep 结果 + Task 15 plan heredoc 逐字段对比):
+1. shared/modules.ts 单一注册中心字段 literal 对齐
+2. role × module × action 组合覆盖矩阵完整性
+3. 实际 router / handler 位置 (production code 对齐 registry)
+4. 幽灵权限检测 assertion 逻辑 (orphan role / orphan module / orphan action)
+5. Task 14 carry-forward infra (testDb + adminDb + withTestTenant / withTestPlatform 是否 Task 15 消费)
 
-work-log commit land 后 Ian 明批 "Task 14 GO" → 起 CC 执行消息。
+work-log commit land 后 Ian 明批 "Task 15 GO" → 起 CC 执行消息.
 
-### 9.5 关键 grep 清单(Batch 2 新增,L1 verify 依据)
+### 9.5 关键 grep 清单 (Batch 3 新增, L1 verify 依据)
 
-Task 14 plan 含大量 SQL / schema / migration literal assertion。L1 verify 必须对每 literal grep fact base,不凭 plan 文字推断。
+**G-T15.1 — shared/modules.ts 单一注册中心 literal**:
 
-**G-T14.1 — RLS policy 表达式**(Task 4 migration 实际):
+    grep -nE "export|role|module|action" server/src/shared/modules.ts 2>/dev/null || \
+    find server -name "modules.ts" -path "*/shared/*" -exec grep -nE "export|role|module|action" {} +
 
-    grep -B 2 -A 5 "CREATE POLICY\|USING.*store_id\|WITH CHECK" \
-      server/prisma/migrations/20260417000002_rls_and_roles/migration.sql
+Fact base: 实际 module 列表 + role 列表 + action 列表 (与 Task 15 plan heredoc assertion 对齐).
 
-Fact base:每个 policy 的 USING / WITH CHECK 表达式 literal(`store_id::text = current_setting('app.current_store_id')::text` 或类似)对齐 Task 14 `rls-coverage.test.ts` 元查询 assertion。
+**G-T15.2 — production router / handler role 声明位置**:
 
-**G-T14.2 — A2 set_config 实现**(prisma-client.ts 实际):
+    grep -rnE "requireRole|@Roles|@RequireAction|authzCheck" server/src 2>&1 | head -30
 
-    grep -B 2 -A 10 "set_config\|current_setting\|current_store_id" \
-      server/src/repositories/prisma-client.ts
+Fact base: 实际 production code 声明哪些 role-action 组合, Task 15 幽灵检测对比基准.
 
-Fact base:prisma-client.ts 实际使用的 GUC 变量名 + strict mode 行为。对齐 Task 14 `tenant-isolation.test.ts` 裸 query 抛错 assertion 的 error message regex。
+**G-T15.3 — Task 15 plan heredoc 完整 view**:
 
-**G-T14.3 — pg_policies / pg_tables 元查询对齐**:
+    sed -n "689,<end>p" docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md
+    # <end> 由 grep "^### Task\|^---" 定位 Task 15 段终点
 
-    grep -nE "pg_policies|pg_tables|pg_class|relrowsecurity|policyname" \
-      docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md
+Fact base: plan heredoc 完整内容, 产出 L1 work-log 5 维度 verdict 依据.
 
-Fact base:Task 14 `rls-coverage.test.ts` 的 pg_* 系统表查询的 column name(policyname / tablename / qual / with_check / relrowsecurity)与 PostgreSQL 16 文档对齐,avoid fabricated column name。
+**G-T15.4 — Cross-phase literal coupling (D84 激活)**:
 
-**G-T14.4 — platform_admin role 命名**(Task 4 migration):
+    grep -nE "shared/modules|ModuleLicense|module_license|role_permission" \
+      docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md | head -20
 
-    grep -E "CREATE ROLE|GRANT|platform_admin" \
-      server/prisma/migrations/20260417000002_rls_and_roles/migration.sql
+Fact base: plan Task 15 段 literal 对齐 Phase B migration + schema.prisma + seed-data.
 
-Fact base:实际 role 命名对齐 Task 14 `SET LOCAL ROLE platform_admin` literal。Batch 1 已部分 verify(role 命名 `app_user / platform_admin / system_worker` 确认),但 Task 14 L1 需贴具体 GRANT 范围 + BYPASSRLS 语义。
+### 9.6 规则应用提醒 (Batch 2 实施经验 informed)
 
-**G-T14.5 — WITH CHECK reversal mechanism**:
-
-    grep -A 3 "WITH CHECK" server/prisma/migrations/20260417000002_rls_and_roles/migration.sql
-
-Fact base:WITH CHECK 表达式与 USING 表达式是否一致(Task 4 β 决议双侧 `::text` cast)。Task 14 `tenant-isolation.test.ts` 的 "tenant A context 内 insert storeId=B 必 reject" assertion 依赖此对称性。
-
-**G-T14.6 — Cross-phase literal coupling 激活**(D84 / #25 防御):
-
-    grep -nE "qr_order\b|app_user\b|platform_admin\b|system_worker\b|app\.current_store_id|tenant_isolation" \
-      docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-c-test-db.md | \
-      head -40
-
-Fact base:plan Task 14 段内任何 DB name / role / GUC / policy 命名 literal,grep Phase B migration 对齐。任一 drift → 规则 8 暂停 Opus 判。
-
-### 9.6 规则应用提醒(Batch 1 实施经验 informed)
-
-- **Opus Spec Pre-Flight Checklist**(Digest §7,含第 5 行 Cross-phase literal coupling,#25 防御激活)
-- **D74 双向校准**:预估行数分桶
-- **D83 定性约束**:verify 用 "expected 结构出现 / unexpected 未出现",不用 ±N%
-- **#14/#22 防御**:Snapshot §8 每对话收尾增量 Edit(A 路径)
-- **#20 完整 dump**:Stage 0 grep schema / migration 用 `grep -A N` 完整 dump
-- **#21 措辞防御**:reasoning 出现 "不大惊小怪 / shorthand / 小 drift" → 立即 suspect
-- **#23/#24 激活**:本对话登记 + handoff 引用既有规则,CoT 主动扫应用
-- **#25 / D84 激活**:plan 内 cross-phase literal 必 grep Phase B migration 对齐
+- **Opus Spec Pre-Flight Checklist** (Digest §7, 含 Language-layer async-executable self-check 条款, D86 生效 baseline `0da7456a`)
+- **D74 双向校准**: 预估行数分桶 (Batch 2 累积 3 sub-bucket 候选: 治理文档纯追加 ×0.7 / 治理短段追加 / Write replace w/ structural preserve 偏差 −76% deletions)
+- **D83 定性约束**: verify 用 "expected 结构出现 / unexpected 未出现", 不用 ±N%
+- **D85 infra identity 变更 dryrun 全 lifecycle 链路** (Batch 2 live 3 drift 数据点): plan writer 改 infra 身份 (dual-URL / role / privilege) 时 plan 必 exercise beforeEach / fixture / afterAll 全链路
+- **D86 async-executable + language-layer self-check**: 所有治理文档 / commit message / CC 执行消息 / work-log 禁 session-relative 指示词 (引号内清单 legitimate 豁免); Stage 0 repo 状态 pre-check 模板
+- **#14/#22 防御**: Snapshot §8 每对话收尾增量 Edit (A 路径)
+- **#20 完整 dump**: Stage 0 grep schema / migration 用 `cat` 或 `grep -A N` 完整 dump
+- **#25 subclass path drift** 2 数据点: repo 文件路径 Opus 写 spec 前 grep verify
+- **#26 Language-layer self-check**: spec 产出前全文扫 session-relative 指示词
 
 ### 9.7 不启动原则
 
 新 Plan Opus 启动后:
-1. 读完 ritual(9.2)→ CoT 输出 Batch 2 scope 理解 + Batch 1 carry-forward ack
-2. 做 Stage 0 Task 14 新增 grep(9.5)→ 产出 L1 verify work-log(9.4)
-3. work-log commit land + Ian 明批 "Task 14 GO" → 起 CC 执行消息
+1. 读完 ritual (9.2) → CoT 输出 Batch 3 scope 理解 + Batch 1+2 carry-forward ack
+2. 做 Stage 0 Task 15 新增 grep (9.5) → 产出 L1 verify work-log (9.4)
+3. work-log commit land + Ian 明批 "Task 15 GO" → 起 CC 执行消息
 
-**不直接起 CC 执行消息**。work-log → Ian review → CC 三步走,对应 L1 最严级别。
+**不直接起 CC 执行消息**. work-log → Ian review → CC 三步走, 对应 L1 最严级别.
 
-### 9.8 本对话 sanity check 注记(Ian 留言)
+### 9.8 Phase C Batch 2 closure 记录 (供 Plan Opus 理解 Batch 2 协作节奏)
 
-Ian 观察:Archive / Digest / Snapshot 本对话的 spec 文字经 CC 多轮 Edit,可能有字符漂(全角 vs 半角 / 中文 vs 英文引号)。CC 报 21/21 Edit success 是 **工具执行成功**,不是 **语义 identical verify**。
+Batch 2 = 40+ 对话轮 + 6 commits + 3 规则 8 暂停全 resolved + 0 critical fabrication 逃逸:
 
-低风险(不影响 live 指令语义),本对话不回查。新 Plan Opus 启动读 ritual 时若发现字符漂,自行 Edit 修正即可,不触发规则 8。
+- 规则 8 暂停 #1: post-Edit D86 self-check 命中 2 (line 230 legitimate self-reference 保留 / line 266 实质违反 "上轮输出" self-fix)
+- 规则 8 暂停 #2: Step 6 tsc 3 new errors on tenant-isolation.test.ts 缺 tableName (D85 drift #2, plan patch v6 forward-fix)
+- 规则 8 暂停 #3: Step 7 test run 6/6 fail 'permission denied for table stores' (D85 drift #3, plan patch v7 adminDb pattern forward-fix)
+
+Fabrication 拦截: Ian 一手 2 次 (Flag 1 URL encoding regex / D86 语言层自违反 Archive #26) + CC grep/tsc 自审 3 次 (规则 8 暂停).
+
+**协作节奏观察**: L1 最严 review 价值验证 — Task 14 实施中途暴露 3 个 D85 家族 drift, 全部 infra layer silent gap, 若无 L1 review catch 则 tests 绿但防御失效 (silent security hole). Batch 2 为未来 L1 最严 task (Task 15 / Phase H Task 43-45 / Phase G SOP) 树立 live precedent.
 
 ---
 
@@ -519,6 +524,22 @@ Ian 观察:Archive / Digest / Snapshot 本对话的 spec 文字经 CC 多轮 Edi
   - 内容: Round 1+2 grep fact base 汇总 + L1 5 维度逐条 verdict 表 + γ 方案事实依据 + 治理层事件登记回顾 (D85 / D86 / #26 / #25 subclass 第 2 数据点 / D74 桶 refinement 候选 / A.1 CC Edit 全角逗号 drift 观察) + Task 14 CC 执行消息 scope 前置声明 (D86 Stage 0 pre-check anchor: `ca863caa` + `0da7456a`)
   - L1 maximum strictness verdict: 5 维度 all Pass (`ca863caa` post-state), 0 silent security hole, 推荐 Ian 明批 "Task 14 GO"
   - Snapshot §9.4 三步走 第二步 完成
+- **2026-04-21 v4.5 批 (Phase C Batch 2 Task 14 closure, `308f7d54` feat commit 后 Snapshot live 增量)**:
+  - §1 时点 / commit SHA / Phase C 状态 / 下一对话目标 更新 (Batch 2 完成, Batch 3 = Task 15 启动)
+  - §2 Phase C 行 Batch 2 完成追加
+  - §3 追加 Phase C Batch 2 对话段 6 commits 完整表 (放 Batch 1 对话段之前, 时间倒序)
+  - §8 HEAD SHA `ca863caa` → `308f7d54` (Batch 2 closure)
+  - §9 整节重写为 Phase C Batch 3 (Task 15) 启动指引:
+    - §9.1 Batch 3 scope = Task 15 only (L1 最严单独跑)
+    - §9.2 启动 ritual 读取顺序 6 件
+    - §9.3 Stage 0 carry-forward Batch 1 + Batch 2 累积 fact base (dual-URL / adminDb pattern / Task 14 infra live)
+    - §9.4 第一动作 = L1 verify work-log (Batch 2 efa3d2e9 pattern)
+    - §9.5 关键 grep 清单 G-T15.1-4 (含 shared/modules.ts registry + production handler + cross-phase literal)
+    - §9.6 规则应用提醒 (含 D85 + D86 live 经验)
+    - §9.7 不启动原则 三步走 (work-log → Ian review → CC)
+    - §9.8 Phase C Batch 2 closure 记录 (6 commits + 3 规则 8 暂停 resolved + fabrication 拦截统计 + L1 最严 review 价值观察)
+  - §10 本条目
+  - 触发事件: Phase C Batch 2 Task 14 (RLS coverage + tenant isolation) feat commit `308f7d54` land + 6/6 tests runtime pass + 3 D85 家族 drift 全 forward-fix 收敛
 
 ---
 
