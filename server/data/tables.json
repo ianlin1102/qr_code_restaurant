@@ -1,15 +1,14 @@
 [
   {
-    "id": "166a7850-fa14-41be-b128-3ef7e9bc5b23",
+    "id": "5d26ba3f-9cd8-4ad4-9452-61a12b8eed54",
     "storeId": "store-demo-001",
     "name": "A1",
-    "status": "occupied",
+    "status": "idle",
     "number": 1,
-    "enabled": true,
-    "currentSessionId": "46677caf-47e8-4308-895f-81a949b591ca"
+    "enabled": true
   },
   {
-    "id": "7fc8109f-5455-43aa-bec1-f6bc81c09baa",
+    "id": "629740fd-8ba8-427f-be78-d98ccbc7d87e",
     "storeId": "store-demo-001",
     "name": "A2",
     "status": "idle",
@@ -17,7 +16,7 @@
     "enabled": true
   },
   {
-    "id": "1756cc8a-1927-4959-b683-15ca6ae13683",
+    "id": "0d1311aa-5f9b-4ee2-a280-924b803eec5e",
     "storeId": "store-demo-001",
     "name": "A3",
     "status": "idle",
@@ -25,7 +24,7 @@
     "enabled": true
   },
   {
-    "id": "a21c56f0-6871-4798-9af1-edba1989efa1",
+    "id": "8174027d-7cd9-4c95-93f7-84c59e201d74",
     "storeId": "store-demo-001",
     "name": "B1",
     "status": "idle",
@@ -33,7 +32,7 @@
     "enabled": true
   },
   {
-    "id": "3e89da0b-cc7b-48b1-b1ac-4f4de97feb21",
+    "id": "17df464b-28bb-4c9c-aa48-6ee567b81e05",
     "storeId": "store-demo-001",
     "name": "B2",
     "status": "idle",
@@ -41,17 +40,46 @@
     "enabled": true
   },
   {
-    "id": "8b5982dc-19ad-42c1-a07f-c347a4990021",
+    "id": "473ad3ac-7bb2-42de-95a1-53da20eca8c4",
     "storeId": "store-demo-002",
+    "name": "1号桌",
+    "nameEn": "Table 1",
+    "status": "idle"
+  },
+  {
+    "id": "d0562feb-5c66-452d-873b-a303f7f361d2",
+    "storeId": "store-demo-002",
+    "name": "2号桌",
+    "nameEn": "Table 2",
+    "status": "idle"
+  },
+  {
+    "id": "3a8113ac-4efe-47e7-86b6-c63ea5fca74b",
+    "storeId": "store-demo-002",
+    "name": "3号桌",
+    "nameEn": "Table 3",
+    "status": "idle"
+  },
+  {
+    "id": "24dcb4e4-b00e-4c25-be51-a0ddf27b3845",
+    "storeId": "store-demo-002",
+    "name": "包间1",
+    "nameEn": "Room 1",
+    "status": "idle"
+  },
+  {
+    "id": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "storeId": "store-demo-003",
     "name": "1号桌",
     "nameEn": "Table 1",
     "status": "idle",
     "number": 1,
-    "enabled": true
+    "enabled": true,
+    "currentSessionId": "c70bd767-a4de-4a78-8736-3e92b7df0712"
   },
   {
-    "id": "9d334651-2fc8-4dde-b75d-33eecb2c38c0",
-    "storeId": "store-demo-002",
+    "id": "fb59cab9-3f24-44e8-a1dd-ec680ceca45c",
+    "storeId": "store-demo-003",
     "name": "2号桌",
     "nameEn": "Table 2",
     "status": "idle",
@@ -59,8 +87,8 @@
     "enabled": true
   },
   {
-    "id": "ce8b2478-9c1a-48ca-8045-13af032fc17d",
-    "storeId": "store-demo-002",
+    "id": "d139e17e-7895-4bde-a68c-d52dc36dceb9",
+    "storeId": "store-demo-003",
     "name": "3号桌",
     "nameEn": "Table 3",
     "status": "idle",
@@ -68,141 +96,13 @@
     "enabled": true
   },
   {
-    "id": "11eb0a85-5005-4f7f-ad0f-b7e0e1c7ae65",
-    "storeId": "store-demo-002",
-    "name": "包间1",
-    "nameEn": "Room 1",
+    "id": "95f036b1-f2a8-4454-af70-d107961723b0",
+    "storeId": "store-demo-003",
+    "name": "4号桌",
+    "nameEn": "Table 4",
     "status": "idle",
     "number": 4,
     "enabled": true
-  },
-  {
-    "id": "store-demo-002-table-005",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 5,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-006",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 6,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-007",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 7,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-008",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 8,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-009",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 9,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-010",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 10,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-011",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 11,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-012",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 12,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-013",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 13,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-014",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 14,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-015",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 15,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-016",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 16,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-017",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 17,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-018",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 18,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-019",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 19,
-    "enabled": false,
-    "status": "idle"
-  },
-  {
-    "id": "store-demo-002-table-020",
-    "storeId": "store-demo-002",
-    "name": "",
-    "number": 20,
-    "enabled": false,
-    "status": "idle"
   },
   {
     "id": "store-demo-001-table-006",
@@ -319,6 +219,134 @@
   {
     "id": "store-demo-001-table-020",
     "storeId": "store-demo-001",
+    "name": "",
+    "number": 20,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-005",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 5,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-006",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 6,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-007",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 7,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-008",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 8,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-009",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 9,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-010",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 10,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-011",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 11,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-012",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 12,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-013",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 13,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-014",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 14,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-015",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 15,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-016",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 16,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-017",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 17,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-018",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 18,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-019",
+    "storeId": "store-demo-003",
+    "name": "",
+    "number": 19,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-003-table-020",
+    "storeId": "store-demo-003",
     "name": "",
     "number": 20,
     "enabled": false,

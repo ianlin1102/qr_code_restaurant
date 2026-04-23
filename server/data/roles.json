@@ -142,5 +142,77 @@
     ],
     "isSystem": true,
     "createdAt": "2026-04-22T21:25:41.576Z"
+  },
+  {
+    "id": "store-demo-003-role-owner",
+    "storeId": "store-demo-003",
+    "name": "owner",
+    "nameEn": "Owner",
+    "permissions": [
+      "orders:read",
+      "orders:write",
+      "tables:read",
+      "tables:write",
+      "menu:read",
+      "menu:write",
+      "settings:read",
+      "settings:write",
+      "billing:read",
+      "billing:write",
+      "analytics:read",
+      "coupons:read",
+      "coupons:write",
+      "waitlist:read",
+      "waitlist:write",
+      "staff:manage",
+      "printer:read",
+      "printer:write"
+    ],
+    "isSystem": true,
+    "createdAt": "2026-04-23T08:43:03.420Z"
+  },
+  {
+    "id": "store-demo-003-role-manager",
+    "storeId": "store-demo-003",
+    "name": "manager",
+    "nameEn": "Manager",
+    "permissions": [
+      "orders:read",
+      "orders:write",
+      "tables:read",
+      "tables:write",
+      "menu:read",
+      "menu:write",
+      "settings:read",
+      "settings:write",
+      "billing:read",
+      "billing:write",
+      "analytics:read",
+      "coupons:read",
+      "coupons:write",
+      "waitlist:read",
+      "waitlist:write",
+      "printer:read",
+      "printer:write"
+    ],
+    "isSystem": true,
+    "createdAt": "2026-04-23T08:43:03.420Z"
+  },
+  {
+    "id": "store-demo-003-role-waiter",
+    "storeId": "store-demo-003",
+    "name": "waiter",
+    "nameEn": "Waiter",
+    "permissions": [
+      "orders:read",
+      "orders:write",
+      "menu:read",
+      "tables:read",
+      "tables:write",
+      "waitlist:read",
+      "printer:write"
+    ],
+    "isSystem": true,
+    "createdAt": "2026-04-23T08:43:03.420Z"
   }
 ]
