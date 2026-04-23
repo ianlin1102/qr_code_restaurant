@@ -259,7 +259,7 @@ export const adminT = {
     orderDetail: {
       receipt: '小票', table: '桌台', customer: '顾客',
       orderTime: '下单时间', updateTime: '更新时间', itemDetail: '菜品明细',
-      remarkPrefix: '备注', printReceipt: '打印小票', editOrder: '修改订单',
+      remarkPrefix: '备注', printReceipt: '打印小票', printKitchen: '打印后厨票', editOrder: '修改订单',
       startPreparing: '开始制作', markComplete: '完成',
     },
     tableDetail: {
@@ -576,7 +576,7 @@ export const adminT = {
     orderDetail: {
       receipt: 'Receipt', table: 'Table', customer: 'Customer',
       orderTime: 'Order Time', updateTime: 'Updated', itemDetail: 'Items',
-      remarkPrefix: 'Note', printReceipt: 'Print Receipt', editOrder: 'Edit Order',
+      remarkPrefix: 'Note', printReceipt: 'Print Receipt', printKitchen: 'Print Kitchen Ticket', editOrder: 'Edit Order',
       startPreparing: 'Start', markComplete: 'Done',
     },
     tableDetail: {

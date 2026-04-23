@@ -12,6 +12,7 @@ import { itemLineTotal } from '@/lib/pricing'
 import { localized, optionLabel } from '@/lib/i18n-utils'
 import { printQrCodes } from '@/lib/qr-pdf'
 import { notify } from '@/lib/notify'
+import { buildReceiptHtml, openPrintWindow, type ReceiptItem } from '@/lib/print-receipt'
 import { Button } from '@/components/ui/button'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -41,78 +42,35 @@ function printSessionReceipt(
   orders: Order[], table: Table,
   summary: SessionSummary | null, lang: string,
 ) {
-  const zh = lang === 'zh'
-  const now = new Date().toLocaleString('zh-CN', {
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
-  })
-  const allItems: { name: string; qty: number; price: number; opts: string; remark?: string }[] = []
+  const items: ReceiptItem[] = []
   for (const o of orders) {
     for (const it of o.items) {
       if (it.voided) continue
       const opts = (it.selectedOptions ?? []).map(op =>
         `${op.choiceName || op.choiceNameEn || ''}`).filter(Boolean).join(', ')
-      allItems.push({
+      items.push({
         name: localized(it, lang), qty: it.quantity,
         price: itemLineTotal(it), opts, remark: it.remark,
       })
     }
   }
-  const subtotal = allItems.reduce((s, i) => s + i.price, 0)
-  const tax = summary?.tax ?? 0
-  const svc = summary?.serviceFee ?? 0
-  const total = summary?.totalWithTax ?? subtotal
-  const paid = summary?.totalPaid ?? 0
-  const remaining = summary?.remaining ?? total
-
-  const rows = allItems.map(i => `
-    <tr>
-      <td style="text-align:left">${i.name} x${i.qty}</td>
-      <td style="text-align:right">${formatPriceUSD(i.price)}</td>
-    </tr>
-    ${i.opts ? `<tr><td colspan="2" style="padding-left:12px;font-size:11px;color:#555">${i.opts}</td></tr>` : ''}
-    ${i.remark ? `<tr><td colspan="2" style="padding-left:12px;font-size:11px;color:#555">*${i.remark}</td></tr>` : ''}
-  `).join('')
-
-  const html = `<html><head><title>${zh ? '账单' : 'Bill'}</title>
-<style>
-  body{margin:0;padding:0;font-family:'Courier New',monospace;font-size:12px;line-height:1.5}
-  .r{width:280px;padding:16px;margin:auto}
-  .c{text-align:center} .b{font-weight:bold}
-  .d{border-top:1px dashed #333;margin:6px 0}
-  table{width:100%;border-collapse:collapse}
-  td{padding:2px 0}
-  .total td{font-size:14px;font-weight:bold;padding-top:4px}
-  @media print{body{margin:0}}
-</style></head><body>
-<div class="r">
-  <div class="c b" style="font-size:16px;margin-bottom:4px">${zh ? '账单' : 'Bill'}</div>
-  <div class="d"></div>
-  <table>
-    <tr><td>${zh ? '桌号' : 'Table'}</td><td style="text-align:right" class="b">${table.name}</td></tr>
-    <tr><td>${zh ? '时间' : 'Time'}</td><td style="text-align:right">${now}</td></tr>
-    <tr><td>${zh ? '订单数' : 'Orders'}</td><td style="text-align:right">${orders.length}</td></tr>
-  </table>
-  <div class="d"></div>
-  <table>${rows}</table>
-  <div class="d"></div>
-  <table>
-    <tr><td>${zh ? '小计' : 'Subtotal'}</td><td style="text-align:right">${formatPriceUSD(subtotal)}</td></tr>
-    ${tax > 0 ? `<tr><td>${zh ? '税' : 'Tax'}</td><td style="text-align:right">${formatPriceUSD(tax)}</td></tr>` : ''}
-    ${svc > 0 ? `<tr><td>${zh ? '服务费' : 'Service Fee'}</td><td style="text-align:right">${formatPriceUSD(svc)}</td></tr>` : ''}
-    <tr class="total"><td>${zh ? '合计' : 'Total'}</td><td style="text-align:right">${formatPriceUSD(total)}</td></tr>
-    ${paid > 0 ? `<tr><td style="color:green">${zh ? '已付' : 'Paid'}</td><td style="text-align:right;color:green">-${formatPriceUSD(paid)}</td></tr>` : ''}
-    ${remaining > 0 && paid > 0 ? `<tr class="total"><td style="color:orange">${zh ? '待付' : 'Remaining'}</td><td style="text-align:right;color:orange">${formatPriceUSD(remaining)}</td></tr>` : ''}
-  </table>
-  <div class="d"></div>
-  <div class="c" style="font-size:11px;color:#666;margin-top:8px">${zh ? '谢谢光临' : 'Thank you!'}</div>
-</div>
-<script>window.onload=function(){window.print()}</script>
-</body></html>`
-
-  const w = window.open('', '_blank', 'width=320,height=600')
-  if (!w) return
-  w.document.write(html)
-  w.document.close()
+  const subtotal = items.reduce((s, i) => s + i.price, 0)
+  const html = buildReceiptHtml({
+    items,
+    table: { name: table.name },
+    summary: {
+      tax: summary?.tax ?? 0,
+      serviceFee: summary?.serviceFee ?? 0,
+      totalWithTax: summary?.totalWithTax ?? subtotal,
+      totalPaid: summary?.totalPaid ?? 0,
+      remaining: summary?.remaining ?? (summary?.totalWithTax ?? subtotal),
+    },
+    orderCount: orders.length,
+    lang,
+    paperWidth: 58,
+    variant: 'auto',
+  })
+  openPrintWindow(html)
 }
 
 export default function TablesPage() {

@@ -1,146 +1,248 @@
 [
   {
-    "id": "26edfc3e-b773-42d8-9816-8895f98ab267",
+    "id": "166a7850-fa14-41be-b128-3ef7e9bc5b23",
+    "storeId": "store-demo-001",
+    "name": "A1",
+    "status": "occupied",
+    "number": 1,
+    "enabled": true,
+    "currentSessionId": "46677caf-47e8-4308-895f-81a949b591ca"
+  },
+  {
+    "id": "7fc8109f-5455-43aa-bec1-f6bc81c09baa",
     "storeId": "store-demo-001",
     "name": "A2",
     "status": "idle",
     "number": 2,
-    "enabled": false
+    "enabled": true
   },
   {
-    "id": "1e259bc9-4052-46f1-a5a1-62329aab0274",
+    "id": "1756cc8a-1927-4959-b683-15ca6ae13683",
     "storeId": "store-demo-001",
     "name": "A3",
     "status": "idle",
     "number": 3,
-    "enabled": true,
-    "x": 220,
-    "y": 200,
-    "width": 100,
-    "height": 80,
-    "zone": "test"
+    "enabled": true
   },
   {
-    "id": "4f12ac19-21c6-4c5d-b74b-0883662db351",
+    "id": "a21c56f0-6871-4798-9af1-edba1989efa1",
     "storeId": "store-demo-001",
     "name": "B1",
     "status": "idle",
     "number": 4,
-    "enabled": true,
-    "x": 60,
-    "y": 80,
-    "width": 40,
-    "height": 40,
-    "currentSessionId": "f3ed8d65-84b9-4309-bef4-2e2ff783e1d6"
+    "enabled": true
   },
   {
-    "id": "f9f6d503-faac-4f30-8fa6-2eae2587df67",
+    "id": "3e89da0b-cc7b-48b1-b1ac-4f4de97feb21",
     "storeId": "store-demo-001",
     "name": "B2",
     "status": "idle",
     "number": 5,
-    "enabled": true,
-    "x": 440,
-    "y": 20,
-    "width": 100,
-    "height": 80,
-    "shape": "long"
+    "enabled": true
   },
   {
-    "id": "b3cd62fb-8b3c-49fa-84ce-4e503be3b0f7",
+    "id": "8b5982dc-19ad-42c1-a07f-c347a4990021",
     "storeId": "store-demo-002",
     "name": "1号桌",
     "nameEn": "Table 1",
-    "status": "idle"
+    "status": "idle",
+    "number": 1,
+    "enabled": true
   },
   {
-    "id": "150aed55-82d5-4c8d-b67d-702321c68d07",
+    "id": "9d334651-2fc8-4dde-b75d-33eecb2c38c0",
     "storeId": "store-demo-002",
     "name": "2号桌",
     "nameEn": "Table 2",
-    "status": "idle"
+    "status": "idle",
+    "number": 2,
+    "enabled": true
   },
   {
-    "id": "6e5b22a5-74da-4477-bb3d-fb2d7999ca99",
+    "id": "ce8b2478-9c1a-48ca-8045-13af032fc17d",
     "storeId": "store-demo-002",
     "name": "3号桌",
     "nameEn": "Table 3",
-    "status": "idle"
+    "status": "idle",
+    "number": 3,
+    "enabled": true
   },
   {
-    "id": "33e95fd1-3e0a-48a9-b1ce-963cfcd97f2d",
+    "id": "11eb0a85-5005-4f7f-ad0f-b7e0e1c7ae65",
     "storeId": "store-demo-002",
     "name": "包间1",
     "nameEn": "Room 1",
     "status": "idle",
-    "currentOrderId": "b3f969b0-ef3a-4dd2-ae01-a2dcbf0cf576"
+    "number": 4,
+    "enabled": true
+  },
+  {
+    "id": "store-demo-002-table-005",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 5,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-006",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 6,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-007",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 7,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-008",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 8,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-009",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 9,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-010",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 10,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-011",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 11,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-012",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 12,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-013",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 13,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-014",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 14,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-015",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 15,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-016",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 16,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-017",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 17,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-018",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 18,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-019",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 19,
+    "enabled": false,
+    "status": "idle"
+  },
+  {
+    "id": "store-demo-002-table-020",
+    "storeId": "store-demo-002",
+    "name": "",
+    "number": 20,
+    "enabled": false,
+    "status": "idle"
   },
   {
     "id": "store-demo-001-table-006",
     "storeId": "store-demo-001",
-    "name": "VIP",
+    "name": "",
     "number": 6,
-    "enabled": true,
-    "status": "idle",
-    "x": 580,
-    "y": 20,
-    "width": 100,
-    "height": 80,
-    "shape": "long"
+    "enabled": false,
+    "status": "idle"
   },
   {
     "id": "store-demo-001-table-007",
     "storeId": "store-demo-001",
-    "name": "Table 7",
+    "name": "",
     "number": 7,
-    "enabled": true,
-    "status": "idle",
-    "x": 140,
-    "y": 80,
-    "width": 100,
-    "height": 80,
-    "currentOrderId": "2023d802-b42f-4e00-b817-8afd9beeb9ea",
-    "currentBillId": "2ac4cc00-4c8c-45ff-bc0e-6c4d4b21fc63"
+    "enabled": false,
+    "status": "idle"
   },
   {
     "id": "store-demo-001-table-008",
     "storeId": "store-demo-001",
-    "name": "Table 8",
+    "name": "",
     "number": 8,
-    "enabled": true,
-    "status": "occupied",
-    "x": 200,
-    "y": 380,
-    "width": 100,
-    "height": 80,
-    "currentSessionId": "8c7bb9da-5d46-4ebc-a2fd-fc9daed106c8"
+    "enabled": false,
+    "status": "idle"
   },
   {
     "id": "store-demo-001-table-009",
     "storeId": "store-demo-001",
-    "name": "Table 9",
+    "name": "",
     "number": 9,
-    "enabled": true,
-    "status": "idle",
-    "x": 40,
-    "y": 140,
-    "width": 80,
-    "height": 100,
-    "shape": "round"
+    "enabled": false,
+    "status": "idle"
   },
   {
     "id": "store-demo-001-table-010",
     "storeId": "store-demo-001",
-    "name": "Table 10",
+    "name": "",
     "number": 10,
-    "enabled": true,
-    "status": "idle",
-    "zone": "test",
-    "x": 220,
-    "y": 40,
-    "width": 100,
-    "height": 80,
-    "shape": "long"
+    "enabled": false,
+    "status": "idle"
   },
   {
     "id": "store-demo-001-table-011",
@@ -221,33 +323,5 @@
     "number": 20,
     "enabled": false,
     "status": "idle"
-  },
-  {
-    "id": "store-demo-001-table-002",
-    "storeId": "store-demo-001",
-    "name": "Table 2",
-    "number": 2,
-    "enabled": true,
-    "status": "idle",
-    "x": 420,
-    "y": 360,
-    "width": 100,
-    "height": 80,
-    "currentSessionId": "9666e7e7-2ae0-4036-ae84-b423c09101b0"
-  },
-  {
-    "id": "store-demo-001-t-2213edb1",
-    "storeId": "store-demo-001",
-    "name": "A1",
-    "status": "idle",
-    "number": 1,
-    "enabled": true,
-    "currentBillId": "37533730-8022-49de-b289-fd55e23c293c",
-    "x": 40,
-    "y": 20,
-    "width": 100,
-    "height": 80,
-    "zone": "test",
-    "shape": "square"
   }
 ]

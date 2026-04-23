@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Printer, Trash2 } from 'lucide-react'
 import { useT } from '@/i18n/useT'
 import { localized, optionLabel } from '@/lib/i18n-utils'
-import { api } from '@/services/api'
+import { buildKitchenTicketHtml, openPrintWindow } from '@/lib/print-receipt'
 import { formatPriceUSD } from '@/lib/format'
-import { itemUnitPrice } from '@/lib/pricing'
+import { itemUnitPrice, itemLineTotal } from '@/lib/pricing'
 import { minutesSince } from '@/lib/time-format'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -46,7 +46,7 @@ interface Props {
   actionButton: React.ReactNode
 }
 
-export default function OrderCard({ order, storeId, onClick, onEdit, onDelete, actionButton }: Props) {
+export default function OrderCard({ order, onClick, onEdit, onDelete, actionButton }: Props) {
   const { t, lang } = useT()
   const [reprinting, setReprinting] = useState(false)
   const [reprintFeedback, setReprintFeedback] = useState(false)
@@ -75,11 +75,34 @@ export default function OrderCard({ order, storeId, onClick, onEdit, onDelete, a
     if (reprinting) return
     setReprinting(true)
     try {
-      await api.reprintOrder(storeId, order.id)
+      // Convert OrderItem[] → ReceiptItem[] (filter voided, join options)
+      const items = order.items
+        .filter(it => !it.voided)
+        .map(it => ({
+          name: localized(it, lang),
+          qty: it.quantity,
+          price: itemLineTotal(it), // KitchenTicket doesn't render price, but type requires it
+          opts: (it.selectedOptions ?? [])
+            .map(op => op.choiceName || op.choiceNameEn || '')
+            .filter(Boolean)
+            .join(', '),
+          remark: it.remark,
+        }))
+
+      const html = buildKitchenTicketHtml({
+        items,
+        table: { name: order.tableName },
+        orderNumber: order.orderNumber,
+        lang,
+        paperWidth: 80,
+        variant: 'auto',
+      })
+      openPrintWindow(html)
+
       setReprintFeedback(true)
       setTimeout(() => setReprintFeedback(false), 2000)
     } catch (err) {
-      console.error('Failed to reprint order:', err)
+      console.error('Failed to print kitchen ticket:', err)
     } finally {
       setReprinting(false)
     }

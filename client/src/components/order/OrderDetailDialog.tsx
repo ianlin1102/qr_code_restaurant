@@ -1,8 +1,10 @@
 import { useRef, useCallback } from 'react'
+import { ChefHat } from 'lucide-react'
 import { formatPriceUSD } from '@/lib/format'
-import { itemUnitPrice } from '@/lib/pricing'
+import { itemUnitPrice, itemLineTotal } from '@/lib/pricing'
 import { useT } from '@/i18n/useT'
 import { localized, optionLabel } from '@/lib/i18n-utils'
+import { buildReceiptHtml, buildKitchenTicketHtml, openPrintWindow } from '@/lib/print-receipt'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -66,22 +68,61 @@ export default function OrderDetailDialog({
   }
 
   const handlePrint = useCallback(() => {
-    if (!receiptRef.current) return
-    const printWindow = window.open('', '_blank', 'width=320,height=600')
-    if (!printWindow) return
-    printWindow.document.write(`
-      <html><head><title>${t.orderDetail.receipt}</title>
-      <style>
-        body { margin: 0; padding: 0; }
-        @media print { body { margin: 0; } }
-      </style>
-      </head><body>
-      ${receiptRef.current.outerHTML}
-      <script>window.onload=function(){window.print();window.close();}</script>
-      </body></html>
-    `)
-    printWindow.document.close()
-  }, [t])
+    if (!order) return
+    const items = order.items
+      .filter(it => !it.voided)
+      .map(it => ({
+        name: localized(it, lang),
+        qty: it.quantity,
+        price: itemLineTotal(it),
+        opts: (it.selectedOptions ?? [])
+          .map(op => op.choiceName || op.choiceNameEn || '')
+          .filter(Boolean)
+          .join(', '),
+        remark: it.remark,
+      }))
+    const html = buildReceiptHtml({
+      items,
+      table: { name: order.tableName },
+      summary: {
+        tax: 0,
+        serviceFee: 0,
+        totalWithTax: order.totalPrice,
+        totalPaid: 0,
+        remaining: order.totalPrice,
+      },
+      orderCount: 1,
+      lang,
+      paperWidth: 58,
+      variant: 'auto',
+    })
+    openPrintWindow(html)
+  }, [order, lang])
+
+  const handlePrintKitchen = useCallback(() => {
+    if (!order) return
+    const items = order.items
+      .filter(it => !it.voided)
+      .map(it => ({
+        name: localized(it, lang),
+        qty: it.quantity,
+        price: itemLineTotal(it),
+        opts: (it.selectedOptions ?? [])
+          .map(op => op.choiceName || op.choiceNameEn || '')
+          .filter(Boolean)
+          .join(', '),
+        remark: it.remark,
+      }))
+    const html = buildKitchenTicketHtml({
+      items,
+      table: { name: order.tableName },
+      orderNumber: order.orderNumber,
+      lang,
+      paperWidth: 80,
+      variant: 'auto',
+    })
+    openPrintWindow(html)
+  }, [order, lang])
 
   if (!order) return null
 
@@ -168,6 +209,10 @@ export default function OrderDetailDialog({
         <div className="flex flex-wrap gap-2 justify-end pt-2">
           <Button variant="outline" size="sm" className="min-h-[44px]" onClick={handlePrint}>
             {t.orderDetail.printReceipt}
+          </Button>
+          <Button variant="outline" size="sm" className="min-h-[44px]" onClick={handlePrintKitchen}>
+            <ChefHat className="size-4 mr-1" />
+            {t.orderDetail.printKitchen}
           </Button>
           {order.status !== 'served' && onEdit && (
             <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => onEdit(order)}>

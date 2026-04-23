@@ -44,6 +44,7 @@ import StaffManagePage from './pages/admin/StaffManagePage'
 import ClockPage from './pages/admin/ClockPage'
 import WaitlistPage from './pages/admin/WaitlistPage'
 import MorePage from './pages/admin/MorePage'
+import PrintTestPage from './pages/admin/PrintTestPage'
 
 function FallbackRedirect() {
   const storeId = useSessionStore(s => s.storeId)
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="clock" element={<ProtectedRoute perm="staff:manage"><ClockPage /></ProtectedRoute>} />
           <Route path="waitlist" element={<ProtectedRoute perm="waitlist:read"><WaitlistPage /></ProtectedRoute>} />
           <Route path="more" element={<MorePage />} />
+          <Route path="print-test" element={<PrintTestPage />} />
           <Route index element={<Navigate to="dashboard" />} />
         </Route>
 

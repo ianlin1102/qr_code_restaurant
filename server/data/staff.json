@@ -8,6 +8,14 @@
     "createdAt": "2026-03-01T00:00:00.000Z"
   },
   {
+    "id": "staff-owner-demo-001",
+    "storeId": "store-demo-001",
+    "username": "admin",
+    "password": "$2b$10$C//xy17Vr.tMp/1mNQIYp.5o3yV5a1kO/Z65365bkwasVbeVC7oHq",
+    "role": "owner",
+    "createdAt": "2026-04-22T00:00:00.000Z"
+  },
+  {
     "id": "8bec0727-ab89-4c95-9133-96ee20756044",
     "storeId": "store-demo-002",
     "username": "ian",

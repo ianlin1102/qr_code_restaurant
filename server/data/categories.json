@@ -1,69 +1,58 @@
 [
   {
-    "id": "879cda7f-85c1-40e8-ac00-fa523d0702da",
+    "id": "21960876-b120-4220-82b0-df90705eaba0",
     "storeId": "store-demo-001",
     "name": "热菜",
     "nameEn": "Hot Dishes",
     "sortOrder": 1
   },
   {
-    "id": "8c04b927-0f95-49cc-99ed-0bf3d3c6cbe4",
+    "id": "35358b0b-e876-4eb4-8636-5356568dbe47",
     "storeId": "store-demo-001",
     "name": "凉菜",
     "nameEn": "Cold Dishes",
     "sortOrder": 2
   },
   {
-    "id": "20ed3b68-258c-442c-bee5-897999787abe",
+    "id": "3c83528d-5d08-4a13-91ef-7610f4255f36",
     "storeId": "store-demo-001",
     "name": "饮品",
     "nameEn": "Beverages",
     "sortOrder": 3
   },
   {
-    "id": "53f41930-b982-4c64-8fc8-99a5a81f843d",
+    "id": "812b1013-c7ba-4282-adc6-378a497ab2cb",
     "storeId": "store-demo-001",
     "name": "主食",
     "nameEn": "Staples",
     "sortOrder": 4
   },
   {
-    "id": "72ef63bd-2f89-4490-86d5-a5fba7c83202",
+    "id": "1dfb5896-28d8-4f64-8acc-e70514caf4d3",
     "storeId": "store-demo-002",
     "name": "锅底",
     "nameEn": "Soup Base",
-    "sortOrder": 2,
-    "active": true
+    "sortOrder": 1
   },
   {
-    "id": "4b5f6890-f2c8-4dd9-b554-9144d80fab92",
+    "id": "9e248766-3c06-4990-842d-25b46e8c0c5e",
     "storeId": "store-demo-002",
     "name": "肉类",
     "nameEn": "Meats",
-    "sortOrder": 0,
-    "active": true
+    "sortOrder": 2
   },
   {
-    "id": "48949f02-4af9-4be3-ae08-04b43780afe5",
+    "id": "1c2a7c17-92c5-41ae-b955-14f0fa46dea9",
     "storeId": "store-demo-002",
     "name": "蔬菜",
     "nameEn": "Vegetables",
-    "sortOrder": 3,
-    "active": true
+    "sortOrder": 3
   },
   {
-    "id": "4e454b79-3a3c-4a94-bc1a-97ac5cbb0b9e",
+    "id": "fcf4e07a-6a52-4dd1-9e4f-a80d3c1cebad",
     "storeId": "store-demo-002",
     "name": "饮品",
     "nameEn": "Beverages",
-    "sortOrder": 1,
-    "active": true
-  },
-  {
-    "id": "1616ffd9-2ecd-445a-8a39-f34c02e79072",
-    "storeId": "store-demo-001",
-    "name": "特殊",
-    "nameEn": "Specialties",
-    "sortOrder": 5
+    "sortOrder": 4
   }
 ]

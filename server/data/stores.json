@@ -6,13 +6,12 @@
     "description": "这是一家示例餐厅",
     "descriptionEn": "A demo restaurant",
     "openingHours": "09:00-22:00",
-    "createdAt": "2026-03-23T08:38:13.228Z",
-    "announcement": "新老顾客欢迎",
+    "createdAt": "2026-04-22T20:36:40.957Z",
     "autoAcceptOrders": false,
     "paymentMode": "pay-later",
-    "announcementEn": "Selectable Announcement English test",
     "taxRate": 8.25,
-    "serviceFeeRate": 0
+    "serviceFeeRate": 0,
+    "tipBase": "posttax"
   },
   {
     "id": "store-demo-002",
@@ -21,6 +20,6 @@
     "description": "正宗重庆火锅",
     "descriptionEn": "Authentic Chongqing hotpot",
     "openingHours": "11:00-23:00",
-    "createdAt": "2026-03-23T08:38:13.228Z"
+    "createdAt": "2026-04-22T20:36:40.958Z"
   }
 ]
