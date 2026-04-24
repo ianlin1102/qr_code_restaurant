@@ -542,7 +542,7 @@ export default function MenuPage() {
                     return (
                       <div
                         key={item.id}
-                        className={`group relative flex items-center gap-3 p-2 rounded-lg border bg-card transition-opacity duration-300 ${
+                        className={`group relative flex items-center gap-3 p-2 rounded-lg border bg-card transition-opacity duration-300 min-w-0 overflow-hidden ${
                           !item.available ? 'opacity-50 pointer-events-none' : ''
                         }`}
                       >
@@ -568,7 +568,7 @@ export default function MenuPage() {
                         </div>
                         {/* Item info */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{localized(item, lang)}</p>
+                          <p className="font-medium text-sm line-clamp-2 break-words">{localized(item, lang)}</p>
                           <DietaryBadges item={item} className="mt-0.5" />
                           {item.description && (
                             <p className="text-xs text-muted-foreground truncate">
@@ -576,11 +576,11 @@ export default function MenuPage() {
                             </p>
                           )}
                           {hasOptions && (
-                            <p className="text-xs text-orange-600">
+                            <p className="text-xs text-orange-600 truncate">
                               {item.options!.map(o => localized(o, lang)).join(' / ')}
                             </p>
                           )}
-                          <div className="flex items-center gap-1.5 mt-1">
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap min-w-0">
                             {item.originalPrice && item.originalPrice > item.price && (
                               <span className="text-xs text-muted-foreground line-through">
                                 {formatPriceUSD(item.originalPrice)}
@@ -606,7 +606,7 @@ export default function MenuPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-11 w-11 p-0 rounded-full"
+                              className="h-11 w-11 p-0 rounded-full shrink-0"
                               onClick={() => handleAdd(item)}
                             >
                               +
