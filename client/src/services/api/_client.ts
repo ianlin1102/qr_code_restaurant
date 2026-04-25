@@ -49,14 +49,19 @@ export async function fetchJSON<T>(url: string, options?: RequestInit): Promise<
   const res = await fetch(`${BASE}${url}`, { ...options, headers })
 
   if (res.status === 401) {
-    // Don't auto-redirect for login attempts — let the login page handle the error
     const isLoginAttempt = url.includes('/auth/login')
-    if (!isLoginAttempt) {
+    const isAdminPage = typeof window !== 'undefined' &&
+                         window.location.pathname.startsWith('/admin')
+    if (!isLoginAttempt && isAdminPage) {
+      // Only redirect on admin pages; customer pages just surface the error.
       const storeId = useAuthStore.getState().user?.storeId
       useAuthStore.getState().logout()
       window.location.href = storeId ? `/admin/login?store=${storeId}` : '/admin/login'
       throw new Error('Session expired')
     }
+    // Non-admin page 401: throw without redirect, caller handles.
+    // Skip for login attempts so the !res.ok branch below surfaces server message.
+    if (!isLoginAttempt) throw new Error('Unauthorized')
   }
 
   if (!res.ok) {

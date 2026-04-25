@@ -47,14 +47,9 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   const [percent, setPercent] = useState(50)
   const [loading, setLoading] = useState(false)
 
-  // Check if waiter has created unpaid split bills for this session
-  const [hasWaiterSplits, setHasWaiterSplits] = useState(false)
-  useEffect(() => {
-    if (!open) return
-    api.getSplitBills(storeId, session.id)
-      .then(({ splits }) => setHasWaiterSplits(splits.some(s => s.status === 'unpaid')))
-      .catch(() => setHasWaiterSplits(false))
-  }, [open, storeId, session.id])
+  // Customer side: do not pre-check waiter splits (admin-auth endpoint -> 401 redirect).
+  // State retained for the "waiter processing" banner below; false is a safe default.
+  const [hasWaiterSplits] = useState(false)
 
   // Flatten all order items with keys
   const allItems = useMemo(() => {
