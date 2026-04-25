@@ -191,15 +191,31 @@ function esc(s: string): string {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 }
 
-/** Open a print window and trigger print. Driver paper preset decides final size. */
+/**
+ * Open a print popup in an isolated renderer process so the print dialog does
+ * not block the admin tab. Uses Blob URL + noopener to force a separate
+ * browsing context, and a child-side onload script so window.print() runs in
+ * the popup's own renderer (not the parent's). Driver paper preset decides
+ * final size.
+ */
 export function openPrintWindow(html: string): void {
-  const w = window.open('', '_blank', 'width=320,height=600')
-  if (!w) return
-  w.document.write(html)
-  w.document.close()
-  const doPrint = () => { w.focus(); w.print() }
-  if (w.document.readyState === 'complete') doPrint()
-  else w.addEventListener('load', doPrint)
+  // Ensure HTML self-triggers print so the popup's own renderer handles it
+  // (avoids parent-side w.print() that blocks the admin tab's renderer).
+  const htmlWithPrint = html.includes('window.print()')
+    ? html
+    : html.replace(
+        '</body>',
+        '<script>window.onload=function(){window.print()}</script></body>'
+      )
+
+  // Blob URL + noopener forces a separate browsing context (independent
+  // renderer process), preventing the print modal from freezing the admin tab.
+  const blob = new Blob([htmlWithPrint], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  window.open(url, '_blank', 'noopener')
+
+  // Revoke blob URL after the popup has had time to load.
+  setTimeout(() => URL.revokeObjectURL(url), 30000)
 }
 
 /** Mock items targeting approximately `targetMm` rendered height. */
