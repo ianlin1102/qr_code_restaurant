@@ -192,8 +192,9 @@ sed -n '321,332p' docs/superpowers/plans/2026-04-17-phase5-postgres-migration/ph
 
 | D | spec 检验点 | grep / impl 实证 | Pre-verdict |
 |---|---|---|---|
-| D55 | replaceDraftItems + submitDraft 签名 `tx: Prisma.TransactionClient` (非 Db) | heredoc line 553 + line 626 | 预通过 |
-| D55 | createDraftOrder + updateStatus + voidOrder + findById/findBySessionId/findSubmitted/findActive/findDraft `db: Db` (默认 prisma 仅 reads) | heredoc 默认参数 `db: Db = prisma` (reads) + writes 必填 db | 预通过 |
+| D55 | replaceDraftItems + submitDraft 签名 `tx: Prisma.TransactionClient` (非 Db, 编译期强制 multi-step tx) | heredoc line 553 + line 626 | 预通过 |
+| D55 (reads) | findById + findBySessionId + findSubmitted + findActive + findDraft (5 reads) `db: Db = prisma` 默认 | heredoc reads 默认参数 `db: Db = prisma` | 预通过 |
+| D55 (writes single-step) | createDraftOrder + updateStatus + voidOrder (3 single-step writes) `db: Db` 必填非 default | heredoc writes 签名 `db: Db` 必填 (无 = prisma 默认) | 预通过 |
 | D56 | OrderItem 字段 + heredoc 全文 无 itemKey | `grep -c "itemKey" orders.ts` = 0 + G-T17.4 schema 验证无 itemKey 列 | 预通过 |
 | D56 | createDraftOrder + replaceDraftItems items[idx] → position | heredoc line 516 + line 586 `position: idx` | 预通过 |
 | D57 | includeItemsAndOptions orderBy position asc | heredoc line 391-396 全局 const | 预通过 |
@@ -340,8 +341,9 @@ Plan Opus 收 closure 后:
 **累积 9 处 Plan Opus 印象产出数据点** (D-1 期 4 + D-2 启动 first-turn 5):
 - 默认 β 路径 (双 entry — #28 Snapshot self-fab / #29 Plan Opus 启动期印象产出)
 - 不本 turn 动 D88 维度 3 设计
+- **Flag A noting** (Ian Round 2 micro-adjust 2026-04-26): §5 表 + §6 self-audit 表当 **forward-looking checklist** — heredoc line anchor (553 / 626 / 391-396 / 482-490 / 700-703 / 746-749 等) 引用自 plan §Task 17 heredoc 行号, CC impl 写入 orders.ts 后实际文件行号 shift. **不本 turn 改**, closure 期 (CC impl 完成 + work-log §4/§5 Final verdict 填) 实证矫正 line anchor 至 actual orders.ts file line + 同步 §6 self-audit 表 anchor 状态
 - 入下次 governance commit 节奏点 decide
-- 本 work-log §6 self-audit 表已 0 凭印象映射残留 (10 anchor 全 grep 实证)
+- 本 work-log §6 self-audit 表已 0 凭印象映射残留 (10 anchor 全 grep 实证 against plan §Task 17 当前 heredoc, **forward-looking 性质 ack 入本节 第 3 条**)
 
 ---
 
