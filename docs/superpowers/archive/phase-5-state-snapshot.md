@@ -309,13 +309,42 @@
 
 - **位置**: 协作环境基础设施层 (Mac dev environment + Docker Desktop + node_modules)
 - **背景**: Mac 砖机 (Logic Gate 故障, 2026-04-22 OS update 后) → Time Machine 4/4 备份还原 → Phase 5 协作链路重启
-- **2 数据点**:
+- **3 数据点**:
   - 数据点 1: Docker Desktop daemon 未自启 (socket `/Users/.../docker.sock` 不存在), 容器 image 需 rebuild — Phase C Batch 3 Task 15 启动期 CC Stage 0 docker ps fail-loud 拦截
   - 数据点 2: `server/node_modules/.bin/vitest` 缺失 (Time Machine 备份 node_modules 不完整, pnpm install 未跑过) — Phase C Batch 3 Task 15 test run 期 fail-loud `sh: vitest: command not found` 拦截
-- **处置**: 2 数据点均 Ian 一手处置 (`open -a Docker` + `docker compose build` / `pnpm install --frozen-lockfile`), spec 内 Risk E 子类已预置处置路径
+  - 数据点 3: Prisma Client generated types 缺失 (`server/node_modules/.prisma/` 不存在, `pnpm prisma generate` 未跑过) — Phase D Task 16 启动期 CC Stage 4.1 fail-loud (TS2305 ModuleLicense + TS2353 tipBase / moduleLicense 字段缺失, 4 store.ts own errors) → α 接受 `cd server && pnpm prisma generate` (75ms) → 重跑 Stage 4.1 store.ts 0 own error + Stage 4.2 baseline 123 → 103 (-20 transitive errors, BASELINE_TSC §8 cite 验证准确, env transient drift 非 cite stale, 见 §7.18 数据点 4)
+- **处置**: 3 数据点均 Ian 一手 + α 接受路径处置 (`open -a Docker` + `docker compose build` / `pnpm install --frozen-lockfile` / `pnpm prisma generate`), spec 内 Risk E 子类已预置处置路径
 - **观察**: Snapshot §8 "Daily dev stack 5 容器 Up 长期" 在 Time Machine 还原后失效, 整体 env restore 工作量比 Snapshot §8 假设大
 - **处理**: Phase H Task 45 候选条款 "Backup restore protocol" 教训内化, 不新升格 D 候选; Snapshot §8 候选 sub-clause "post-restore env gap risk acknowledgment" 列出环境层 gap checklist (Docker daemon 自启 + container image rebuild + node_modules 完整性 + `.env` 文件存在 + DB volume 持久化 + tooling CLI install)
-- **外化锚**: `035cdee2` commit body Governance 段 Time Machine env gap observation + Phase H Task 45 reconcile queue
+- **外化锚**: `035cdee2` commit body Governance 段 Time Machine env gap observation + Phase H Task 45 reconcile queue + Phase D Task 16 commit body 数据点 3 追加
+
+### 7.16 phase-d-repositories.md §746 "段 2a 完成" stale marker
+
+- **位置**: docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-d-repositories.md line 746-749
+- **内容**: "段 2 段 2a 完成. Task 16 (store.ts) + Task 17 (orders.ts) verify 通过 (对话中, 2026-04-17). Nit: replaceDraftItems 顺序插入循环已加 createMany 限制说明注释."
+- **问题**: 2026-04-17 Plan 撰写期旧 attempt 残留 marker (Phase A skip + Phase B/C 重排前的旧叙事). 实际 HEAD 851505d9 时点 store.ts / orders.ts 不存在, git log 空 — Phase 5 main lineage 实际未实施.
+- **附属违反**: line 748 含 D86 禁词 "对话中" (session-relative 措辞)
+- **处理**: Phase H Task 45 reconcile, Plan §746-749 整段删除或改写为 "Phase D 启动期重新实施" marker
+- **外化锚**: Phase D Task 16 启动 Stage 0 G-D16.5 grep 实证 (HEAD 851505d9, store.ts/orders.ts 不存在 + git log 空) + Plan line 748 D86 violation
+
+### 7.17 PlatformAuditLog Task 26 归属决议待办
+
+- **位置**: phase-d-repositories.md §85-88 Task 26 方法清单 + schema.prisma model PlatformAuditLog
+- **问题**: Phase D plan §88 Task 26 方法清单写 "PlatformAdmin + ModuleLicense (这个走 withPlatformContext, bypass RLS)", 未提 PlatformAuditLog. 22 model 全清单 Stage 0 G-D16.4 实证 PlatformAuditLog 存在 (含 adminId / action / targetStoreId / payload / ipAddress / userAgent + 3 @@index), 归属 Task 26 (含在 platform-admin.ts) vs 单独 audit-log.ts 待决议.
+- **处理**: Task 26 batch (D-5) 启动期 Plan Opus + Ian 决议. 必要时 plan §88 patch 增量补 PlatformAuditLog 方法.
+- **外化锚**: Phase D Task 16 启动 Stage 0 G-D16.4 grep 22 model 全清单 + Task 16 work-log §1 G-T16.3 + §3 风险 A 关联 + Stage 0.3c PlatformAuditLog 字段 grep 实证
+
+### 7.18 Snapshot v5.0 self-fabrication 多数据点 + env-state observation (Archive #28 候选)
+
+- **位置**: Snapshot v5.0 §8 文件状态表 + §9.3 Phase B carry-forward + §9.5 G-D16.2 / G-D16.4 启发, 共 4+ literal occurrence (本批 D-1 Stage 5.2-5.5 一并修)
+- **数据点 1** (count drift): 两处 "21 model (16 主表 + 6 子表)" literal (§8 line 408 + §9.5 G-D16.4), Stage 0 G-D16.4 实证为 22 model (16 主表 + 6 子表, +PlatformAuditLog as 16th 主表). root cause: Plan Opus 凭 Phase B Task 2 期记忆产出 enumerable count, 未 grep schema.prisma 实证.
+- **数据点 2** (wrapper count drift): §9.5 G-D16.2 fact base 写 "3 wrapper (withTenantContext / withPlatformContext / withTenantContextAndHooks)", Stage 0 G-D16.2 实证为 4 wrapper (漏 `withSystemContext`). root cause: Plan Opus 凭 Phase B Task 6 期记忆产出, 未 cat prisma-client.ts 实证.
+- **数据点 3** (SHA cite drift): §9.5 G-D16.2 cite "Phase B `49a53a3a` + `60fdcfe0` baseline" 引用错误. Stage 0.4 实证: prisma-client.ts git log 显示 `820389a9` (Task 8 G7-4 helper) + `49a53a3a` (Task 6 init), 不含 `60fdcfe0`. `60fdcfe0` 实际是 Task 7 shared/types.ts (DraftOrder/SubmittedOrder + OrderStatus 5 + StoreUser/JWT). root cause: Plan Opus 凭对 Phase B Task 6/7 期 commit chain 印象映射 SHA, 未 git log 实证.
+- **数据点 4** (env-state observation, **NOT cite self-stale**): Snapshot §8 cite "tsc baseline 103 errors" 经 Stage 0.7 pre-generate 测得 123 (drift +20). Stage 4.2 post-generate (运行 `pnpm prisma generate` 后) 测得 103 (= cite 准确). 结论: `103` 数字本身不是 self-stale, drift 来源 = Time Machine restore 后 Prisma Client 未 generate (env transient drift, 见 §7.15 数据点 3). 录本 DP 用于区分 "cite 真 stale" (DP1+2+3 印象产出类) vs "env 异常导致 cite 似 stale" (本 DP), 防御层不同.
+- **谁拦**: CC fail-loud Stage 0/4 grep + Helper Opus cross-instance review 2026-04-26 第 2 turn 同模式 anchor literal 印象映射 flag (defense-in-depth 第 6 层 retrospective fabrication 暴露 working-as-designed)
+- **处理**: §8 + §9.5 G-D16.2/4 21 → 22 model + 3 → 4 wrapper + SHA cite forward-fix, 本批 D-1 commit 一并 update. Archive #28 候选 (Category 1 子类 "Phase 封顶 regen 期 enumerable count + SHA cite 印象产出") 下次 governance commit 节奏点 land. DP4 单独标记为 env-state observation, 不入 Archive #28 主体 (不算 fabrication)
+- **防御候选** (下窗口 D88 正式登记时考虑): (1) Type β-adjacent 主子规则 "信任 prior Plan instance produced artifact literal 不 grep 实证" (覆盖 SHA / count / 任意 enumerable literal 引用) — 与 D88 维度 3 同构. (2) DP4 区分子规则 "env-state 异常导致 cite 似 stale 不入 self-fabrication 范畴, 必须 post-recovery state 验证才判 cite 真 stale" — 防止 false positive Archive 登记.
+- **外化锚**: 851505d9 governance v5.0 commit body (fabrication 源 DP1+2+3) + Phase D Task 16 启动 Stage 0 G-D16.2/4 + Stage 0.4 git log + Stage 4.1/4.2 tsc + Helper 2026-04-26 cross-instance review 第 2 turn flag
 
 ---
 
@@ -405,7 +434,7 @@
 ### 9.3 Stage 0 carry-forward (Phase B + Phase C 完整 verified, Phase D 直接信任)
 
 **Phase B carry-forward** (Task 2-10 全 land):
-- Schema (15 主表 + 6 子表 + Mode C δ 桶 1 RESOLVED) / 4 migrations (init / extend_schema / rls_and_roles / seed_platform_admin) / Prisma Client regenerated / seed.ts (platform admin + demo store + roles + menu + tables 完整)
+- Schema (16 主表 + 6 子表 + Mode C δ 桶 1 RESOLVED) / 4 migrations (init / extend_schema / rls_and_roles / seed_platform_admin) / Prisma Client regenerated / seed.ts (platform admin + demo store + roles + menu + tables 完整)
 - prisma-client.ts (`server/src/repositories/prisma-client.ts`, withTenantContext + withPlatformContext + withTenantContextAndHooks G7-4) / shared/types.ts (OrderStatus 5 + 判别联合) / tenant-aware.ts (Express middleware) / shared/modules.ts (52 lines, MODULE_REGISTRY + ALL_MODULE_PERMISSIONS)
 - `.env.example` aspirational / ESLint 9 flat config / no-floating-promises baseline 0
 
@@ -439,11 +468,11 @@
 
 (具体行号由 Plan Opus Stage 0 grep `^### Task 16` 定位.)
 
-**G-D16.2** — production prisma-client API surface (Phase B `49a53a3a` + `60fdcfe0` baseline):
+**G-D16.2** — production prisma-client API surface (Phase B `49a53a3a` Task 6 init + `820389a9` Task 8 add G7-4 helper baseline):
 
     cat server/src/repositories/prisma-client.ts
 
-Fact base: `withTenantContext` / `withPlatformContext` / `withTenantContextAndHooks` 完整签名 + 内部 set_config / SET LOCAL ROLE 实现.
+Fact base: `prisma` (app_user) / `systemPrisma` (system_worker) export + `Db = PrismaClient | Prisma.TransactionClient` 类型 + 4 wrapper (`withTenantContext` / `withPlatformContext` / `withSystemContext` / `withTenantContextAndHooks`) + `assertUuid` SQL injection guard + Hook 语义 (tx commit FIFO fire / tx throw 0 fire / hook throw console.error 不传播). [Snapshot v5.0 self-stale 修正, 见 §7.18 Archive #28 候选 数据点 2 + 3]
 
 **G-D16.3** — Phase B Task 8 tenant-aware.ts (Express middleware) integration point:
 
@@ -455,7 +484,19 @@ Fact base: req-level storeId 注入逻辑 + Repository 层 db 参数透传 contr
 
     grep -nE "^model |@@map" server/prisma/schema.prisma
 
-Fact base: 21 models (15 主表 + 6 子表) 命名空间, Phase D 11 个 Repository 对应 model 选择.
+Fact base: 22 models (16 主表 + 6 子表, +PlatformAuditLog as 16th 主表) 命名空间, Phase D 11 个 Repository 对应 model 选择. [Snapshot v5.0 self-stale 修正, 见 §7.18 Archive #28 候选 数据点 1]
+
+**G-D16.5** — `server/src/repositories/` 当前文件清单 (Phase D Task 16 启动 baseline, `851505d9` 时点):
+
+    ls -la server/src/repositories/
+
+Fact base:
+- `auth.repository.ts` (704 B, Mar 23, legacy pre-Phase 5)
+- `json-store.ts` (2080 B, Apr 26, JsonStore singleton)
+- `prisma-client.ts` (6213 B, Apr 26, Phase B Task 6 + Task 8 baseline — SHA chain `49a53a3a` + `820389a9`, 见 G-D16.2)
+- `stores.ts` (1153 B, Apr 26, JsonStore singleton, Phase D 期 NOT 改动 — Plan §47/§52 铁律)
+
+`store.ts` / `orders.ts` (Task 16/17 目标文件) Phase D Task 16 实施前不存在; git log 空 — Plan §746 "段 2a 完成" stale marker, 见 §7.16.
 
 (其他 grep 由 plan §1 整体 scope 读后扩展.)
 
@@ -464,7 +505,7 @@ Fact base: 21 models (15 主表 + 6 子表) 命名空间, Phase D 11 个 Reposit
 新 Plan Opus 启动后:
 
 1. 读完 ritual (9.2) → CoT 输出 Phase D scope 理解 + Phase B/C carry-forward ack
-2. Stage 0 grep `phase-d-repositories.md` 整体 + Task 16 段 (9.5 G-D16.x)
+2. Stage 0 grep `phase-d-repositories.md` 整体 + Task 16 段 (9.5 G-D16.1-5)
 3. 视 plan §1 review 级别字段定 batch 切分 + 第一个 task 是 L1 / L2 / L3 review
 4. L1 → 同 Phase C Task 14/15 三步走 (work-log → Ian 明批 → CC); L2 → 直接 CC 执行消息; L3 → 摘要委托
 5. **不直接起 CC 执行消息** 在 Phase D 启动期; plan 整体 scope 读完 + Stage 0 grep 完成 + Ian 明批 batch 1 第一个 task GO 后才进入 CC 执行消息
