@@ -18,6 +18,7 @@ import SettlementSheet from '@/components/customer/SettlementSheet'
 import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
 import BottomNav from '@/components/customer/BottomNav'
+import CheckoutBar from '@/components/customer/CheckoutBar'
 import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
@@ -529,23 +530,15 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* Floating bottom bar — only when cart has items */}
+      {/* Floating CheckoutBar — only when cart has items */}
       {itemCount > 0 && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg p-3 glass shadow-lg z-40">
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-primary">
-                  {formatPriceUSD(priceTotal)}
-                </span>
-                <Badge variant="secondary">{itemCount} {t('common:items')}</Badge>
-              </div>
-            </div>
-            <Button onClick={() => navigate('/cart')} className="px-6">
-              {t('menu.goOrder')}
-            </Button>
-          </div>
-        </div>
+        <CheckoutBar
+          variant="goto-cart"
+          itemCount={itemCount}
+          totalAmount={priceTotal}
+          currentLang={lang === 'en' ? 'en' : 'zh'}
+          onAction={() => navigate('/cart')}
+        />
       )}
 
       <BottomNav

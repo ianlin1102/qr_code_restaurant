@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Info, Loader2, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
+import { Info, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +14,7 @@ import { api } from '@/services/api'
 import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
 import BottomNav from '@/components/customer/BottomNav'
+import CheckoutBar from '@/components/customer/CheckoutBar'
 import { optionLabel } from '@/lib/i18n-utils'
 import type { CartItem } from '@qr-order/shared'
 
@@ -271,43 +272,26 @@ export default function CartPage() {
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Bottom bar */}
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg bg-card/90 backdrop-blur-xl shadow-lg z-40">
-        <div className="p-4 space-y-3">
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
-            <Info className="size-4 text-blue-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-blue-700">{t('common.allergyNotice')}</p>
-          </div>
-          {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
-          )}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">
-                {t('cart.itemCount', { count: totalItems() })}
-              </p>
-              <p className="text-2xl font-bold">{formatPriceUSD(totalPrice())}</p>
-            </div>
-            <Button
-              size="lg"
-              onClick={handleCheckout}
-              disabled={submitting || items.length === 0 || !activeSessionId}
-              className="min-w-[120px] sm:min-w-[160px] min-h-[48px] bg-primary hover:bg-primary/90"
-            >
-              {submitting ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="size-4 animate-spin" />
-                  {paymentMode === 'pay-later' ? t('cart.ordering') : t('cart.submitting')}
-                </span>
-              ) : (
-                paymentMode === 'pay-later' ? t('cart.placeOrder') : t('cart.submitOrder')
-              )}
-            </Button>
-          </div>
+        {/* Allergy notice */}
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-start gap-2 mt-4">
+          <Info className="size-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-xs text-primary">{t('common.allergyNotice')}</p>
         </div>
       </div>
+
+      <CheckoutBar
+        variant="submit-order"
+        itemCount={totalItems()}
+        totalAmount={totalPrice()}
+        currentLang={lang === 'en' ? 'en' : 'zh'}
+        loading={submitting}
+        disabled={items.length === 0 || !activeSessionId}
+        errorMessage={error}
+        onAction={handleCheckout}
+        actionLabel={paymentMode === 'pay-later' ? t('cart.placeOrder') : t('cart.submitOrder')}
+        loadingLabel={paymentMode === 'pay-later' ? t('cart.ordering') : t('cart.submitting')}
+      />
     </div>
 
     <BottomNav
