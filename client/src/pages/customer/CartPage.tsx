@@ -13,6 +13,7 @@ import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
 import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
+import BottomNav from '@/components/customer/BottomNav'
 import { optionLabel } from '@/lib/i18n-utils'
 import type { CartItem } from '@qr-order/shared'
 
@@ -228,7 +229,7 @@ export default function CartPage() {
 
   return (
     <CustomerPageFrame>
-    <div className="pb-32 pt-14">
+    <div className="pb-40 pt-14">
       <TopAppBar
         mode="cart"
         storeName=""
@@ -273,7 +274,7 @@ export default function CartPage() {
       </div>
 
       {/* Bottom bar */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-card/90 backdrop-blur-xl shadow-lg pb-safe z-40">
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg bg-card/90 backdrop-blur-xl shadow-lg z-40">
         <div className="p-4 space-y-3">
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
             <Info className="size-4 text-blue-500 shrink-0 mt-0.5" />
@@ -308,6 +309,12 @@ export default function CartPage() {
         </div>
       </div>
     </div>
+
+    <BottomNav
+      storeId={storeId}
+      cartItemCount={totalItems()}
+      currentLang={lang === 'en' ? 'en' : 'zh'}
+    />
     </CustomerPageFrame>
   )
 }

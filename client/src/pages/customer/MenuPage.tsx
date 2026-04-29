@@ -17,6 +17,7 @@ import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
 import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
+import BottomNav from '@/components/customer/BottomNav'
 import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
@@ -420,7 +421,7 @@ export default function MenuPage() {
         {/* Menu items */}
         <div ref={menuScrollRef} className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="p-3 pb-24">
+          <div className="p-3 pb-40">
             {isSearching && filteredCategories.length === 0 && (
               <p className="text-center text-muted-foreground py-8">
                 {t('menu.noResults')}
@@ -530,7 +531,7 @@ export default function MenuPage() {
 
       {/* Floating bottom bar — only when cart has items */}
       {itemCount > 0 && (
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg p-3 pb-safe glass shadow-lg z-40">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg p-3 glass shadow-lg z-40">
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -546,6 +547,12 @@ export default function MenuPage() {
           </div>
         </div>
       )}
+
+      <BottomNav
+        storeId={storeId!}
+        cartItemCount={itemCount}
+        currentLang={lang === 'en' ? 'en' : 'zh'}
+      />
 
       {/* Item Detail Sheet */}
       <MenuItemDetailSheet
