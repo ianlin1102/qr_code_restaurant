@@ -184,7 +184,18 @@ sed -n '321,332p' docs/superpowers/plans/2026-04-17-phase5-postgres-migration/ph
 | 4. 状态机 + 乐观锁 | draft→pending 单向 / state guard pending+preparing voidable / version bump | **预通过** (函数注释 + 编译期 tx 强制 + 运行时 count=0 throw) |
 | 5. Cross-task coupling | Phase G Task 34 foundation + Task 19/20 PaymentItem FK 引用 + Plan stale marker §746-749 不动 | **预通过** (B2 contract 由本 task 落地, 后续 task 复用; stale marker Phase H reconcile) |
 
-**Final verdict** (CC impl 完成后 closure 增量 Edit 填): 待 CC Step 1-4 完成 + tsc 实证后 Plan Opus 判全 5 维度 Pass / 部分 Fail (规则 8 暂停).
+**Final verdict** (post Task 17 impl `ff5e881b` land, CC closure 汇报实证, 2026-04-26): **全 5 维度 Pass** —
+- 维度 1 类型: orders.ts 0 own tsc error (Stage 2-fix.4 post α-extended forward-fix)
+- 维度 2 RLS: storeId redundant column 保 raw on OrderItem + OrderItemOption (CC G-Step 2-fix.0b/c 实证 NO Store @relation on subordinate models)
+- 维度 3 D 决议: D55 + D56 + D57 + **D68** 首落 (D68 tableName/tableNameEn snapshot 写入 createDraftOrder data) + D23/D24/D30 应用
+- 维度 4 状态机 + 乐观锁: 编译期 tx 强制 (Prisma.TransactionClient 签名) + 运行时 count=0 throw OPTIMISTIC_LOCK_CONFLICT
+- 维度 5 Cross-task coupling: B2 contract land for Phase G Task 34 + caller contract D68 enforced (Phase G route 层 tableRepo.findById 责任)
+
+**4 处 fail-loud forward-fix 全 Ian 明批 land, 0 critical fabrication 逃逸**:
+1. Stage 0 G-T17.6 path literal (npm flat vs pnpm hoist) → α functional verify (tsc 103 + smoke test)
+2. Stage 1 D56 grep `grep -c "itemKey"` 不自洽 → α regex doc-comment-excluding `(itemKey:|itemKey =|\.itemKey\b)`
+3. Stage 2 TS2322 Prisma Create vs UncheckedCreate XOR semantics → α Order Checked connect + OrderItem RLS-denormalized raw
+4. Step 2-fix.0 schema field discovery (Order.tableName required + OrderItem.menuItemId raw NO @relation) → α-extended +tableName/tableNameEn input + data + menuItemId raw kept
 
 ---
 
@@ -201,6 +212,23 @@ sed -n '321,332p' docs/superpowers/plans/2026-04-17-phase5-postgres-migration/ph
 | D23 | DraftOrderWithItems / SubmittedOrderWithItems 判别 | heredoc line 386-389 type alias | 预通过 |
 | D24 | findSubmitted + findBySessionId 默认 not draft | heredoc line 433 + line 446 where status not draft | 预通过 |
 | D30 | replaceDraftItems + submitDraft updateMany count=0 throw | heredoc line 555-563 + line 628-636 | 预通过 |
+
+**Final verdict** (post Task 17 impl `ff5e881b` land, CC closure 实证, 2026-04-26): **全 9 D 决议条款 + D68 NEW = 10 条 Pass** —
+
+| D | spec 检验点 | impl 实证 (CC closure ff5e881b) | Final verdict |
+|---|---|---|---|
+| D55 (tx) | replaceDraftItems + submitDraft 签名 `tx: Prisma.TransactionClient` (非 Db, 编译期强制 multi-step tx) | CC closure 实证 2 处 (orders.ts post-α-extended) ✅ | Pass |
+| D55 (reads) | findById + findBySessionId + findSubmitted + findActive + findDraft (5 reads) `db: Db = prisma` 默认 | CC closure heredoc anchor verify ✅ | Pass |
+| D55 (writes single-step) | createDraftOrder + updateStatus + voidOrder (3 single-step writes) `db: Db` 必填非 default | CC closure heredoc anchor verify ✅ (createDraftOrder D68 input shape 扩 tableName + tableNameEn) | Pass |
+| D56 | OrderItem 字段 + heredoc 全文 无 itemKey field/property/var | α forward-fix `grep -cE "(itemKey:\|itemKey =\|\.itemKey\b)"` = 0 ✅ (3 doc comment 中 D56 自身 positive reference 保留, D56 doc 价值未损) | Pass |
+| D56 | createDraftOrder + replaceDraftItems items[idx] → position | CC closure D57 `position: idx` 2 处实证 ✅ | Pass |
+| D57 | includeItemsAndOptions orderBy position asc | CC closure D57 orderBy verify ✅ | Pass |
+| D23 | DraftOrderWithItems / SubmittedOrderWithItems 判别 | CC closure D23 type aliases verify ✅ | Pass |
+| D24 | findSubmitted + findBySessionId 默认 not draft | CC closure D24 `status: { not: 'draft' }` 2 处实证 ✅ | Pass |
+| D30 | replaceDraftItems + submitDraft updateMany count=0 throw | CC closure D30 OPTIMISTIC_LOCK_CONFLICT + `version: expectedVersion` anchor verify ✅ | Pass |
+| **D68 (NEW α-extended)** | Order.tableName + tableNameEn snapshot 写入 createDraftOrder input + data block (D68 Order snapshot 哲学, frozen at order time, caller Phase G route 层 tableRepo.findById 责任) | α-extended Stage 2-fix.1 Edit 实证 tableName anchor ≥ 2 处 (input shape + data block) ✅ | Pass |
+
+**Pre-verdict / Final verdict 表关系**: Pre-verdict 表 (9 row pre-impl) carry plan §Task 17 heredoc line 号 anchor literal — pre-impl forward-looking; Final verdict 表 (10 row post-impl) carry CC closure 实证 — D68 NEW α-extended (Stage 2-fix.0 schema field discovery 触发) 落地. **Pre vs Final 双表 audit trail** — Plan Opus 写作期 vs CC 实证期 状态对比, 防 closure 期改写 Pre-verdict 丢失 forward-looking 历史.
 
 ---
 
@@ -222,6 +250,10 @@ per Snapshot §6 D88 + Helper review 建议 2 method count 自检:
 | **Snapshot v5.0 self-fab DP1+2+3** (22 model + 4 wrapper) | §1.3 carry-forward | ✅ Snapshot §7.18 已 land literal, Plan Opus cite 不再次 derive |
 
 无凭印象映射 anchor literal 残留. CC Stage 0 G-T17.1-9 实证作 defense-in-depth 第 3 层兜底.
+
+**Closure 期 ack** (post Task 17 impl `ff5e881b` land): 10 anchor 全 grep 实证 carry through closure ✅. **D88 维度 3 spec writer self-audit 维持**, defense-in-depth 第 3 层 (CC Stage 0 G-T17.1-9 + Stage 1 anchor verify + Stage 2-fix.0 schema grep) 兜 spec 层失守 — 4 处 fail-loud 全 α/α-extended forward-fix land at `ff5e881b`. 7 处 Plan Opus spec writer 凭印象产出 累积数据点 (5 D88 维度 3 #29 候选 + 2 D79 #30 候选) 入下次 governance commit β 路径 decide.
+
+**Flag A noting closure** (work-log §10 第 3 条 forward-looking 性质): closure 期 §5 双表 (Pre-verdict 9 row + Final verdict 10 row) audit trail land — Pre-verdict carry plan heredoc line 号 (writer 期 forward-looking), Final verdict carry CC closure 实证 (post-impl Pass). §6 anchor 全 ✅ 不变 (writer 期已 grep 实证, 不属 forward-looking 范畴, Helper Round 2 Flag A 拦截 §6 误归 forward-looking, work-log §10 第 3 条措辞冗余 Cat 5 子项候选).
 
 ---
 

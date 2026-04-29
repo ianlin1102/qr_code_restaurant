@@ -13,11 +13,12 @@
 
 ## 1. 当前时点
 
-- **最后更新**: 2026-04-21 (Phase C 封顶 v5.0 regen — Phase B 10/10 + Phase C 5/5 双里程碑 + Batch 3 closure 治理增量)
-- **最后 commit on main**: `035cdee2` feat(phase-5): Phase C Batch 3 Task 15 — module-registry.test.ts ghost permission guard (2/2 tests pass)
+- **最后更新**: 2026-04-26 (Phase D Task 17 closure — orders.ts B2 核心 land at `ff5e881b`, D55+D56+D57+D68 首落 + α/α-extended forward-fix 3 fail-loud resolved)
+- **最后 commit on main**: `ff5e881b` feat(phase-5): Phase D Task 17 — orders repository B2 core (10 methods, 5 reads + 5 writes)
 - **Phase B 状态**: **10/10 完成 ✅**
 - **Phase C 状态**: **5/5 完成 ✅** (Batch 1: Task 11/12/13 / Batch 2: Task 14 / Batch 3: Task 15)
-- **下一对话目标**: **Phase D Repository 启动 (Task 16, 11 个语义化 repo 第一个)** —— plan Phase D 完整 (`phase-d-repositories.md`), Stage 0 carry-forward Phase C testDb infra + #11 path drift verify (`server/src/repositories/prisma-client.ts` import path Phase C Batch 1 §7.11 已 grep 实证, Phase D 直接消费)
+- **Phase D 状态**: **2/11 完成** (D-1 Task 16 store.ts `019ab826` ✅ + D-2 Task 17 orders.ts `ff5e881b` ✅), Task 18-26 ⏸️ 待启动
+- **下一对话目标**: **Phase D Task 18 (sessions.ts, L1, D-3a 单跑)** —— Default Push Forward Rule 1 触发, Plan Opus 进 Task 18 work-log L1 起草 (Stage 0 carry-forward Phase B+C+D Task 16/17 完整 + 增 G-T18.X schema-side full field enumeration grep 防 #30 D79 候选 重发)
 
 ---
 
@@ -28,7 +29,7 @@
 | A | ~~备份~~ SKIPPED(Ian calibration 2026-04-19) | N/A | N/A |
 | B | 基础设施(schema + migration + seed + docker + ESLint) | ✅ 完整 | ✅ **10/10 完成** |
 | C | 测试 DB | ✅ 完整 | ✅ **5/5 完成** |
-| D | Repository(11 个语义化 repo) | ✅ 完整 | ⏸️ **待启动** (下对话第一目标) |
+| D | Repository(11 个语义化 repo) | ✅ 完整 | 🟡 **2/11 进行中** (Task 16 store.ts + Task 17 orders.ts ✅, Task 18-26 待启动) |
 | E | 外围域(3 agent) | ✅ 完整 | ⏸️ 未启动 |
 | F | Platform Admin | ✅ 完整 | ⏸️ 未启动 |
 | G | 核心业务链 + SOP | ✅ 5/5 + SOP | ⏸️ 未启动 |
@@ -37,11 +38,32 @@
 | J | 部署 | ⏸️ 批 2 待写 | ⏸️ 未启动 |
 | K | e2e 验收 | ⏸️ 批 2 待写 | ⏸️ 未启动 |
 
-**Phase 5 整体实施约 ~25-28%**(Phase B 10/10 + Phase C 5/5 = 15/15 implementation tasks across 2 phases)。
+**Phase 5 整体实施约 ~30-32%**(Phase B 10/10 + Phase C 5/5 + Phase D 2/11 = 17/26 implementation tasks across 3 phases)。
 
 ---
 
 ## 3. 最近 commit 链(按时间倒序)
+
+### Phase D-2 对话 (2026-04-26, Task 17 orders.ts impl, 3 commits + 4 规则 8 暂停 resolved (G-T17.6 path literal pnpm hoist α + Stage 1 D56 grep doc-comment-excluding α + Stage 2 TS2322 Prisma XOR α + Stage 2-fix.0 schema field discovery α-extended) + 0 critical fabrication 逃逸 + 7 数据点 #29/#30 候选累积)
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| `ff5e881b` | feat | Phase D Task 17 — orders repository B2 core (10 methods, 5 reads + 5 writes) — D55+D56+D57+D68 首落 + D23/D24/D30 应用 / α + α-extended forward-fix (Order Checked relation connect + tableName/tableNameEn snapshot + OrderItem RLS-denormalized raw + menuItemId raw NO @relation) / 5 维度 verdict 全 Pass / Self-flag 段 7 数据点累积 |
+| `3bb5cd1c` | docs | Phase D Task 17 work-log round 2 micro-adjust — Flag A (§10 第 3 条 forward-looking ack) + Flag B (§5 row 2 split reads/writes single-step) D77 forward-fix 模板 (不 amend pushed commit) |
+| `7dc63fd3` | docs | Phase D Task 17 L1 verify work-log — orders.ts B2 核心 (348 lines initial, 5 维度 pre-verdict + 风险 A/B/C/D + Stage 0 G-T17.1-9 完整 grep spec + §6 D88 维度 3 anchor literal grep 实证 self-audit 10 anchor 全 ✅) |
+
+### Phase D-1 对话 (2026-04-22 ~ 2026-04-26, Task 16 store.ts impl, 2 commits + 治理 v5.0 + Time Machine env gap §7.15 DP3 Prisma Client generate 修复)
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| `019ab826` | feat | Phase D Task 16 — store.ts (Phase D 第 1 个 repo, withSystemContext 4 wrapper validate) + Snapshot v5.0 self-fab DP1+2+3 修正同 commit body land (22 model + 4 wrapper + SHA cite) + DP4 env-state observation ack + 4 处 Plan Opus 印象产出数据点 (Risk C moduleResolution / Stage 0.5b grep / Stage 0.7 BASELINE_TSC env transient / 后续 G-T17.6 同模式) |
+| `f500067c` | docs | Phase D Batch 1 Task 16 L1 verify work-log (含 Stage 0 G-D16.1-5 grep fact base + 5 维度 + Risk A/B/C/D, Snapshot v5.0 self-fab §7.18 DP1+2+3+4 触发链) |
+
+### 治理 commit (2026-04-26)
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| `851505d9` | docs | governance v5.0 — Phase B/C 双里程碑封顶 (Snapshot v5.0 + Digest v5 + Archive v5 三件 docs commit, D88 候选登记 + #27 双数据点 + Phase D 启动指引 ritual) |
 
 ### Phase C Batch 3 对话 (2026-04-21, 3 commits + 2 规则 8 暂停 resolved (D + α 接受 spec 内部不一致 forward-fix) + 2 规则 8 暂停 resolved (Time Machine env gap: Docker daemon + node_modules) + 0 critical fabrication 逃逸)
 
@@ -140,6 +162,24 @@
 - ✅ RLS coverage + tenant isolation: 6/6 tests verify 每 store_id 表有 RLS enabled + tenant_isolation policy + WITH CHECK 完整 + 跨租户 SELECT 隔离 + WITH CHECK INSERT mismatch 拒绝
 - ✅ Ghost permission guard: code → registry 单向 guard, 11 route files × 100+ requirePermission literals all ∈ ALL_MODULE_PERMISSIONS (14 permissions × 6 modules)
 - ✅ L1 最严 review 节奏验证: Task 14 (`efa3d2e9`) + Task 15 (`aea392ff`) work-log → Ian 明批 → CC 三步走 live precedent
+
+---
+
+## 4''. Phase D 完成总览(进行中 2/11)
+
+| Task | SHA 链 | 核心产出 |
+|---|---|---|
+| 16 | `019ab826` + work-log `f500067c` | store.ts (Phase D 第 1 个 repo, withSystemContext 4 wrapper validate / Snapshot v5.0 self-fab DP1+2+3 修正 land + DP4 env-state ack / 4 处 Plan Opus 印象产出数据点 trigger #29 候选 累积起步) |
+| 17 | `ff5e881b` + work-log `7dc63fd3` + round 2 forward-fix `3bb5cd1c` | orders.ts B2 核心 (10 methods 5 reads + 5 writes / D55+D56+D57+**D68** 首落 + D23/D24/D30 应用 / α + α-extended forward-fix 4 fail-loud resolved: G-T17.6 path literal pnpm hoist functional verify + Stage 1 D56 grep doc-comment-excluding regex + Stage 2 TS2322 Prisma Create vs UncheckedCreate XOR Order Checked relation connect + Stage 2-fix.0 schema field discovery tableName/menuItemId raw / 5 维度 verdict 全 Pass / 7 数据点 #29 (5 D88 维度 3) + #30 (2 D79) 候选累积) |
+
+**Acceptance 证据** (Phase D 进行中):
+
+- ✅ Phase D-1 + D-2 batch land: Task 16 store.ts + Task 17 orders.ts (B2 核心) 入 git, push aligned origin/main (D76)
+- ✅ Phase G Task 34 (session-cart B2 重写) foundation contract land: orders.ts 10 methods (findSubmitted 默认排除 draft / 类型判别联合 / 乐观锁 / state guard) Phase G 直接消费
+- ✅ L1 最严 review 节奏稳定: Task 16 + Task 17 work-log → Ian 明批 → CC 三步走 双数据点继 Phase C Task 14/15 模型
+- ✅ D77 forward-fix 模板 live precedent: round 2 micro-adjust `3bb5cd1c` 不 amend pushed commit `7dc63fd3`
+- ✅ 4 处 fail-loud 全 α/α-extended 决议 forward-fix land + 0 critical fabrication 逃逸 (defense-in-depth 第 3 层 CC fail-loud + Plan Opus α/β/γ 决议 + Ian 明批兜底)
+- 🟡 9 处 Plan Opus 印象产出数据点 累积 (Phase D-1 期 4 + Phase D-2 期 5) → #29 (D88 维度 3 anchor literal grep 实证, 5 数据点) + #30 (D79 Plan-as-code dryrun missing, 2 数据点) + Cat 5 子项 (Cowork workspace path 假设 + Helper Round 2 Flag A 误归 §6 forward-looking 措辞冗余, 2 数据点) → β 双 entry 路径 入下次 governance commit 节奏点 decide
 
 ---
 
@@ -346,6 +386,27 @@
 - **防御候选** (下窗口 D88 正式登记时考虑): (1) Type β-adjacent 主子规则 "信任 prior Plan instance produced artifact literal 不 grep 实证" (覆盖 SHA / count / 任意 enumerable literal 引用) — 与 D88 维度 3 同构. (2) DP4 区分子规则 "env-state 异常导致 cite 似 stale 不入 self-fabrication 范畴, 必须 post-recovery state 验证才判 cite 真 stale" — 防止 false positive Archive 登记.
 - **外化锚**: 851505d9 governance v5.0 commit body (fabrication 源 DP1+2+3) + Phase D Task 16 启动 Stage 0 G-D16.2/4 + Stage 0.4 git log + Stage 4.1/4.2 tsc + Helper 2026-04-26 cross-instance review 第 2 turn flag
 
+### 7.19 Plan Opus spec writer 凭印象产出 数据点累积 (Phase D 期 #29 + #30 候选)
+
+- **位置**: Phase D Task 16-17 commits (`019ab826` + `ff5e881b`) Self-flag 段 + work-log §10 累积清单
+- **#29 候选 (D88 维度 3 anchor literal / verify literal grep 实证, 5 数据点 — Phase C closure + Phase D 累积)**:
+  1. Task 15 setup.ts last commit (Archive #27): `f49139a0` docs-only vs `308f7d54` feat code
+  2. Task 15 wc -l 38±2 (Archive #27): vs 46 heredoc 实际
+  3. Task 16 Risk C moduleResolution: NodeNext/Node16 vs bundler
+  4. Task 17 G-T17.6 path literal: server/node_modules/.prisma/... vs pnpm hoist node_modules/.pnpm/.../
+  5. Task 17 Stage 1 D56 grep: `grep -c "itemKey"` = 0 vs 3 (doc comment) — spec 与 spec 自身产出 heredoc body 不自洽
+- **#30 候选 (D79 候选 Plan-as-code dryrun missing — framework type system feature + schema field discovery, 2 数据点 Phase D 期)**:
+  6. Task 17 Stage 2 TS2322 (createDraftOrder + replaceDraftItems Prisma Create vs UncheckedCreate XOR semantics 推断 fail): Plan Opus 凭旧 idiom 印象, 未 dryrun verify XOR
+  7. Task 17 Step 2-fix.0 schema field discovery: Order.tableName String required (D68 snapshot 哲学) heredoc 漏写 + OrderItem.menuItemId raw NO @relation spec 误提 menuItem connect — Plan Opus 凭 "标准结构" 印象, 未 cat schema.prisma full enumeration
+- **Cat 5 协作心智模型混淆 子项候选 (2 数据点 Phase D 期)**:
+  - Cowork workspace path 假设 (Plan Opus forward-fix template 假设 Cowork workspace = Ian Mac repo, 实际独立 system, 与 Archive #22/#25 同质)
+  - Helper Round 2 Flag A 误归 §6 forward-looking 措辞冗余 (work-log §10 第 3 条 ack §5 + §6 都 forward-looking, 实际 §6 anchor writer 期已 grep 实证 ✅, 不属 forward-looking 范畴; closure 期 work-log §6 closure ack 段已澄清)
+- **D88 维度 3 延伸 sub-rule 候选** (下次 governance commit decide): "spec writer 写 plan heredoc 含跨 model nested create / required field 时, 必先 cat schema.prisma 全 model field enumeration + @relation status 实证, 不凭对 schema 字段印象产出 heredoc body"
+- **plan §Task 17 heredoc patch v9 候选** (下次 governance commit decide): createDraftOrder input 加 tableName + tableNameEn / data block Order layer Checked relation connect + tableName/tableNameEn 写入 + OrderItem keep menuItemId raw 注释 NO @relation / replaceDraftItems order connect + menuItemId raw + storeId raw 注释; Phase D Task 18+ 推广 (Task 18+ work-log Stage 0 增 schema-side full field enumeration grep 防 #30 D79 候选 重发)
+- **谁拦**: CC fail-loud × 4 (G-T17.6 + Stage 1 D56 + Stage 2 TS2322 + Stage 2-fix.0 schema discovery) + Plan Opus α/α-extended 决议 + Ian 明批 (defense-in-depth 第 3 + 第 4 层兜 spec 层失守) + Helper minor flag (D68 source verify confirmed pre-existing, ignore)
+- **处理**: 当前 forward-fix 仅 land 在 orders.ts 文件层 (`ff5e881b`). #29 + #30 + Cat 5 子项 formal entry + D88 维度 3 延伸 sub-rule 升格判 + plan §Task 17 patch v9 land — 全入下次 governance commit 节奏点 Ian 明批 batch decide (Exception Trigger 3 治理结构变更)
+- **外化锚**: `ff5e881b` commit body Self-flag 段 7 数据点累积 + work-log `7dc63fd3` §10 累积清单 + round 2 forward-fix `3bb5cd1c` Flag A/B + Phase D Task 17 closure 期 §5 双表 audit trail (Pre-verdict 9 row writer 期 + Final verdict 10 row 实证期)
+
 ---
 
 ## 8. 环境状态(全 stack,响应 #22 + Phase C 完成 + Time Machine restore 后状态)
@@ -379,7 +440,9 @@
 | Prisma Client types | 已最新 | Task 9a Stage 4c regenerate, post-schema |
 | tsc baseline | 103 errors(pristine HEAD, v3/v4 drift 修正) | Phase B/C Task 每次 verify "touched files 内 0 new errors" |
 | ESLint `no-floating-promises` baseline | 0 errors | Task 10 Stage 6 验证 |
-| HEAD == origin/main | ✅ `035cdee2` | Phase C 封顶 — Task 15 feat (module-registry.test.ts ghost permission guard, 2/2 tests pass). Snapshot §8 HEAD SHA 每对话收尾增量 Edit 同步 (§7.9 pattern Phase 封顶 regen reconcile 已内化机制, 不再单独登记)。 |
+| `server/src/repositories/store.ts` | Phase D Task 16 `019ab826` | Phase D 第 1 个 repo, withSystemContext 4 wrapper validate |
+| `server/src/repositories/orders.ts` | Phase D Task 17 `ff5e881b` | B2 核心 repo (10 methods 5 reads + 5 writes, D55+D56+D57+D68 首落 + D23/D24/D30 应用, α + α-extended forward-fix) — Phase G Task 34 session-cart B2 重写 foundation contract |
+| HEAD == origin/main | ✅ `ff5e881b` | Phase D-2 Task 17 closure — orders.ts B2 核心 land. Snapshot §8 HEAD SHA 每对话收尾增量 Edit 同步 (§7.9 pattern Phase 封顶 regen reconcile 已内化机制, 不再单独登记)。 |
 
 ### Shell / OS 环境状态 (post-Time Machine restore)
 
@@ -392,26 +455,34 @@
 
 ---
 
-## 9. 下一对话第一件事 (Phase D Repository 启动 — Task 16 第一个 task)
+## 9. 下一对话第一件事 (Phase D Task 18 sessions.ts — D-3a 单跑 L1)
 
-### 9.1 Phase D 启动 scope
+### 9.1 Phase D Task 18 启动 scope
 
-**Phase D = 11 个语义化 Repository 重构** (`phase-d-repositories.md` 完整). 起点 = Task 16 (Repository 11 个之第 1 个, 具体 model 需 Stage 0 grep `phase-d-repositories.md` Task 16 段确认). Phase D 整体批次切分 (Batch 数 / 每 Batch task 数 / L1/L2/L3 review 级别) 由 Plan Opus 启动期 Stage 0 grep `phase-d-repositories.md` 后判.
+**Phase D = 11 个语义化 Repository 重构** (`phase-d-repositories.md` 完整). 进行中 2/11: Task 16 store.ts `019ab826` ✅ + Task 17 orders.ts `ff5e881b` ✅. **下一目标 = Task 18 sessions.ts** (Project Instructions Default Review 表 — **L1**: 业务 source of truth + 多步 tx, **D-3a 单跑 batch**, plan §753+ 段).
 
-**预期 batch 切分启发**(基于 Phase B/C 经验):
+**Task 18 预期 scope** (Plan Opus 启动期 Stage 0 grep `phase-d-repositories.md` Task 18 段实证后细化):
+- sessions.ts = Phase D 第 3 个 repo, B2 业务 source of truth (session lifecycle / table occupancy / multi-step tx)
+- L1 review 完整 (5 维度 + 风险 A/B/C/D + Stage 0 G-T18.1-N+ + Snapshot 增量 + Helper cross-instance review)
+- 双 commit (work-log Step 1 + impl Step 3 atomic)
+- Ian 明批节奏: work-log → Ian 明批 → Helper review (async) → Ian 明批 → CC 执行 spec → CC closure → Plan Opus closure 增量 Edit
 
-- L1 最严级别 task (跨 tenant 关键 helper / RLS 边界 helper / Repository core CRUD pattern 初始化等) 单独 batch, work-log → Ian 明批 → CC 三步走
-- L2 spot check task (后续 Repository 复用 L1 已验证 pattern) 可批量 batch
-- 具体由 plan §1-§N 段标 review 级别字段定 (Phase D plan 写作期已含)
+**Phase D 后续 task 启发** (Project Instructions Default Review 表):
+- D-3b Task 19 payments.ts L1 单跑 (D56 in payment scope 首落 / Stripe / 真钱)
+- D-4 Task 20 split-bills.ts + Task 21 menu.ts + Task 22 staff.ts L2 同 batch
+- D-5a Task 23 roles.ts L1 偏轻 单跑
+- D-5b Task 24 coupons.ts + Task 25 waitlist.ts L3 串行
+- D-5c Task 26 platform-admin.ts L1 单跑 (PlatformAuditLog 归属决议 §7.17 + withPlatformContext vs withSystemContext + BYPASSRLS 边界)
 
 ### 9.2 启动 ritual
 
 1. **读** (按顺序):
-   - 本 Snapshot v5.0 (live 增量, HEAD `035cdee2`)
-   - `phase-5-fabrication-archive.md` (27 条, 最新 #27 Plan Opus spec 内部不一致 forward-fix 双数据点)
-   - `phase-5-governance-digest.md` (含 D85 / D86 / D88 + Pre-Flight §7 全条款)
-   - `docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-d-repositories.md` (Task 16 段起整体 scope)
-   - Phase C 封顶 v5.0 regen commit body (本 commit, 治理 v5.0 + Archive #27 锚)
+   - 本 Snapshot live 增量, HEAD `ff5e881b` (Phase D-2 closure post Task 17, 2026-04-26)
+   - `phase-5-fabrication-archive.md` (27 条 land + #28/#29/#30/Cat 5 子项 候选 待下次 governance commit formal entry, 见 §7.18 + §7.19)
+   - `phase-5-governance-digest.md` (含 D85 / D86 / D88 + Pre-Flight §7 全条款 + D88 维度 3 延伸 sub-rule 候选 待 governance commit decide)
+   - `docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-d-repositories.md` (§Task 18 段 sessions.ts) + `phase-d-repositories-part2.md` (若 Task 18 跨 part 2)
+   - Phase D-2 Task 17 closure commit body `ff5e881b` (Self-flag 段 7 数据点累积 + 4 fail-loud forward-fix + D68 NEW 落地)
+   - Phase D Task 16-17 work-logs (`f500067c` + `7dc63fd3` + round 2 forward-fix `3bb5cd1c`) — Phase D L1 review 节奏 双数据点 carry-forward
 
 2. **Grep verify** (Stage 0 carry-forward ritual):
 
