@@ -4,6 +4,8 @@
     "subtitle": "Please select your language"
   },
   "menu": {
+    "featured": "推荐",
+    "moreDishes": "更多菜品",
     "searchPlaceholder": "搜索菜品...",
     "noResults": "未找到相关菜品",
     "selectSpec": "选规格",

@@ -6,9 +6,8 @@ import { useCartStore } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
 import { itemLineTotal } from '@/lib/pricing'
-import { localized, localizedDesc } from '@/lib/i18n-utils'
+import { localized } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -23,7 +22,7 @@ import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
 import { notify } from '@/lib/notify'
-import { DietaryBadges, RecommendedBadge } from '@/components/menu/MenuItemBadges'
+import DishCard from '@/components/menu/DishCard'
 import type { MenuResponse, MenuItem } from '@qr-order/shared'
 
 /** Strip ALL HTML — render announcement as safe plain text with line breaks */
@@ -185,9 +184,6 @@ export default function MenuPage() {
     setActiveCategory(categoryId)
     sectionRefs.current[categoryId]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
-
-  const getCartQuantity = (menuItemId: string): number =>
-    cartItems.filter(i => i.menuItemId === menuItemId).reduce((sum, i) => sum + i.quantity, 0)
 
   const handleAdd = (item: MenuItem) => { setSelectedMenuItem(item); setDetailSheetOpen(true) }
 
@@ -423,108 +419,55 @@ export default function MenuPage() {
         <div ref={menuScrollRef} className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-3 pb-40">
-            {isSearching && filteredCategories.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">
-                {t('menu.noResults')}
-              </p>
-            )}
-            {filteredCategories.map((cat, catIndex) => (
-              <div
-                key={cat.id}
-                ref={el => { sectionRefs.current[cat.id] = el }}
-              >
-                <h2 className={`text-sm font-semibold text-muted-foreground mb-2 ${catIndex === 0 ? 'mt-0' : 'mt-4'}`}>
-                  {localized(cat, lang)}
-                </h2>
-                <div className="space-y-2">
-                  {!isSearching && cat.items.length === 0 && (
-                    <p className="text-sm text-muted-foreground py-4 text-center">
-                      {t('menu.emptyCategory', 'No dishes in this category')}
-                    </p>
-                  )}
-                  {cat.items.map(item => {
-                    const qty = getCartQuantity(item.id)
-                    const hasOptions = item.options && item.options.length > 0
-                    return (
-                      <div
-                        key={item.id}
-                        className={`group relative flex items-center gap-3 p-2 rounded-lg border bg-card transition-opacity duration-300 min-w-0 overflow-hidden ${
-                          !item.available ? 'opacity-50 pointer-events-none' : ''
-                        }`}
-                      >
-                        {item.isRecommended && item.available && <RecommendedBadge />}
-                        {!item.available && (
-                          <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-lg">
-                            <span className="bg-red-600 text-white text-xs font-bold px-8 py-0.5 -rotate-12">{t('common:soldOut').toUpperCase()}</span>
-                          </div>
-                        )}
-                        {/* Item image placeholder */}
-                        <div className="w-16 h-16 rounded-md bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                          {item.image ? (
-                            <img
-                              src={item.image}
-                              alt={localized(item, lang)}
-                              className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 ${!item.available ? 'grayscale' : ''}`}
-                            />
-                          ) : (
-                            <span className="text-2xl text-muted-foreground">
-                              {localized(cat, lang).charAt(0)}
-                            </span>
-                          )}
-                        </div>
-                        {/* Item info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm line-clamp-2 break-words">{localized(item, lang)}</p>
-                          <DietaryBadges item={item} className="mt-0.5" />
-                          {item.description && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {localizedDesc(item, lang)}
-                            </p>
-                          )}
-                          {hasOptions && (
-                            <p className="text-xs text-orange-600 truncate">
-                              {item.options!.map(o => localized(o, lang)).join(' / ')}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-1.5 mt-1 flex-wrap min-w-0">
-                            {item.originalPrice && item.originalPrice > item.price && (
-                              <span className="text-xs text-muted-foreground line-through">
-                                {formatPriceUSD(item.originalPrice)}
-                              </span>
-                            )}
-                            <span className="text-sm font-semibold text-primary">
-                              {formatPriceUSD(item.price)}
-                            </span>
-                            {item.originalPrice && item.originalPrice > item.price && (
-                              <Badge className="bg-red-100 text-red-600 border-0 text-[10px] px-1 py-0">
-                                {Math.round((1 - item.price / item.originalPrice) * 100)}% OFF
-                              </Badge>
-                            )}
-                            {hasOptions && <span className="text-xs font-normal text-muted-foreground">{t('menu.from')}</span>}
-                          </div>
-                        </div>
-                        {/* Add to cart controls */}
-                        {item.available && (
-                          <div className="shrink-0 w-16 flex flex-col items-center gap-1">
-                            {qty > 0 && (
-                              <Badge variant="secondary" className="text-xs">{qty}</Badge>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-11 w-11 p-0 rounded-full shrink-0"
-                              onClick={() => handleAdd(item)}
-                            >
-                              +
-                            </Button>
-                          </div>
-                        )}
+            {(() => {
+              const allItems = filteredCategories.flatMap(c => c.items)
+              const recommended = allItems.filter(i => i.isRecommended)
+              const regular = allItems.filter(i => !i.isRecommended)
+              const langCode = lang === 'en' ? 'en' : 'zh'
+              if (allItems.length === 0) {
+                return (
+                  <p className="text-center text-muted-foreground py-8">
+                    {isSearching ? t('menu.noResults') : t('menu.emptyCategory', 'No dishes available')}
+                  </p>
+                )
+              }
+              return (
+                <>
+                  {recommended.length > 0 && (
+                    <section className="mb-8">
+                      <h2 className="font-display text-headline-md text-foreground mb-4">{t('menu.featured')}</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {recommended.map(item => (
+                          <DishCard
+                            key={item.id}
+                            item={item}
+                            onAddClick={() => handleAdd(item)}
+                            onCardClick={() => handleAdd(item)}
+                            currentLang={langCode}
+                          />
+                        ))}
                       </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
+                    </section>
+                  )}
+                  {regular.length > 0 && (
+                    <section>
+                      <h2 className="font-display text-headline-md text-foreground mb-4">{t('menu.moreDishes')}</h2>
+                      <div className="flex flex-col gap-4">
+                        {regular.map(item => (
+                          <DishCard
+                            key={item.id}
+                            item={item}
+                            onAddClick={() => handleAdd(item)}
+                            onCardClick={() => handleAdd(item)}
+                            currentLang={langCode}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </>
+              )
+            })()}
           </div>
         </ScrollArea>
         </div>

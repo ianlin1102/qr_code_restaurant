@@ -4,6 +4,8 @@
     "subtitle": "Please select your language"
   },
   "menu": {
+    "featured": "Featured",
+    "moreDishes": "More Dishes",
     "searchPlaceholder": "Search dishes...",
     "noResults": "No dishes found",
     "selectSpec": "Options",
