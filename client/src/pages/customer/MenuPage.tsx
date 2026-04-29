@@ -7,17 +7,15 @@ import { useSessionStore } from '@/stores/session-store'
 import { formatPriceUSD } from '@/lib/format'
 import { itemLineTotal } from '@/lib/pricing'
 import { localized, localizedDesc } from '@/lib/i18n-utils'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Input } from '@/components/ui/input'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
-import TableBadge from '@/components/customer/TableBadge'
+import TopAppBar from '@/components/customer/TopAppBar'
 import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
@@ -63,9 +61,7 @@ export default function MenuPage() {
 
   const [showAnnouncement, setShowAnnouncement] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [waiterCalled, setWaiterCalled] = useState(false)
   const [calling, setCalling] = useState(false)
-  const [billRequested, setBillRequested] = useState(false)
   const [requestingBill, setRequestingBill] = useState(false)
   const [detailSheetOpen, setDetailSheetOpen] = useState(false)
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null)
@@ -77,8 +73,7 @@ export default function MenuPage() {
   const stopPayment = usePaymentStore(s => s.stop)
   const sessionRemaining = sessionSummary?.remaining ?? 0
   const sessionOrders = sessionSummary?.orders?.filter(o => o.status !== 'closed') ?? []
-  const [headerCollapsed, setHeaderCollapsed] = useState(false)
-  const lastScrollY = useRef(0)
+  const [searchExpanded, setSearchExpanded] = useState(false)
   const menuScrollRef = useRef<HTMLDivElement | null>(null)
 
   // Initialize session payment store (handles polling + session creation)
@@ -150,19 +145,12 @@ export default function MenuPage() {
     }
   }, [sessionSummary?.status])
 
-  // Stable scroll handler — header collapse + active category tracking (RAF throttled)
+  // Stable scroll handler — active category tracking (RAF throttled)
   const rafRef = useRef(0)
   const activeCatRef = useRef('')
   const handleScroll = useCallback(() => {
     const viewport = menuScrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null
     if (!viewport) return
-
-    // Header collapse/expand (cheap, no layout queries)
-    const THRESHOLD = 10
-    const y = viewport.scrollTop
-    if (y - lastScrollY.current > THRESHOLD) setHeaderCollapsed(true)
-    else if (lastScrollY.current - y > THRESHOLD) setHeaderCollapsed(false)
-    lastScrollY.current = y
 
     // Throttle category tracking to once per frame
     cancelAnimationFrame(rafRef.current)
@@ -206,8 +194,6 @@ export default function MenuPage() {
     try {
       await api.callWaiter(storeId, tableId)
       notify.success(t('menu.waiterCalledToast'))
-      setWaiterCalled(true)
-      setTimeout(() => setWaiterCalled(false), 10000)
     } catch (err) {
       notify.fromError(err)
     } finally {
@@ -221,14 +207,10 @@ export default function MenuPage() {
     try {
       await api.requestBill(storeId, tableId)
       notify.success(t('menu.billRequestedToast'))
-      setBillRequested(true)
-      setTimeout(() => setBillRequested(false), 10000)
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
       if (msg.includes("Cannot request bill from status 'bill-requested'")) {
         notify.info(t('menu.alreadyRequested'))
-        setBillRequested(true)
-        setTimeout(() => setBillRequested(false), 10000)
       } else {
         notify.fromError(err)
       }
@@ -277,105 +259,29 @@ export default function MenuPage() {
   const priceTotal = totalPrice()
 
   return (
-    <div className="flex flex-col h-screen max-w-lg mx-auto">
-      {/* Header — collapsible top + sticky search */}
-      <div className="bg-background shadow-sm">
-        {/* Collapsible: store name, buttons, description */}
-        <div
-          className={cn(
-            'px-4 overflow-hidden transition-all duration-200 ease-in-out',
-            headerCollapsed ? 'max-h-0 pt-0 pb-0 opacity-0' : 'max-h-40 pt-4 pb-1 opacity-100'
-          )}
-        >
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold font-display">{menu.store.name}</h1>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs font-semibold border-primary text-primary px-3"
-                onClick={() => {
-                  const next = lang === 'zh' ? 'en' : 'zh'
-                  i18n.changeLanguage(next)
-                  localStorage.setItem('i18n-lang', next)
-                }}
-              >
-                {t('common:langSwitch')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  'text-xs px-3',
-                  waiterCalled ? 'border-green-500 text-green-600' : 'border-orange-400 text-orange-600'
-                )}
-                disabled={calling}
-                onClick={handleCallWaiter}
-              >
-                {waiterCalled ? t('menu.waiterCalled') : t('menu.callWaiter')}
-              </Button>
-              {sessionSummary && sessionRemaining > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={requestingBill}
-                  className={cn(
-                    'text-xs px-3',
-                    billRequested ? 'border-green-500 text-green-600' : 'border-amber-500 text-amber-700'
-                  )}
-                  onClick={handleRequestBill}
-                >
-                  {billRequested ? t('menu.billRequested') : t('menu.requestBill')}
-                </Button>
-              )}
-              {tableName && <TableBadge tableName={tableName} />}
-              {!customerName ? (
-                <button
-                  onClick={() => {
-                    const name = prompt(t('menu.enterName') || 'Your name (optional):')
-                    if (name?.trim()) setCustomerName(name.trim())
-                  }}
-                  className="text-xs text-muted-foreground underline"
-                >
-                  {t('menu.setName') || '+ Name'}
-                </button>
-              ) : (
-                <span
-                  className="inline-flex items-center gap-1 bg-muted text-xs px-2 py-1 rounded-full cursor-pointer"
-                  onClick={() => {
-                    const name = prompt(t('menu.enterName') || 'Your name:', customerName)
-                    if (name !== null) setCustomerName(name.trim())
-                  }}
-                >
-                  👤 {customerName}
-                </span>
-              )}
-            </div>
-          </div>
-          {menu.store.description && (
-            <p className="text-xs text-muted-foreground mt-1">{menu.store.description}</p>
-          )}
-        </div>
-        {/* Search bar — always visible */}
-        <div className="relative px-4 py-2">
-          <Input
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder={t('menu.searchPlaceholder')}
-            className="h-10 text-base"
-          />
-          {headerCollapsed && (
-            <button
-              type="button"
-              onClick={() => { setHeaderCollapsed(false); lastScrollY.current = 0 }}
-              className="absolute right-6 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
-              aria-label="Expand header"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="flex flex-col h-screen max-w-lg mx-auto pt-16">
+      <TopAppBar
+        mode="menu"
+        storeName={menu.store.name}
+        tableName={tableName}
+        customerName={customerName}
+        searchExpanded={searchExpanded}
+        searchValue={searchQuery}
+        onSearchToggle={() => setSearchExpanded(v => !v)}
+        onSearchChange={setSearchQuery}
+        onCallService={handleCallWaiter}
+        onRequestBill={handleRequestBill}
+        onLanguageToggle={() => {
+          const next = lang === 'zh' ? 'en' : 'zh'
+          i18n.changeLanguage(next)
+          localStorage.setItem('i18n-lang', next)
+        }}
+        onCustomerNameClick={() => {
+          const name = prompt(t('menu.enterName') || 'Your name:', customerName ?? '')
+          if (name !== null) setCustomerName(name.trim())
+        }}
+        currentLang={lang === 'en' ? 'en' : 'zh'}
+      />
 
       {/* Pay Now banner — shows when session has remaining balance */}
       {sessionRemaining > 0 && activeSessionId && (

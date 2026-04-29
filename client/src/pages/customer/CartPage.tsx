@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Info, Loader2, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
+import { Info, Loader2, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -11,7 +11,7 @@ import { formatPriceUSD } from '@/lib/format'
 import { getDeviceId } from '@/lib/device-id'
 import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
-import TableBadge from '@/components/customer/TableBadge'
+import TopAppBar from '@/components/customer/TopAppBar'
 import { optionLabel } from '@/lib/i18n-utils'
 import type { CartItem } from '@qr-order/shared'
 
@@ -226,28 +226,14 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-card/90 backdrop-blur-xl px-4 py-3 flex items-center gap-3 shadow-sm">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(`/menu/${storeId}`)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">
-            {lang === 'zh' ? '购物车' : 'Shopping Cart'}
-            <span className="text-muted-foreground font-normal text-sm ml-1.5">
-              / {lang === 'zh' ? 'Shopping Cart' : '购物车'}
-            </span>
-          </h1>
-          <div className="flex items-center gap-2">
-            {tableName && <TableBadge tableName={tableName} />}
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background pb-32 pt-14">
+      <TopAppBar
+        mode="cart"
+        storeName=""
+        tableName={tableName}
+        currentLang={lang === 'en' ? 'en' : 'zh'}
+        onBack={() => navigate(`/menu/${storeId}`)}
+      />
 
       <div className="max-w-lg mx-auto p-4">
         <div className="space-y-1">
