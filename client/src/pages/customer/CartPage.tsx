@@ -12,6 +12,7 @@ import { getDeviceId } from '@/lib/device-id'
 import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
 import TopAppBar from '@/components/customer/TopAppBar'
+import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
 import { optionLabel } from '@/lib/i18n-utils'
 import type { CartItem } from '@qr-order/shared'
 
@@ -226,7 +227,8 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 pt-14">
+    <CustomerPageFrame>
+    <div className="pb-32 pt-14">
       <TopAppBar
         mode="cart"
         storeName=""
@@ -235,7 +237,7 @@ export default function CartPage() {
         onBack={() => navigate(`/menu/${storeId}`)}
       />
 
-      <div className="max-w-lg mx-auto p-4">
+      <div className="p-4">
         <div className="space-y-1">
           {groups.map(([deviceKey, group]) => (
             <div key={deviceKey}>
@@ -271,8 +273,8 @@ export default function CartPage() {
       </div>
 
       {/* Bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-xl shadow-lg pb-safe">
-        <div className="max-w-lg mx-auto p-4 space-y-3">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-card/90 backdrop-blur-xl shadow-lg pb-safe z-40">
+        <div className="p-4 space-y-3">
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
             <Info className="size-4 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700">{t('common.allergyNotice')}</p>
@@ -306,5 +308,6 @@ export default function CartPage() {
         </div>
       </div>
     </div>
+    </CustomerPageFrame>
   )
 }

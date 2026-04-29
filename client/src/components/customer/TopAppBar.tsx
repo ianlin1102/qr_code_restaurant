@@ -72,7 +72,7 @@ function MenuTopBar({
 }: TopAppBarProps) {
   const L = labels[currentLang]
   return (
-    <header className="glass border-b border-border fixed top-0 z-50 w-full h-16 flex items-center px-4 gap-2">
+    <header className="glass border-b border-border fixed top-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg h-16 flex items-center px-4 gap-2">
       {/* Brand: icon always; text hidden on small screens or when search is expanded */}
       <div
         className={cn(
@@ -174,7 +174,7 @@ function MenuTopBar({
 function CartTopBar({ tableName, currentLang = 'zh', onBack }: TopAppBarProps) {
   const L = labels[currentLang]
   return (
-    <header className="glass border-b border-border fixed top-0 z-50 w-full h-14 flex items-center px-4 gap-3">
+    <header className="glass border-b border-border fixed top-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg h-14 flex items-center px-4 gap-3">
       <Button
         variant="ghost"
         size="icon"

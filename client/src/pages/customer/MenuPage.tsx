@@ -16,6 +16,7 @@ import {
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
 import TopAppBar from '@/components/customer/TopAppBar'
+import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
 import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
@@ -259,7 +260,8 @@ export default function MenuPage() {
   const priceTotal = totalPrice()
 
   return (
-    <div className="flex flex-col h-screen max-w-lg mx-auto pt-16">
+    <CustomerPageFrame>
+    <div className="flex flex-col h-screen pt-16">
       <TopAppBar
         mode="menu"
         storeName={menu.store.name}
@@ -286,7 +288,7 @@ export default function MenuPage() {
       {/* Pay Now banner — shows when session has remaining balance */}
       {sessionRemaining > 0 && activeSessionId && (
         <div className="bg-orange-50 border-b border-orange-200 px-4 py-3">
-          <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-orange-800">
                 {lang === 'zh' ? '待付款' : 'Payment Due'}
@@ -528,8 +530,8 @@ export default function MenuPage() {
 
       {/* Floating bottom bar — only when cart has items */}
       {itemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-3 pb-safe glass shadow-lg">
-          <div className="max-w-lg mx-auto flex items-center gap-3">
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg p-3 pb-safe glass shadow-lg z-40">
+          <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-lg font-bold text-primary">
@@ -594,5 +596,6 @@ export default function MenuPage() {
         </div>
       )}
     </div>
+    </CustomerPageFrame>
   )
 }
