@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
+import TableBadge from '@/components/customer/TableBadge'
 import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
@@ -327,12 +328,7 @@ export default function MenuPage() {
                   {billRequested ? t('menu.billRequested') : t('menu.requestBill')}
                 </Button>
               )}
-              {tableName && (
-                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                  {tableName}
-                </span>
-              )}
+              {tableName && <TableBadge tableName={tableName} />}
               {!customerName ? (
                 <button
                   onClick={() => {

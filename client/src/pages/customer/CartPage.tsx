@@ -11,6 +11,7 @@ import { formatPriceUSD } from '@/lib/format'
 import { getDeviceId } from '@/lib/device-id'
 import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
+import TableBadge from '@/components/customer/TableBadge'
 import { optionLabel } from '@/lib/i18n-utils'
 import type { CartItem } from '@qr-order/shared'
 
@@ -243,10 +244,7 @@ export default function CartPage() {
             </span>
           </h1>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              {tableName}
-            </span>
+            {tableName && <TableBadge tableName={tableName} />}
           </div>
         </div>
       </div>
