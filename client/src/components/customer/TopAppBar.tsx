@@ -6,7 +6,7 @@ import TableBadge from './TableBadge'
 
 export interface TopAppBarProps {
   mode: 'menu' | 'cart'
-  storeName: string
+  storeName?: string
   storeNameEn?: string
   tableName?: string | null
   customerName?: string | null
@@ -68,7 +68,7 @@ function MenuTopBar({
   onRequestBill,
   onLanguageToggle,
   onCustomerNameClick,
-  currentLang = 'zh',
+  currentLang = 'en',
 }: TopAppBarProps) {
   const L = labels[currentLang]
   return (
@@ -171,7 +171,7 @@ function MenuTopBar({
   )
 }
 
-function CartTopBar({ tableName, currentLang = 'zh', onBack }: TopAppBarProps) {
+function CartTopBar({ tableName, currentLang = 'en', onBack }: TopAppBarProps) {
   const L = labels[currentLang]
   return (
     <header className="glass border-b border-border fixed top-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg h-14 flex items-center px-4 gap-3">

@@ -13,7 +13,7 @@ export default function TableBadge({ tableName, showPulse = true }: TableBadgePr
       {showPulse && (
         <span
           aria-hidden="true"
-          className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"
+          className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"
         />
       )}
       {tableName}

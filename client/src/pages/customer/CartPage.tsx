@@ -146,7 +146,6 @@ export default function CartPage() {
     <CustomerPageFrame>
       <TopAppBar
         mode="cart"
-        storeName=""
         tableName={tableName}
         currentLang={lang === 'en' ? 'en' : 'zh'}
         onBack={() => navigate(`/menu/${storeId}`)}

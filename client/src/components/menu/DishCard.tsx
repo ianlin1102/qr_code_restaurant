@@ -124,7 +124,7 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
             className={cn(
               'w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200',
               showSuccess
-                ? 'bg-green-500 text-white scale-110'
+                ? 'bg-success text-white scale-110'
                 : 'bg-primary text-primary-foreground',
               !showSuccess && isAvailable && 'hover:bg-primary/90 active:scale-95',
               !isAvailable && 'opacity-50 cursor-not-allowed',
@@ -214,7 +214,7 @@ function DishCardCompact({ item, onAddClick, onCardClick, currentLang = 'en' }: 
           className={cn(
             'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200',
             showSuccess
-              ? 'bg-green-500 text-white scale-110'
+              ? 'bg-success text-white scale-110'
               : 'bg-primary text-primary-foreground',
             !showSuccess && isAvailable && 'hover:bg-primary/90 active:scale-95',
             !isAvailable && 'opacity-50 cursor-not-allowed',

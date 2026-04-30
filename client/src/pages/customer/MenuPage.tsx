@@ -2,6 +2,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight } from 'lucide-react'
+
+/** Sticky region above scroll content: TopAppBar h-16 (64) + sticky tabs (~56). */
+/* Keep in sync with className `scroll-mt-[120px]` on each <section> below. */
+const STICKY_HEADER_OFFSET = 120
 import { api } from '@/services/api'
 import { useCartStore } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
@@ -234,7 +238,6 @@ export default function MenuPage() {
     ) as HTMLElement | null
     if (!viewport) return
 
-    const STICKY_OFFSET = 120 // TopAppBar 64 + tabs ~56
     let rafId: number | null = null
 
     const TOLERANCE = 2 // sub-pixel buffer: scroll-mt:120 lands target at 120.x, not exactly 120
@@ -259,7 +262,7 @@ export default function MenuPage() {
           const el = sectionRefs.current[cat.id]
           if (!el) continue
           const top = el.getBoundingClientRect().top
-          if (top <= STICKY_OFFSET + TOLERANCE) {
+          if (top <= STICKY_HEADER_OFFSET + TOLERANCE) {
             foundId = cat.id
           } else {
             break // categories are in document order; further ones are below
@@ -317,6 +320,9 @@ export default function MenuPage() {
       if (rafId !== null) cancelAnimationFrame(rafId)
     }
   }, [filteredCategories, isSearching, activeCategory])
+
+  // Route /menu/:storeId guarantees this, but narrow the type for downstream usage.
+  if (!storeId) return null
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen">
@@ -599,7 +605,7 @@ export default function MenuPage() {
       )}
 
       <BottomNav
-        storeId={storeId!}
+        storeId={storeId}
         cartItemCount={itemCount}
         currentLang={lang === 'en' ? 'en' : 'zh'}
       />
@@ -617,7 +623,7 @@ export default function MenuPage() {
         <SettlementSheet
           open={settlementOpen}
           onClose={() => setSettlementOpen(false)}
-          storeId={storeId!}
+          storeId={storeId}
           session={sessionSummary}
         />
       )}

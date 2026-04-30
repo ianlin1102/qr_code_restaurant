@@ -121,7 +121,7 @@ export default function LangSelectPage() {
         {/* Table verification badge */}
         <div className="flex flex-col items-center gap-1 text-xs text-muted-foreground mt-4">
           <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
             TABLE {tableId?.slice(-2)?.toUpperCase() || '??'} ACTIVE
           </span>
         </div>

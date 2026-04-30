@@ -147,13 +147,13 @@ export default function OrderConfirmPage() {
           {tableName && (
             <div className="flex justify-center">
               <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-success" />
                 {tableName}
               </span>
             </div>
           )}
           <div className="flex flex-col items-center text-center space-y-3">
-            <CheckCircle2 className="h-16 w-16 text-green-500" />
+            <CheckCircle2 className="h-16 w-16 text-success" />
             <h1 className="text-2xl font-bold">
               {lang === 'zh' ? '支付成功！' : 'Payment Successful!'}
             </h1>
@@ -249,13 +249,13 @@ export default function OrderConfirmPage() {
           {tableName && (
             <div className="flex justify-center">
               <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-success" />
                 {tableName}
               </span>
             </div>
           )}
           <div className="flex flex-col items-center text-center space-y-3">
-            <CheckCircle2 className="h-16 w-16 text-green-500" />
+            <CheckCircle2 className="h-16 w-16 text-success" />
             <h1 className="text-2xl font-bold">
               {alreadySubmitted
                 ? (lang === 'zh' ? '订单已提交！' : 'Order Already Submitted!')
