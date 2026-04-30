@@ -420,11 +420,15 @@ export default function MenuPage() {
         <ScrollArea className="h-full">
           <div className="p-3 pb-40">
             {(() => {
-              const allItems = filteredCategories.flatMap(c => c.items)
-              const recommended = allItems.filter(i => i.isRecommended)
-              const regular = allItems.filter(i => !i.isRecommended)
+              // Search mode: pool all matching items globally (no category limit)
+              // Non-search: filter to active category only
+              const visibleItems = isSearching
+                ? filteredCategories.flatMap(c => c.items)
+                : (filteredCategories.find(c => c.id === activeCategory)?.items ?? [])
+              const recommended = visibleItems.filter(i => i.isRecommended)
+              const regular = visibleItems.filter(i => !i.isRecommended)
               const langCode = lang === 'en' ? 'en' : 'zh'
-              if (allItems.length === 0) {
+              if (visibleItems.length === 0) {
                 return (
                   <p className="text-center text-muted-foreground py-8">
                     {isSearching ? t('menu.noResults') : t('menu.emptyCategory', 'No dishes available')}
