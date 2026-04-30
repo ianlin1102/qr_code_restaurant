@@ -327,18 +327,18 @@ export default function MenuPage() {
       {/* Pay Now banner — shows when session has remaining balance */}
       {sessionRemaining > 0 && activeSessionId && (
         <div className="bg-orange-50 border-b border-orange-200 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-orange-800">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-display font-medium text-sm text-orange-800">
                 {lang === 'zh' ? '待付款' : 'Payment Due'}
               </p>
-              <p className="text-xs text-orange-600">
+              <p className="font-display font-bold text-base text-orange-600">
                 {formatPriceUSD(sessionRemaining)}
               </p>
             </div>
             <Button
               size="sm"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-orange-500 hover:bg-orange-600 text-white font-display rounded-xl"
               onClick={() => setSettlementOpen(true)}
             >
               {lang === 'zh' ? '结账' : 'Settle'}
@@ -358,11 +358,11 @@ export default function MenuPage() {
         const payments = [...(ss?.payments ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         return (
           <details className="border-b">
-            <summary className="px-4 py-2 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">
-              {lang === 'zh' ? '本次已点' : 'Current Order'}
-              <span className="ml-2 text-xs">{formatPriceUSD(total)}</span>
+            <summary className="px-4 py-3 font-display text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 flex items-center justify-between">
+              <span>{lang === 'zh' ? '本次已点' : 'Current Order'}</span>
+              <span className="font-display font-bold text-foreground">{formatPriceUSD(total)}</span>
             </summary>
-            <div className="px-4 pb-3 space-y-0.5 max-h-72 overflow-y-auto">
+            <div className="px-4 pb-3 space-y-1 max-h-72 overflow-y-auto">
               {/* Items */}
               {sessionOrders.flatMap((o, oi) => o.items.map((item, ii) => {
                 const itemKey = `${o.id}:${ii}`
@@ -370,52 +370,52 @@ export default function MenuPage() {
                 const isVoided = !!(item as { voided?: boolean }).voided
                 const price = isVoided ? 0 : itemLineTotal(item)
                 return (
-                  <div key={`${oi}-${ii}`} className={`flex justify-between text-xs ${isVoided ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>
-                    <span>
+                  <div key={`${oi}-${ii}`} className={`flex justify-between text-xs gap-2 ${isVoided ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>
+                    <span className="font-display">
                       {item.quantity}x {localized(item, lang) || item.name}
                       {item.selectedOptions && item.selectedOptions.length > 0 && (
                         <span className="text-orange-600 ml-1">
                           ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || '')).join(', ')})
                         </span>
                       )}
-                      {isPaid && <span className="ml-1.5 text-[10px] text-green-600 font-medium">{lang === 'zh' ? '已付' : 'Paid'}</span>}
-                      {isVoided && <span className="ml-1.5 text-[10px] text-red-600 font-medium">{lang === 'zh' ? '已作废' : 'Voided'}</span>}
+                      {isPaid && <span className="ml-1.5 font-label text-label-sm text-green-600">{lang === 'zh' ? '已付' : 'Paid'}</span>}
+                      {isVoided && <span className="ml-1.5 font-label text-label-sm text-red-600">{lang === 'zh' ? '已作废' : 'Voided'}</span>}
                     </span>
-                    <span>{formatPriceUSD(price)}</span>
+                    <span className="font-display">{formatPriceUSD(price)}</span>
                   </div>
                 )
               }))}
               {/* Tax + Service Fee + Total */}
-              <div className="border-t mt-1.5 pt-1.5 space-y-0.5">
+              <div className="border-t mt-2 pt-2 space-y-1">
                 {tax > 0 && (
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{lang === 'zh' ? '税' : 'Tax'}</span>
-                    <span>{formatPriceUSD(tax)}</span>
+                    <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '税' : 'Tax'}</span>
+                    <span className="font-display">{formatPriceUSD(tax)}</span>
                   </div>
                 )}
                 {svcFee > 0 && (
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{lang === 'zh' ? '服务费' : 'Service Fee'}</span>
-                    <span>{formatPriceUSD(svcFee)}</span>
+                    <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '服务费' : 'Service Fee'}</span>
+                    <span className="font-display">{formatPriceUSD(svcFee)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-xs font-semibold">
-                  <span>{lang === 'zh' ? '合计' : 'Total'}</span>
-                  <span>{formatPriceUSD(total)}</span>
+                <div className="flex justify-between text-xs">
+                  <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '合计' : 'Total'}</span>
+                  <span className="font-display font-bold">{formatPriceUSD(total)}</span>
                 </div>
               </div>
               {/* Payment history (sorted by time, tip excluded from displayed amount) */}
               {payments.length > 0 && (
-                <div className="border-t mt-1.5 pt-1.5 space-y-0.5">
+                <div className="border-t mt-2 pt-2 space-y-1">
                   {payments.map((p, pi) => {
                     const foodAmount = p.amount - (p.tipAmount ?? 0)
                     return (
                       <div key={pi} className="flex justify-between text-xs text-green-600">
-                        <span>
+                        <span className="font-display">
                           {p.paidBy || (lang === 'zh' ? '顾客' : 'Guest')}
-                          {p.method && <span className="text-[10px] text-muted-foreground ml-1">({p.method})</span>}
+                          {p.method && <span className="font-label text-label-sm text-muted-foreground ml-1">({p.method})</span>}
                         </span>
-                        <span>−{formatPriceUSD(foodAmount)}</span>
+                        <span className="font-display">−{formatPriceUSD(foodAmount)}</span>
                       </div>
                     )
                   })}
@@ -423,9 +423,9 @@ export default function MenuPage() {
               )}
               {/* Remaining */}
               {(ss?.remaining ?? 0) > 0 && payments.length > 0 && (
-                <div className="flex justify-between text-xs font-semibold pt-1 border-t mt-1">
-                  <span>{lang === 'zh' ? '待付' : 'Remaining'}</span>
-                  <span className="text-primary">{formatPriceUSD(ss!.remaining)}</span>
+                <div className="flex justify-between text-xs pt-2 border-t mt-2">
+                  <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '待付' : 'Remaining'}</span>
+                  <span className="font-display font-bold text-primary">{formatPriceUSD(ss!.remaining)}</span>
                 </div>
               )}
             </div>
