@@ -48,7 +48,6 @@ export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const cartItems = useCartStore(s => s.items)
   const removeItem = useCartStore(s => s.removeItem)
@@ -147,44 +146,6 @@ export default function MenuPage() {
     }
   }, [sessionSummary?.status])
 
-  // Stable scroll handler — active category tracking (RAF throttled)
-  const rafRef = useRef(0)
-  const activeCatRef = useRef('')
-  const handleScroll = useCallback(() => {
-    const viewport = menuScrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null
-    if (!viewport) return
-
-    // Throttle category tracking to once per frame
-    cancelAnimationFrame(rafRef.current)
-    rafRef.current = requestAnimationFrame(() => {
-      const viewportTop = viewport.getBoundingClientRect().top + 120
-      let closest: { id: string; dist: number } | null = null
-      for (const [id, el] of Object.entries(sectionRefs.current)) {
-        if (!el) continue
-        const dist = Math.abs(el.getBoundingClientRect().top - viewportTop)
-        if (!closest || dist < closest.dist) closest = { id, dist }
-      }
-      // Only update state if category actually changed
-      if (closest && closest.id !== activeCatRef.current) {
-        activeCatRef.current = closest.id
-        setActiveCategory(closest.id)
-      }
-    })
-  }, [])
-
-  // Attach scroll listener once after menu loads (not on every menu change)
-  useEffect(() => {
-    const viewport = menuScrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null
-    if (!viewport) return
-    viewport.addEventListener('scroll', handleScroll, { passive: true })
-    return () => viewport.removeEventListener('scroll', handleScroll)
-  }, [handleScroll, loading])
-
-  const scrollToCategory = (categoryId: string) => {
-    setActiveCategory(categoryId)
-    sectionRefs.current[categoryId]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   const handleAdd = (item: MenuItem) => { setSelectedMenuItem(item); setDetailSheetOpen(true) }
 
   const handleCallWaiter = async () => {
@@ -282,6 +243,28 @@ export default function MenuPage() {
         }}
         currentLang={lang === 'en' ? 'en' : 'zh'}
       />
+
+      {/* Top horizontal category tabs */}
+      <nav
+        aria-label={lang === 'zh' ? '菜品分类' : 'Categories'}
+        className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm flex overflow-x-auto scrollbar-hide gap-3 px-4 py-3 border-b border-border"
+      >
+        {filteredCategories.map(cat => (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => setActiveCategory(cat.id)}
+            aria-pressed={activeCategory === cat.id}
+            className={`whitespace-nowrap px-6 py-2 rounded-xl font-display text-sm transition-colors flex-shrink-0 ${
+              activeCategory === cat.id
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-card text-muted-foreground border border-border hover:bg-muted/50'
+            }`}
+          >
+            {localized(cat, lang)}
+          </button>
+        ))}
+      </nav>
 
       {/* Pay Now banner — shows when session has remaining balance */}
       {sessionRemaining > 0 && activeSessionId && (
@@ -392,31 +375,8 @@ export default function MenuPage() {
         )
       })()}
 
-      {/* Main content: sidebar + items */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Category sidebar (hidden during search) */}
-        {!isSearching && (
-          <ScrollArea className="w-24 shrink-0 bg-muted">
-            <div className="py-2">
-              {menu.categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => scrollToCategory(cat.id)}
-                  className={`w-full px-2 py-3 text-sm text-left transition-colors ${
-                    activeCategory === cat.id
-                      ? 'bg-background font-semibold text-primary border-r-2 border-primary'
-                      : 'text-muted-foreground hover:bg-background/50'
-                  }`}
-                >
-                  {localized(cat, lang)}
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-
-        {/* Menu items */}
-        <div ref={menuScrollRef} className="flex-1 overflow-hidden">
+      {/* Menu items */}
+      <div ref={menuScrollRef} className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-3 pb-40">
             {(() => {
@@ -474,7 +434,6 @@ export default function MenuPage() {
             })()}
           </div>
         </ScrollArea>
-        </div>
       </div>
 
       {/* Floating CheckoutBar — only when cart has items */}
