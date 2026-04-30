@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ChevronRight } from 'lucide-react'
 import { api } from '@/services/api'
 import { useCartStore } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
@@ -369,9 +370,12 @@ export default function MenuPage() {
         const paidIds = ss?.paidItemIds ?? []
         const payments = [...(ss?.payments ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         return (
-          <details className="border-b">
-            <summary className="px-4 py-3 font-display text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 flex items-center justify-between">
-              <span>{lang === 'zh' ? '本次已点' : 'Current Order'}</span>
+          <details className="group border-b">
+            <summary className="px-4 py-3 font-display text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 flex items-center justify-between [&::-webkit-details-marker]:hidden list-none">
+              <span className="flex items-center gap-2">
+                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                <span>{lang === 'zh' ? '本次已点' : 'Current Order'}</span>
+              </span>
               <span className="font-display font-bold text-foreground">{formatPriceUSD(total)}</span>
             </summary>
             <div className="px-4 pb-3 space-y-1 max-h-72 overflow-y-auto">
