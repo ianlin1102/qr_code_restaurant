@@ -75,8 +75,9 @@ export default function CheckoutBar({
             <ShoppingCart className="h-7 w-7 text-primary-foreground" aria-hidden="true" />
             {itemCount > 0 && (
               <span
+                key={itemCount}
                 aria-hidden="true"
-                className="absolute -top-1 -right-1 bg-card text-primary text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                className="absolute -top-1 -right-1 bg-card text-primary text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-in fade-in zoom-in duration-200"
               >
                 {badgeText}
               </span>
@@ -86,7 +87,10 @@ export default function CheckoutBar({
             <span className="text-primary-foreground/70 font-label text-label-sm uppercase">
               {L.subtotal}
             </span>
-            <span className="text-primary-foreground font-display text-price-tag truncate">
+            <span
+              key={totalAmount}
+              className="text-primary-foreground font-display text-price-tag truncate animate-in fade-in slide-in-from-bottom-1 duration-200"
+            >
               {formatPriceUSD(totalAmount)}
             </span>
           </div>

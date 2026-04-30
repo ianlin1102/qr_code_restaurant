@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ShoppingCart, UtensilsCrossed } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,6 +22,22 @@ export default function BottomNav({ storeId, cartItemCount, currentLang = 'en' }
   const isCartActive = location.pathname === '/cart'
 
   const badgeText = cartItemCount > 99 ? '99+' : String(cartItemCount)
+
+  // Bounce when count increases (decrement / no-change does nothing).
+  const [bouncing, setBouncing] = useState(false)
+  const prevCountRef = useRef(cartItemCount)
+  const bounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (cartItemCount > prevCountRef.current) {
+      setBouncing(true)
+      if (bounceTimeoutRef.current) clearTimeout(bounceTimeoutRef.current)
+      bounceTimeoutRef.current = setTimeout(() => setBouncing(false), 300)
+    }
+    prevCountRef.current = cartItemCount
+    return () => {
+      if (bounceTimeoutRef.current) clearTimeout(bounceTimeoutRef.current)
+    }
+  }, [cartItemCount])
 
   const tabClass = (active: boolean) =>
     cn(
@@ -55,7 +72,10 @@ export default function BottomNav({ storeId, cartItemCount, currentLang = 'en' }
             {cartItemCount > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute -top-1.5 -right-2 bg-primary text-primary-foreground text-[10px] font-bold min-w-4 h-4 px-1 rounded-full flex items-center justify-center"
+                className={cn(
+                  'absolute -top-1.5 -right-2 bg-primary text-primary-foreground text-[10px] font-bold min-w-4 h-4 px-1 rounded-full flex items-center justify-center transition-transform duration-200',
+                  bouncing && 'scale-125',
+                )}
               >
                 {badgeText}
               </span>

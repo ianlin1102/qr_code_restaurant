@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from 'react'
 import type { MouseEvent } from 'react'
-import { Plus } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { formatPriceUSD } from '@/lib/format'
@@ -16,9 +17,26 @@ interface DishCardProps {
 }
 
 const labels = {
-  zh: { add: '添加', soldOut: '售罄' },
-  en: { add: 'Add', soldOut: 'Sold Out' },
+  zh: { add: '添加', added: '已添加', soldOut: '售罄' },
+  en: { add: 'Add', added: 'Added', soldOut: 'Sold Out' },
 } as const
+
+/** 600ms add-success visual feedback hook (Plus → Check, navy → green, scale-up). */
+function useAddSuccess() {
+  const [showSuccess, setShowSuccess] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
+  const trigger = () => {
+    setShowSuccess(true)
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => setShowSuccess(false), 600)
+  }
+  return { showSuccess, trigger }
+}
 
 export default function DishCard(props: DishCardProps) {
   if (props.item.isRecommended) return <DishCardHighlight {...props} />
@@ -31,10 +49,13 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
   const desc = localizedDesc(item, currentLang)
   const quickTag = item.quickTags?.[0]
   const isAvailable = item.available
+  const { showSuccess, trigger } = useAddSuccess()
 
   const handleAdd = (e: MouseEvent) => {
     e.stopPropagation()
-    if (isAvailable) onAddClick()
+    if (!isAvailable) return
+    onAddClick()
+    trigger()
   }
 
   return (
@@ -98,13 +119,18 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
             type="button"
             onClick={handleAdd}
             disabled={!isAvailable}
-            aria-label={`${L.add} ${name}`}
+            aria-label={showSuccess ? `${L.added} ${name}` : `${L.add} ${name}`}
+            aria-live="polite"
             className={cn(
-              'w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center transition-all',
-              isAvailable ? 'hover:bg-primary/90 active:scale-95' : 'opacity-50 cursor-not-allowed',
+              'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200',
+              showSuccess
+                ? 'bg-green-500 text-white scale-110'
+                : 'bg-primary text-primary-foreground',
+              !showSuccess && isAvailable && 'hover:bg-primary/90 active:scale-95',
+              !isAvailable && 'opacity-50 cursor-not-allowed',
             )}
           >
-            <Plus className="h-5 w-5" />
+            {showSuccess ? <Check className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
           </button>
         </div>
       </div>
@@ -119,10 +145,13 @@ function DishCardCompact({ item, onAddClick, onCardClick, currentLang = 'en' }: 
   const isAvailable = item.available
   const hasOptions = item.options && item.options.length > 0
   const hasDiscount = item.originalPrice && item.originalPrice > item.price
+  const { showSuccess, trigger } = useAddSuccess()
 
   const handleAdd = (e: MouseEvent) => {
     e.stopPropagation()
-    if (isAvailable) onAddClick()
+    if (!isAvailable) return
+    onAddClick()
+    trigger()
   }
 
   return (
@@ -180,13 +209,18 @@ function DishCardCompact({ item, onAddClick, onCardClick, currentLang = 'en' }: 
           type="button"
           onClick={handleAdd}
           disabled={!isAvailable}
-          aria-label={`${L.add} ${name}`}
+          aria-label={showSuccess ? `${L.added} ${name}` : `${L.add} ${name}`}
+          aria-live="polite"
           className={cn(
-            'w-8 h-8 bg-primary text-primary-foreground rounded-lg flex items-center justify-center transition-all',
-            isAvailable ? 'hover:bg-primary/90 active:scale-95' : 'opacity-50 cursor-not-allowed',
+            'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200',
+            showSuccess
+              ? 'bg-green-500 text-white scale-110'
+              : 'bg-primary text-primary-foreground',
+            !showSuccess && isAvailable && 'hover:bg-primary/90 active:scale-95',
+            !isAvailable && 'opacity-50 cursor-not-allowed',
           )}
         >
-          <Plus className="h-4 w-4" />
+          {showSuccess ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
         </button>
       </div>
       {!isAvailable && (
