@@ -85,7 +85,7 @@ export default function CartItemCard({
         placeholder={t('cart.remarkPlaceholder')}
         value={item.remark ?? ''}
         onChange={(e) => updateRemark(item.cartKey, e.target.value)}
-        className="text-base"
+        className="h-8 text-sm"
         disabled={!isOwn}
       />
     </div>
