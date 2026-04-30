@@ -79,6 +79,9 @@ export default function MenuPage() {
   const menuScrollRef = useRef<HTMLDivElement | null>(null)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const scrollLockRef = useRef<boolean>(false)
+  const lastScrollYRef = useRef<number>(0)
+  const isHeaderCollapsedRef = useRef<boolean>(false)
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false)
 
   // Initialize session payment store (handles polling + session creation)
   useEffect(() => {
@@ -271,6 +274,33 @@ export default function MenuPage() {
       if (foundId && foundId !== activeCategory) {
         setActiveCategory(foundId)
       }
+
+      // Scroll-direction header collapse — skip during click-driven scrolls.
+      if (!scrollLockRef.current) {
+        const currentY = viewport.scrollTop
+        const lastY = lastScrollYRef.current
+        const delta = currentY - lastY
+        const COLLAPSE_THRESHOLD = 8 // px noise filter
+        const FORCE_SHOW_BELOW = 100 // near-top zone
+
+        if (currentY < FORCE_SHOW_BELOW) {
+          if (isHeaderCollapsedRef.current) {
+            isHeaderCollapsedRef.current = false
+            setIsHeaderCollapsed(false)
+          }
+        } else if (delta > COLLAPSE_THRESHOLD) {
+          if (!isHeaderCollapsedRef.current) {
+            isHeaderCollapsedRef.current = true
+            setIsHeaderCollapsed(true)
+          }
+        } else if (delta < -COLLAPSE_THRESHOLD) {
+          if (isHeaderCollapsedRef.current) {
+            isHeaderCollapsedRef.current = false
+            setIsHeaderCollapsed(false)
+          }
+        }
+        lastScrollYRef.current = currentY
+      }
     }
 
     const onScroll = () => {
@@ -278,6 +308,7 @@ export default function MenuPage() {
       rafId = requestAnimationFrame(updateActiveCategory)
     }
 
+    lastScrollYRef.current = viewport.scrollTop // baseline for delta math
     updateActiveCategory() // initial sync after mount / filteredCategories change
     viewport.addEventListener('scroll', onScroll, { passive: true })
 
@@ -351,6 +382,13 @@ export default function MenuPage() {
         </nav>
       )}
 
+      {/* Collapsible header region: Pay Now + Current Order auto-hide on scroll-down */}
+      <div
+        aria-hidden={isHeaderCollapsed}
+        className={`overflow-hidden transition-all duration-200 ease-in-out ${
+          isHeaderCollapsed ? 'max-h-0 opacity-0' : 'max-h-[600px] opacity-100'
+        }`}
+      >
       {/* Pay Now banner — shows when session has remaining balance */}
       {sessionRemaining > 0 && activeSessionId && (
         <div className="bg-orange-50 border-b border-orange-200 px-4 py-2">
@@ -462,6 +500,7 @@ export default function MenuPage() {
           </details>
         )
       })()}
+      </div>
 
       {/* Menu items */}
       <div ref={menuScrollRef} className="flex-1 overflow-hidden">
