@@ -154,51 +154,56 @@ export default function CartPage() {
 
       <main className={`pt-14 ${isEmpty ? 'pb-20' : 'pb-40'}`}>
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center px-4 py-16 min-h-[60vh]">
-            <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-lg font-semibold mb-2">{t('cart.emptyCart')}</h2>
-            <p className="text-muted-foreground text-center mb-4">{t('cart.emptyPrompt')}</p>
-            <Button onClick={() => navigate(`/menu/${storeId}`)}>{t('cart.backToMenu')}</Button>
+          <div className="flex flex-col items-center justify-center px-4 min-h-[60vh] gap-4">
+            <ShoppingCart className="h-16 w-16 text-muted-foreground" aria-hidden="true" />
+            <h2 className="font-display text-lg font-semibold">{t('cart.emptyCart')}</h2>
+            <p className="font-display text-base text-muted-foreground text-center">
+              {t('cart.emptyPrompt')}
+            </p>
+            <Button
+              onClick={() => navigate(`/menu/${storeId}`)}
+              className="font-display rounded-xl"
+            >
+              {t('cart.backToMenu')}
+            </Button>
           </div>
         ) : (
           <div className="p-4">
-            <div className="space-y-1">
-              {groups.map(([deviceKey, group]) => (
-                <div key={deviceKey}>
-                  {/* Person divider */}
-                  <div className="flex items-center gap-2 py-2">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-xs text-muted-foreground px-2">
-                      {group.name}
-                      {deviceKey === myDeviceId && (
-                        <span className="ml-1">
-                          ({lang === 'zh' ? '我' : 'You'})
-                        </span>
-                      )}
-                    </span>
-                    <div className="flex-1 h-px bg-border" />
+            <div>
+              {groups.map(([deviceKey, group]) => {
+                const isMine = deviceKey === myDeviceId
+                return (
+                  <div key={deviceKey} className="mt-6 first:mt-0">
+                    {/* Person divider */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="font-label text-label-sm uppercase text-muted-foreground">
+                        {isMine ? (lang === 'zh' ? '我的' : 'Mine') : group.name}
+                      </span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                    {/* Items for this person */}
+                    <div className="space-y-3">
+                      {group.items.map((item) => (
+                        <CartItemCard
+                          key={item.cartKey}
+                          item={item}
+                          isOwn={isMine}
+                          updateQuantity={updateQuantity}
+                          updateRemark={updateRemark}
+                          t={t}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  {/* Items for this person */}
-                  <div className="space-y-3">
-                    {group.items.map((item) => (
-                      <CartItemCard
-                        key={item.cartKey}
-                        item={item}
-                        isOwn={deviceKey === myDeviceId}
-                        updateQuantity={updateQuantity}
-                        updateRemark={updateRemark}
-                        t={t}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* Allergy notice */}
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-start gap-2 mt-4">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-start gap-2 mt-6">
               <Info className="size-4 text-primary shrink-0 mt-0.5" />
-              <p className="text-xs text-primary">{t('common.allergyNotice')}</p>
+              <p className="font-display text-xs text-primary">{t('common.allergyNotice')}</p>
             </div>
           </div>
         )}
