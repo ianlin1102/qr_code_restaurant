@@ -85,15 +85,6 @@ export default function CartPage() {
     </div>
   )
 
-  if (items.length === 0) return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-      <h2 className="text-lg font-semibold mb-2">{t('cart.emptyCart')}</h2>
-      <p className="text-muted-foreground text-center mb-4">{t('cart.emptyPrompt')}</p>
-      <Button onClick={() => navigate(`/menu/${storeId}`)}>{t('cart.backToMenu')}</Button>
-    </div>
-  )
-
   async function handleCheckout() {
     if (!storeId || !tableId || !activeSessionId) return
     if (items.length === 0) return
@@ -149,9 +140,10 @@ export default function CartPage() {
     }
   }
 
+  const isEmpty = items.length === 0
+
   return (
     <CustomerPageFrame>
-    <div className="pb-40 pt-14">
       <TopAppBar
         mode="cart"
         storeName=""
@@ -160,66 +152,78 @@ export default function CartPage() {
         onBack={() => navigate(`/menu/${storeId}`)}
       />
 
-      <div className="p-4">
-        <div className="space-y-1">
-          {groups.map(([deviceKey, group]) => (
-            <div key={deviceKey}>
-              {/* Person divider */}
-              <div className="flex items-center gap-2 py-2">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground px-2">
-                  {group.name}
-                  {deviceKey === myDeviceId && (
-                    <span className="ml-1">
-                      ({lang === 'zh' ? '我' : 'You'})
+      <main className={`pt-14 ${isEmpty ? 'pb-20' : 'pb-40'}`}>
+        {isEmpty ? (
+          <div className="flex flex-col items-center justify-center px-4 py-16 min-h-[60vh]">
+            <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+            <h2 className="text-lg font-semibold mb-2">{t('cart.emptyCart')}</h2>
+            <p className="text-muted-foreground text-center mb-4">{t('cart.emptyPrompt')}</p>
+            <Button onClick={() => navigate(`/menu/${storeId}`)}>{t('cart.backToMenu')}</Button>
+          </div>
+        ) : (
+          <div className="p-4">
+            <div className="space-y-1">
+              {groups.map(([deviceKey, group]) => (
+                <div key={deviceKey}>
+                  {/* Person divider */}
+                  <div className="flex items-center gap-2 py-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-xs text-muted-foreground px-2">
+                      {group.name}
+                      {deviceKey === myDeviceId && (
+                        <span className="ml-1">
+                          ({lang === 'zh' ? '我' : 'You'})
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-              {/* Items for this person */}
-              <div className="space-y-3">
-                {group.items.map((item) => (
-                  <CartItemCard
-                    key={item.cartKey}
-                    item={item}
-                    isOwn={deviceKey === myDeviceId}
-                    updateQuantity={updateQuantity}
-                    updateRemark={updateRemark}
-                    t={t}
-                  />
-                ))}
-              </div>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                  {/* Items for this person */}
+                  <div className="space-y-3">
+                    {group.items.map((item) => (
+                      <CartItemCard
+                        key={item.cartKey}
+                        item={item}
+                        isOwn={deviceKey === myDeviceId}
+                        updateQuantity={updateQuantity}
+                        updateRemark={updateRemark}
+                        t={t}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Allergy notice */}
-        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-start gap-2 mt-4">
-          <Info className="size-4 text-primary shrink-0 mt-0.5" />
-          <p className="text-xs text-primary">{t('common.allergyNotice')}</p>
-        </div>
-      </div>
+            {/* Allergy notice */}
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-start gap-2 mt-4">
+              <Info className="size-4 text-primary shrink-0 mt-0.5" />
+              <p className="text-xs text-primary">{t('common.allergyNotice')}</p>
+            </div>
+          </div>
+        )}
+      </main>
 
-      <CheckoutBar
-        variant="submit-order"
-        itemCount={totalItems()}
-        totalAmount={totalPrice()}
+      {!isEmpty && (
+        <CheckoutBar
+          variant="submit-order"
+          itemCount={totalItems()}
+          totalAmount={totalPrice()}
+          currentLang={lang === 'en' ? 'en' : 'zh'}
+          loading={submitting}
+          disabled={!activeSessionId}
+          errorMessage={error}
+          onAction={handleCheckout}
+          actionLabel={paymentMode === 'pay-later' ? t('cart.placeOrder') : t('cart.submitOrder')}
+          loadingLabel={paymentMode === 'pay-later' ? t('cart.ordering') : t('cart.submitting')}
+        />
+      )}
+
+      <BottomNav
+        storeId={storeId}
+        cartItemCount={totalItems()}
         currentLang={lang === 'en' ? 'en' : 'zh'}
-        loading={submitting}
-        disabled={items.length === 0 || !activeSessionId}
-        errorMessage={error}
-        onAction={handleCheckout}
-        actionLabel={paymentMode === 'pay-later' ? t('cart.placeOrder') : t('cart.submitOrder')}
-        loadingLabel={paymentMode === 'pay-later' ? t('cart.ordering') : t('cart.submitting')}
       />
-    </div>
-
-    <BottomNav
-      storeId={storeId}
-      cartItemCount={totalItems()}
-      currentLang={lang === 'en' ? 'en' : 'zh'}
-    />
     </CustomerPageFrame>
   )
 }
