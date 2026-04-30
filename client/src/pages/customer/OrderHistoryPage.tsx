@@ -13,7 +13,7 @@ import type { Order } from '@qr-order/shared'
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-orange-100 text-orange-700',
   paid: 'bg-purple-100 text-purple-700',
-  preparing: 'bg-blue-100 text-blue-700',
+  preparing: 'bg-primary/10 text-primary',
   completed: 'bg-green-100 text-green-700',
   closed: 'bg-gray-100 text-gray-600',
 }

@@ -175,7 +175,7 @@ export default function ScanPage() {
           ) : (
             /* Language selection view */
             <div className="flex flex-col items-center gap-6 p-6">
-              <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary" />
               </div>
               <div className="text-center space-y-1">

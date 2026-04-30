@@ -83,7 +83,7 @@ export default function LangSelectPage() {
 
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
         {/* Globe icon */}
-        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
           <Globe className="w-8 h-8 text-primary" />
         </div>
 
