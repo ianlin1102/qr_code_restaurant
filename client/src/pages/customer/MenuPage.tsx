@@ -227,20 +227,32 @@ export default function MenuPage() {
     const updateActiveCategory = () => {
       rafId = null
       let foundId: string | null = null
-      for (const cat of filteredCategories) {
-        const el = sectionRefs.current[cat.id]
-        if (!el) continue
-        const top = el.getBoundingClientRect().top
-        if (top <= STICKY_OFFSET) {
-          foundId = cat.id
-        } else {
-          break // categories are in document order; further ones are below
+
+      // Page-bottom fallback: when scroll cannot push the target section's top
+      // above the sticky line (last category, or any short section near page end),
+      // force-activate the last category. 4px tolerance for sub-pixel rounding.
+      const isAtBottom =
+        viewport.scrollTop + viewport.clientHeight >= viewport.scrollHeight - 4
+
+      if (isAtBottom && filteredCategories.length > 0) {
+        foundId = filteredCategories[filteredCategories.length - 1].id
+      } else {
+        for (const cat of filteredCategories) {
+          const el = sectionRefs.current[cat.id]
+          if (!el) continue
+          const top = el.getBoundingClientRect().top
+          if (top <= STICKY_OFFSET) {
+            foundId = cat.id
+          } else {
+            break // categories are in document order; further ones are below
+          }
+        }
+        // Page-top fallback: before the first section crosses the line, pin to first.
+        if (!foundId && filteredCategories.length > 0) {
+          foundId = filteredCategories[0].id
         }
       }
-      // Page-top fallback: before the first section crosses the line, pin to first.
-      if (!foundId && filteredCategories.length > 0) {
-        foundId = filteredCategories[0].id
-      }
+
       if (foundId && foundId !== activeCategory) {
         setActiveCategory(foundId)
       }
