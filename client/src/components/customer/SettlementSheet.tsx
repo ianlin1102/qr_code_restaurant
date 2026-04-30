@@ -85,6 +85,11 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   const [calcPending, setCalcPending] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
+    // Skip preview when sheet is closed — component stays mounted (shadcn Sheet
+    // controls visibility internally) and previously fired API calls on every
+    // mount, which 400'd when session was fully paid (gateway rejects pay-percent
+    // / pay-items on SESSION_FULLY_PAID even for preview).
+    if (!open) return
     clearTimeout(debounceRef.current)
     const keys = buildItemKeys(selectedQty)
     if (tab === 'items' && keys.length === 0) {
@@ -111,7 +116,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
       })
     }, 300)
     return () => clearTimeout(debounceRef.current)
-  }, [tab, selectedQty, percent, storeId, session.id])
+  }, [open, tab, selectedQty, percent, storeId, session.id])
 
   const adjustQty = (key: string, delta: number, max: number) => {
     setSelectedQty(prev => {
