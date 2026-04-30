@@ -132,12 +132,12 @@ function DishCardCompact({ item, onAddClick, onCardClick, currentLang = 'en' }: 
       onClick={isAvailable ? onCardClick : undefined}
       aria-label={`${name} ${formatPriceUSD(item.price)}`}
       className={cn(
-        'group relative bg-card rounded-xl border border-border overflow-hidden flex items-center p-3 gap-4 hover:shadow-md transition-shadow cursor-pointer',
+        'group relative bg-card rounded-xl border border-border overflow-hidden flex items-center p-2.5 gap-3 hover:shadow-md transition-shadow cursor-pointer',
         !isAvailable && 'opacity-60 cursor-not-allowed',
       )}
     >
       {item.isRecommended && isAvailable && <RecommendedBadge />}
-      <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+      <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
         {item.image ? (
           <img
             src={item.image}
