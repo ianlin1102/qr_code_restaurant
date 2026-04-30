@@ -331,7 +331,7 @@ export default function MenuPage() {
       {!isSearching && (
         <nav
           aria-label={lang === 'zh' ? '菜品分类' : 'Categories'}
-          className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm flex overflow-x-auto scrollbar-hide gap-3 px-4 py-3 border-b border-border"
+          className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm flex overflow-x-auto scrollbar-hide gap-3 px-4 py-2 border-b border-border"
         >
           {filteredCategories.map(cat => (
             <button
@@ -353,7 +353,7 @@ export default function MenuPage() {
 
       {/* Pay Now banner — shows when session has remaining balance */}
       {sessionRemaining > 0 && activeSessionId && (
-        <div className="bg-orange-50 border-b border-orange-200 px-4 py-3">
+        <div className="bg-orange-50 border-b border-orange-200 px-4 py-2">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="font-display font-medium text-sm text-orange-800">
@@ -385,7 +385,7 @@ export default function MenuPage() {
         const payments = [...(ss?.payments ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         return (
           <details className="group border-b">
-            <summary className="px-4 py-3 font-display text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 flex items-center justify-between [&::-webkit-details-marker]:hidden list-none">
+            <summary className="px-4 py-2 font-display text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 flex items-center justify-between [&::-webkit-details-marker]:hidden list-none">
               <span className="flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
                 <span>{lang === 'zh' ? '本次已点' : 'Current Order'}</span>
