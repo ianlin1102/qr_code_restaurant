@@ -1,13 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Info, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
+import { Info, ShoppingCart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { useCartStore, unitPrice, type CartEntry } from '@/stores/cart-store'
+import { useCartStore, type CartEntry } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
-import { formatPriceUSD } from '@/lib/format'
 import { getDeviceId } from '@/lib/device-id'
 import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
@@ -15,84 +12,8 @@ import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
 import BottomNav from '@/components/customer/BottomNav'
 import CheckoutBar from '@/components/customer/CheckoutBar'
-import { optionLabel } from '@/lib/i18n-utils'
+import CartItemCard from '@/components/customer/CartItemCard'
 import type { CartItem } from '@qr-order/shared'
-
-interface CartItemCardProps {
-  item: CartEntry
-  isOwn: boolean
-  updateQuantity: (cartKey: string, quantity: number) => void
-  updateRemark: (cartKey: string, remark: string) => void
-  t: (key: string, opts?: Record<string, unknown>) => string
-}
-
-function CartItemCard({ item, isOwn, updateQuantity, updateRemark, t }: CartItemCardProps) {
-  const price = unitPrice(item)
-  return (
-    <div className="bg-card rounded-xl p-3 md:p-4 space-y-3 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div className="w-10 h-10 rounded-full bg-muted/50 shrink-0 flex items-center justify-center text-lg">
-          {item.name.charAt(0)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{item.name}</p>
-          {item.selectedOptions && item.selectedOptions.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {item.selectedOptions.map(opt => (
-                <Badge key={opt.optionId} variant="outline" className="text-xs rounded-full bg-blue-50 border-blue-200 text-blue-700">
-                  {optionLabel(opt)}
-                  {opt.priceAdjust > 0 && ` +${formatPriceUSD(opt.priceAdjust)}`}
-                </Badge>
-              ))}
-            </div>
-          )}
-          <p className="text-sm text-muted-foreground mt-1">
-            {formatPriceUSD(price)} {t('cart.perServing')}
-          </p>
-        </div>
-        <p className="font-semibold whitespace-nowrap">
-          {formatPriceUSD(price * item.quantity)}
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-11 w-11"
-            onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
-            disabled={!isOwn}
-          >
-            {item.quantity === 1 ? (
-              <Trash2 className="h-4 w-4 text-destructive" />
-            ) : (
-              <Minus className="h-4 w-4" />
-            )}
-          </Button>
-          <span className="w-8 text-center font-medium">{item.quantity}</span>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-11 w-11"
-            onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-            disabled={!isOwn}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <Input
-        placeholder={t('cart.remarkPlaceholder')}
-        value={item.remark ?? ''}
-        onChange={(e) => updateRemark(item.cartKey, e.target.value)}
-        className="text-base"
-        disabled={!isOwn}
-      />
-    </div>
-  )
-}
 
 export default function CartPage() {
   const navigate = useNavigate()
