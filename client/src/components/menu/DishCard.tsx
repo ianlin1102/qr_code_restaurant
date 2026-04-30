@@ -122,7 +122,7 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
             aria-label={showSuccess ? `${L.added} ${name}` : `${L.add} ${name}`}
             aria-live="polite"
             className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200',
+              'w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200',
               showSuccess
                 ? 'bg-green-500 text-white scale-110'
                 : 'bg-primary text-primary-foreground',
