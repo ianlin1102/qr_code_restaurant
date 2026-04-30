@@ -174,13 +174,11 @@ export default function CartPage() {
                 const isMine = deviceKey === myDeviceId
                 return (
                   <div key={deviceKey} className="mt-6 first:mt-0">
-                    {/* Person divider */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="font-label text-label-sm uppercase text-muted-foreground">
+                    {/* Person divider — chip badge */}
+                    <div className="mb-3 flex items-center">
+                      <span className="font-label text-label-sm uppercase tracking-wider text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
                         {isMine ? (lang === 'zh' ? '我的' : 'Mine') : group.name}
                       </span>
-                      <div className="flex-1 h-px bg-border" />
                     </div>
                     {/* Items for this person */}
                     <div className="space-y-3">
