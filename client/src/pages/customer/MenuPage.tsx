@@ -209,28 +209,56 @@ export default function MenuPage() {
     }).filter(cat => cat.items.length > 0)
   }, [menu?.categories, isSearching, searchLower])
 
-  // Scroll-spy: highlight the tab whose section is currently in the upper-mid viewport.
-  // rootMargin -120px top skips sticky TopAppBar (64px) + tabs (~56px),
-  // -66% bottom shrinks the active region to roughly the upper third.
+  // Scroll-spy: highlight the tab whose section heading sits just above the sticky line.
+  // Replaces a prior IntersectionObserver setup whose active zone (~107px) was
+  // smaller than typical sections (~568px) and missed mid-list categories.
+  // Listens on the ScrollArea viewport (radix data-slot) since the page itself
+  // doesn't scroll — content scrolls inside ScrollArea.
   useEffect(() => {
     if (isSearching) return
-    const observer = new IntersectionObserver(
-      entries => {
-        const visible = entries.filter(e => e.isIntersecting)
-        if (visible.length === 0) return
-        const topMost = visible.reduce((a, b) =>
-          a.boundingClientRect.top < b.boundingClientRect.top ? a : b,
-        )
-        const id = topMost.target.getAttribute('data-category-id')
-        if (id) setActiveCategory(id)
-      },
-      { rootMargin: '-120px 0px -66% 0px', threshold: 0 },
-    )
-    Object.values(sectionRefs.current).forEach(el => {
-      if (el) observer.observe(el)
-    })
-    return () => observer.disconnect()
-  }, [filteredCategories, isSearching])
+    const viewport = menuScrollRef.current?.querySelector(
+      '[data-slot="scroll-area-viewport"]',
+    ) as HTMLElement | null
+    if (!viewport) return
+
+    const STICKY_OFFSET = 120 // TopAppBar 64 + tabs ~56
+    let rafId: number | null = null
+
+    const updateActiveCategory = () => {
+      rafId = null
+      let foundId: string | null = null
+      for (const cat of filteredCategories) {
+        const el = sectionRefs.current[cat.id]
+        if (!el) continue
+        const top = el.getBoundingClientRect().top
+        if (top <= STICKY_OFFSET) {
+          foundId = cat.id
+        } else {
+          break // categories are in document order; further ones are below
+        }
+      }
+      // Page-top fallback: before the first section crosses the line, pin to first.
+      if (!foundId && filteredCategories.length > 0) {
+        foundId = filteredCategories[0].id
+      }
+      if (foundId && foundId !== activeCategory) {
+        setActiveCategory(foundId)
+      }
+    }
+
+    const onScroll = () => {
+      if (rafId !== null) return
+      rafId = requestAnimationFrame(updateActiveCategory)
+    }
+
+    updateActiveCategory() // initial sync after mount / filteredCategories change
+    viewport.addEventListener('scroll', onScroll, { passive: true })
+
+    return () => {
+      viewport.removeEventListener('scroll', onScroll)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
+  }, [filteredCategories, isSearching, activeCategory])
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen">
