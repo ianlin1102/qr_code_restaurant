@@ -397,7 +397,7 @@ export default function MenuPage() {
               <p className="font-display font-medium text-sm text-orange-800">
                 {lang === 'zh' ? '待付款' : 'Payment Due'}
               </p>
-              <p className="font-display font-bold text-base text-orange-600">
+              <p className="font-display font-bold text-sm text-orange-600">
                 {formatPriceUSD(sessionRemaining)}
               </p>
             </div>
