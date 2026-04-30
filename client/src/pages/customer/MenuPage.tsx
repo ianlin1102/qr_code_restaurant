@@ -440,7 +440,7 @@ export default function MenuPage() {
                   {recommended.length > 0 && (
                     <section className="mb-8">
                       <h2 className="font-display text-headline-md text-foreground mb-4">{t('menu.featured')}</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="flex flex-col gap-4">
                         {recommended.map(item => (
                           <DishCard
                             key={item.id}
