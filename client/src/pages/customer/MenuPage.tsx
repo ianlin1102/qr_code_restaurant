@@ -78,6 +78,7 @@ export default function MenuPage() {
   const [searchExpanded, setSearchExpanded] = useState(false)
   const menuScrollRef = useRef<HTMLDivElement | null>(null)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
+  const scrollLockRef = useRef<boolean>(false)
 
   // Initialize session payment store (handles polling + session creation)
   useEffect(() => {
@@ -151,6 +152,14 @@ export default function MenuPage() {
   const handleAdd = (item: MenuItem) => { setSelectedMenuItem(item); setDetailSheetOpen(true) }
 
   const scrollToCategory = (id: string) => {
+    // Eagerly set active for immediate visual feedback (don't wait for scroll-spy).
+    setActiveCategory(id)
+    // Lock scroll-spy for the smooth-scroll duration (default ~300ms) + safety
+    // margin so intermediate positions don't revert active to the prior section.
+    scrollLockRef.current = true
+    setTimeout(() => {
+      scrollLockRef.current = false
+    }, 400)
     sectionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -225,8 +234,13 @@ export default function MenuPage() {
     const STICKY_OFFSET = 120 // TopAppBar 64 + tabs ~56
     let rafId: number | null = null
 
+    const TOLERANCE = 2 // sub-pixel buffer: scroll-mt:120 lands target at 120.x, not exactly 120
+
     const updateActiveCategory = () => {
       rafId = null
+      // Click-driven scrolls own the active state for the smooth-scroll duration;
+      // do not let the spy revert to an intermediate section.
+      if (scrollLockRef.current) return
       let foundId: string | null = null
 
       // Page-bottom fallback: when scroll cannot push the target section's top
@@ -242,7 +256,7 @@ export default function MenuPage() {
           const el = sectionRefs.current[cat.id]
           if (!el) continue
           const top = el.getBoundingClientRect().top
-          if (top <= STICKY_OFFSET) {
+          if (top <= STICKY_OFFSET + TOLERANCE) {
             foundId = cat.id
           } else {
             break // categories are in document order; further ones are below
