@@ -76,6 +76,7 @@ export default function MenuPage() {
   const sessionOrders = sessionSummary?.orders?.filter(o => o.status !== 'closed') ?? []
   const [searchExpanded, setSearchExpanded] = useState(false)
   const menuScrollRef = useRef<HTMLDivElement | null>(null)
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
 
   // Initialize session payment store (handles polling + session creation)
   useEffect(() => {
@@ -148,6 +149,10 @@ export default function MenuPage() {
 
   const handleAdd = (item: MenuItem) => { setSelectedMenuItem(item); setDetailSheetOpen(true) }
 
+  const scrollToCategory = (id: string) => {
+    sectionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const handleCallWaiter = async () => {
     if (!storeId || !tableId || calling) return
     setCalling(true)
@@ -204,6 +209,29 @@ export default function MenuPage() {
     }).filter(cat => cat.items.length > 0)
   }, [menu?.categories, isSearching, searchLower])
 
+  // Scroll-spy: highlight the tab whose section is currently in the upper-mid viewport.
+  // rootMargin -120px top skips sticky TopAppBar (64px) + tabs (~56px),
+  // -66% bottom shrinks the active region to roughly the upper third.
+  useEffect(() => {
+    if (isSearching) return
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(e => e.isIntersecting)
+        if (visible.length === 0) return
+        const topMost = visible.reduce((a, b) =>
+          a.boundingClientRect.top < b.boundingClientRect.top ? a : b,
+        )
+        const id = topMost.target.getAttribute('data-category-id')
+        if (id) setActiveCategory(id)
+      },
+      { rootMargin: '-120px 0px -66% 0px', threshold: 0 },
+    )
+    Object.values(sectionRefs.current).forEach(el => {
+      if (el) observer.observe(el)
+    })
+    return () => observer.disconnect()
+  }, [filteredCategories, isSearching])
+
   if (loading) return (
     <div className="flex items-center justify-center h-screen">
       <p className="text-muted-foreground">{t('common:loading')}</p>
@@ -244,27 +272,29 @@ export default function MenuPage() {
         currentLang={lang === 'en' ? 'en' : 'zh'}
       />
 
-      {/* Top horizontal category tabs */}
-      <nav
-        aria-label={lang === 'zh' ? '菜品分类' : 'Categories'}
-        className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm flex overflow-x-auto scrollbar-hide gap-3 px-4 py-3 border-b border-border"
-      >
-        {filteredCategories.map(cat => (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => setActiveCategory(cat.id)}
-            aria-pressed={activeCategory === cat.id}
-            className={`whitespace-nowrap px-6 py-2 rounded-xl font-display text-sm transition-colors flex-shrink-0 ${
-              activeCategory === cat.id
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'bg-card text-muted-foreground border border-border hover:bg-muted/50'
-            }`}
-          >
-            {localized(cat, lang)}
-          </button>
-        ))}
-      </nav>
+      {/* Top horizontal category tabs (hidden in search mode) */}
+      {!isSearching && (
+        <nav
+          aria-label={lang === 'zh' ? '菜品分类' : 'Categories'}
+          className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm flex overflow-x-auto scrollbar-hide gap-3 px-4 py-3 border-b border-border"
+        >
+          {filteredCategories.map(cat => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => scrollToCategory(cat.id)}
+              aria-pressed={activeCategory === cat.id}
+              className={`whitespace-nowrap px-6 py-2 rounded-xl font-display text-sm transition-colors flex-shrink-0 ${
+                activeCategory === cat.id
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-card text-muted-foreground border border-border hover:bg-muted/50'
+              }`}
+            >
+              {localized(cat, lang)}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {/* Pay Now banner — shows when session has remaining balance */}
       {sessionRemaining > 0 && activeSessionId && (
@@ -380,27 +410,54 @@ export default function MenuPage() {
         <ScrollArea className="h-full">
           <div className="p-3 pb-40">
             {(() => {
-              // Search mode: pool all matching items globally (no category limit)
-              // Non-search: filter to active category only
-              const visibleItems = isSearching
-                ? filteredCategories.flatMap(c => c.items)
-                : (filteredCategories.find(c => c.id === activeCategory)?.items ?? [])
-              const recommended = visibleItems.filter(i => i.isRecommended)
-              const regular = visibleItems.filter(i => !i.isRecommended)
               const langCode = lang === 'en' ? 'en' : 'zh'
-              if (visibleItems.length === 0) {
+
+              // Search mode: flat list, no sections, no Featured/More headings.
+              if (isSearching) {
+                const results = filteredCategories.flatMap(c => c.items)
+                if (results.length === 0) {
+                  return <p className="text-center text-muted-foreground py-8">{t('menu.noResults')}</p>
+                }
+                return (
+                  <div className="flex flex-col gap-4">
+                    {results.map(item => (
+                      <DishCard
+                        key={item.id}
+                        item={item}
+                        onAddClick={() => handleAdd(item)}
+                        onCardClick={() => handleAdd(item)}
+                        currentLang={langCode}
+                      />
+                    ))}
+                  </div>
+                )
+              }
+
+              // Navigation mode: every non-empty category as a scroll anchor.
+              const nonEmpty = filteredCategories.filter(c => c.items.length > 0)
+              if (nonEmpty.length === 0) {
                 return (
                   <p className="text-center text-muted-foreground py-8">
-                    {isSearching ? t('menu.noResults') : t('menu.emptyCategory', 'No dishes available')}
+                    {t('menu.emptyCategory', 'No dishes available')}
                   </p>
                 )
               }
-              return (
-                <>
-                  {recommended.length > 0 && (
-                    <section className="mb-8">
-                      <h2 className="font-display text-headline-md text-foreground mb-4">{t('menu.featured')}</h2>
-                      <div className="flex flex-col gap-4">
+              return nonEmpty.map(cat => {
+                const items = [...cat.items].sort((a, b) => a.sortOrder - b.sortOrder)
+                const recommended = items.filter(i => i.isRecommended)
+                const regular = items.filter(i => !i.isRecommended)
+                return (
+                  <section
+                    key={cat.id}
+                    ref={el => { sectionRefs.current[cat.id] = el }}
+                    data-category-id={cat.id}
+                    className="scroll-mt-[120px]"
+                  >
+                    <h2 className="font-display text-headline-md text-foreground mb-4 mt-8 first:mt-0">
+                      {localized(cat, lang)}
+                    </h2>
+                    {recommended.length > 0 && (
+                      <div className="flex flex-col gap-4 mb-4">
                         {recommended.map(item => (
                           <DishCard
                             key={item.id}
@@ -411,11 +468,8 @@ export default function MenuPage() {
                           />
                         ))}
                       </div>
-                    </section>
-                  )}
-                  {regular.length > 0 && (
-                    <section>
-                      <h2 className="font-display text-headline-md text-foreground mb-4">{t('menu.moreDishes')}</h2>
+                    )}
+                    {regular.length > 0 && (
                       <div className="flex flex-col gap-4">
                         {regular.map(item => (
                           <DishCard
@@ -427,10 +481,10 @@ export default function MenuPage() {
                           />
                         ))}
                       </div>
-                    </section>
-                  )}
-                </>
-              )
+                    )}
+                  </section>
+                )
+              })
             })()}
           </div>
         </ScrollArea>
