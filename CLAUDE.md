@@ -102,6 +102,27 @@ MVP 阶段：JSON 文件存储，迁移路径 → PostgreSQL（Prisma schema 已
 
 ---
 
+## 设计约束 / Design Constraints
+
+### Cart Merge Key 必须覆盖所有用户可见区分字段
+
+**Rule**: 当定义"合并键"用于 entity merging（cart 的 addItem 把同款合并 + quantity 累加）时，必须穷举枚举**所有用户可见且可不同的字段**。任何 UI 上可见且用户输入会不同的字段，**必须参与 key**。否则 "add same dish with different input" 会静默合并并通过 spread operator 覆盖后续输入。
+
+**Failure mode**:
+- 用户加 冰红茶 quick tag "不要加盐"
+- 用户加 冰红茶 quick tag "不要加味精"（期望 2 个独立 entry）
+- 旧逻辑: match key = `menuItemId + selectedOptions only` → 2 items 合并成 quantity=2，"不要加味精" 静默丢失
+- Fix (commit a58930a7): include trimmed remark in match key
+
+**General principle (推广到任何 derived match key)**:
+> 当为 entity merging 定义 derived match key，必须穷举所有 user-visible distinguishing fields。如果某字段在 UI 可见且用户输入可不同，**必须**进 key。Tests 应包含 "same entity, different optional field value" cases。
+
+**Files affected**:
+- `client/src/stores/cart-store.ts` — addItem() match logic (3-tuple: menuItemId + sortedSelectedOptions + trimmedRemark)
+- 任何未来在 user-input entity 上加 "merge by key" 逻辑的代码
+
+---
+
 ## 安全待修复（P0）
 
 - **凭据泄漏**: AWS Key、Stripe Secret、DB 密码在 `.env` 和 git 历史中，需轮换 + `git filter-repo` 清除
