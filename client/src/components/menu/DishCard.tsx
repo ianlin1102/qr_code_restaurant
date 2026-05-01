@@ -69,7 +69,7 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
         !isAvailable && 'opacity-60 cursor-not-allowed',
       )}
     >
-      <div className="aspect-[4/3] w-full relative overflow-hidden bg-muted">
+      <div className="aspect-square w-full relative overflow-hidden bg-muted">
         {item.image ? (
           <img
             src={item.image}
