@@ -71,6 +71,17 @@ export default function DashboardPage() {
     return subscribe('store:orders', () => { fetchOrders() })
   }, [subscribe, fetchOrders])
 
+  // Keep `detailOrder` in sync with the orders list. Without this, the
+  // detail dialog displays a snapshot taken at click time — server-side
+  // status / item / total changes pushed via SSE refresh `orders` but the
+  // dialog stays stale until the user closes and reopens it.
+  // Same pattern as TablesPage `selected` (commit 5a756c0f).
+  useEffect(() => {
+    if (!detailOrder) return
+    const fresh = orders.find(o => o.id === detailOrder.id)
+    if (fresh && fresh !== detailOrder) setDetailOrder(fresh)
+  }, [orders, detailOrder])
+
   // Re-fetch when tab changes
   useEffect(() => {
     setLoading(true)
