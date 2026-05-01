@@ -31,23 +31,48 @@ export default function ScanPage() {
   useEffect(() => {
     if (!storeId || !tableId) return
 
-    // Fast path: same table, session exists → skip API, go straight to menu
-    const isSameSession = session.storeId === storeId && session.tableId === tableId
-    if (isSameSession) {
-      goToMenu()
-      return
-    }
-
-    // First visit: no language set → show language modal
+    // First visit: no language set → show language modal (contains lang selector;
+    // announcement view rendered after selectLang if store has one).
     const hasLang = localStorage.getItem('i18n-lang')
     if (!hasLang) {
       setShowLangModal(true)
       return // wait for language selection before proceeding
     }
 
-    // Language set → validate table and proceed
+    // Language set — need store data to decide on announcement.
+    if (!store) return
+
+    // Announcement check precedes the same-session fast path. Without this,
+    // returning visitors (isSameSession=true) would skip the announcement
+    // entirely and the popup would fire from MenuPage instead, after the menu
+    // had already rendered. Expected UX: lang → announcement → menu.
+    const ann = hasLang === 'en' && store.announcementEn
+      ? store.announcementEn
+      : store.announcement
+    if (ann?.trim()) {
+      const hash = Array.from(ann)
+        .reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
+        .toString(36)
+        .slice(0, 8)
+      const storedHash = localStorage.getItem(`announcement-hash-${storeId}`)
+      if (storedHash !== hash) {
+        // New/updated announcement → show modal in announcement-only view
+        // (lang selector skipped because lang already set; announcement state
+        // alone causes the announcement branch to render).
+        setAnnouncement(ann)
+        setShowLangModal(true)
+        return
+      }
+    }
+
+    // No new announcement → fast path for same-table revisit; otherwise init.
+    const isSameSession = session.storeId === storeId && session.tableId === tableId
+    if (isSameSession) {
+      goToMenu()
+      return
+    }
     initTable()
-  }, [storeId, tableId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [storeId, tableId, store]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function initTable() {
     if (!storeId || !tableId) return
