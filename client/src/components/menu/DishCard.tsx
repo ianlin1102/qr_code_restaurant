@@ -75,7 +75,7 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
             src={item.image}
             alt={name}
             className={cn(
-              'w-full h-full object-cover transition-transform duration-500 group-hover:scale-105',
+              'w-full h-full object-cover object-center transition-transform duration-500 md:group-hover:scale-105',
               !isAvailable && 'grayscale',
             )}
           />
