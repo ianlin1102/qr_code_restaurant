@@ -1,8 +1,10 @@
-import { Bell, ChevronLeft, Languages, Receipt, Search, UtensilsCrossed, X } from 'lucide-react'
+import { useState } from 'react'
+import { Bell, ChevronLeft, Languages, Search, UtensilsCrossed, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import TableBadge from './TableBadge'
+import ServiceMenuSheet from './ServiceMenuSheet'
 
 export interface TopAppBarProps {
   mode: 'menu' | 'cart'
@@ -71,6 +73,7 @@ function MenuTopBar({
   currentLang = 'en',
 }: TopAppBarProps) {
   const L = labels[currentLang]
+  const [serviceSheetOpen, setServiceSheetOpen] = useState(false)
   return (
     <header className="glass border-b border-border fixed top-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg h-16 flex items-center px-4 gap-2">
       {/* Brand: icon always; text hidden on small screens or when search is expanded */}
@@ -123,19 +126,10 @@ function MenuTopBar({
               variant="ghost"
               size="icon"
               className="h-9 w-9"
-              onClick={onCallService}
+              onClick={() => setServiceSheetOpen(true)}
               aria-label={L.callService}
             >
               <Bell className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={onRequestBill}
-              aria-label={L.requestBill}
-            >
-              <Receipt className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
@@ -167,6 +161,13 @@ function MenuTopBar({
           </>
         )}
       </div>
+      <ServiceMenuSheet
+        open={serviceSheetOpen}
+        onOpenChange={setServiceSheetOpen}
+        onCallWaiter={() => onCallService?.()}
+        onRequestBill={() => onRequestBill?.()}
+        currentLang={currentLang}
+      />
     </header>
   )
 }
