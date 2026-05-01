@@ -69,13 +69,13 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
         !isAvailable && 'opacity-60 cursor-not-allowed',
       )}
     >
-      <div className="aspect-[4/3] w-full relative overflow-hidden bg-muted p-3">
+      <div className="aspect-[4/3] w-full relative overflow-hidden bg-muted">
         {item.image ? (
           <img
             src={item.image}
             alt={name}
             className={cn(
-              'w-full h-full object-contain transition-transform duration-500 group-hover:scale-105',
+              'w-full h-full object-cover transition-transform duration-500 group-hover:scale-105',
               !isAvailable && 'grayscale',
             )}
           />
