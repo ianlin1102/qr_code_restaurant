@@ -6,6 +6,24 @@ import { useSessionStore } from './session-store'
 import type { CartItem } from '@qr-order/shared'
 import { unitPrice as calcUnitPrice } from '@qr-order/shared/pricing'
 
+/**
+ * Cart match key design rationale (post a58930a7 fix)
+ *
+ * Cart items are matched (for quantity merging in addItem) by a 3-tuple:
+ *   - menuItemId
+ *   - sortedSelectedOptions (structured choices: 辣度 / 份量 / etc)
+ *   - trimmedRemark (free-text: quick tags joined + custom 备注)
+ *
+ * History: original logic matched only on menuItemId + selectedOptions,
+ * causing silent remark loss when same dish was added with different
+ * quick tags (e.g. 冰红茶 + "不要加盐" merged with 冰红茶 + "不要加味精"
+ * → second remark dropped via the spread operator in the merge branch).
+ *
+ * Rule: any user-visible distinguishing field MUST be in the match key.
+ *
+ * See CLAUDE.md "设计约束 / Design Constraints" for the general principle.
+ */
+
 /** Calculate unit price (base + all option adjustments) */
 export function unitPrice(item: CartItem): number {
   return calcUnitPrice({
