@@ -75,12 +75,12 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
             src={item.image}
             alt={name}
             className={cn(
-              'w-full h-full object-cover object-center transition-transform duration-500 md:group-hover:scale-105',
+              'absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 md:group-hover:scale-105',
               !isAvailable && 'grayscale',
             )}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl text-muted-foreground">
+          <div className="absolute inset-0 flex items-center justify-center text-4xl text-muted-foreground">
             {name.charAt(0)}
           </div>
         )}
