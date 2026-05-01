@@ -122,6 +122,17 @@ export default function TablesPage() {
     return () => { unsub1(); unsub2() }
   }, [subscribe, fetchData])
 
+  // Keep `selected` in sync with the tables list. Without this, `selected`
+  // captures a snapshot at click time — when a customer later starts a
+  // session, the new table.currentSessionId never reaches `selected`, so
+  // the new order's sessionId fails to match and lands in "History" until
+  // the user manually refreshes (clearing `selected` and re-clicking).
+  useEffect(() => {
+    if (!selected) return
+    const fresh = tables.find(t => t.id === selected.id)
+    if (fresh && fresh !== selected) setSelected(fresh)
+  }, [tables, selected])
+
   const tablesRef = useRef<Table[]>([])
   tablesRef.current = tables
   useEffect(() => {
