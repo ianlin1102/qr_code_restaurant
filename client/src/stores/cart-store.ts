@@ -39,17 +39,21 @@ export const useCartStore = create<CartState>()(
   cartVersion: 0,
 
   addItem: (item) => set(state => {
-    const optsKey = JSON.stringify(
-      (item.selectedOptions ?? [])
-        .map(o => ({ optionId: o.optionId, choiceId: o.choiceId }))
-        .sort((a, b) => a.optionId.localeCompare(b.optionId)),
-    )
-    const existing = state.items.find(
-      i => i.menuItemId === item.menuItemId && JSON.stringify(
-        (i.selectedOptions ?? [])
+    const serializeOpts = (opts?: typeof item.selectedOptions) =>
+      JSON.stringify(
+        (opts ?? [])
           .map(o => ({ optionId: o.optionId, choiceId: o.choiceId }))
           .sort((a, b) => a.optionId.localeCompare(b.optionId)),
-      ) === optsKey,
+      )
+    const optsKey = serializeOpts(item.selectedOptions)
+    // Normalize remark: undefined / empty / whitespace-only collapse to ''.
+    // Without this, items with different remarks ("ice" vs "warm") would
+    // merge by menuItemId+options match alone, dropping the second remark.
+    const remarkKey = (item.remark ?? '').trim()
+    const existing = state.items.find(i =>
+      i.menuItemId === item.menuItemId &&
+      serializeOpts(i.selectedOptions) === optsKey &&
+      (i.remark ?? '').trim() === remarkKey,
     )
     if (existing) {
       return {
