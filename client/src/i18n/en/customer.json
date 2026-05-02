@@ -109,13 +109,6 @@
     "tipApply": "Apply",
     "orderSummary": "Order Summary"
   },
-  "orderHistory": {
-    "title": "Order History",
-    "noOrders": "No orders yet",
-    "backToMenu": "Back to Menu",
-    "orderNumber": "Order #{{number}}",
-    "items": "{{count}} items"
-  },
   "session": {
     "closedTitle": "Table Session Ended",
     "closedMessage": "Your bill has been processed",

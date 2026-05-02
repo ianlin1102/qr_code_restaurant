@@ -109,13 +109,6 @@
     "tipApply": "确认",
     "orderSummary": "订单详情"
   },
-  "orderHistory": {
-    "title": "历史订单",
-    "noOrders": "暂无订单",
-    "backToMenu": "返回菜单",
-    "orderNumber": "订单 #{{number}}",
-    "items": "{{count}} 件商品"
-  },
   "session": {
     "closedTitle": "桌台已结账",
     "closedMessage": "您的账单已处理完成",

@@ -27,7 +27,6 @@ import MenuPage from './pages/customer/MenuPage'
 import CartPage from './pages/customer/CartPage'
 import OrderConfirmPage from './pages/customer/OrderConfirmPage'
 import CheckoutPage from './pages/customer/CheckoutPage'
-import OrderHistoryPage from './pages/customer/OrderHistoryPage'
 import AdminLayout from './components/layout/AdminLayout'
 import LoginPage from './pages/admin/LoginPage'
 import ProtectedRoute from './components/layout/ProtectedRoute'
@@ -65,7 +64,6 @@ export default function App() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/store/:storeId/checkout" element={<CheckoutPage />} />
         <Route path="/order/confirm" element={<OrderConfirmPage />} />
-        <Route path="/orders/:storeId" element={<OrderHistoryPage />} />
 
         {/* Login (no auth required) */}
         <Route path="/admin/login" element={<LoginPage />} />
