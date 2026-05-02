@@ -44,12 +44,41 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
   const [tab, setTab] = useState<Tab>(lockedPercent ? 'percent' : 'items')
   // Map of "orderId:idx" → quantity to pay (0 = not selected)
   const [selectedQty, setSelectedQty] = useState<Record<string, number>>({})
-  const [percent, setPercent] = useState(50)
+  const [percent, setPercent] = useState(100)
   const [loading, setLoading] = useState(false)
 
   // Customer side: do not pre-check waiter splits (admin-auth endpoint -> 401 redirect).
   // State retained for the "waiter processing" banner below; false is a safe default.
   const [hasWaiterSplits] = useState(false)
+
+  // Reset to "pay everything" defaults whenever the sheet opens or the session's
+  // paid state changes (SSE-pushed concurrent payment while sheet is open). Closes
+  // skip the work via early return. Q14 α: do not preserve previous selection.
+  useEffect(() => {
+    if (!open) return
+    setPercent(100)
+    const next: Record<string, number> = {}
+    const orders = session.orders ?? []
+    const paidIds = session.paidItemIds ?? []
+    for (const order of orders) {
+      const items = order.items ?? []
+      items.forEach((item, idx) => {
+        const isVoided = !!(item as { voided?: boolean }).voided
+        if (isVoided) return
+        const totalQty = typeof item.quantity === 'number' && item.quantity > 0 ? item.quantity : 0
+        if (totalQty === 0) return
+        const key = `${order.id}:${idx}`
+        let paidQty = 0
+        for (const pid of paidIds) {
+          if (pid === key) { paidQty = totalQty; break }
+          if (pid.startsWith(key + ':')) { paidQty += parseInt(pid.split(':')[2], 10) || 0 }
+        }
+        const unpaidQty = Math.max(0, totalQty - paidQty)
+        if (unpaidQty > 0) next[key] = unpaidQty
+      })
+    }
+    setSelectedQty(next)
+  }, [open, session.orders, session.paidItemIds])
 
   // Flatten all order items with keys
   const allItems = useMemo(() => {
