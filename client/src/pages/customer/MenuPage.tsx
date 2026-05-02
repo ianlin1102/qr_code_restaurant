@@ -21,7 +21,6 @@ import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
 import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
-import BottomNav from '@/components/customer/BottomNav'
 import CheckoutBar from '@/components/customer/CheckoutBar'
 import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
@@ -603,12 +602,6 @@ export default function MenuPage() {
           onAction={() => navigate('/cart')}
         />
       )}
-
-      <BottomNav
-        storeId={storeId}
-        cartItemCount={itemCount}
-        currentLang={lang === 'en' ? 'en' : 'zh'}
-      />
 
       {/* Item Detail Sheet */}
       <MenuItemDetailSheet

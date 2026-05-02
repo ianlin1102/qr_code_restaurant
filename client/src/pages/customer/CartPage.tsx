@@ -10,7 +10,6 @@ import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
 import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
-import BottomNav from '@/components/customer/BottomNav'
 import CheckoutBar from '@/components/customer/CheckoutBar'
 import CartItemCard from '@/components/customer/CartItemCard'
 import type { CartItem } from '@qr-order/shared'
@@ -221,11 +220,6 @@ export default function CartPage() {
         />
       )}
 
-      <BottomNav
-        storeId={storeId}
-        cartItemCount={totalItems()}
-        currentLang={lang === 'en' ? 'en' : 'zh'}
-      />
     </CustomerPageFrame>
   )
 }
