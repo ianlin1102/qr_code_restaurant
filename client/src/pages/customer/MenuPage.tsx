@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 /** Sticky region above scroll content: TopAppBar h-16 (64) + sticky tabs (~56). */
@@ -18,7 +18,7 @@ import MenuItemDetailSheet from '@/components/menu/MenuItemDetailSheet'
 import SettlementSheet from '@/components/customer/SettlementSheet'
 import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
-import CheckoutBar from '@/components/customer/CheckoutBar'
+import CartFloatingButton from '@/components/customer/CartFloatingButton'
 import { usePaymentStore } from '@/stores/payment-store'
 import { useSessionEvents } from '@/hooks/useSessionEvents'
 import { useCartSync } from '@/hooks/useCartSync'
@@ -44,7 +44,6 @@ function simpleHash(s: string): string {
 
 export default function MenuPage() {
   const { storeId } = useParams<{ storeId: string }>()
-  const navigate = useNavigate()
   const [menu, setMenu] = useState<MenuResponse | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -52,8 +51,6 @@ export default function MenuPage() {
 
   const cartItems = useCartStore(s => s.items)
   const removeItem = useCartStore(s => s.removeItem)
-  const totalItems = useCartStore(s => s.totalItems)
-  const totalPrice = useCartStore(s => s.totalPrice)
 
   const { tableId, tableName, customerName } = useSessionStore()
   const setCustomerName = useSessionStore(s => s.setCustomerName)
@@ -298,9 +295,6 @@ export default function MenuPage() {
     </div>
   )
 
-  const itemCount = totalItems()
-  const priceTotal = totalPrice()
-
   return (
     <CustomerPageFrame>
     <div className="flex flex-col h-screen pt-16">
@@ -436,16 +430,11 @@ export default function MenuPage() {
         </ScrollArea>
       </div>
 
-      {/* Floating CheckoutBar — only when cart has items */}
-      {itemCount > 0 && (
-        <CheckoutBar
-          variant="goto-cart"
-          itemCount={itemCount}
-          totalAmount={priceTotal}
-          currentLang={lang === 'en' ? 'en' : 'zh'}
-          onAction={() => navigate('/cart')}
-        />
-      )}
+      {/* Floating cart button — 4 states: goto-cart / add-more / settle / empty-clean */}
+      <CartFloatingButton
+        onSettleClick={() => setSettlementOpen(true)}
+        currentLang={lang === 'en' ? 'en' : 'zh'}
+      />
 
       {/* Item Detail Sheet */}
       <MenuItemDetailSheet

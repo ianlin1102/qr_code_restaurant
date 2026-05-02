@@ -3,13 +3,12 @@ import { cn } from '@/lib/utils'
 import { formatPriceUSD } from '@/lib/format'
 
 interface CheckoutBarProps {
-  variant: 'goto-cart' | 'submit-order'
+  variant: 'submit-order'
   itemCount: number
   totalAmount: number // cents
   onAction: () => void
   currentLang?: 'zh' | 'en'
 
-  // submit-order variant only
   loading?: boolean
   disabled?: boolean
   errorMessage?: string | null
@@ -22,14 +21,12 @@ interface CheckoutBarProps {
 const labels = {
   zh: {
     subtotal: '小计',
-    checkout: '去结账',
     submit: '提交订单',
     submitting: '提交中…',
     cart: '购物车',
   },
   en: {
     subtotal: 'Subtotal',
-    checkout: 'Checkout',
     submit: 'Submit Order',
     submitting: 'Submitting…',
     cart: 'Cart',
@@ -37,7 +34,6 @@ const labels = {
 } as const
 
 export default function CheckoutBar({
-  variant,
   itemCount,
   totalAmount,
   onAction,
@@ -51,10 +47,9 @@ export default function CheckoutBar({
   const L = labels[currentLang]
   const isDisabled = disabled || loading
 
-  const defaultActionLabel = variant === 'goto-cart' ? L.checkout : L.submit
   const buttonText = loading
     ? (loadingLabel ?? L.submitting)
-    : (actionLabel ?? defaultActionLabel)
+    : (actionLabel ?? L.submit)
 
   const badgeText = itemCount > 99 ? '99+' : String(itemCount)
 
