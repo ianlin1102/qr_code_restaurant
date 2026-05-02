@@ -1,17 +1,22 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Info, ShoppingCart } from 'lucide-react'
+import { ChevronRight, Info, ShoppingCart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useCartStore, type CartEntry } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
+import { usePaymentStore } from '@/stores/payment-store'
 import { getDeviceId } from '@/lib/device-id'
 import { useCartSync } from '@/hooks/useCartSync'
 import { api } from '@/services/api'
+import { formatPriceUSD } from '@/lib/format'
+import { itemLineTotal } from '@/lib/pricing'
+import { localized } from '@/lib/i18n-utils'
 import TopAppBar from '@/components/customer/TopAppBar'
 import CustomerPageFrame from '@/components/customer/CustomerPageFrame'
 import CheckoutBar from '@/components/customer/CheckoutBar'
 import CartItemCard from '@/components/customer/CartItemCard'
+import SettlementSheet from '@/components/customer/SettlementSheet'
 import type { CartItem } from '@qr-order/shared'
 
 export default function CartPage() {
@@ -24,6 +29,22 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null)
   const [paymentMode, setPaymentMode] = useState<'pay-first' | 'pay-later'>('pay-first')
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+  const [settlementOpen, setSettlementOpen] = useState(false)
+
+  // Payment summary subscription — mirrors MenuPage init/stop lifecycle
+  const sessionSummary = usePaymentStore(s => s.summary)
+  const initPayment = usePaymentStore(s => s.init)
+  const stopPayment = usePaymentStore(s => s.stop)
+  useEffect(() => {
+    if (!storeId || !tableId) return
+    initPayment(storeId, tableId)
+    return () => stopPayment()
+  }, [storeId, tableId, initPayment, stopPayment])
+
+  const sessionOrders = sessionSummary?.orders?.filter(o => o.status !== 'closed') ?? []
+  const sessionRemaining = sessionSummary?.remaining ?? 0
+  const hasActiveSession = !!sessionSummary && sessionSummary.status !== 'closed'
+  const showCurrentOrder = hasActiveSession && sessionOrders.length > 0
 
   // Shared cart sync: push local changes (1s debounce), poll other devices (5s)
   const { markSubmitted } = useCartSync(storeId, activeSessionId)
@@ -151,7 +172,114 @@ export default function CartPage() {
       />
 
       <main className={`pt-14 ${isEmpty ? 'pb-20' : 'pb-40'}`}>
-        {isEmpty ? (
+        {/* Current Order — collapsible (default closed) */}
+        {showCurrentOrder && (() => {
+          const ss = sessionSummary
+          const tax = ss?.tax ?? 0
+          const svcFee = ss?.serviceFee ?? 0
+          const total = ss?.totalWithTax ?? sessionOrders.reduce((s, o) => s + o.totalPrice, 0)
+          const paidIds = ss?.paidItemIds ?? []
+          const payments = [...(ss?.payments ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+          return (
+            <details className="group border-b">
+              <summary className="px-4 py-3 font-display text-base font-medium text-foreground cursor-pointer hover:bg-muted/50 flex items-center justify-between [&::-webkit-details-marker]:hidden list-none">
+                <span className="flex items-center gap-2">
+                  <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                  <span>{lang === 'zh' ? '本次已点' : 'Current Order'}</span>
+                </span>
+                <span className="font-display font-bold text-foreground">{formatPriceUSD(total)}</span>
+              </summary>
+              <div className="px-4 pb-3 space-y-1">
+                {/* Items */}
+                {sessionOrders.flatMap((o, oi) => o.items.map((item, ii) => {
+                  const itemKey = `${o.id}:${ii}`
+                  const isPaid = paidIds.some(k => k === itemKey || k.startsWith(itemKey + ':'))
+                  const isVoided = !!(item as { voided?: boolean }).voided
+                  const price = isVoided ? 0 : itemLineTotal(item)
+                  return (
+                    <div key={`${oi}-${ii}`} className={`flex justify-between text-sm gap-2 ${isVoided ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>
+                      <span className="font-display">
+                        {item.quantity}x {localized(item, lang) || item.name}
+                        {item.selectedOptions && item.selectedOptions.length > 0 && (
+                          <span className="text-orange-600 ml-1">
+                            ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || '')).join(', ')})
+                          </span>
+                        )}
+                        {isPaid && <span className="ml-1.5 font-label text-label-sm text-green-600">{lang === 'zh' ? '已付' : 'Paid'}</span>}
+                        {isVoided && <span className="ml-1.5 font-label text-label-sm text-red-600">{lang === 'zh' ? '已作废' : 'Voided'}</span>}
+                      </span>
+                      <span className="font-display">{formatPriceUSD(price)}</span>
+                    </div>
+                  )
+                }))}
+                {/* Tax + Service Fee + Total */}
+                <div className="border-t mt-2 pt-2 space-y-1">
+                  {tax > 0 && (
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '税' : 'Tax'}</span>
+                      <span className="font-display">{formatPriceUSD(tax)}</span>
+                    </div>
+                  )}
+                  {svcFee > 0 && (
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '服务费' : 'Service Fee'}</span>
+                      <span className="font-display">{formatPriceUSD(svcFee)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '合计' : 'Total'}</span>
+                    <span className="font-display font-bold">{formatPriceUSD(total)}</span>
+                  </div>
+                </div>
+                {/* Payment history (sorted by time, tip excluded from displayed amount) */}
+                {payments.length > 0 && (
+                  <div className="border-t mt-2 pt-2 space-y-1">
+                    {payments.map((p, pi) => {
+                      const foodAmount = p.amount - (p.tipAmount ?? 0)
+                      return (
+                        <div key={pi} className="flex justify-between text-sm text-green-600">
+                          <span className="font-display">
+                            {p.paidBy || (lang === 'zh' ? '顾客' : 'Guest')}
+                            {p.method && <span className="font-label text-label-sm text-muted-foreground ml-1">({p.method})</span>}
+                          </span>
+                          <span className="font-display">−{formatPriceUSD(foodAmount)}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                {/* Remaining */}
+                {sessionRemaining > 0 && payments.length > 0 && (
+                  <div className="flex justify-between text-sm pt-2 border-t mt-2">
+                    <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '待付' : 'Remaining'}</span>
+                    <span className="font-display font-bold text-primary">{formatPriceUSD(sessionRemaining)}</span>
+                  </div>
+                )}
+                {/* C3 α: Settle button (cart-side unpaid entry) */}
+                {sessionRemaining > 0 && (
+                  <Button
+                    onClick={() => setSettlementOpen(true)}
+                    className="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white font-display rounded-xl"
+                  >
+                    {lang === 'zh' ? '结账' : 'Settle'}
+                  </Button>
+                )}
+              </div>
+            </details>
+          )
+        })()}
+
+        {/* C2 α: chip divider between Current Order and pending cart items */}
+        {showCurrentOrder && !isEmpty && (
+          <div className="mt-4 mb-3 flex items-center px-4">
+            <span className="font-label text-label-sm uppercase tracking-wider text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+              {lang === 'zh' ? '待下单' : 'Pending Items'}
+            </span>
+          </div>
+        )}
+
+        {/* Pending cart items / EmptyCart fallback */}
+        {isEmpty && !showCurrentOrder ? (
           <div className="flex flex-col items-center justify-center px-4 min-h-[60vh] gap-4">
             <ShoppingCart className="h-16 w-16 text-muted-foreground" aria-hidden="true" />
             <h2 className="font-display text-lg font-semibold">{t('cart.emptyCart')}</h2>
@@ -165,7 +293,7 @@ export default function CartPage() {
               {t('cart.backToMenu')}
             </Button>
           </div>
-        ) : (
+        ) : !isEmpty ? (
           <div className="p-4">
             <div>
               {groups.map(([deviceKey, group]) => {
@@ -202,7 +330,7 @@ export default function CartPage() {
               <p className="font-display text-xs text-primary">{t('common.allergyNotice')}</p>
             </div>
           </div>
-        )}
+        ) : null}
       </main>
 
       {!isEmpty && (
@@ -217,6 +345,16 @@ export default function CartPage() {
           onAction={handleCheckout}
           actionLabel={paymentMode === 'pay-later' ? t('cart.placeOrder') : t('cart.submitOrder')}
           loadingLabel={paymentMode === 'pay-later' ? t('cart.ordering') : t('cart.submitting')}
+        />
+      )}
+
+      {/* Settlement Sheet — opened by Current Order Settle button */}
+      {sessionSummary && (
+        <SettlementSheet
+          open={settlementOpen}
+          onClose={() => setSettlementOpen(false)}
+          storeId={storeId}
+          session={sessionSummary}
         />
       )}
 
