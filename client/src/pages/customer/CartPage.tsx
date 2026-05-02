@@ -171,7 +171,7 @@ export default function CartPage() {
         onBack={() => navigate(`/menu/${storeId}`)}
       />
 
-      <main className={`pt-14 ${isEmpty ? 'pb-20' : 'pb-40'}`}>
+      <main className={`pt-14 ${isEmpty ? 'pb-4' : 'pb-24'}`}>
         {/* Current Order — collapsible (default closed) */}
         {showCurrentOrder && (() => {
           const ss = sessionSummary

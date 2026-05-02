@@ -348,7 +348,7 @@ export default function MenuPage() {
       {/* Menu items */}
       <div ref={menuScrollRef} className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="p-3 pb-40">
+          <div className="p-3 pb-24">
             {(() => {
               const langCode = lang === 'en' ? 'en' : 'zh'
 

@@ -54,7 +54,7 @@ export default function CheckoutBar({
   const badgeText = itemCount > 99 ? '99+' : String(itemCount)
 
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg z-40 px-4">
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg z-40 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       {errorMessage && (
         <div
           role="alert"
