@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { formatPriceUSD } from '@/lib/format'
 import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { DietaryBadges, RecommendedBadge } from '@/components/menu/MenuItemBadges'
+import { useCartStore } from '@/stores/cart-store'
 import type { MenuItem } from '@qr-order/shared'
 
 interface DishCardProps {
@@ -17,8 +18,8 @@ interface DishCardProps {
 }
 
 const labels = {
-  zh: { add: '添加', added: '已添加', soldOut: '售罄' },
-  en: { add: 'Add', added: 'Added', soldOut: 'Sold Out' },
+  zh: { add: '添加', added: '已添加', soldOut: '售罄', inCart: '已加入' },
+  en: { add: 'Add', added: 'Added', soldOut: 'Sold Out', inCart: 'in cart' },
 } as const
 
 /** 600ms add-success visual feedback hook (Plus → Check, navy → green, scale-up). */
@@ -49,6 +50,7 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
   const desc = localizedDesc(item, currentLang)
   const quickTag = item.quickTags?.[0]
   const isAvailable = item.available
+  const cartQuantity = useCartStore(s => s.quantityByMenuItem(item.id))
   const { showSuccess, trigger } = useAddSuccess()
 
   const handleAdd = (e: MouseEvent) => {
@@ -119,10 +121,16 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
             type="button"
             onClick={handleAdd}
             disabled={!isAvailable}
-            aria-label={showSuccess ? `${L.added} ${name}` : `${L.add} ${name}`}
+            aria-label={
+              showSuccess
+                ? `${L.added} ${name}`
+                : cartQuantity > 0
+                  ? `${L.add} ${name}, ${cartQuantity} ${L.inCart}`
+                  : `${L.add} ${name}`
+            }
             aria-live="polite"
             className={cn(
-              'w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200',
+              'relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200',
               showSuccess
                 ? 'bg-success text-white scale-110'
                 : 'bg-primary text-primary-foreground',
@@ -131,6 +139,14 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
             )}
           >
             {showSuccess ? <Check className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            {cartQuantity > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -top-2 -right-2 border-2 border-primary text-primary bg-white text-[10px] font-bold min-w-5 h-5 px-1 rounded-full flex items-center justify-center"
+              >
+                {cartQuantity > 99 ? '99+' : cartQuantity}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -145,6 +161,7 @@ function DishCardCompact({ item, onAddClick, onCardClick, currentLang = 'en' }: 
   const isAvailable = item.available
   const hasOptions = item.options && item.options.length > 0
   const hasDiscount = item.originalPrice && item.originalPrice > item.price
+  const cartQuantity = useCartStore(s => s.quantityByMenuItem(item.id))
   const { showSuccess, trigger } = useAddSuccess()
 
   const handleAdd = (e: MouseEvent) => {
@@ -209,10 +226,16 @@ function DishCardCompact({ item, onAddClick, onCardClick, currentLang = 'en' }: 
           type="button"
           onClick={handleAdd}
           disabled={!isAvailable}
-          aria-label={showSuccess ? `${L.added} ${name}` : `${L.add} ${name}`}
+          aria-label={
+            showSuccess
+              ? `${L.added} ${name}`
+              : cartQuantity > 0
+                ? `${L.add} ${name}, ${cartQuantity} ${L.inCart}`
+                : `${L.add} ${name}`
+          }
           aria-live="polite"
           className={cn(
-            'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200',
+            'relative w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200',
             showSuccess
               ? 'bg-success text-white scale-110'
               : 'bg-primary text-primary-foreground',
@@ -221,6 +244,14 @@ function DishCardCompact({ item, onAddClick, onCardClick, currentLang = 'en' }: 
           )}
         >
           {showSuccess ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {cartQuantity > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-2 -right-2 border-2 border-primary text-primary bg-white text-[10px] font-bold min-w-5 h-5 px-1 rounded-full flex items-center justify-center"
+            >
+              {cartQuantity > 99 ? '99+' : cartQuantity}
+            </span>
+          )}
         </button>
       </div>
       {!isAvailable && (

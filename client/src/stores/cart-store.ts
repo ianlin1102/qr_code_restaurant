@@ -48,6 +48,8 @@ interface CartState {
   setCartVersion: (v: number) => void
   totalPrice: () => number
   totalItems: () => number
+  /** Sum quantity for a given menuItemId across all CartEntries (different remarks/options merge here). */
+  quantityByMenuItem: (menuItemId: string) => number
 }
 
 export const useCartStore = create<CartState>()(
@@ -128,6 +130,15 @@ export const useCartStore = create<CartState>()(
   totalPrice: () => get().items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0),
 
   totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
+
+  quantityByMenuItem: (menuItemId) => {
+    if (!menuItemId) return 0
+    return get().items.reduce((sum, i) => {
+      if (i.menuItemId !== menuItemId) return sum
+      const qty = typeof i.quantity === 'number' && i.quantity > 0 ? i.quantity : 0
+      return sum + qty
+    }, 0)
+  },
     }),
     { name: 'qr-order-cart', storage: safeStorage as any }
   )
