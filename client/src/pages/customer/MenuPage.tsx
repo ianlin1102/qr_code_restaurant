@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight } from 'lucide-react'
 
 /** Sticky region above scroll content: TopAppBar h-16 (64) + sticky tabs (~56). */
 /* Keep in sync with className `scroll-mt-[120px]` on each <section> below. */
@@ -9,8 +8,6 @@ const STICKY_HEADER_OFFSET = 120
 import { api } from '@/services/api'
 import { useCartStore } from '@/stores/cart-store'
 import { useSessionStore } from '@/stores/session-store'
-import { formatPriceUSD } from '@/lib/format'
-import { itemLineTotal } from '@/lib/pricing'
 import { localized } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -76,15 +73,10 @@ export default function MenuPage() {
   const activeSessionId = usePaymentStore(s => s.sessionId)
   const initPayment = usePaymentStore(s => s.init)
   const stopPayment = usePaymentStore(s => s.stop)
-  const sessionRemaining = sessionSummary?.remaining ?? 0
-  const sessionOrders = sessionSummary?.orders?.filter(o => o.status !== 'closed') ?? []
   const [searchExpanded, setSearchExpanded] = useState(false)
   const menuScrollRef = useRef<HTMLDivElement | null>(null)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const scrollLockRef = useRef<boolean>(false)
-  const lastScrollYRef = useRef<number>(0)
-  const isHeaderCollapsedRef = useRef<boolean>(false)
-  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false)
 
   // Initialize session payment store (handles polling + session creation)
   useEffect(() => {
@@ -276,33 +268,6 @@ export default function MenuPage() {
       if (foundId && foundId !== activeCategory) {
         setActiveCategory(foundId)
       }
-
-      // Scroll-direction header collapse — skip during click-driven scrolls.
-      if (!scrollLockRef.current) {
-        const currentY = viewport.scrollTop
-        const lastY = lastScrollYRef.current
-        const delta = currentY - lastY
-        const COLLAPSE_THRESHOLD = 8 // px noise filter
-        const FORCE_SHOW_BELOW = 100 // near-top zone
-
-        if (currentY < FORCE_SHOW_BELOW) {
-          if (isHeaderCollapsedRef.current) {
-            isHeaderCollapsedRef.current = false
-            setIsHeaderCollapsed(false)
-          }
-        } else if (delta > COLLAPSE_THRESHOLD) {
-          if (!isHeaderCollapsedRef.current) {
-            isHeaderCollapsedRef.current = true
-            setIsHeaderCollapsed(true)
-          }
-        } else if (delta < -COLLAPSE_THRESHOLD) {
-          if (isHeaderCollapsedRef.current) {
-            isHeaderCollapsedRef.current = false
-            setIsHeaderCollapsed(false)
-          }
-        }
-        lastScrollYRef.current = currentY
-      }
     }
 
     const onScroll = () => {
@@ -310,7 +275,6 @@ export default function MenuPage() {
       rafId = requestAnimationFrame(updateActiveCategory)
     }
 
-    lastScrollYRef.current = viewport.scrollTop // baseline for delta math
     updateActiveCategory() // initial sync after mount / filteredCategories change
     viewport.addEventListener('scroll', onScroll, { passive: true })
 
@@ -386,126 +350,6 @@ export default function MenuPage() {
           ))}
         </nav>
       )}
-
-      {/* Collapsible header region: Pay Now + Current Order auto-hide on scroll-down */}
-      <div
-        aria-hidden={isHeaderCollapsed}
-        className={`overflow-hidden transition-all duration-200 ease-in-out ${
-          isHeaderCollapsed ? 'max-h-0 opacity-0' : 'max-h-[600px] opacity-100'
-        }`}
-      >
-      {/* Pay Now banner — shows when session has remaining balance */}
-      {sessionRemaining > 0 && activeSessionId && (
-        <div className="bg-orange-50 border-b border-orange-200 px-4 py-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-display font-medium text-sm text-orange-800">
-                {lang === 'zh' ? '待付款' : 'Payment Due'}
-              </p>
-              <p className="font-display font-bold text-sm text-orange-600">
-                {formatPriceUSD(sessionRemaining)}
-              </p>
-            </div>
-            <Button
-              size="sm"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-display rounded-xl"
-              onClick={() => setSettlementOpen(true)}
-            >
-              {lang === 'zh' ? '结账' : 'Settle'}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Current session — items + tax + total + payments + remaining */}
-      {sessionOrders.length > 0 && (() => {
-        const ss = sessionSummary
-        const subtotal = ss?.netDue ?? sessionOrders.reduce((s, o) => s + o.totalPrice, 0)
-        const tax = ss?.tax ?? 0
-        const svcFee = ss?.serviceFee ?? 0
-        const total = ss?.totalWithTax ?? subtotal
-        const paidIds = ss?.paidItemIds ?? []
-        const payments = [...(ss?.payments ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-        return (
-          <details className="group border-b">
-            <summary className="px-4 py-2 font-display text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50 flex items-center justify-between [&::-webkit-details-marker]:hidden list-none">
-              <span className="flex items-center gap-2">
-                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
-                <span>{lang === 'zh' ? '本次已点' : 'Current Order'}</span>
-              </span>
-              <span className="font-display font-bold text-foreground">{formatPriceUSD(total)}</span>
-            </summary>
-            <div className="px-4 pb-3 space-y-1 max-h-72 overflow-y-auto">
-              {/* Items */}
-              {sessionOrders.flatMap((o, oi) => o.items.map((item, ii) => {
-                const itemKey = `${o.id}:${ii}`
-                const isPaid = paidIds.some(k => k === itemKey || k.startsWith(itemKey + ':'))
-                const isVoided = !!(item as { voided?: boolean }).voided
-                const price = isVoided ? 0 : itemLineTotal(item)
-                return (
-                  <div key={`${oi}-${ii}`} className={`flex justify-between text-xs gap-2 ${isVoided ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>
-                    <span className="font-display">
-                      {item.quantity}x {localized(item, lang) || item.name}
-                      {item.selectedOptions && item.selectedOptions.length > 0 && (
-                        <span className="text-orange-600 ml-1">
-                          ({item.selectedOptions.map(o => (o.choiceName || o.choiceNameEn || '')).join(', ')})
-                        </span>
-                      )}
-                      {isPaid && <span className="ml-1.5 font-label text-label-sm text-green-600">{lang === 'zh' ? '已付' : 'Paid'}</span>}
-                      {isVoided && <span className="ml-1.5 font-label text-label-sm text-red-600">{lang === 'zh' ? '已作废' : 'Voided'}</span>}
-                    </span>
-                    <span className="font-display">{formatPriceUSD(price)}</span>
-                  </div>
-                )
-              }))}
-              {/* Tax + Service Fee + Total */}
-              <div className="border-t mt-2 pt-2 space-y-1">
-                {tax > 0 && (
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '税' : 'Tax'}</span>
-                    <span className="font-display">{formatPriceUSD(tax)}</span>
-                  </div>
-                )}
-                {svcFee > 0 && (
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '服务费' : 'Service Fee'}</span>
-                    <span className="font-display">{formatPriceUSD(svcFee)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-xs">
-                  <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '合计' : 'Total'}</span>
-                  <span className="font-display font-bold">{formatPriceUSD(total)}</span>
-                </div>
-              </div>
-              {/* Payment history (sorted by time, tip excluded from displayed amount) */}
-              {payments.length > 0 && (
-                <div className="border-t mt-2 pt-2 space-y-1">
-                  {payments.map((p, pi) => {
-                    const foodAmount = p.amount - (p.tipAmount ?? 0)
-                    return (
-                      <div key={pi} className="flex justify-between text-xs text-green-600">
-                        <span className="font-display">
-                          {p.paidBy || (lang === 'zh' ? '顾客' : 'Guest')}
-                          {p.method && <span className="font-label text-label-sm text-muted-foreground ml-1">({p.method})</span>}
-                        </span>
-                        <span className="font-display">−{formatPriceUSD(foodAmount)}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-              {/* Remaining */}
-              {(ss?.remaining ?? 0) > 0 && payments.length > 0 && (
-                <div className="flex justify-between text-xs pt-2 border-t mt-2">
-                  <span className="font-label text-label-sm uppercase">{lang === 'zh' ? '待付' : 'Remaining'}</span>
-                  <span className="font-display font-bold text-primary">{formatPriceUSD(ss!.remaining)}</span>
-                </div>
-              )}
-            </div>
-          </details>
-        )
-      })()}
-      </div>
 
       {/* Menu items */}
       <div ref={menuScrollRef} className="flex-1 overflow-hidden">
