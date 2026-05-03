@@ -4,7 +4,7 @@ import { Check, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { formatPriceUSD } from '@/lib/format'
-import { localized, localizedDesc } from '@/lib/i18n-utils'
+import { localized, localizedDesc, localizedQuickTag } from '@/lib/i18n-utils'
 import { DietaryBadges, RecommendedBadge } from '@/components/menu/MenuItemBadges'
 import { useCartStore } from '@/stores/cart-store'
 import type { MenuItem } from '@qr-order/shared'
@@ -89,7 +89,7 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
         {quickTag && isAvailable && (
           <div className="absolute top-3 left-3">
             <span className="bg-card/90 backdrop-blur-sm text-primary font-label text-label-sm rounded-lg px-2 py-1">
-              {quickTag}
+              {localizedQuickTag(quickTag, currentLang)}
             </span>
           </div>
         )}

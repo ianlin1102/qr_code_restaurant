@@ -366,6 +366,9 @@ function QuickTagsField({
   return (
     <div>
       <label className="text-sm font-medium">{t.menu.quickTagsLabel}</label>
+      <p className="text-xs text-muted-foreground mt-0.5 mb-1.5 leading-snug">
+        {t.menu.quickTagsHint}
+      </p>
       <Textarea
         value={text}
         onChange={e => commit(e.target.value)}

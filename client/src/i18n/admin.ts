@@ -63,7 +63,8 @@ export const adminT = {
       dietaryLabel: '饮食标签',
       recommendedLabel: '推荐菜品',
       quickTagsLabel: '快捷备注（每行一条）',
-      quickTagsPlaceholder: '每行一条，最多 10 条',
+      quickTagsPlaceholder: '每行一条，最多 10 条 (例: 少冰/Less Ice)',
+      quickTagsHint: '格式：中文/English — 顾客切换语言时自动显示对应部分。无斜杠的备注两种语言都显示原文。',
       dietary: {
         vegetarian: '素食',
         vegan: '纯素',
@@ -380,7 +381,8 @@ export const adminT = {
       dietaryLabel: 'Dietary Tags',
       recommendedLabel: 'Recommended',
       quickTagsLabel: 'Quick Remarks (one per line)',
-      quickTagsPlaceholder: 'One per line, up to 10',
+      quickTagsPlaceholder: 'One per line, up to 10 (e.g. 少冰/Less Ice)',
+      quickTagsHint: 'Format: Chinese/English — customer language toggle picks the matching part. Tags without slash render the same string in both languages.',
       dietary: {
         vegetarian: 'Vegetarian',
         vegan: 'Vegan',

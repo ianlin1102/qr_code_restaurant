@@ -25,3 +25,22 @@ export function localizedDesc(
   if (lang === 'en') return item.descriptionEn || item.description
   return item.description
 }
+
+/**
+ * Resolve a quickTag with embedded bilingual content using "/" separator.
+ *
+ * Convention: admin enters "少冰/Less Ice" — display picks per lang.
+ * Backward-compat: tags without "/" return as-is (legacy mono-language tags
+ * like "少冰" still render their original string regardless of lang).
+ *
+ * Example:
+ *   localizedQuickTag("少冰/Less Ice", "en") → "Less Ice"
+ *   localizedQuickTag("少冰/Less Ice", "zh") → "少冰"
+ *   localizedQuickTag("少冰", "en")          → "少冰"  (no slash → fallback)
+ */
+export function localizedQuickTag(tag: string, lang: string): string {
+  if (!tag.includes('/')) return tag
+  const parts = tag.split('/').map(s => s.trim())
+  if (lang === 'en' && parts[1]) return parts[1]
+  return parts[0] || tag
+}

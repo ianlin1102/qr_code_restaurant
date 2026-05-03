@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useCartStore } from '@/stores/cart-store'
 import { formatPriceUSD } from '@/lib/format'
 import { itemUnitPrice } from '@/lib/pricing'
-import { localized, localizedDesc } from '@/lib/i18n-utils'
+import { localized, localizedDesc, localizedQuickTag } from '@/lib/i18n-utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -168,7 +168,7 @@ export default function MenuItemDetailSheet({ item, category, open, onClose }: P
                         : 'border-gray-200 text-muted-foreground hover:border-gray-300'
                     }`}
                   >
-                    {tag}
+                    {localizedQuickTag(tag, lang)}
                   </button>
                 ))}
               </div>
