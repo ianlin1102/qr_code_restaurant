@@ -36,6 +36,7 @@ export default function MenuItemDetailSheet({ item, category, open, onClose }: P
   const [quickTags, setQuickTags] = useState<string[]>([])
   const [remark, setRemark] = useState('')
   const [quantity, setQuantity] = useState(1)
+  const [noteExpanded, setNoteExpanded] = useState(false)
 
   // Reset state when item changes or sheet opens
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function MenuItemDetailSheet({ item, category, open, onClose }: P
       setQuickTags([])
       setRemark('')
       setQuantity(1)
+      setNoteExpanded(false)
     }
   }, [open, item?.id])
 
@@ -215,15 +217,26 @@ export default function MenuItemDetailSheet({ item, category, open, onClose }: P
             </div>
           ))}
 
-          {/* Remark */}
+          {/* Remark — collapsed by default; click "+ Note" to expand */}
           <div>
-            <Textarea
-              value={remark}
-              onChange={e => setRemark(e.target.value)}
-              placeholder={t('cart.remarkPlaceholder')}
-              className="resize-none text-sm"
-              rows={2}
-            />
+            {noteExpanded || remark.trim() ? (
+              <Textarea
+                value={remark}
+                onChange={e => setRemark(e.target.value)}
+                placeholder={t('cart.remarkPlaceholder')}
+                className="resize-none text-sm"
+                rows={2}
+                autoFocus={noteExpanded && !remark.trim()}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setNoteExpanded(true)}
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary border border-dashed border-muted-foreground/30 rounded-full px-3 py-1.5 transition-colors"
+              >
+                {t('cart.addNote')}
+              </button>
+            )}
           </div>
 
           {/* Quantity selector + Add button */}

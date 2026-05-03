@@ -51,6 +51,7 @@
     "currentCart": "当前购物车",
     "perServing": "/ 份",
     "remarkPlaceholder": "添加备注（可选）",
+    "addNote": "+ 备注",
     "itemCount": "{{count}} 件商品",
     "submitOrder": "提交订单",
     "submitAddMore": "提交加菜",

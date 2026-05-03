@@ -51,6 +51,7 @@
     "currentCart": "Current cart",
     "perServing": "/ each",
     "remarkPlaceholder": "Add a note (optional)",
+    "addNote": "+ Note",
     "itemCount": "{{count}} items",
     "submitOrder": "Place order",
     "submitAddMore": "Add to order",
