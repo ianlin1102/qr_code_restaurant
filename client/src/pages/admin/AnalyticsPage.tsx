@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/i18n/useT'
+import { localized } from '@/lib/i18n-utils'
 import { api } from '@/services/api'
 import { formatPriceUSD } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -33,7 +34,7 @@ function downloadCsv(data: AnalyticsResponse) {
 }
 
 export default function AnalyticsPage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const storeId = useAuthStore(s => s.user?.storeId)
   const [[start, end], setRange] = useState(defaultRange)
   const [data, setData] = useState<AnalyticsResponse | null>(null)
@@ -143,7 +144,7 @@ export default function AnalyticsPage() {
                         {data.topItems.map((item, i) => (
                           <tr key={item.menuItemId} className="border-b last:border-0">
                             <td className="py-2 pr-4">{i + 1}</td>
-                            <td className="py-2 pr-4">{item.name}</td>
+                            <td className="py-2 pr-4">{localized(item, lang)}</td>
                             <td className="py-2 pr-4 text-right">{item.quantity}</td>
                             <td className="py-2 text-right">{formatPriceUSD(item.revenue)}</td>
                           </tr>

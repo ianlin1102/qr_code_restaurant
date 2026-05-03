@@ -183,8 +183,8 @@ function DesktopTable({
                           )}
                           <div>
                             <InlineEdit
-                              value={item.name}
-                              onSave={val => onInlineEdit(item.id, 'name', val)}
+                              value={localized(item, lang)}
+                              onSave={val => onInlineEdit(item.id, lang === 'en' ? 'nameEn' : 'name', val)}
                               className="font-medium"
                             />
                             {localizedDesc(item, lang) && (
