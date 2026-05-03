@@ -182,7 +182,7 @@ export default function MenuItemForm({
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] md:w-auto max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] md:w-auto max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isNew ? t.menuManage.addItemTitle : t.menuManage.editItemTitle}</DialogTitle>
         </DialogHeader>

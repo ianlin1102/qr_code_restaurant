@@ -107,7 +107,7 @@ export default function MenuItemDetailSheet({ item, category, open, onClose }: P
 
   return (
     <Sheet open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto pb-safe p-0">
+      <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto pb-safe p-0">
         {/* Image section */}
         {item.image ? (
           <img

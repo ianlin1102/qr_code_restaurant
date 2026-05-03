@@ -145,7 +145,7 @@ export function CsvImportDialog({ open, onClose, categories, onImported, t }: Pr
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-[calc(100vw-2rem)] max-h-[80dvh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-semibold">{t.csv?.importTitle || 'Import CSV'}</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">

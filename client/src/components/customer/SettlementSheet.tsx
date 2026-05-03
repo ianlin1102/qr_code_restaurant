@@ -179,7 +179,7 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
 
   return (
     <Sheet open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <SheetContent side="bottom" className="max-h-[85vh] flex flex-col">
+      <SheetContent side="bottom" className="max-h-[85dvh] flex flex-col">
         <SheetHeader>
           <SheetTitle>{t('结账', 'Settle Bill')}</SheetTitle>
         </SheetHeader>
