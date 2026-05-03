@@ -4,6 +4,9 @@ import { Dialog as SheetPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 
+/** Pixels of vertical drag from the grabber zone needed to dismiss a bottom sheet. */
+const SWIPE_DOWN_CLOSE_THRESHOLD = 80
+
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
 }
@@ -52,12 +55,40 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
+  const closeRef = React.useRef<HTMLButtonElement>(null)
+  const startYRef = React.useRef<number | null>(null)
+  const [dragY, setDragY] = React.useState(0)
+
+  // Bottom sheets get a swipe-down-to-close grabber zone.
+  // Drag handlers are wired on a thin top strip — content body scrolls natively.
+  const onGrabberTouchStart = (e: React.TouchEvent) => {
+    startYRef.current = e.touches[0].clientY
+  }
+  const onGrabberTouchMove = (e: React.TouchEvent) => {
+    if (startYRef.current === null) return
+    const dy = e.touches[0].clientY - startYRef.current
+    setDragY(Math.max(0, dy))
+  }
+  const onGrabberTouchEnd = () => {
+    if (dragY >= SWIPE_DOWN_CLOSE_THRESHOLD) closeRef.current?.click()
+    setDragY(0)
+    startYRef.current = null
+  }
+
+  const isBottom = side === "bottom"
+  const dragStyle: React.CSSProperties | undefined = isBottom && dragY > 0
+    ? { transform: `translateY(${dragY}px)`, transition: "none" }
+    : isBottom
+      ? { transition: "transform 200ms ease-out" }
+      : undefined
+
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
         aria-describedby={undefined}
         data-slot="sheet-content"
+        style={dragStyle}
         className={cn(
           "fixed z-50 flex flex-col gap-4 bg-background shadow-ambient transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500",
           side === "right" &&
@@ -67,14 +98,30 @@ function SheetContent({
           side === "top" &&
             "inset-x-0 top-0 h-auto border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
           side === "bottom" &&
-            "inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+            "inset-x-0 bottom-0 h-auto border-t rounded-t-2xl data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
           className
         )}
         {...props}
       >
+        {isBottom && (
+          <div
+            data-slot="sheet-grabber"
+            onTouchStart={onGrabberTouchStart}
+            onTouchMove={onGrabberTouchMove}
+            onTouchEnd={onGrabberTouchEnd}
+            onTouchCancel={onGrabberTouchEnd}
+            className="absolute inset-x-0 top-0 flex justify-center pt-2 pb-2 z-10 cursor-grab touch-none"
+            aria-hidden="true"
+          >
+            <span className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
         {children}
         {showCloseButton && (
-          <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">
+          <SheetPrimitive.Close
+            ref={closeRef}
+            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary"
+          >
             <XIcon className="size-4" />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
