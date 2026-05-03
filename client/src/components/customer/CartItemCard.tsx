@@ -23,7 +23,7 @@ export default function CartItemCard({
 }: CartItemCardProps) {
   const price = unitPrice(item)
   return (
-    <div className="bg-card rounded-xl p-3 md:p-4 space-y-3 shadow-sm">
+    <div className="bg-yellow-50 border border-yellow-200/60 rounded-xl p-3 md:p-4 space-y-3 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="w-10 h-10 rounded-full bg-muted/50 shrink-0 flex items-center justify-center text-lg font-display">
           {item.name.charAt(0)}
