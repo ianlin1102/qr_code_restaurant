@@ -80,17 +80,18 @@ export default function OrderConfirmPage() {
   }, [storeId, tableId])
 
   // On successful Stripe payment: retry polling for payment confirmation (fallback)
+  // NOTE: cart clearing is deferred until we confirm the payment was a
+  // cart-submit pay-first (not a settle of already-submitted orders).
+  // Settling existing orders must NOT touch the local pending cart —
+  // those are different items that the user hasn't submitted yet.
   useEffect(() => {
     if (!paymentSuccess || !storeId || !tableId) return
     const deviceId = getDeviceId()
     const piId = searchParams.get('payment_intent')
-    clearMyItems()
-    api.getActiveSession(storeId, tableId).then(s => {
-      if (s) api.updateSessionCart(storeId, s.id, deviceId, []).catch(() => {})
-    }).catch(() => {})
 
     let attempts = 0
     const maxAttempts = 7 // ~21s at 3s intervals
+    let cleared = false
     const poll = () => {
       api.getActiveSession(storeId, tableId).then(s => {
         if (!s) { if (++attempts < maxAttempts) setTimeout(poll, 3000); else setOrderTimeout(true); return }
@@ -105,6 +106,14 @@ export default function OrderConfirmPage() {
 
         const settlement = !!(s.settlementMode || (s.paidItemIds && s.paidItemIds.length > 0))
         setIsSettlement(settlement)
+
+        // Cart-submit pay-first: clear cart now (server already cleared pendingCart on submit).
+        // Settlement of existing orders: leave pending cart intact.
+        if (!cleared && !settlement) {
+          cleared = true
+          clearMyItems()
+          api.updateSessionCart(storeId, s.id, deviceId, []).catch(() => {})
+        }
 
         if (s.orders.length > 0) {
           if (settlement) {
