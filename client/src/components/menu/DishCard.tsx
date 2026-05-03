@@ -4,7 +4,7 @@ import { Check, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { formatPriceUSD } from '@/lib/format'
-import { localized, localizedDesc, localizedQuickTag } from '@/lib/i18n-utils'
+import { localized, localizedDesc } from '@/lib/i18n-utils'
 import { DietaryBadges, RecommendedBadge } from '@/components/menu/MenuItemBadges'
 import { useCartStore } from '@/stores/cart-store'
 import type { MenuItem } from '@qr-order/shared'
@@ -18,8 +18,8 @@ interface DishCardProps {
 }
 
 const labels = {
-  zh: { add: '添加', added: '已添加', soldOut: '售罄', inCart: '已加入' },
-  en: { add: 'Add', added: 'Added', soldOut: 'Sold Out', inCart: 'in cart' },
+  zh: { add: '添加', added: '已添加', soldOut: '售罄', inCart: '已加入', signature: '招牌' },
+  en: { add: 'Add', added: 'Added', soldOut: 'Sold Out', inCart: 'in cart', signature: 'Signature' },
 } as const
 
 /** 600ms add-success visual feedback hook (Plus → Check, navy → green, scale-up). */
@@ -48,7 +48,6 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
   const L = labels[currentLang]
   const name = localized(item, currentLang)
   const desc = localizedDesc(item, currentLang)
-  const quickTag = item.quickTags?.[0]
   const isAvailable = item.available
   const cartQuantity = useCartStore(s => s.quantityByMenuItem(item.id))
   const { showSuccess, trigger } = useAddSuccess()
@@ -86,10 +85,10 @@ function DishCardHighlight({ item, onAddClick, onCardClick, currentLang = 'en' }
             {name.charAt(0)}
           </div>
         )}
-        {quickTag && isAvailable && (
+        {item.isRecommended && isAvailable && (
           <div className="absolute top-3 left-3">
-            <span className="bg-card/90 backdrop-blur-sm text-primary font-label text-label-sm rounded-lg px-2 py-1">
-              {localizedQuickTag(quickTag, currentLang)}
+            <span className="bg-primary text-primary-foreground font-label text-label-sm uppercase tracking-wider rounded-full px-2 py-0.5">
+              {L.signature}
             </span>
           </div>
         )}
