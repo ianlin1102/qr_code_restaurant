@@ -2,6 +2,13 @@ import { writeFileSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { v4 as uuid } from 'uuid'
+import {
+  store3Id,
+  store3StoreEntry,
+  store3Categories,
+  store3MenuItems,
+  store3Tables,
+} from './seeds/store-003.js'
 
 const __filename2 = typeof __filename !== 'undefined' ? __filename : fileURLToPath(import.meta.url)
 const __dirname2 = typeof __dirname !== 'undefined' ? __dirname : dirname(__filename2)
@@ -197,59 +204,12 @@ const store2Tables = [
   { id: uuid(), storeId: store2Id, name: '包间1', nameEn: 'Room 1', status: 'idle' as const },
 ]
 
-// === Store 3: 竹香小馆 ===
-const store3Id = 'store-demo-003'
-const IMG3 = `${IMG}/demo-003`
-
-const store3Categories = [
-  { id: uuid(), storeId: store3Id, name: '主食', nameEn: 'Rice & Noodles', sortOrder: 1 },
-  { id: uuid(), storeId: store3Id, name: '招牌热菜', nameEn: 'Signature Entrees', sortOrder: 2 },
-  { id: uuid(), storeId: store3Id, name: '小吃', nameEn: 'Appetizers', sortOrder: 3 },
-  { id: uuid(), storeId: store3Id, name: '饮品', nameEn: 'Drinks', sortOrder: 4 },
-]
-
-const store3MenuItems = [
-  // --- 主食 (cat 0) ---
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[0].id, name: '宫保鸡丁盖饭', nameEn: 'Kung Pao Chicken over Rice', price: 1399, available: true, sortOrder: 1, image: `${IMG3}/kung-pao-chicken-rice.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[0].id, name: '黑椒牛肉盖饭', nameEn: 'Black Pepper Beef over Rice', price: 1499, available: true, sortOrder: 2, image: `${IMG3}/black-pepper-beef-rice.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[0].id, name: '麻婆豆腐盖饭', nameEn: 'Mapo Tofu over Rice', price: 1299, available: true, sortOrder: 3, image: `${IMG3}/mapo-tofu-rice.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[0].id, name: '招牌牛肉炒面', nameEn: 'House Special Beef Chow Mein', price: 1499, available: true, sortOrder: 4, image: `${IMG3}/beef-chow-mein.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[0].id, name: '鸡肉炒河粉', nameEn: 'Chicken Stir-Fried Rice Noodles', price: 1399, available: true, sortOrder: 5, image: `${IMG3}/chicken-chow-fun.webp` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[0].id, name: '扬州炒饭', nameEn: 'Yangzhou Fried Rice', price: 1399, available: true, sortOrder: 6, image: `${IMG3}/yangzhou-fried-rice.jpg` },
-
-  // --- 招牌热菜 (cat 1) ---
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[1].id, name: '左宗鸡', nameEn: "General Tso's Chicken", price: 1599, available: true, sortOrder: 1, image: `${IMG3}/general-tsos-chicken.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[1].id, name: '陈皮鸡', nameEn: 'Orange Chicken', price: 1599, available: true, sortOrder: 2, image: `${IMG3}/orange-chicken.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[1].id, name: '宫保鸡丁', nameEn: 'Kung Pao Chicken', price: 1549, available: true, sortOrder: 3, image: `${IMG3}/kung-pao-chicken.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[1].id, name: '西兰花牛肉', nameEn: 'Beef with Broccoli', price: 1699, available: true, sortOrder: 4, image: `${IMG3}/beef-with-broccoli.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[1].id, name: '鱼香肉丝', nameEn: 'Shredded Pork with Garlic Sauce', price: 1549, available: true, sortOrder: 5, image: `${IMG3}/shredded-pork-garlic.avif` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[1].id, name: '麻婆豆腐', nameEn: 'Mapo Tofu', price: 1399, available: true, sortOrder: 6, image: `${IMG3}/mapo-tofu.avif` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[1].id, name: '干煸四季豆', nameEn: 'Dry-Fried Green Beans', price: 1349, available: true, sortOrder: 7, image: `${IMG3}/dry-fried-green-beans.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[1].id, name: '番茄炒蛋', nameEn: 'Tomato & Egg Stir-Fry', price: 1299, available: true, sortOrder: 8, image: `${IMG3}/tomato-egg-stir-fry.avif` },
-
-  // --- 小吃 (cat 2) ---
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[2].id, name: '春卷(2个)', nameEn: 'Spring Rolls (2 pcs)', price: 499, available: true, sortOrder: 1, image: `${IMG3}/spring-rolls.avif` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[2].id, name: '锅贴(6个)', nameEn: 'Pan-Fried Dumplings (6 pcs)', price: 899, available: true, sortOrder: 2, image: `${IMG3}/pan-fried-dumplings.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[2].id, name: '炸蟹角(6个)', nameEn: 'Crab Rangoon (6 pcs)', price: 799, available: true, sortOrder: 3, image: `${IMG3}/crab-rangoon.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[2].id, name: '盐酥鸡', nameEn: 'Crispy Popcorn Chicken', price: 899, available: true, sortOrder: 4, image: `${IMG3}/popcorn-chicken.jpg` },
-
-  // --- 饮品 (cat 3) ---
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[3].id, name: '冰红茶', nameEn: 'Iced Black Tea', price: 350, available: true, sortOrder: 1, image: `${IMG3}/iced-black-tea.jpg` },
-  { id: uuid(), storeId: store3Id, categoryId: store3Categories[3].id, name: '蜜桃气泡饮', nameEn: 'Peach Sparkling Drink', price: 450, available: true, sortOrder: 2, image: `${IMG3}/peach-sparkling.png` },
-]
-
-const store3Tables = [
-  { id: uuid(), storeId: store3Id, name: '1号桌', nameEn: 'Table 1', status: 'idle' as const },
-  { id: uuid(), storeId: store3Id, name: '2号桌', nameEn: 'Table 2', status: 'idle' as const },
-  { id: uuid(), storeId: store3Id, name: '3号桌', nameEn: 'Table 3', status: 'idle' as const },
-  { id: uuid(), storeId: store3Id, name: '4号桌', nameEn: 'Table 4', status: 'idle' as const },
-]
 
 // === Merge & Write ===
 const stores = [
   { id: store1Id, name: '示例餐厅', nameEn: 'Demo Restaurant', description: '这是一家示例餐厅', descriptionEn: 'A demo restaurant', openingHours: '09:00-22:00', createdAt: new Date().toISOString() },
   { id: store2Id, name: '火锅世界', nameEn: 'Hotpot World', description: '正宗重庆火锅', descriptionEn: 'Authentic Chongqing hotpot', openingHours: '11:00-23:00', createdAt: new Date().toISOString() },
-  { id: store3Id, name: '竹香小馆', nameEn: 'Bamboo Kitchen', description: '地道中华美食', descriptionEn: 'Authentic Chinese cuisine', openingHours: '11:00-22:00', createdAt: new Date().toISOString() },
+  store3StoreEntry,
 ]
 
 const categories = [...store1Categories, ...store2Categories, ...store3Categories]
