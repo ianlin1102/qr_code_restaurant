@@ -272,7 +272,7 @@ export default function CartPage() {
         {/* C2 α: chip divider between Current Order and pending cart items */}
         {showCurrentOrder && !isEmpty && (
           <div className="mt-4 mb-3 flex items-center px-4">
-            <span className="font-label text-label-sm uppercase tracking-wider text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+            <span className="font-label text-label-sm uppercase tracking-wider text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full">
               {lang === 'zh' ? '待下单' : 'Pending Items'}
             </span>
           </div>
