@@ -23,11 +23,16 @@ import type { Store } from '@qr-order/shared'
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 type Settlement = { type: 'by-item'; itemKeys: string[] } | { type: 'by-percent'; percent: number }
+type SummaryItem = {
+  name: string; quantity: number; price: number
+  selectedOptions?: { choiceName?: string; choiceNameEn?: string; priceAdjust?: number }[]
+}
 type RouteState = {
   clientSecret?: string; amount?: number; tableId?: string
   subtotal?: number; tax?: number
   items?: { menuItemId: string; quantity: number; remark?: string; selectedOptions?: unknown[] }[]
   sessionId?: string; settlement?: Settlement
+  summaryItems?: SummaryItem[]
 } | null
 
 function CheckoutForm({ amount, items }: { amount: number; items: { name: string; quantity: number; price: number; selectedOptions?: { choiceName?: string; choiceNameEn?: string; priceAdjust?: number }[] }[] }) {
@@ -229,7 +234,7 @@ export default function CheckoutPage() {
           locale: lang === 'zh' ? 'zh' : 'en',
           appearance: { theme: 'stripe' },
         }} key={activeSecret}>
-          <CheckoutForm amount={activeAmount} items={cartItems} />
+          <CheckoutForm amount={activeAmount} items={state?.summaryItems ?? cartItems} />
         </Elements>
       </div>
     </div>

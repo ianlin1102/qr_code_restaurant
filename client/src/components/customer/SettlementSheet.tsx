@@ -162,12 +162,30 @@ export default function SettlementSheet({ open, onClose, storeId, session }: Pro
       const settlement = tab === 'items'
         ? { type: 'by-item' as const, itemKeys: buildItemKeys(selectedQty) }
         : { type: 'by-percent' as const, percent }
+      // Build display items for CheckoutPage's ORDER SUMMARY — show what the
+      // user is actually paying for (selected items), not the local cart.
+      // by-percent has no per-item breakdown → empty list, CheckoutForm hides
+      // the section via its items.length > 0 conditional.
+      const summaryItems = tab === 'items'
+        ? allItems
+            .filter(it => (selectedQty[it.key] ?? 0) > 0)
+            .map(it => ({
+              name: it.name,
+              quantity: selectedQty[it.key],
+              price: it.unitPrice,
+              selectedOptions: it.opts.map(o => ({
+                choiceName: o.label,
+                priceAdjust: o.adjust,
+              })),
+            }))
+        : []
       const { clientSecret, amount } = await api.createCheckoutForSession(storeId, session.id, calc.total, settlement)
       navigate(`/store/${storeId}/checkout`, {
         state: {
           clientSecret, amount,
           subtotal: calc.subtotal, tax: calc.tax,
           tableId: session.tableId, sessionId: session.id, settlement,
+          summaryItems,
         },
       })
     } catch (err) {
