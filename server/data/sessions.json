@@ -1,1 +1,310 @@
-[]
+[
+  {
+    "id": "49725a5e-304d-447b-8d66-2eff53f496c1",
+    "storeId": "store-demo-002",
+    "tableId": "473ad3ac-7bb2-42de-95a1-53da20eca8c4",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-04-29T22:44:45.706Z",
+    "pendingCart": {},
+    "closedAt": "2026-04-29T23:03:20.809Z"
+  },
+  {
+    "id": "bf1b545d-d8a3-4363-8134-767eae2da09f",
+    "storeId": "store-demo-002",
+    "tableId": "473ad3ac-7bb2-42de-95a1-53da20eca8c4",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-04-29T23:05:07.417Z",
+    "pendingCart": {},
+    "cartVersion": 1,
+    "lastCartSubmitAt": "2026-04-29T23:27:36.041Z",
+    "closedAt": "2026-04-29T23:27:36.603Z"
+  },
+  {
+    "id": "205cd537-c002-4f7b-afac-a7acfd602685",
+    "storeId": "store-demo-002",
+    "tableId": "473ad3ac-7bb2-42de-95a1-53da20eca8c4",
+    "status": "closed",
+    "orderIds": [
+      "edd55225-c89e-4fd8-bf83-0a02cc1501d8",
+      "e973360d-fe8b-4862-9069-979506e063ad",
+      "1de5a5ac-800a-4e76-81b5-eaa8c276fbbf",
+      "23c4a8d3-3453-4827-82dd-4d8a3fba2271",
+      "958005bb-c679-47eb-a06a-8087124b5ca6",
+      "69c89cb3-9167-4e3b-b655-451830a5314a"
+    ],
+    "createdAt": "2026-04-29T23:27:51.750Z",
+    "pendingCart": {},
+    "cartVersion": 7,
+    "lastCartSubmitAt": "2026-04-30T23:02:39.715Z",
+    "settlementMode": "by-percent",
+    "closedAt": "2026-04-30T23:03:01.847Z"
+  },
+  {
+    "id": "9ceb8743-f78d-4eec-ae43-1c401f5a5d2f",
+    "storeId": "store-demo-003",
+    "tableId": "473ad3ac-7bb2-42de-95a1-53da20eca8c4",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-04-30T22:48:02.404Z",
+    "pendingCart": {},
+    "closedAt": "2026-04-30T23:05:41.648Z"
+  },
+  {
+    "id": "a5e6dc49-cf28-49de-aaa6-a18eff988dfd",
+    "storeId": "store-demo-002",
+    "tableId": "d0562feb-5c66-452d-873b-a303f7f361d2",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-04-30T22:49:32.135Z",
+    "pendingCart": {},
+    "closedAt": "2026-04-30T23:05:41.651Z"
+  },
+  {
+    "id": "68faac54-210e-40e8-8395-e8d0ec42a911",
+    "storeId": "store-demo-002",
+    "tableId": "473ad3ac-7bb2-42de-95a1-53da20eca8c4",
+    "status": "closed",
+    "orderIds": [
+      "bd1c58f0-a23e-43ff-8955-94401c2fb9f8",
+      "853339e1-7b81-4bcc-a627-e8f61677f49a"
+    ],
+    "createdAt": "2026-04-30T23:03:12.111Z",
+    "pendingCart": {},
+    "cartVersion": 2,
+    "lastCartSubmitAt": "2026-04-30T23:18:59.395Z",
+    "settlementMode": "by-percent",
+    "closedAt": "2026-04-30T23:38:32.269Z"
+  },
+  {
+    "id": "b3602bea-80fd-4235-ad20-1ae6065352c4",
+    "storeId": "store-demo-003",
+    "tableId": "473ad3ac-7bb2-42de-95a1-53da20eca8c4",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-05-01T01:00:48.897Z",
+    "pendingCart": {},
+    "closedAt": "2026-05-01T01:24:36.933Z"
+  },
+  {
+    "id": "283ba6b5-509a-4ccf-b118-9a7491fe8c6a",
+    "storeId": "store-demo-002",
+    "tableId": "473ad3ac-7bb2-42de-95a1-53da20eca8c4",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-05-01T01:00:59.187Z",
+    "pendingCart": {},
+    "closedAt": "2026-05-01T01:24:36.936Z"
+  },
+  {
+    "id": "05add1e5-a333-4a43-aaff-4c996c7360eb",
+    "storeId": "store-demo-003",
+    "tableId": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-05-01T01:01:37.852Z",
+    "pendingCart": {},
+    "closedAt": "2026-05-01T01:24:36.937Z"
+  },
+  {
+    "id": "6a78647c-c474-4e65-ae81-2066566e4cac",
+    "storeId": "store-demo-003",
+    "tableId": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "status": "closed",
+    "orderIds": [
+      "1ccd4ae9-7114-4f6d-beac-9e6099e48e58"
+    ],
+    "createdAt": "2026-05-01T01:26:52.409Z",
+    "pendingCart": {},
+    "cartVersion": 1,
+    "lastCartSubmitAt": "2026-05-01T01:34:27.035Z",
+    "settlementMode": "by-item",
+    "closedAt": "2026-05-01T01:34:39.688Z"
+  },
+  {
+    "id": "370b2715-6bb8-4077-b037-f34c00a1bee2",
+    "storeId": "store-demo-003",
+    "tableId": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "status": "closed",
+    "orderIds": [
+      "4d97be84-0310-45a9-b8a3-eccb5affa988"
+    ],
+    "createdAt": "2026-05-01T01:34:41.871Z",
+    "pendingCart": {},
+    "cartVersion": 1,
+    "lastCartSubmitAt": "2026-05-01T01:34:53.713Z",
+    "settlementMode": "by-item",
+    "closedAt": "2026-05-01T01:37:12.782Z"
+  },
+  {
+    "id": "0fb7d8be-8cae-4450-a0f3-f69e928dd581",
+    "storeId": "store-demo-003",
+    "tableId": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "status": "closed",
+    "orderIds": [
+      "7c8d8c08-0f8a-40ff-b755-bc67b6a1f112"
+    ],
+    "createdAt": "2026-05-01T01:37:17.263Z",
+    "pendingCart": {},
+    "cartVersion": 1,
+    "lastCartSubmitAt": "2026-05-01T01:37:29.581Z",
+    "settlementMode": "by-item",
+    "closedAt": "2026-05-01T01:37:49.273Z"
+  },
+  {
+    "id": "929236d7-b191-4be1-9595-b40533aa36f8",
+    "storeId": "store-demo-003",
+    "tableId": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "status": "closed",
+    "orderIds": [
+      "a4bb6f79-5fa8-4640-a894-d86bfb7fd1d9",
+      "726802cb-55d9-4ff1-8dbe-44308f2aa3e2",
+      "50ec8e5f-78c0-48b0-9ae9-f7281e4f487d",
+      "b0da2115-14af-4d3a-929f-4c17fdc9359f"
+    ],
+    "createdAt": "2026-05-01T01:37:57.064Z",
+    "pendingCart": {},
+    "cartVersion": 4,
+    "lastCartSubmitAt": "2026-05-01T01:58:58.958Z",
+    "settlementMode": "by-percent",
+    "closedAt": "2026-05-01T03:48:08.145Z"
+  },
+  {
+    "id": "cdcfae97-4ab4-44e8-b6fe-8ce129598849",
+    "storeId": "store-demo-003",
+    "tableId": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "status": "closed",
+    "orderIds": [
+      "567d29c7-0125-4e18-9abe-fa7beef0c62c",
+      "f367029c-5e92-435f-b703-2ee6eaf91314",
+      "d1520d02-fc4f-4c23-9f68-8bc6f2f52f5c",
+      "53427e57-b1c3-4144-8d55-f51fd7142a1d"
+    ],
+    "createdAt": "2026-05-02T16:42:49.060Z",
+    "pendingCart": {},
+    "cartVersion": 4,
+    "lastCartSubmitAt": "2026-05-02T17:53:04.422Z",
+    "settlementMode": "by-item",
+    "closedAt": "2026-05-02T19:34:12.547Z"
+  },
+  {
+    "id": "92f71d33-666a-41a8-bb4a-1ed231afaa64",
+    "storeId": "store-demo-003",
+    "tableId": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "status": "closed",
+    "orderIds": [
+      "dce59fc1-28e7-4971-85f1-7eb697dd8067"
+    ],
+    "createdAt": "2026-05-02T19:34:15.264Z",
+    "pendingCart": {},
+    "cartVersion": 1,
+    "lastCartSubmitAt": "2026-05-02T19:34:22.043Z",
+    "closedAt": "2026-05-03T17:19:32.029Z"
+  },
+  {
+    "id": "21fc30ac-93d5-49a3-9431-675d73b7fcbb",
+    "storeId": "store-demo-003",
+    "tableId": "e28d3814-b884-4a36-96e3-9ad44e7858ad",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-05-03T21:37:52.095Z",
+    "pendingCart": {},
+    "cartVersion": 2,
+    "lastCartSubmitAt": "2026-05-03T21:39:32.627Z",
+    "closedAt": "2026-05-03T21:55:01.350Z"
+  },
+  {
+    "id": "287b86f7-f5fb-4a05-9c15-6832124c38ed",
+    "storeId": "store-demo-003",
+    "tableId": "a6a3fc69-eee1-43d9-94a6-d7f5c2e3ff52",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-05-03T21:39:44.460Z",
+    "pendingCart": {
+      "dev-zb0b327t": [
+        {
+          "menuItemId": "16d0af72-2d0d-4aeb-9d06-a98379836fe6",
+          "name": "招牌牛肉炒面",
+          "price": 1499,
+          "quantity": 6,
+          "selectedOptions": [
+            {
+              "optionId": "2a67de42-f37f-42a8-ab20-c73a9aeacb4e",
+              "optionName": "份量",
+              "choiceId": "e6e3cba2-6c12-41f3-975b-c0dbb510dcfe",
+              "choiceName": "大份",
+              "priceAdjust": 300
+            }
+          ],
+          "addedByDevice": "dev-zb0b327t"
+        }
+      ]
+    },
+    "closedAt": "2026-05-03T21:55:01.352Z"
+  },
+  {
+    "id": "ef403771-9da9-4f7a-a093-fd5b17269ef6",
+    "storeId": "store-demo-003",
+    "tableId": "a6a3fc69-eee1-43d9-94a6-d7f5c2e3ff52",
+    "status": "closed",
+    "orderIds": [],
+    "createdAt": "2026-05-03T22:03:52.151Z",
+    "pendingCart": {
+      "dev-zb0b327t": [
+        {
+          "menuItemId": "16d0af72-2d0d-4aeb-9d06-a98379836fe6",
+          "name": "招牌牛肉炒面",
+          "price": 1499,
+          "quantity": 6,
+          "selectedOptions": [
+            {
+              "optionId": "2a67de42-f37f-42a8-ab20-c73a9aeacb4e",
+              "optionName": "份量",
+              "choiceId": "e6e3cba2-6c12-41f3-975b-c0dbb510dcfe",
+              "choiceName": "大份",
+              "priceAdjust": 300
+            }
+          ],
+          "addedByDevice": "dev-zb0b327t"
+        }
+      ]
+    },
+    "closedAt": "2026-05-03T22:24:25.887Z"
+  },
+  {
+    "id": "cc915157-55e0-4750-93e3-734f65438c46",
+    "storeId": "store-demo-003",
+    "tableId": "a6a3fc69-eee1-43d9-94a6-d7f5c2e3ff52",
+    "status": "active",
+    "orderIds": [
+      "4c93b30e-dcb7-4c54-bdb9-570185ac8181",
+      "c38aa8ef-c7bf-4230-82b8-e9fbe54a1425",
+      "38a6916f-d410-4fd7-bb9f-b303b49f0d04"
+    ],
+    "createdAt": "2026-05-03T22:25:05.068Z",
+    "pendingCart": {
+      "dev-zb0b327t": [
+        {
+          "menuItemId": "16d0af72-2d0d-4aeb-9d06-a98379836fe6",
+          "name": "招牌牛肉炒面",
+          "price": 1499,
+          "quantity": 1,
+          "selectedOptions": [
+            {
+              "optionId": "2a67de42-f37f-42a8-ab20-c73a9aeacb4e",
+              "optionName": "份量",
+              "choiceId": "e6e3cba2-6c12-41f3-975b-c0dbb510dcfe",
+              "choiceName": "大份",
+              "priceAdjust": 300
+            }
+          ],
+          "addedByDevice": "dev-zb0b327t"
+        }
+      ]
+    },
+    "cartVersion": 3,
+    "lastCartSubmitAt": "2026-05-03T23:29:06.733Z",
+    "settlementMode": "by-item"
+  }
+]

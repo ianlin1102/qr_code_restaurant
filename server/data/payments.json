@@ -1,1 +1,152 @@
-[]
+[
+  {
+    "id": "b4b49cdb-25ba-4357-a275-128ed20b471f",
+    "sessionId": "205cd537-c002-4f7b-afac-a7acfd602685",
+    "storeId": "store-demo-002",
+    "amount": 199990,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TS3YR3aHj6iWnyd1dyPXZ27",
+    "tipAmount": 30507,
+    "percent": 100,
+    "createdAt": "2026-04-30T22:59:40.101Z",
+    "method": "stripe"
+  },
+  {
+    "id": "fedabcae-4633-4422-ac94-649005a005cc",
+    "sessionId": "205cd537-c002-4f7b-afac-a7acfd602685",
+    "storeId": "store-demo-002",
+    "amount": 1499,
+    "paidBy": "waiter",
+    "itemKeys": [
+      "edd55225-c89e-4fd8-bf83-0a02cc1501d8:0:1"
+    ],
+    "createdAt": "2026-04-30T23:03:00.547Z",
+    "method": "cash"
+  },
+  {
+    "id": "432ba14e-800a-473b-9c9a-54fcc60bf874",
+    "sessionId": "68faac54-210e-40e8-8395-e8d0ec42a911",
+    "storeId": "store-demo-002",
+    "amount": 2359,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TS3c83aHj6iWnyd1n4psC1o",
+    "tipAmount": 360,
+    "percent": 100,
+    "createdAt": "2026-04-30T23:03:33.143Z",
+    "method": "stripe"
+  },
+  {
+    "id": "85fc2ed6-2481-478c-9052-18c678026a58",
+    "sessionId": "68faac54-210e-40e8-8395-e8d0ec42a911",
+    "storeId": "store-demo-002",
+    "amount": 2949,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TS3rK3aHj6iWnyd10OotZF1",
+    "tipAmount": 450,
+    "percent": 100,
+    "createdAt": "2026-04-30T23:19:13.064Z",
+    "method": "stripe"
+  },
+  {
+    "id": "610846a1-2e35-4020-b741-1f41bea7434b",
+    "sessionId": "6a78647c-c474-4e65-ae81-2066566e4cac",
+    "storeId": "store-demo-003",
+    "amount": 1769,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TS5yJ3aHj6iWnyd1TVreX3H",
+    "tipAmount": 270,
+    "itemKeys": [
+      "1ccd4ae9-7114-4f6d-beac-9e6099e48e58:0:1"
+    ],
+    "createdAt": "2026-05-01T01:34:33.417Z",
+    "method": "stripe"
+  },
+  {
+    "id": "5d23b290-d653-4afc-88b5-be0a77859dd0",
+    "sessionId": "370b2715-6bb8-4077-b037-f34c00a1bee2",
+    "storeId": "store-demo-003",
+    "amount": 1769,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TS5yk3aHj6iWnyd1rrqPIDh",
+    "tipAmount": 270,
+    "itemKeys": [
+      "4d97be84-0310-45a9-b8a3-eccb5affa988:0:1"
+    ],
+    "createdAt": "2026-05-01T01:35:01.285Z",
+    "method": "stripe"
+  },
+  {
+    "id": "1557ccfb-a46a-488f-934f-61a25ff32239",
+    "sessionId": "0fb7d8be-8cae-4450-a0f3-f69e928dd581",
+    "storeId": "store-demo-003",
+    "amount": 1651,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TS61G3aHj6iWnyd0cIExA70",
+    "tipAmount": 252,
+    "itemKeys": [
+      "7c8d8c08-0f8a-40ff-b755-bc67b6a1f112:0:1"
+    ],
+    "createdAt": "2026-05-01T01:37:35.978Z",
+    "method": "stripe"
+  },
+  {
+    "id": "bf312930-3bfb-406b-9f9c-0c96d5c04f45",
+    "sessionId": "929236d7-b191-4be1-9595-b40533aa36f8",
+    "storeId": "store-demo-003",
+    "amount": 12028,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TS7oZ3aHj6iWnyd0Zz3yy08",
+    "tipAmount": 1835,
+    "percent": 100,
+    "createdAt": "2026-05-01T03:32:36.186Z",
+    "method": "stripe"
+  },
+  {
+    "id": "c31cfd3c-ec54-4445-becd-c02905cbfeca",
+    "sessionId": "cdcfae97-4ab4-44e8-b6fe-8ce129598849",
+    "storeId": "store-demo-003",
+    "amount": 6721,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TSjIN3aHj6iWnyd1oM1Ay7u",
+    "tipAmount": 1025,
+    "itemKeys": [
+      "567d29c7-0125-4e18-9abe-fa7beef0c62c:0:1",
+      "f367029c-5e92-435f-b703-2ee6eaf91314:0:1",
+      "d1520d02-fc4f-4c23-9f68-8bc6f2f52f5c:0:1",
+      "53427e57-b1c3-4144-8d55-f51fd7142a1d:0:1"
+    ],
+    "createdAt": "2026-05-02T19:33:53.493Z",
+    "method": "stripe"
+  },
+  {
+    "id": "43151751-19fd-4d0c-b28c-ce58e5c9327b",
+    "sessionId": "cc915157-55e0-4750-93e3-734f65438c46",
+    "storeId": "store-demo-003",
+    "amount": 19459,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TT9DX3aHj6iWnyd1xTHe3Gt",
+    "tipAmount": 2968,
+    "itemKeys": [
+      "4c93b30e-dcb7-4c54-bdb9-570185ac8181:0:1",
+      "4c93b30e-dcb7-4c54-bdb9-570185ac8181:1:1",
+      "4c93b30e-dcb7-4c54-bdb9-570185ac8181:2:1",
+      "4c93b30e-dcb7-4c54-bdb9-570185ac8181:3:6"
+    ],
+    "createdAt": "2026-05-03T23:14:41.559Z",
+    "method": "stripe"
+  },
+  {
+    "id": "33822bbe-ed6e-460d-b395-d5e6b597dc34",
+    "sessionId": "cc915157-55e0-4750-93e3-734f65438c46",
+    "storeId": "store-demo-003",
+    "amount": 4246,
+    "paidBy": "customer",
+    "stripePaymentIntentId": "pi_3TT9RD3aHj6iWnyd00DlRKQ9",
+    "tipAmount": 648,
+    "itemKeys": [
+      "c38aa8ef-c7bf-4230-82b8-e9fbe54a1425:0:2"
+    ],
+    "createdAt": "2026-05-03T23:28:46.596Z",
+    "method": "stripe"
+  }
+]

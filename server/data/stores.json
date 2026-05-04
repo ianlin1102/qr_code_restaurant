@@ -6,7 +6,7 @@
     "description": "这是一家示例餐厅",
     "descriptionEn": "A demo restaurant",
     "openingHours": "09:00-22:00",
-    "createdAt": "2026-04-23T08:42:26.164Z"
+    "createdAt": "2026-05-03T16:10:39.218Z"
   },
   {
     "id": "store-demo-002",
@@ -15,15 +15,18 @@
     "description": "正宗重庆火锅",
     "descriptionEn": "Authentic Chongqing hotpot",
     "openingHours": "11:00-23:00",
-    "createdAt": "2026-04-23T08:42:26.165Z"
+    "createdAt": "2026-05-03T16:10:39.218Z"
   },
   {
     "id": "store-demo-003",
     "name": "竹香小馆",
     "nameEn": "Bamboo Kitchen",
-    "description": "地道中华美食",
-    "descriptionEn": "Authentic Chinese cuisine",
+    "description": "地道川粤美食 · 现做现送",
+    "descriptionEn": "Authentic Sichuan & Cantonese cuisine · Made to order",
     "openingHours": "11:00-22:00",
-    "createdAt": "2026-04-23T08:42:26.165Z"
+    "createdAt": "2026-05-03T17:13:42.634Z",
+    "autoAcceptOrders": false,
+    "paymentMode": "pay-later",
+    "tipBase": "pretax"
   }
 ]

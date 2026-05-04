@@ -1,83 +1,83 @@
 [
   {
-    "id": "d1f8dbbf-18f3-4581-82fa-67d0286170a9",
+    "id": "d81d4085-490b-4953-b7a6-3a85d7495497",
     "storeId": "store-demo-001",
     "name": "热菜",
     "nameEn": "Hot Dishes",
     "sortOrder": 1
   },
   {
-    "id": "f963bfc9-9ead-419e-8493-5de898c2fae4",
+    "id": "f60e9439-79e7-47cb-bdf4-144c359d64ef",
     "storeId": "store-demo-001",
     "name": "凉菜",
     "nameEn": "Cold Dishes",
     "sortOrder": 2
   },
   {
-    "id": "d296c34e-fd55-4441-b1d4-74204fb55792",
+    "id": "4d25fccc-f2a8-4f23-8805-8ba4e72029f4",
     "storeId": "store-demo-001",
     "name": "饮品",
     "nameEn": "Beverages",
     "sortOrder": 3
   },
   {
-    "id": "645cce1e-0c18-4462-8ba0-f226d083fb4f",
+    "id": "7ad23f63-88a4-49b4-8bcc-14afec7dcaaa",
     "storeId": "store-demo-001",
     "name": "主食",
     "nameEn": "Staples",
     "sortOrder": 4
   },
   {
-    "id": "e4d1e686-dcff-46d2-9f71-20676337e0ea",
+    "id": "dce59f59-c608-479c-a157-293abb4d56ad",
     "storeId": "store-demo-002",
     "name": "锅底",
     "nameEn": "Soup Base",
     "sortOrder": 1
   },
   {
-    "id": "e03f3f21-19b3-42db-ad94-a17e629d8fd3",
+    "id": "672b373e-c7e9-4456-82b6-86afdc5b107c",
     "storeId": "store-demo-002",
     "name": "肉类",
     "nameEn": "Meats",
     "sortOrder": 2
   },
   {
-    "id": "4fb17d38-b851-40a7-baa1-1d6e8aa87820",
+    "id": "ea900afe-3b3f-4667-901b-05904350e216",
     "storeId": "store-demo-002",
     "name": "蔬菜",
     "nameEn": "Vegetables",
     "sortOrder": 3
   },
   {
-    "id": "8d7791b6-c81e-44fa-9004-39378149840f",
+    "id": "0f85a03d-3ccf-4568-817d-cdfb18a1b886",
     "storeId": "store-demo-002",
     "name": "饮品",
     "nameEn": "Beverages",
     "sortOrder": 4
   },
   {
-    "id": "ec9c9f3a-b208-4ea2-ac71-fbf618fde200",
+    "id": "73d65feb-f891-4b09-b6ee-cd9f413f0411",
     "storeId": "store-demo-003",
     "name": "主食",
     "nameEn": "Rice & Noodles",
     "sortOrder": 1
   },
   {
-    "id": "f9a8eb5a-c014-4ca3-90cb-863dcb734b4a",
+    "id": "6f09ff2e-0a81-47ea-a2a7-739617b3d942",
     "storeId": "store-demo-003",
     "name": "招牌热菜",
     "nameEn": "Signature Entrees",
     "sortOrder": 2
   },
   {
-    "id": "02860283-5ec9-4117-9b4b-5f1313bb3cff",
+    "id": "14e488fd-e521-40b1-9a50-058ba2268936",
     "storeId": "store-demo-003",
     "name": "小吃",
     "nameEn": "Appetizers",
     "sortOrder": 3
   },
   {
-    "id": "a991fd55-2caf-46e9-bbc9-7311a084c945",
+    "id": "a645def1-b16d-4e85-8fcc-61ed13778bcb",
     "storeId": "store-demo-003",
     "name": "饮品",
     "nameEn": "Drinks",
