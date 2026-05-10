@@ -240,27 +240,27 @@ sed -n '994,1014p' docs/superpowers/plans/2026-04-17-phase5-postgres-migration/p
 
 ## §4 5 维度 pre-verdict
 
-| 维度 | 内容 | Pre-verdict |
+| 维度 | 内容 | Final verdict (post a7752a30) |
 |---|---|---|
-| 1. 类型签名正确性 | D55 multi-step tx + Prisma type integration + create nested items.create XOR risk | **预通过 with 高概率 Stage 2 TS2322 forward-fix** (#30 防御层 G-T19.10 predict, α-extended spec 预案 carry-forward Task 17 spec template) |
-| 2. RLS / 多租户 + Stripe webhook 真钱 idempotent | storeId scoped + Stripe webhook idempotent guard + multi-step tx atomicity | **预通过** (D55 强约束 + heredoc idempotent guard line 1031 + Phase H integration test) |
-| 3. D 决议遵守 | D55 + D56 in payment scope + D56 核心 derivePaidQuantityByOrderItem | **预通过** (§5 audit 逐项实证) |
-| 4. 状态机 + Stripe lifecycle | pending → confirmed (idempotent) / refunded (Phase H 后期) | **预通过** (函数注释 + idempotent guard + state guard 设计意图) |
-| 5. Cross-task coupling | Phase G Task 35/36 settlement gateway + webhook handler + Task 17/18 cross-repo + Task 20 D56 同模式复用 + D56 核心 contract | **预通过** (D56 in payment scope 首落 / cross-repo D56 first live demo / Phase G contract 由本 task land) |
+| 1. 类型签名正确性 | D55 multi-step tx + Prisma type integration + create nested items.create XOR risk | **Pass** — Stage 2.0 raw=4 (env noise file-agnostic, orders.ts symmetric probe 同 4 实证) / filtered=0 / 0 src/ errors. G-T19.10 XOR predict false alarm informational (NOT fabrication archive) — Prisma 6 当 data block 全 raw FK form 走 Unchecked branch 直接, 无视 schema @relation 双形. Task 17 createDraftOrder 实际 root cause = data block mixed @relation connect (OrderItem.menuItem) + raw FK 混用 mixed-style XOR fail. Task 19 data block 全 raw FK 无 connect 调用 → Unchecked 直接命中 → 0 TS2322. |
+| 2. RLS / 多租户 + Stripe webhook 真钱 idempotent | storeId scoped + Stripe webhook idempotent guard + multi-step tx atomicity | **Pass** — D55 编译期强制 + payments.ts line 1031 idempotent guard + PaymentItem.storeId raw RLS denormalized (G-T19.4b 实证 同 Task 17 OrderItem 模式) |
+| 3. D 决议遵守 | D55 + D56 in payment scope + D56 核心 derivePaidQuantityByOrderItem | **Pass** — §5 audit 全 Pass (impl 实证 land) |
+| 4. 状态机 + Stripe lifecycle | pending → confirmed (idempotent) | **Pass** — payments.ts line 1031 idempotent guard + state guard 设计意图 land |
+| 5. Cross-task coupling | Phase G Task 35/36 + Task 17/18 cross-repo + Task 20 D56 同模式复用 | **Pass** — D56 in payment scope first cross-repo live demo land (PaymentItem.orderItemId FK 引用 OrderItem.id, Task 17 D56 设计 work-as-designed) |
 
-**Final verdict** (CC impl 完成后 closure 增量 Edit 填): 待 CC Step 1-4 完成 + tsc 实证后 Plan Opus 判全 5 维度 Pass / 部分 Fail (规则 8 暂停 — 预测 Stage 2 TS2322 高概率 fail-loud → α-extended forward-fix → 重跑 Stage 2-fix.4 0 own error → 进 Stage 3-4).
+**Final verdict**: 全 5 维度 Pass. 1 规则 8 暂停 (G-T19.6 spec literal definition-incompatible) Plan Opus α 决议 turn resolved + 1 informational G-T19.10 XOR predict 假 alarm (NOT fabrication, 防御层 predict 模型 nuance refinement — Task 20+ trigger condition refined: "data block mixed @relation connect + raw FK" 替 "schema @relation 双形").
 
 ---
 
 ## §5 D 决议遵守 audit (CC impl 后 closure 填实证)
 
-| D | spec 检验点 | grep / impl 实证 | Pre-verdict |
+| D | spec 检验点 | impl 实证 | Final verdict |
 |---|---|---|---|
-| D55 (tx) | create + confirmStripe 签名 `tx: Prisma.TransactionClient` (非 Db, 编译期强制 multi-step tx) | heredoc plan §Task 19 line ~992 + ~1024 (forward-looking, CC实证矫正) | 预通过 |
-| D55 (reads) | 5 reads `db: Db = prisma` 默认 (findById / findBySessionId / findByStripeId / sumConfirmed / derivePaidQuantityByOrderItem) | heredoc reads 默认参数 | 预通过 |
-| D56 in payment scope | PaymentItem 全 FK + paidQuantity, 0 itemKey 字符串 (G-T19.4d schema itemKey count = 0 + heredoc verify) | heredoc plan §Task 19 line ~1005-1009 PaymentItem create (storeId raw + orderItemId raw + paidQuantity) + 0 itemKey 字符串 | 预通过 |
-| **D56 核心** | derivePaidQuantityByOrderItem 用 Map<orderItemId, paidQty> 替 legacy paidItemIds 字符串集合 | heredoc plan §Task 19 line ~1063-1078 verify Map aggregate | 预通过 |
-| Stripe idempotent | confirmStripe 重发返回 existing confirmed 不重复 update | heredoc plan §Task 19 line ~1031 idempotent guard | 预通过 |
+| D55 (tx) | create + confirmStripe 签名 `tx: Prisma.TransactionClient` 编译期强制 multi-step tx | payments.ts line 992 + 1024 (sed extract verified) | **Pass** |
+| D55 (reads) | 5 reads `db: Db = prisma` 默认 | payments.ts reads 默认参数 (findById line 952 / findBySessionId line 958 / findByStripeId line 965 / sumConfirmed line 1044 / derivePaidQuantityByOrderItem line 1063) | **Pass** |
+| D56 in payment scope | PaymentItem 全 FK + paidQuantity, 0 itemKey 字符串 | G-T19.4d schema itemKey count = 0 + payments.ts line 1005-1009 (storeId raw + orderItemId raw + paidQuantity) | **Pass** — Task 17 D56 设计 cross-repo first live demo work-as-designed |
+| **D56 核心** | derivePaidQuantityByOrderItem 用 Map<orderItemId, paidQty> 替 legacy paidItemIds 字符串集合 | payments.ts line 1063-1078 Map aggregate land | **Pass** — Phase G settlement gateway contract by 本 task land |
+| Stripe idempotent | confirmStripe 重发返回 existing confirmed 不重复 update | payments.ts line 1031 idempotent guard land | **Pass** |
 
 ---
 
@@ -276,12 +276,17 @@ sed -n '994,1014p' docs/superpowers/plans/2026-04-17-phase5-postgres-migration/p
 | **plan §1063-1078** derivePaidQuantityByOrderItem D56 核心 | §5 D56 核心 audit | ✅ Plan Opus 本 turn 已 view 实证 |
 | **Snapshot §3 Phase D-3a + §4'' Task 18 row** (Task 18 closure carry-forward) | §1.3 carry-forward + 风险 D | ✅ Plan Opus 本 turn 已 read + Edit 实证 (workspace 已 land Phase D-3a 段 + §4'' Task 18 row) |
 | **Task 17 D56 设计 (无 itemKey + position 锚定)** | §1.2 D56 in payment scope cross-repo 验证 | ✅ Task 17 work-log §1.2 D56 audit + commit body Self-flag 段 ack |
-| **schema.prisma Payment + PaymentItem model** field enumeration | §2 G-T19.4 + §3 Risk A/B + §4 维度 1/2/3 | ⚠️ **forward-looking** — Plan Opus 不预 assert exact 字段 / @relation 状态 / line range, CC G-T19.4 实证后 record (#30 防御层应用 carry-forward Task 18 work-as-designed) |
-| **wc -l N (payments.ts)** | Stage 1 D75 | ⚠️ **forward-looking** — Plan Opus 不预设 N (Archive #27 教训), CC Stage 1 实证 record |
-| **N0 / N1 tsc baseline** | Stage 0.7 + Stage 3 | ⚠️ **forward-looking** — CC 实证 record (期望 N0=N1=103, D83 定性 Pass) |
-| **TS2322 fail-loud predict (Stage 2)** | §3 风险 A G-T19.10 #30 防御层 | ⚠️ **forward-looking probabilistic** — Plan Opus predict 高概率, CC Stage 2 实证. 若 fail → α-extended forward-fix carry-forward Task 17 spec template; 若 pass → predict 假 alarm, 防御层 over-cautious 数据点 (informational, 不入 fabrication) |
+| **schema.prisma Payment + PaymentItem field enumeration** | §2 G-T19.4 + §3 Risk A/B + §4 维度 1/2/3 | ✅ **closure 矫正** — Payment line 333 (raw FK + @relation 双形 storeId/store + sessionId/session, status=PaymentStatus no @default), PaymentItem (storeId raw only NO @relation RLS denormalized matches Task 17 OrderItem, paymentId+payment + orderItemId+orderItem 双形), PaymentStatus enum line 25 { pending, confirmed, refunded }, OrderItem.paymentItems @ line 308 reverse FK. **Branch 1 命中 plan §Task 19 假设**. |
+| **wc -l N (payments.ts)** | Stage 1 D75 | ✅ **closure 矫正** — 150 lines (sed extract heredoc body line 932-1081, exact match) |
+| **N0 / N1 tsc baseline** | Stage 0.7 + Stage 3 | ✅ **closure 矫正** — N0=N1=103 (Stage 3 diff=0, D83 定性 Pass) |
+| **TS2322 fail-loud predict (Stage 2)** | §3 风险 A G-T19.10 #30 防御层 | ✅ **closure 矫正 — predict 假 alarm informational** — Stage 2.0 filtered=0 / 0 TS2322. Root cause: Prisma 6 当 data block 全 raw FK form 走 Unchecked branch 直接, 无视 schema @relation 双形. Task 17 实际 root cause = mixed @relation connect + raw FK 混用 mixed-style XOR fail (OrderItem.menuItem connect 触发). 防御层 over-cautious 数据点 informational only (NOT fabrication archive). 模型 nuance refinement: Task 20+ trigger condition = "data block mixed @relation connect + raw FK". |
 
-**0 凭印象映射 anchor literal 残留**. forward-looking 项明示标 ⚠️ + CC closure 期实证矫正. **Flag A noting carry-forward Task 17/18 closure 同模式**.
+**0 凭印象映射 anchor literal 残留** ✅ closure 矫正 12/12 anchor 全 ✅ 实证 (4 forward-looking 项 ⚠️ → ✅).
+
+**关键 closure 数据点**:
+- G-T19.6 spec literal definition-incompatible (DP10 NEW, #30 D79 候选 sub-instance 第 3 数据点) — α 决议 forward-only filtered semantics Task 20+
+- G-T19.10 XOR predict 假 alarm (informational, 防御层 predict 模型 nuance refinement — data block mixed-style trigger 替 schema @relation 双形)
+- Cat 5 子项 第 4+5 数据点 NEW (Plan Opus path / content-state assumption — Snapshot path drift handoffs/ vs archive/ + project knowledge ≠ working tree state)
 
 ---
 
@@ -464,7 +469,21 @@ Plan Opus 收 closure 后:
 
 **累积 9 数据点 + Cat 5 子项 (3) + 5 governance queue entries** β 双 entry 路径状态: 入下次 governance commit 节奏点 Ian 明批 batch decide, 本 task 不动 D 候选升格 / Archive formal entry.
 
-**Task 19 期望 outcome**: 0 新增 D88/D79 数据点 (G-T19.4 + G-T19.10 防御层 carry-forward Task 18 work-as-designed) — 但 Task 19 create 含 nested items.create 风险高于 Task 18 createForTable, 1 处 Task 17 同模式 TS2322 fail-loud + α-extended forward-fix 数据点 可能 trigger (informational, 防御层有效但 plan §Task 19 heredoc 自身仍 pre-fix pattern, plan patch v9 候选 carry-forward). **本 task Cat 5 子项 第 3 数据点已 land** (Step 1 lead-up Plan Opus oversight, CC Stop 拦截).
+**Task 19 actual outcome (closure 矫正)**:
+- 0 新增 D88 维度 3 anchor literal grep 实证 数据点 (#29 候选 carry-forward 9 sub-instance unchanged)
+- **DP10 NEW** entry #30 D79 候选 (3 sub-instance):
+  - DP6: Task 17 Stage 2 TS2322 Prisma XOR semantics (existing)
+  - DP7: Task 17 Stage 2-fix.0 schema field discovery (existing) + Task 18 防御层 first live demo + Task 19 防御层 second live demo
+  - **DP10 NEW**: Task 19 G-T19.6 bare tsc invocation semantics (默认 ES3 vs Prisma 6 library.d.ts ES2015+ 冲突, file-agnostic env noise — α 决议 spec literal forward-only filtered semantics Task 20+, D77 不 retro-amend Task 17/18/19 已 land work-log)
+- **Cat 5 子项 累积 5 数据点 trend rising 强化 D89 候选**:
+  - DP1: Cowork workspace path 假设 (跨 system topology, Snapshot §7.19 数据点 1)
+  - DP2: Helper Round 2 Flag A 误归 §6 forward-looking (Task 17 closure)
+  - **DP3 NEW**: Plan Opus working tree vs project knowledge file 存在性 混淆 (Phase D-3b Step 1 lead-up)
+  - **DP4 NEW**: Plan Opus path 凭印象 cross-system topology (handoffs/ vs archive/, Phase D-3b §F Stage 1)
+  - **DP5 NEW**: Plan Opus assumed project knowledge file content = current repo state (Phase D-3b §F Stage 1, Task 18 closure 增量 in /mnt/project 但不在 repo) — α′ 路径 atomic absorb T18 deferred 增量 + T19 增量
+- **Informational 防御层 predict 模型 nuance refinement** (NOT fabrication, NOT D 候选 升格 本 turn): G-T19.10 XOR predict 假 alarm 由 Prisma 6 Unchecked branch 直接命中 raw FK form 解释. 入 Plan Opus 内部知识 carry-forward Task 20+ spec output + 7th governance queue entry NEW (Pre-Flight Checklist v2 candidate, Helper R3 minor flag 1).
+
+**累积**: 9 (D88 维度 3) + 3 (D79 sub-instance, DP10 NEW) + 5 (Cat 5 子项, DP3+DP4+DP5 NEW, trend rising 强化 D89 候选) + 8 governance queue entries (NEW 6th: Task 20+ G-Tn.6 filtered semantics; NEW 7th: Pre-Flight Checklist v2 XOR predict trigger refinement explicit; NEW 8th: Plan Opus 跨 system / path / state assumption 必先 CC dump 实证, /mnt/project 是 input reference 不是 working tree state 权威) — β 双 entry 路径状态: 入下次 governance commit batch atomic decide.
 
 ---
 

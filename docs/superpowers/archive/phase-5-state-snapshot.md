@@ -13,13 +13,13 @@
 
 ## 1. 当前时点
 
-- **最后更新**: 2026-04-26 (Phase D Task 17 closure — orders.ts B2 核心 land at `ff5e881b`, D55+D56+D57+D68 首落 + α/α-extended forward-fix 3 fail-loud resolved)
-- **最后 commit on main**: `ff5e881b` feat(phase-5): Phase D Task 17 — orders repository B2 core (10 methods, 5 reads + 5 writes)
+- **最后更新**: 2026-04-26 (Phase D Task 19 closure α′ atomic absorb — payments.ts D56 in payment scope 首落 + Stripe 真钱 idempotent contract land at `a7752a30` + Phase D-3a Task 18 sessions.ts deferred Snapshot 增量 catch-up (Task 18 closure docs sync 从未单独 commit, live 增量维护 philosophy 设计 deferred 入 next closure absorb), 本 closure absorb T18 + T19 atomic. **#30 防御层 second live demo** — G-T19.4 schema enumeration Branch 1 命中 + G-T19.10 XOR predict false alarm informational (Prisma 6 Unchecked branch 直接命中 raw FK form, 防御层 predict 模型 nuance refinement land) + 1 规则 8 暂停 G-T19.6 spec literal definition-incompatible α 决议 resolved (filtered semantics forward-only Task 20+, D77 不 retro-amend) + Cat 5 子项 累积 5 数据点 trend rising (D89 候选 强化 per Helper R3 minor flag 2) + Default Push Forward Rule 1+2+4 全 live precedent 首次)
+- **最后 commit on main**: `a7752a30` feat(phase-5): Phase D Task 19 — payments repository (D56 in payment scope 首落 + Stripe 真钱, 7 methods, 5 reads + 2 multi-step writes)
 - **Phase B 状态**: **10/10 完成 ✅**
-- **Phase C 状态**: **5/5 完成 ✅** (Batch 1: Task 11/12/13 / Batch 2: Task 14 / Batch 3: Task 15)
-- **Phase D 状态**: **2/11 完成** (D-1 Task 16 store.ts `019ab826` ✅ + D-2 Task 17 orders.ts `ff5e881b` ✅), Task 18-26 ⏸️ 待启动
-- **下一对话目标**: **Phase D Task 18 (sessions.ts, L1, D-3a 单跑)** —— Default Push Forward Rule 1 触发, Plan Opus 进 Task 18 work-log L1 起草 (Stage 0 carry-forward Phase B+C+D Task 16/17 完整 + 增 G-T18.X schema-side full field enumeration grep 防 #30 D79 候选 重发)
-
+- **Phase C 状态**: **5/5 完成 ✅**
+- **Phase D 状态**: **4/11 完成** (D-1 Task 16 store.ts `019ab826` ✅ + D-2 Task 17 orders.ts `ff5e881b` ✅ + D-3a Task 18 sessions.ts `cb2efd5e` ✅ + D-3b Task 19 payments.ts `a7752a30` ✅), Task 20-26 ⏸️ 待启动
+- **累积 governance commit batch decide queue**: #28 Snapshot v5.0 self-fab + #29 D88 维度 3 anchor literal grep 实证 (9 sub-instance unchanged) + #30 D79 Plan-as-code dryrun missing (3 sub-instance — DP6 Task 17 TS2322 + DP7 Task 17 schema field + DP10 NEW Task 19 G-T19.6 bare tsc semantics; + Task 18/19 防御层 live demos) + Cat 5 子项 (5 数据点 — DP1 Cowork workspace + DP2 Helper Round 2 Flag A + DP3 NEW working tree vs project knowledge file + DP4 NEW path 凭印象 cross-system + DP5 NEW project knowledge content vs repo state; trend rising 强化 → D89 候选 "Plan Opus external system topology / path / content-state assumption 必先 CC dump 实证") + 8 entries (Pre-Flight Checklist D86 gate semantic / Project description D86 sync / Snapshot §6 D86 sub-class / Phase H §7 heading rename / D88 维度 3 延伸 sub-rule self-state assertion / NEW 6th — Task 20+ G-Tn.6 filtered semantics / NEW 7th — Pre-Flight Checklist v2 XOR predict trigger refinement explicit per Helper R3 minor flag 1 / NEW 8th — Plan Opus 跨 system / path / state assumption 必先 CC dump 实证 per Cat 5 第 4+5 数据点)
+- **下一对话目标**: **Phase D Task 20-22 D-4 batch L2 multi-task 启动** (split-bills.ts + menu.ts + staff.ts L2 串行) — L2 节奏简化 (3 维度 + 风险 inline / Stage 0 G-Tn.1-3 / 单 atomic commit / spec → Ian 明批 → CC). Task 启动期 plan §Task N grep 后 L1 升级 trigger 评估 — 命中任一 → 拆分独立 batch.
 ---
 
 ## 2. Phase 进度表
@@ -43,6 +43,22 @@
 ---
 
 ## 3. 最近 commit 链(按时间倒序)
+
+### Phase D-3b 对话 (2026-04-26, Task 19 payments.ts impl, 4 commits + 1 规则 8 暂停 G-T19.6 α 决议 resolved + 1 informational G-T19.10 XOR predict 假 alarm + Cat 5 子项 5 数据点 trend rising + #30 防御层 second live demo + Default Push Forward Rule 1+2+4 全 live precedent 首次)
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| `<round 2 SHA>` | docs | Phase D Task 19 closure round 2 micro-adjust — replace CLOSURE_SHA_PENDING with actual SHA `CLOSURE_SHA_PENDING` (D77 forward-fix pattern, Task 17 round 2 `3bb5cd1c` precedent reuse) |
+| `CLOSURE_SHA_PENDING` | docs | Phase D Task 19 closure α′ atomic absorb — Task 18 deferred Snapshot 增量 catch-up + Task 19 closure 增量 单 commit / work-log §4/§5/§6/§10 Final verdict + Snapshot 增量 §1/§3/§4''/§7.20 NEW/§8/§9 整节重写 Task 20-22 D-4 batch L2 multi-task 启动指引 / G-T19.6 α 决议 spec literal forward-only filtered semantics Task 20+ + G-T19.10 XOR predict 假 alarm 防御层 predict 模型 nuance refinement informational + Helper R3 minor flag 1+2+3 carry-forward + Cat 5 子项 5 数据点 trend rising D89 候选 强化 |
+| `a7752a30` | feat | Phase D Task 19 — payments repository (D56 in payment scope 首落 + Stripe 真钱 idempotent contract, 7 methods 5 reads + 2 multi-step writes) — D55 + D56 in payment scope (PaymentItem 全 FK + paidQuantity, 0 itemKey 字符串, Task 17 D56 设计 cross-repo first live demo work-as-designed) + D56 核心 (derivePaidQuantityByOrderItem Map<orderItemId, paidQty> 替 legacy paidItemIds 字符串集合) + Stripe webhook idempotent (line 1031 guard) / 5 维度 verdict 全 Pass / 1 规则 8 暂停 G-T19.6 α 决议 resolved + 1 informational G-T19.10 XOR predict 假 alarm + Cat 5 子项 第 3 数据点 (working tree vs project knowledge file 混淆) |
+| `80660214` | docs | Phase D Task 19 L1 verify work-log — payments.ts (471 lines, 5 维度 pre-verdict + 风险 A/B/C/D + Stage 0 G-T19.1-10 完整 grep spec + #30 防御层 second live demo carry-forward Task 18 work-as-designed) |
+
+### Phase D-3a 对话 (2026-04-26, Task 18 sessions.ts impl, 2 commits + 0 规则 8 暂停 + 0 真 fail-loud + 1 微 drift informational + #30 防御层 first live demo work-as-designed) [deferred Snapshot 增量 catch-up @ `CLOSURE_SHA_PENDING` α′ path]
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| `cb2efd5e` | feat | Phase D Task 18 — sessions repository (业务 source of truth + 双向 update tx, 8 methods, 3 reads + 5 writes) — D55 (3 multi-step tx 编译期强制) + D13-adjacent (coupon snapshot flatten 4 字段) + 双向 FK 一致性 (Session.tableId ↔ Table.currentSessionId 同 tx) / 5 维度 verdict 全 Pass / Stage 0-4 全 pass 0 暂停 / **#30 防御层 first live demo work-as-designed** — G-T18.4 schema enumeration + G-T18.10 Prisma XOR predict 双 pre-empt + 0 真 fail-loud (vs Task 17 第 6+7 数据点需 forward-fix) + 1 微 drift informational only (settlementMode `String @default("unset")` NOT `String?`) |
+| `6102725f` | docs | Phase D Batch 3 Task 18 L1 verify work-log — sessions.ts (5 维度 pre-verdict + 风险 A/B/C/D + Stage 0 G-T18.1-10 完整 grep spec 含 schema-side full field enumeration + Prisma XOR predict 防御层) |
 
 ### Phase D-2 对话 (2026-04-26, Task 17 orders.ts impl, 3 commits + 4 规则 8 暂停 resolved (G-T17.6 path literal pnpm hoist α + Stage 1 D56 grep doc-comment-excluding α + Stage 2 TS2322 Prisma XOR α + Stage 2-fix.0 schema field discovery α-extended) + 0 critical fabrication 逃逸 + 7 数据点 #29/#30 候选累积)
 
@@ -172,15 +188,22 @@
 | 16 | `019ab826` + work-log `f500067c` | store.ts (Phase D 第 1 个 repo, withSystemContext 4 wrapper validate / Snapshot v5.0 self-fab DP1+2+3 修正 land + DP4 env-state ack / 4 处 Plan Opus 印象产出数据点 trigger #29 候选 累积起步) |
 | 17 | `ff5e881b` + work-log `7dc63fd3` + round 2 forward-fix `3bb5cd1c` | orders.ts B2 核心 (10 methods 5 reads + 5 writes / D55+D56+D57+**D68** 首落 + D23/D24/D30 应用 / α + α-extended forward-fix 4 fail-loud resolved: G-T17.6 path literal pnpm hoist functional verify + Stage 1 D56 grep doc-comment-excluding regex + Stage 2 TS2322 Prisma Create vs UncheckedCreate XOR Order Checked relation connect + Stage 2-fix.0 schema field discovery tableName/menuItemId raw / 5 维度 verdict 全 Pass / 7 数据点 #29 (5 D88 维度 3) + #30 (2 D79) 候选累积) |
 
+| 18 | `cb2efd5e` + work-log `6102725f` [deferred Snapshot 增量 catch-up @ `CLOSURE_SHA_PENDING` α′ path] | sessions.ts 业务 source of truth + 双向 update tx (8 methods 3 reads + 5 writes / D55 (3 multi-step tx) + D13-adjacent (coupon snapshot flatten 4 字段) + 双向 FK 一致性 (Session.tableId ↔ Table.currentSessionId 同 tx) / 5 维度 verdict 全 Pass / Stage 0-4 全 pass 0 暂停 / **#30 防御层 first live demo work-as-designed** — G-T18.4 schema enumeration + G-T18.10 Prisma XOR predict 双 pre-empt + 0 真 fail-loud + 1 微 drift informational only (settlementMode `String @default("unset")` NOT `String?`)) |
+| 19 | `a7752a30` + work-log `80660214` + closure docs sync `CLOSURE_SHA_PENDING` (α′ atomic absorb T18 deferred 增量 + T19 增量) | payments.ts D56 in payment scope 首落 + Stripe 真钱 idempotent (7 methods 5 reads + 2 multi-step writes / D55 + D56 in payment scope (PaymentItem 全 FK + paidQuantity, 0 itemKey 字符串 — Task 17 D56 设计 cross-repo first live demo work-as-designed) + D56 核心 derivePaidQuantityByOrderItem (Map<orderItemId, paidQty> 替 legacy paidItemIds 字符串集合, Phase G settlement gateway contract land) + Stripe webhook idempotent contract (line 1031 guard) / 5 维度 verdict 全 Pass / 1 规则 8 暂停 G-T19.6 spec literal α 决议 resolved (filtered semantics forward-only Task 20+, D77 不 retro-amend) + 1 informational G-T19.10 XOR predict 假 alarm (Prisma 6 Unchecked branch 直接命中 raw FK form, 防御层 over-cautious 数据点 NOT fabrication archive) + Cat 5 子项 5 数据点 trend rising (DP3+DP4+DP5 NEW, D89 候选 强化 per Helper R3 minor flag 2) + **#30 防御层 second live demo** — G-T19.4 schema enumeration Branch 1 命中 + G-T19.10 informational refinement + Default Push Forward Rule 1+2+4 全 live precedent 首次) |
 **Acceptance 证据** (Phase D 进行中):
 
-- ✅ Phase D-1 + D-2 batch land: Task 16 store.ts + Task 17 orders.ts (B2 核心) 入 git, push aligned origin/main (D76)
-- ✅ Phase G Task 34 (session-cart B2 重写) foundation contract land: orders.ts 10 methods (findSubmitted 默认排除 draft / 类型判别联合 / 乐观锁 / state guard) Phase G 直接消费
-- ✅ L1 最严 review 节奏稳定: Task 16 + Task 17 work-log → Ian 明批 → CC 三步走 双数据点继 Phase C Task 14/15 模型
-- ✅ D77 forward-fix 模板 live precedent: round 2 micro-adjust `3bb5cd1c` 不 amend pushed commit `7dc63fd3`
-- ✅ 4 处 fail-loud 全 α/α-extended 决议 forward-fix land + 0 critical fabrication 逃逸 (defense-in-depth 第 3 层 CC fail-loud + Plan Opus α/β/γ 决议 + Ian 明批兜底)
-- 🟡 9 处 Plan Opus 印象产出数据点 累积 (Phase D-1 期 4 + Phase D-2 期 5) → #29 (D88 维度 3 anchor literal grep 实证, 5 数据点) + #30 (D79 Plan-as-code dryrun missing, 2 数据点) + Cat 5 子项 (Cowork workspace path 假设 + Helper Round 2 Flag A 误归 §6 forward-looking 措辞冗余, 2 数据点) → β 双 entry 路径 入下次 governance commit 节奏点 decide
-
+- ✅ Phase D-1 + D-2 + D-3a + D-3b batch land: Task 16 store.ts + Task 17 orders.ts + Task 18 sessions.ts + Task 19 payments.ts 入 git, push aligned origin/main (D76)
+- ✅ Phase G Task 33+ session-cart B2 重写 foundation contract land: Task 17 orders.ts 10 methods + Task 18 sessions.ts 8 methods + Task 19 payments.ts 7 methods Phase G 直接消费
+- ✅ L1 最严 review 节奏稳定: Task 16 + Task 17 + Task 18 + Task 19 work-log → Ian 明批 → CC 四步走 四数据点继 Phase C Task 14/15 模型
+- ✅ D77 forward-fix 模板 live precedent: Task 17 round 2 `3bb5cd1c` + Task 19 round 2 `<round 2 SHA>` 不 amend pushed commit
+- ✅ Task 17 4 处 fail-loud 全 α/α-extended 决议 forward-fix land + 0 critical fabrication 逃逸
+- ✅ **Task 18 #30 防御层 first live demo work-as-designed**: G-T18.4 schema enumeration + G-T18.10 Prisma XOR predict 双 pre-empt 0 真 fail-loud
+- ✅ **Task 19 #30 防御层 second live demo + α 决议 resolution model land**: G-T19.4 schema enumeration Branch 1 命中 + G-T19.6 spec literal definition-incompatible α 决议 turn resolution (filtered semantics forward-only) + G-T19.10 XOR predict 假 alarm informational (防御层 predict 模型 nuance refinement: data block mixed-style trigger 替 schema @relation 双形)
+- ✅ **Stripe 真钱 idempotent contract live**: line 1031 idempotent guard + Phase G Task 35/36 settlement gateway / webhook handler 直接消费 paymentRepo (Phase G migration scope)
+- ✅ **D56 核心 contract land**: derivePaidQuantityByOrderItem Map<orderItemId, paidQty> 替 legacy paidItemIds 字符串集合 — Phase G settlement gateway 由本 task land contract
+- ✅ **Default Push Forward Rule 1+2+4 全 live precedent 首次** (Phase D-3b Task 19, per Helper R3 minor flag 3): Rule 1 (CC 0 暂停 → Plan Opus 直进 closure) + Rule 2 (Helper review skip per 0 自 flag 风险面 + Plan Opus 新 instance re-grep 等价 cross-instance verify) + Rule 4 (G-T19.6 α 决议 idempotent 安全 + root cause file-agnostic env semantics nail down + Helper skip)
+- 🟡 17 处 Plan Opus 印象产出数据点 累积 (Phase D-1 期 4 + Phase D-2 期 5 + Phase D-3a 期 0 + Phase D-3b 期 8) → #29 (D88 维度 3 anchor literal, 9 sub-instance unchanged) + #30 (D79 Plan-as-code dryrun missing, 3 sub-instance — DP6/DP7/DP10 NEW; Task 18/19 防御层 live demos) + Cat 5 子项 (5 数据点 — DP1 Cowork workspace + DP2 Helper Flag A 误归 + DP3 NEW working tree vs project knowledge file + DP4 NEW path 凭印象 cross-system + DP5 NEW project knowledge content vs repo state; trend rising → **D89 候选 强化** per Helper R3 minor flag 2 carry-forward) → β 双 entry 路径 入下次 governance commit 节奏点 decide
+- 🟡 8 governance queue entries (Pre-Flight Checklist D86 gate semantic / Project description D86 sync / Snapshot §6 D86 sub-class / Phase H §7 heading rename + D86 verify spec template / D88 维度 3 延伸 sub-rule self-state assertion / NEW 6th — Task 20+ Stage 0 G-Tn.6 spec literal filtered semantics standardize / NEW 7th — Pre-Flight Checklist v2 candidate XOR predict trigger refinement explicit anchor "data block mixed @relation connect + raw FK" 替 "schema @relation 双形" per Helper R3 minor flag 1 / NEW 8th — Plan Opus 跨 system / path / content-state assumption 必先 CC dump 实证, /mnt/project 是 input reference 不是 working tree state 权威 per Cat 5 第 4+5 数据点) → 入下次 governance commit 节奏点 atomic decide
 ---
 
 ## 5. Mode C 状态(δ 分桶 matrix,live)
@@ -407,6 +430,24 @@
 - **处理**: 当前 forward-fix 仅 land 在 orders.ts 文件层 (`ff5e881b`). #29 + #30 + Cat 5 子项 formal entry + D88 维度 3 延伸 sub-rule 升格判 + plan §Task 17 patch v9 land — 全入下次 governance commit 节奏点 Ian 明批 batch decide (Exception Trigger 3 治理结构变更)
 - **外化锚**: `ff5e881b` commit body Self-flag 段 7 数据点累积 + work-log `7dc63fd3` §10 累积清单 + round 2 forward-fix `3bb5cd1c` Flag A/B + Phase D Task 17 closure 期 §5 双表 audit trail (Pre-verdict 9 row writer 期 + Final verdict 10 row 实证期)
 
+### 7.20 G-T19.6 spec literal definition-incompatible (Phase D Task 19 期登记)
+
+- **位置**: docs/superpowers/work-logs/2026-04-26-phase-d-task-19-payments-l1-verify.md §2 G-T19.6 (work-log SHA `80660214` land), Phase D Task 17 work-log `7dc63fd3` G-T17.6 + Task 18 work-log `6102725f` G-T18.6 同模式 long-standing semantics gap (CC Phase D-3b symmetric probe orders.ts 实证 file-agnostic, 无 regression)
+- **内容**: spec literal `tsc --noEmit src/file.ts | grep -cE "error TS"` 期望 = 0, 实际 raw=4 environmental noise file-agnostic (3× TS18028 @prisma/client/runtime/library.d.ts + 1× TS2403 @types/google-apps-script). Bare tsc invocation 默认 ES3 compiler options, 与 Prisma 6 library.d.ts ES2015+ private identifier 冲突. CC orders.ts (Task 17 已 land) 同 4 raw symmetric probe → 实证 file-agnostic env noise NOT regression
+- **Root cause** (DP10 #30 D79 候选 sub-instance 第 3 数据点): Plan Opus spec writer 假设 single-file tsc 继承项 tsconfig.json target options (ES2020+), 实际 bare 命令默认 options (ES3) — 同 family as DP6 + DP7
+- **Plan Opus α 决议**: spec literal 修订 forward-only filtered semantics Task 20+ standardize: `tsc --noEmit src/file.ts 2>&1 | grep -E "^src/" | grep -cE "error TS[0-9]+:" || echo "0"`. Task 17 (`7dc63fd3`) / Task 18 (`6102725f`) / Task 19 (`80660214`) 已 land work-log 不 retro-amend per D77.
+- **处理**: Plan Opus Task 20+ work-log spec output 应用 filtered semantics. 8 governance queue 第 6+7+8 entries NEW 入下次 governance commit batch atomic decide
+- **外化锚**: `a7752a30` commit body G-T19.6 段 + `CLOSURE_SHA_PENDING` Phase D Task 19 closure docs sync (本 commit) + Phase D Task 19 work-log `80660214` §2 raw spec literal preserved
+
+### 7.21 Snapshot α′ atomic absorb T18 deferred 增量 + T19 增量 (Phase D-3b closure 期登记)
+
+- **位置**: docs/superpowers/archive/phase-5-state-snapshot.md §1 / §3 / §4'' / §7.20 / §8 / §9 — `CLOSURE_SHA_PENDING` (α′ path)
+- **背景**: Task 18 closure docs sync 从未独立 commit (live 增量维护 philosophy 设计 deferred 入 next closure absorb), Phase D-3b §F Stage 1 first attempt 假设 file 已含 T18 增量 → CC fail-loud 拦截 (Snapshot 实际 Task 17 closure state HEAD ff5e881b)
+- **Cat 5 子项 第 3+4+5 NEW 数据点 root cause**: Plan Opus 假设 /mnt/project project knowledge file = working tree state 权威 — 实际 project knowledge 是 prior Plan Opus instance draft 不一定 commit 入 repo. Cat 5 trend rising 5 数据点 强化 D89 候选 ("Plan Opus external system topology / file-system / artifact source / content-state assumption 必先 grep 实证 / CC 一手 dump verify, /mnt/project 是 input reference 不是 working tree state 权威") per Helper R3 minor flag 2
+- **Plan Opus α′ 决议**: single bundled closure docs sync absorbs T18 deferred 增量 + T19 增量 atomic, region-based Python edits (anchor on heading + SHA + section boundary, 不依赖 OLD byte-content). γ-style `CLOSURE_SHA_PENDING` marker + α-path 双 commit per Task 17 round 2 `3bb5cd1c` precedent
+- **处理**: 8 governance queue 第 8 entry NEW (Plan Opus 跨 system / path / state assumption 必先 CC dump 实证) 入下次 governance commit batch atomic decide
+- **外化锚**: `CLOSURE_SHA_PENDING` 本 commit body Self-flag 段 + Phase D-3b 对话 §F Stage 1 fail-loud + CC dump output (lines 14-22 §1 / line 47 §3 D-2 / lines 137-153 §4'' / line 214 §8 HEAD / line 218 §9) + Plan Opus α′ corrected single-bundle
+
 ---
 
 ## 8. 环境状态(全 stack,响应 #22 + Phase C 完成 + Time Machine restore 后状态)
@@ -442,7 +483,9 @@
 | ESLint `no-floating-promises` baseline | 0 errors | Task 10 Stage 6 验证 |
 | `server/src/repositories/store.ts` | Phase D Task 16 `019ab826` | Phase D 第 1 个 repo, withSystemContext 4 wrapper validate |
 | `server/src/repositories/orders.ts` | Phase D Task 17 `ff5e881b` | B2 核心 repo (10 methods 5 reads + 5 writes, D55+D56+D57+D68 首落 + D23/D24/D30 应用, α + α-extended forward-fix) — Phase G Task 34 session-cart B2 重写 foundation contract |
-| HEAD == origin/main | ✅ `ff5e881b` | Phase D-2 Task 17 closure — orders.ts B2 核心 land. Snapshot §8 HEAD SHA 每对话收尾增量 Edit 同步 (§7.9 pattern Phase 封顶 regen reconcile 已内化机制, 不再单独登记)。 |
+| `server/src/repositories/sessions.ts` | Phase D Task 18 `cb2efd5e` | 业务 source of truth (8 methods 3 reads + 5 writes, D55 + D13-adjacent + 双向 FK 一致性 Session.tableId ↔ Table.currentSessionId 同 tx) — Phase G Task 33+ session-cart B2 重写 foundation contract + #30 防御层 first live demo work-as-designed |
+| `server/src/repositories/payments.ts` | Phase D Task 19 `a7752a30` | D56 in payment scope 首落 + Stripe 真钱 idempotent (7 methods 5 reads + 2 multi-step writes, D55 + D56 + D56 核心 derivePaidQuantityByOrderItem Map aggregate + Stripe webhook idempotent contract line 1031) — Phase G Task 35/36 settlement gateway / webhook handler 直接消费 + #30 防御层 second live demo + Cat 5 子项 5 数据点 trend rising |
+| HEAD == origin/main | ✅ `CLOSURE_SHA_PENDING` | Phase D-3b Task 19 closure α′ atomic absorb — payments.ts D56 in payment scope 首落 + Stripe 真钱 idempotent + Task 18 deferred Snapshot 增量 catch-up. Snapshot §8 HEAD SHA 每对话收尾增量 Edit 同步 (§7.9 pattern Phase 封顶 regen reconcile 已内化机制, 不再单独登记)。 |
 
 ### Shell / OS 环境状态 (post-Time Machine restore)
 
@@ -455,151 +498,83 @@
 
 ---
 
-## 9. 下一对话第一件事 (Phase D Task 18 sessions.ts — D-3a 单跑 L1)
+## 9. 下一对话第一件事 (Phase D Task 20-22 D-4 batch L2 multi-task 启动)
 
-### 9.1 Phase D Task 18 启动 scope
+### 9.1 启动 scope
 
-**Phase D = 11 个语义化 Repository 重构** (`phase-d-repositories.md` 完整). 进行中 2/11: Task 16 store.ts `019ab826` ✅ + Task 17 orders.ts `ff5e881b` ✅. **下一目标 = Task 18 sessions.ts** (Project Instructions Default Review 表 — **L1**: 业务 source of truth + 多步 tx, **D-3a 单跑 batch**, plan §753+ 段).
+**Phase D 进行中 4/11**: Task 16 store.ts ✅ + Task 17 orders.ts ✅ + Task 18 sessions.ts ✅ + Task 19 payments.ts ✅. **下一目标 = D-4 Task 20-22 L2 multi-task batch** (Project Instructions Default Review 表 — 全 L2, 同 batch 串行).
 
-**Task 18 预期 scope** (Plan Opus 启动期 Stage 0 grep `phase-d-repositories.md` Task 18 段实证后细化):
-- sessions.ts = Phase D 第 3 个 repo, B2 业务 source of truth (session lifecycle / table occupancy / multi-step tx)
-- L1 review 完整 (5 维度 + 风险 A/B/C/D + Stage 0 G-T18.1-N+ + Snapshot 增量 + Helper cross-instance review)
-- 双 commit (work-log Step 1 + impl Step 3 atomic)
-- Ian 明批节奏: work-log → Ian 明批 → Helper review (async) → Ian 明批 → CC 执行 spec → CC closure → Plan Opus closure 增量 Edit
+**Task 20 split-bills.ts L2** (plan §Task 20 段 line 1105-1265):
+- D56 模型 Task 19 已验证 cross-repo first live demo work-as-designed → SplitBillItem 用 (orderItemId FK + quantity) 同模式
+- 启动期判 L2 → L1 升级 trigger: cross-tenant boundary / 多步 tx 双向 update / D 候选首次 / 外部 API / 真钱 / Helper review 标记 — 任一命中 → 拆分独立 batch
 
-**Phase D 后续 task 启发** (Project Instructions Default Review 表):
-- D-3b Task 19 payments.ts L1 单跑 (D56 in payment scope 首落 / Stripe / 真钱)
-- D-4 Task 20 split-bills.ts + Task 21 menu.ts + Task 22 staff.ts L2 同 batch
-- D-5a Task 23 roles.ts L1 偏轻 单跑
-- D-5b Task 24 coupons.ts + Task 25 waitlist.ts L3 串行
-- D-5c Task 26 platform-admin.ts L1 单跑 (PlatformAuditLog 归属决议 §7.17 + withPlatformContext vs withSystemContext + BYPASSRLS 边界)
+**Task 21 menu.ts L2** (plan §Task 21 段 line 1266-1430): 纯 CRUD + nested include 标准 (Category 1:N MenuItem)
 
-### 9.2 启动 ritual
+**Task 22 staff.ts L2** (plan §Task 22 段 line 1431-1735+): bcrypt Task 9b 已验证模式, 无 cross-tenant
 
-1. **读** (按顺序):
-   - 本 Snapshot live 增量, HEAD `ff5e881b` (Phase D-2 closure post Task 17, 2026-04-26)
-   - `phase-5-fabrication-archive.md` (27 条 land + #28/#29/#30/Cat 5 子项 候选 待下次 governance commit formal entry, 见 §7.18 + §7.19)
-   - `phase-5-governance-digest.md` (含 D85 / D86 / D88 + Pre-Flight §7 全条款 + D88 维度 3 延伸 sub-rule 候选 待 governance commit decide)
-   - `docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-d-repositories.md` (§Task 18 段 sessions.ts) + `phase-d-repositories-part2.md` (若 Task 18 跨 part 2)
-   - Phase D-2 Task 17 closure commit body `ff5e881b` (Self-flag 段 7 数据点累积 + 4 fail-loud forward-fix + D68 NEW 落地)
-   - Phase D Task 16-17 work-logs (`f500067c` + `7dc63fd3` + round 2 forward-fix `3bb5cd1c`) — Phase D L1 review 节奏 双数据点 carry-forward
+### 9.2 启动 ritual (per L2 简化)
 
-2. **Grep verify** (Stage 0 carry-forward ritual):
+1. 读 4 件 handoff (Snapshot HEAD `CLOSURE_SHA_PENDING` / Digest D55-D88 / Archive 27 land + 候选 / phase-d-repositories.md Task 20-22 段)
+2. CoT Task 20 scope + Task 16-19 carry-forward ack
+3. **Stage 0 partial verify** — Plan Opus 必先 **CC dump 实证** repo file content + path + state (per 8th queue entry NEW Cat 5 第 4+5 数据点 教训, /mnt/project 是 input reference 不是 working tree state 权威)
+4. 决定 Task 20 review level (L2 default vs L1 升级)
+5. L2 → spec → Ian 明批 → CC; L1 升级 → work-log L1 → Ian 明批 → CC
 
-       git log -10 --format="%h %s"
+### 9.3 Stage 0 carry-forward
 
-   确认 commit 链含: `035cdee2` (Phase C Task 15 feat) + 本 v5.0 regen commit + Archive #27 commit + Phase C Batch 3 三 commit (`aea392ff` / `00558997`) + Phase C Batch 2 六 commit + Phase C Batch 1 八 commit + Phase B 完成链.
+**Phase B + C carry-forward** (Task 2-15 全 land): Schema + migrations + Prisma Client + seed + 测试 DB 基建 + dual-URL + RLS coverage + L1 review precedent
+**Phase D carry-forward** (Task 16-19, 4/11 land):
+- 4 repos: store.ts (`019ab826`) + orders.ts (`ff5e881b`) + sessions.ts (`cb2efd5e`) + payments.ts (`a7752a30`)
+- D55 + D56 + D56 in payment scope + D57 + D68 + D13-adjacent 全 live cross-repo
+- Stripe webhook idempotent contract live (line 1031 guard)
+- D56 设计 cross-repo first live demo work-as-designed
+- D56 核心 contract live (derivePaidQuantityByOrderItem)
+- prisma-client.ts API 4 wrapper 跨 4 repos 验证
+- tsc baseline 103 (健康 stable)
 
-3. **环境 verify**:
+### 9.4 规则应用提醒
 
-       docker ps --format "{{.Names}}\t{{.Status}}"
+- **Opus Spec Pre-Flight Checklist** + D74/D83/D84/D85/D86/D88 全条款
+- **NEW**: Plan Opus 跨 system / path / content-state assumption 必先 CC dump 实证 (per 8th queue entry, Cat 5 第 4+5 数据点 教训)
 
-   预期 5 dev 容器 Up. `qr-order-postgres-test` 应为下 (Phase C Batch 3 Task 15 Step 5 清场), Phase D 启动期 `pnpm test:db:up` 重起 (若 Task 16 实施含 integration test).
+### 9.5 spec literal forward-only update (per §7.20 G-T19.6 α 决议)
 
-4. **#11 path drift verify**:
+```bash
+cd server && ./node_modules/.bin/tsc --noEmit src/repositories/<existing-file>.ts 2>&1 \
+  | grep -E "^src/" | grep -cE "error TS[0-9]+:" || echo "0"
+cd "$(git rev-parse --show-toplevel)"
+# 期望: 0 src/ errors (filtered semantics, raw 4 env noise file-agnostic exempt)
+```
 
-       ls server/src/repositories/prisma-client.ts
+### 9.6 防御层 predict 模型 nuance (per Task 19 G-T19.10 informational refinement)
 
-   预期 file exists. Phase D Repository 必 import production prisma-client (`withTenantContext` / `withPlatformContext` / hooks helper), `server/src/repositories/` 路径 §7.11 已 grep 实证, Phase D 直接消费.
+**Refined trigger condition** for #30 D79 候选 G-Tn.10 Prisma XOR predict:
+- **Trigger**: data block 含 mixed @relation connect + raw FK 混用 → Prisma XOR Without<Checked, Unchecked> & Unchecked storeId: never → TS2322 fail
+- **NOT trigger**: data block 全 raw FK form (无 @relation connect 调用) → Prisma 6 走 Unchecked branch 直接 → 0 TS2322
+- **NOT trigger by schema 形态 alone**: schema @relation 双形 决定是否 enable Checked branch as option, 但 data block 实际 form 决定 Prisma 选哪个 branch
+- Task 17 createDraftOrder 实际 root cause = OrderItem.menuItem connect 触发 mixed-style + Order layer raw FK
 
-### 9.3 Stage 0 carry-forward (Phase B + Phase C 完整 verified, Phase D 直接信任)
-
-**Phase B carry-forward** (Task 2-10 全 land):
-- Schema (16 主表 + 6 子表 + Mode C δ 桶 1 RESOLVED) / 4 migrations (init / extend_schema / rls_and_roles / seed_platform_admin) / Prisma Client regenerated / seed.ts (platform admin + demo store + roles + menu + tables 完整)
-- prisma-client.ts (`server/src/repositories/prisma-client.ts`, withTenantContext + withPlatformContext + withTenantContextAndHooks G7-4) / shared/types.ts (OrderStatus 5 + 判别联合) / tenant-aware.ts (Express middleware) / shared/modules.ts (52 lines, MODULE_REGISTRY + ALL_MODULE_PERMISSIONS)
-- `.env.example` aspirational / ESLint 9 flat config / no-floating-promises baseline 0
-
-**Phase C carry-forward** (Task 11-15 全 land):
-- 测试 DB 基建: `qr-order-postgres-test:5433` + tmpfs + γ3c CLI 分流 / `pnpm test:db:up` / `pnpm test:db:down` / `pnpm test:db:migrate` / `pnpm test:integration` scripts
-- Dual-URL 测试身份模型 live: `TEST_ADMIN_DATABASE_URL` (postgres superuser, migrate + ALTER ROLE + adminDb TRUNCATE) / `TEST_DATABASE_URL` (app_user, RLS subject runtime) / `DATABASE_URL` (postgres double-guard)
-- `server/src/__tests__/integration/setup.ts` adminDb pattern beforeEach TRUNCATE + testDb null-guard defense-in-depth + `withTestTenant` + `withTestPlatform` helpers
-- `server/src/__tests__/integration/global-setup.ts` migrate deploy + ALTER ROLE app_user password via WHATWG URL parser
-- `server/src/__tests__/integration/fixtures.ts` 桥 helpers (Task 13 land, 含 MODULES_FULL D81 §7.14)
-- `server/src/__tests__/integration/rls-coverage.test.ts` (51 lines, 2 tests) + `tenant-isolation.test.ts` (77 lines, 4 tests) + `module-registry.test.ts` (46 lines, 2 tests)
-- L1 最严 review 节奏 live precedent: Task 14 + Task 15 work-log → Ian 明批 → CC 三步走
-
-### 9.4 规则应用提醒 (Phase B + C 累积 informed)
-
-- **Opus Spec Pre-Flight Checklist** (Digest §7, 含 Language-layer self-check + Cross-phase literal coupling + 本对话内新规则激活 全条款 + D88 候选 anchor literal grep 实证)
-- **D74 双向校准**: 预估行数分桶 (Phase C Batch 3 累积桶 B replacement plan heredoc 第 2 数据点)
-- **D83 定性约束**: verify 用 "expected 结构出现 / unexpected 未出现", 不用 ±N%
-- **D84 Cross-Phase Invariants live**: DB name `qr_order` / role name (`app_user` / `platform_admin` / `system_worker`) / GUC `app.current_store_id` / policy `tenant_isolation` 硬 invariant. plan writer 引用必 grep 实证
-- **D85 infra identity 变更 dryrun 全 lifecycle 链路**: plan writer 改 infra 身份时 plan 必 exercise beforeEach / fixture / afterAll 全链路
-- **D86 async-executable + language-layer self-check**: 所有治理 / commit message / CC 执行消息 / work-log 禁 session-relative 指示词 + Stage 0 repo 状态 pre-check 模板强制
-- **D88 Plan Opus spec 4 维度 self-audit**: 产 spec 前自审 verification + judgement + anchor literal grep 实证 + path-of-least-defense (维度 3 直接响应 Phase C Batch 3 closure 期 2 处 spec 内部不一致 fabrication, 强约束)
-- **#14/#22/#25/#26/#27 防御**: Snapshot 每对话收尾增量 Edit + Phase 封顶 regen + cross-phase grep + language-layer self-check + spec writer anchor literal grep 实证
-- **#20 完整 dump**: Stage 0 grep schema / migration 用 `cat` 或 `grep -A N` 完整 dump
-- **Time Machine restore env gap (§7.15)**: 跨设备 / 跨环境恢复后必 verify Docker daemon + container image + node_modules + `.env` + DB volume + tooling CLI
-
-### 9.5 关键 grep 清单 (Phase D Task 16 启动期, 待 plan 段读后细化)
-
-**G-D16.1** — Phase D plan Task 16 段完整 view:
-
-    sed -n "<TASK_16_LINE_RANGE>p" docs/superpowers/plans/2026-04-17-phase5-postgres-migration/phase-d-repositories.md
-
-(具体行号由 Plan Opus Stage 0 grep `^### Task 16` 定位.)
-
-**G-D16.2** — production prisma-client API surface (Phase B `49a53a3a` Task 6 init + `820389a9` Task 8 add G7-4 helper baseline):
-
-    cat server/src/repositories/prisma-client.ts
-
-Fact base: `prisma` (app_user) / `systemPrisma` (system_worker) export + `Db = PrismaClient | Prisma.TransactionClient` 类型 + 4 wrapper (`withTenantContext` / `withPlatformContext` / `withSystemContext` / `withTenantContextAndHooks`) + `assertUuid` SQL injection guard + Hook 语义 (tx commit FIFO fire / tx throw 0 fire / hook throw console.error 不传播). [Snapshot v5.0 self-stale 修正, 见 §7.18 Archive #28 候选 数据点 2 + 3]
-
-**G-D16.3** — Phase B Task 8 tenant-aware.ts (Express middleware) integration point:
-
-    cat server/src/middleware/tenant-aware.ts
-
-Fact base: req-level storeId 注入逻辑 + Repository 层 db 参数透传 contract.
-
-**G-D16.4** — schema.prisma model 完整 (Phase B `75fd9084` baseline):
-
-    grep -nE "^model |@@map" server/prisma/schema.prisma
-
-Fact base: 22 models (16 主表 + 6 子表, +PlatformAuditLog as 16th 主表) 命名空间, Phase D 11 个 Repository 对应 model 选择. [Snapshot v5.0 self-stale 修正, 见 §7.18 Archive #28 候选 数据点 1]
-
-**G-D16.5** — `server/src/repositories/` 当前文件清单 (Phase D Task 16 启动 baseline, `851505d9` 时点):
-
-    ls -la server/src/repositories/
-
-Fact base:
-- `auth.repository.ts` (704 B, Mar 23, legacy pre-Phase 5)
-- `json-store.ts` (2080 B, Apr 26, JsonStore singleton)
-- `prisma-client.ts` (6213 B, Apr 26, Phase B Task 6 + Task 8 baseline — SHA chain `49a53a3a` + `820389a9`, 见 G-D16.2)
-- `stores.ts` (1153 B, Apr 26, JsonStore singleton, Phase D 期 NOT 改动 — Plan §47/§52 铁律)
-
-`store.ts` / `orders.ts` (Task 16/17 目标文件) Phase D Task 16 实施前不存在; git log 空 — Plan §746 "段 2a 完成" stale marker, 见 §7.16.
-
-(其他 grep 由 plan §1 整体 scope 读后扩展.)
-
-### 9.6 不启动原则
+### 9.7 不启动原则
 
 新 Plan Opus 启动后:
+1. 读完 ritual (9.2) → CoT Task 20-22 scope + carry-forward ack
+2. **CC dump 实证** plan §Task 20 + schema.prisma SplitBill + SplitBillItem model field (Plan Opus 不直接 read /mnt/project assume — Cat 5 第 4+5 教训)
+3. 视 plan §Task 20 + L1 升级 trigger 评估定 review 等级
+4. L2 default → spec → Ian 明批 → CC; L1 升级 → work-log L1 → Ian 明批 → CC
+5. **不直接起 CC 执行消息** 在 Phase D-4 batch 启动期; plan + Stage 0 grep + Ian 明批 GO 后才进入
 
-1. 读完 ritual (9.2) → CoT 输出 Phase D scope 理解 + Phase B/C carry-forward ack
-2. Stage 0 grep `phase-d-repositories.md` 整体 + Task 16 段 (9.5 G-D16.1-5)
-3. 视 plan §1 review 级别字段定 batch 切分 + 第一个 task 是 L1 / L2 / L3 review
-4. L1 → 同 Phase C Task 14/15 三步走 (work-log → Ian 明批 → CC); L2 → 直接 CC 执行消息; L3 → 摘要委托
-5. **不直接起 CC 执行消息** 在 Phase D 启动期; plan 整体 scope 读完 + Stage 0 grep 完成 + Ian 明批 batch 1 第一个 task GO 后才进入 CC 执行消息
+### 9.8 Phase D-3b 对话 closure 记录
 
-### 9.7 Phase C 封顶 closure 记录 (供 Phase D Plan Opus 理解 Phase C 协作节奏)
+Phase D-3b Task 19 payments.ts (D56 in payment scope 首落 + Stripe 真钱 L1) 4 commits (`80660214` work-log + `a7752a30` impl + `CLOSURE_SHA_PENDING` closure α′ atomic absorb T18 deferred + T19 + `<round 2 SHA>` round 2 fix-forward) + 1 规则 8 暂停 G-T19.6 spec literal α 决议 turn resolved + 1 informational G-T19.10 XOR predict 假 alarm + Cat 5 子项 5 数据点 trend rising (DP3+DP4+DP5 NEW) + 0 critical fabrication 逃逸:
 
-Phase C 5/5 + 三 Batch + 17+ commits + 6 规则 8 暂停全 resolved + 0 critical fabrication 逃逸:
+- **Default Push Forward Rule 1+2+4 全触发 live precedent 首次** (per Helper R3 minor flag 3 governance evolution evidence)
+- **#30 防御层 second live demo land** + α 决议 mid-stage resolution = 防御层 robust against env semantics drift
+- **Plan Opus 防御层 predict 模型 nuance refinement land** (data block mixed-style trigger 替 schema @relation 双形)
+- **D77 不 retro-amend live precedent** (G-T19.6 spec literal forward-only filtered semantics) + α path 双 commit pattern reuse Task 17 `3bb5cd1c` precedent
+- **Cat 5 子项 trend rising 5 数据点 → D89 候选 强化** (DP1 Cowork workspace + DP2 Helper Flag A + DP3 working tree vs project knowledge + DP4 path 凭印象 cross-system + DP5 project knowledge content vs repo state) — root cause: Plan Opus 假设 /mnt/project = working tree state 权威, **修正**: Plan Opus 跨 system / path / content-state assumption 必先 CC dump 实证 (8th queue entry NEW)
+- **α′ path live precedent**: single bundled closure absorbing T18 deferred Snapshot 增量 + T19 增量 atomic (Task 18 closure docs sync 从未独立 commit 设计上 deferred 入 next closure absorb)
 
-- Batch 1 (Task 11-13): 8 commits + 3 规则 8 暂停 (vitest 4 / label read-side / DB name cross-phase) + Archive #25 + D84 候选首登
-- Batch 2 (Task 14): 6 commits + 3 规则 8 暂停 (URL encoding / tableName / TRUNCATE privilege) + Archive #26 + D85 + D86 候选 + dual-URL 治理样板
-- Batch 3 (Task 15): 3 commits + 2 规则 8 暂停 (Plan Opus spec 内部不一致 setup.ts anchor + wc -l range, 双 α 接受 forward-fix) + 2 规则 8 暂停 (Time Machine env gap: Docker daemon + node_modules) + Archive #27 + D88 候选 + Archive #25 third data point + D81 landscape 4 surface
-
-**Fabrication 拦截统计 (Phase C 累积)**:
-- Ian 一手 (Flag): 3+ 次 (URL encoding regex / D86 语言层自违反 #26 / D88 raise 后 sub-rule 修正)
-- CC grep / tsc / runtime fail-loud: 8+ 次 (规则 8 暂停 6 次 resolved 全计)
-- Plan Opus 自审: 0 次 (Phase C Batch 3 期数据点证 spec writer 凭印象 anchor literal 子类自审弱, D88 sub-rule 强约束)
-- Helper Opus 跨 chat raise: 1 次 (D88 candidate value-density 分级)
-
-**协作节奏观察**:
-
-- L1 最严 review 节奏 (work-log → Ian 明批 → CC) Phase C 三 batch 累积 Task 14 + Task 15 双数据点, 模型稳定. Phase D / Phase G L1 task 复制此节奏.
-- Plan Opus spec 内部不一致 fabrication 在 Task 15 CC 执行消息 (8 anchor + 5 failure mode + 7 阶段) 复杂度场景下 2 次同模式 (anchor SHA / 数量 range). 提示 D88 维度 3 anchor literal grep 实证子规则核心治理意义, Phase D 启动期立即应用.
-- Helper Opus 在外部 chat instance raise D88 雏形 → Plan Opus Phase C Batch 3 closure 期 evaluate + 修正版含 sub-rule 4 维度. Helper 与 Plan 角色边界 + 规则进入路径 first time 试运行.
+**协作节奏观察**: L1 节奏 Phase D 累积 4 数据点 (Task 16/17/18/19), 模型稳定. Phase D-4 batch L2 multi-task 节奏首次 live (Task 11/12/13 Phase C Batch 1 是 L1 全程, Task 20-22 是 Phase 5 内 L2 multi-task batch 首次 live precedent).
 
 ---
 
