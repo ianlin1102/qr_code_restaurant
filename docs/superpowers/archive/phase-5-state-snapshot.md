@@ -48,12 +48,12 @@
 
 | SHA | 性质 | 内容 |
 |---|---|---|
-| `<round 2 SHA>` | docs | Phase D Task 19 closure round 2 micro-adjust — replace CLOSURE_SHA_PENDING with actual SHA `CLOSURE_SHA_PENDING` (D77 forward-fix pattern, Task 17 round 2 `3bb5cd1c` precedent reuse) |
-| `CLOSURE_SHA_PENDING` | docs | Phase D Task 19 closure α′ atomic absorb — Task 18 deferred Snapshot 增量 catch-up + Task 19 closure 增量 单 commit / work-log §4/§5/§6/§10 Final verdict + Snapshot 增量 §1/§3/§4''/§7.20 NEW/§8/§9 整节重写 Task 20-22 D-4 batch L2 multi-task 启动指引 / G-T19.6 α 决议 spec literal forward-only filtered semantics Task 20+ + G-T19.10 XOR predict 假 alarm 防御层 predict 模型 nuance refinement informational + Helper R3 minor flag 1+2+3 carry-forward + Cat 5 子项 5 数据点 trend rising D89 候选 强化 |
+| `<round 2 SHA>` | docs | Phase D Task 19 closure round 2 micro-adjust — replace ad7a5152 with actual SHA `ad7a5152` (D77 forward-fix pattern, Task 17 round 2 `3bb5cd1c` precedent reuse) |
+| `ad7a5152` | docs | Phase D Task 19 closure α′ atomic absorb — Task 18 deferred Snapshot 增量 catch-up + Task 19 closure 增量 单 commit / work-log §4/§5/§6/§10 Final verdict + Snapshot 增量 §1/§3/§4''/§7.20 NEW/§8/§9 整节重写 Task 20-22 D-4 batch L2 multi-task 启动指引 / G-T19.6 α 决议 spec literal forward-only filtered semantics Task 20+ + G-T19.10 XOR predict 假 alarm 防御层 predict 模型 nuance refinement informational + Helper R3 minor flag 1+2+3 carry-forward + Cat 5 子项 5 数据点 trend rising D89 候选 强化 |
 | `a7752a30` | feat | Phase D Task 19 — payments repository (D56 in payment scope 首落 + Stripe 真钱 idempotent contract, 7 methods 5 reads + 2 multi-step writes) — D55 + D56 in payment scope (PaymentItem 全 FK + paidQuantity, 0 itemKey 字符串, Task 17 D56 设计 cross-repo first live demo work-as-designed) + D56 核心 (derivePaidQuantityByOrderItem Map<orderItemId, paidQty> 替 legacy paidItemIds 字符串集合) + Stripe webhook idempotent (line 1031 guard) / 5 维度 verdict 全 Pass / 1 规则 8 暂停 G-T19.6 α 决议 resolved + 1 informational G-T19.10 XOR predict 假 alarm + Cat 5 子项 第 3 数据点 (working tree vs project knowledge file 混淆) |
 | `80660214` | docs | Phase D Task 19 L1 verify work-log — payments.ts (471 lines, 5 维度 pre-verdict + 风险 A/B/C/D + Stage 0 G-T19.1-10 完整 grep spec + #30 防御层 second live demo carry-forward Task 18 work-as-designed) |
 
-### Phase D-3a 对话 (2026-04-26, Task 18 sessions.ts impl, 2 commits + 0 规则 8 暂停 + 0 真 fail-loud + 1 微 drift informational + #30 防御层 first live demo work-as-designed) [deferred Snapshot 增量 catch-up @ `CLOSURE_SHA_PENDING` α′ path]
+### Phase D-3a 对话 (2026-04-26, Task 18 sessions.ts impl, 2 commits + 0 规则 8 暂停 + 0 真 fail-loud + 1 微 drift informational + #30 防御层 first live demo work-as-designed) [deferred Snapshot 增量 catch-up @ `ad7a5152` α′ path]
 
 | SHA | 性质 | 内容 |
 |---|---|---|
@@ -188,8 +188,8 @@
 | 16 | `019ab826` + work-log `f500067c` | store.ts (Phase D 第 1 个 repo, withSystemContext 4 wrapper validate / Snapshot v5.0 self-fab DP1+2+3 修正 land + DP4 env-state ack / 4 处 Plan Opus 印象产出数据点 trigger #29 候选 累积起步) |
 | 17 | `ff5e881b` + work-log `7dc63fd3` + round 2 forward-fix `3bb5cd1c` | orders.ts B2 核心 (10 methods 5 reads + 5 writes / D55+D56+D57+**D68** 首落 + D23/D24/D30 应用 / α + α-extended forward-fix 4 fail-loud resolved: G-T17.6 path literal pnpm hoist functional verify + Stage 1 D56 grep doc-comment-excluding regex + Stage 2 TS2322 Prisma Create vs UncheckedCreate XOR Order Checked relation connect + Stage 2-fix.0 schema field discovery tableName/menuItemId raw / 5 维度 verdict 全 Pass / 7 数据点 #29 (5 D88 维度 3) + #30 (2 D79) 候选累积) |
 
-| 18 | `cb2efd5e` + work-log `6102725f` [deferred Snapshot 增量 catch-up @ `CLOSURE_SHA_PENDING` α′ path] | sessions.ts 业务 source of truth + 双向 update tx (8 methods 3 reads + 5 writes / D55 (3 multi-step tx) + D13-adjacent (coupon snapshot flatten 4 字段) + 双向 FK 一致性 (Session.tableId ↔ Table.currentSessionId 同 tx) / 5 维度 verdict 全 Pass / Stage 0-4 全 pass 0 暂停 / **#30 防御层 first live demo work-as-designed** — G-T18.4 schema enumeration + G-T18.10 Prisma XOR predict 双 pre-empt + 0 真 fail-loud + 1 微 drift informational only (settlementMode `String @default("unset")` NOT `String?`)) |
-| 19 | `a7752a30` + work-log `80660214` + closure docs sync `CLOSURE_SHA_PENDING` (α′ atomic absorb T18 deferred 增量 + T19 增量) | payments.ts D56 in payment scope 首落 + Stripe 真钱 idempotent (7 methods 5 reads + 2 multi-step writes / D55 + D56 in payment scope (PaymentItem 全 FK + paidQuantity, 0 itemKey 字符串 — Task 17 D56 设计 cross-repo first live demo work-as-designed) + D56 核心 derivePaidQuantityByOrderItem (Map<orderItemId, paidQty> 替 legacy paidItemIds 字符串集合, Phase G settlement gateway contract land) + Stripe webhook idempotent contract (line 1031 guard) / 5 维度 verdict 全 Pass / 1 规则 8 暂停 G-T19.6 spec literal α 决议 resolved (filtered semantics forward-only Task 20+, D77 不 retro-amend) + 1 informational G-T19.10 XOR predict 假 alarm (Prisma 6 Unchecked branch 直接命中 raw FK form, 防御层 over-cautious 数据点 NOT fabrication archive) + Cat 5 子项 5 数据点 trend rising (DP3+DP4+DP5 NEW, D89 候选 强化 per Helper R3 minor flag 2) + **#30 防御层 second live demo** — G-T19.4 schema enumeration Branch 1 命中 + G-T19.10 informational refinement + Default Push Forward Rule 1+2+4 全 live precedent 首次) |
+| 18 | `cb2efd5e` + work-log `6102725f` [deferred Snapshot 增量 catch-up @ `ad7a5152` α′ path] | sessions.ts 业务 source of truth + 双向 update tx (8 methods 3 reads + 5 writes / D55 (3 multi-step tx) + D13-adjacent (coupon snapshot flatten 4 字段) + 双向 FK 一致性 (Session.tableId ↔ Table.currentSessionId 同 tx) / 5 维度 verdict 全 Pass / Stage 0-4 全 pass 0 暂停 / **#30 防御层 first live demo work-as-designed** — G-T18.4 schema enumeration + G-T18.10 Prisma XOR predict 双 pre-empt + 0 真 fail-loud + 1 微 drift informational only (settlementMode `String @default("unset")` NOT `String?`)) |
+| 19 | `a7752a30` + work-log `80660214` + closure docs sync `ad7a5152` (α′ atomic absorb T18 deferred 增量 + T19 增量) | payments.ts D56 in payment scope 首落 + Stripe 真钱 idempotent (7 methods 5 reads + 2 multi-step writes / D55 + D56 in payment scope (PaymentItem 全 FK + paidQuantity, 0 itemKey 字符串 — Task 17 D56 设计 cross-repo first live demo work-as-designed) + D56 核心 derivePaidQuantityByOrderItem (Map<orderItemId, paidQty> 替 legacy paidItemIds 字符串集合, Phase G settlement gateway contract land) + Stripe webhook idempotent contract (line 1031 guard) / 5 维度 verdict 全 Pass / 1 规则 8 暂停 G-T19.6 spec literal α 决议 resolved (filtered semantics forward-only Task 20+, D77 不 retro-amend) + 1 informational G-T19.10 XOR predict 假 alarm (Prisma 6 Unchecked branch 直接命中 raw FK form, 防御层 over-cautious 数据点 NOT fabrication archive) + Cat 5 子项 5 数据点 trend rising (DP3+DP4+DP5 NEW, D89 候选 强化 per Helper R3 minor flag 2) + **#30 防御层 second live demo** — G-T19.4 schema enumeration Branch 1 命中 + G-T19.10 informational refinement + Default Push Forward Rule 1+2+4 全 live precedent 首次) |
 **Acceptance 证据** (Phase D 进行中):
 
 - ✅ Phase D-1 + D-2 + D-3a + D-3b batch land: Task 16 store.ts + Task 17 orders.ts + Task 18 sessions.ts + Task 19 payments.ts 入 git, push aligned origin/main (D76)
@@ -437,16 +437,16 @@
 - **Root cause** (DP10 #30 D79 候选 sub-instance 第 3 数据点): Plan Opus spec writer 假设 single-file tsc 继承项 tsconfig.json target options (ES2020+), 实际 bare 命令默认 options (ES3) — 同 family as DP6 + DP7
 - **Plan Opus α 决议**: spec literal 修订 forward-only filtered semantics Task 20+ standardize: `tsc --noEmit src/file.ts 2>&1 | grep -E "^src/" | grep -cE "error TS[0-9]+:" || echo "0"`. Task 17 (`7dc63fd3`) / Task 18 (`6102725f`) / Task 19 (`80660214`) 已 land work-log 不 retro-amend per D77.
 - **处理**: Plan Opus Task 20+ work-log spec output 应用 filtered semantics. 8 governance queue 第 6+7+8 entries NEW 入下次 governance commit batch atomic decide
-- **外化锚**: `a7752a30` commit body G-T19.6 段 + `CLOSURE_SHA_PENDING` Phase D Task 19 closure docs sync (本 commit) + Phase D Task 19 work-log `80660214` §2 raw spec literal preserved
+- **外化锚**: `a7752a30` commit body G-T19.6 段 + `ad7a5152` Phase D Task 19 closure docs sync (本 commit) + Phase D Task 19 work-log `80660214` §2 raw spec literal preserved
 
 ### 7.21 Snapshot α′ atomic absorb T18 deferred 增量 + T19 增量 (Phase D-3b closure 期登记)
 
-- **位置**: docs/superpowers/archive/phase-5-state-snapshot.md §1 / §3 / §4'' / §7.20 / §8 / §9 — `CLOSURE_SHA_PENDING` (α′ path)
+- **位置**: docs/superpowers/archive/phase-5-state-snapshot.md §1 / §3 / §4'' / §7.20 / §8 / §9 — `ad7a5152` (α′ path)
 - **背景**: Task 18 closure docs sync 从未独立 commit (live 增量维护 philosophy 设计 deferred 入 next closure absorb), Phase D-3b §F Stage 1 first attempt 假设 file 已含 T18 增量 → CC fail-loud 拦截 (Snapshot 实际 Task 17 closure state HEAD ff5e881b)
 - **Cat 5 子项 第 3+4+5 NEW 数据点 root cause**: Plan Opus 假设 /mnt/project project knowledge file = working tree state 权威 — 实际 project knowledge 是 prior Plan Opus instance draft 不一定 commit 入 repo. Cat 5 trend rising 5 数据点 强化 D89 候选 ("Plan Opus external system topology / file-system / artifact source / content-state assumption 必先 grep 实证 / CC 一手 dump verify, /mnt/project 是 input reference 不是 working tree state 权威") per Helper R3 minor flag 2
-- **Plan Opus α′ 决议**: single bundled closure docs sync absorbs T18 deferred 增量 + T19 增量 atomic, region-based Python edits (anchor on heading + SHA + section boundary, 不依赖 OLD byte-content). γ-style `CLOSURE_SHA_PENDING` marker + α-path 双 commit per Task 17 round 2 `3bb5cd1c` precedent
+- **Plan Opus α′ 决议**: single bundled closure docs sync absorbs T18 deferred 增量 + T19 增量 atomic, region-based Python edits (anchor on heading + SHA + section boundary, 不依赖 OLD byte-content). γ-style `ad7a5152` marker + α-path 双 commit per Task 17 round 2 `3bb5cd1c` precedent
 - **处理**: 8 governance queue 第 8 entry NEW (Plan Opus 跨 system / path / state assumption 必先 CC dump 实证) 入下次 governance commit batch atomic decide
-- **外化锚**: `CLOSURE_SHA_PENDING` 本 commit body Self-flag 段 + Phase D-3b 对话 §F Stage 1 fail-loud + CC dump output (lines 14-22 §1 / line 47 §3 D-2 / lines 137-153 §4'' / line 214 §8 HEAD / line 218 §9) + Plan Opus α′ corrected single-bundle
+- **外化锚**: `ad7a5152` 本 commit body Self-flag 段 + Phase D-3b 对话 §F Stage 1 fail-loud + CC dump output (lines 14-22 §1 / line 47 §3 D-2 / lines 137-153 §4'' / line 214 §8 HEAD / line 218 §9) + Plan Opus α′ corrected single-bundle
 
 ---
 
@@ -485,7 +485,7 @@
 | `server/src/repositories/orders.ts` | Phase D Task 17 `ff5e881b` | B2 核心 repo (10 methods 5 reads + 5 writes, D55+D56+D57+D68 首落 + D23/D24/D30 应用, α + α-extended forward-fix) — Phase G Task 34 session-cart B2 重写 foundation contract |
 | `server/src/repositories/sessions.ts` | Phase D Task 18 `cb2efd5e` | 业务 source of truth (8 methods 3 reads + 5 writes, D55 + D13-adjacent + 双向 FK 一致性 Session.tableId ↔ Table.currentSessionId 同 tx) — Phase G Task 33+ session-cart B2 重写 foundation contract + #30 防御层 first live demo work-as-designed |
 | `server/src/repositories/payments.ts` | Phase D Task 19 `a7752a30` | D56 in payment scope 首落 + Stripe 真钱 idempotent (7 methods 5 reads + 2 multi-step writes, D55 + D56 + D56 核心 derivePaidQuantityByOrderItem Map aggregate + Stripe webhook idempotent contract line 1031) — Phase G Task 35/36 settlement gateway / webhook handler 直接消费 + #30 防御层 second live demo + Cat 5 子项 5 数据点 trend rising |
-| HEAD == origin/main | ✅ `CLOSURE_SHA_PENDING` | Phase D-3b Task 19 closure α′ atomic absorb — payments.ts D56 in payment scope 首落 + Stripe 真钱 idempotent + Task 18 deferred Snapshot 增量 catch-up. Snapshot §8 HEAD SHA 每对话收尾增量 Edit 同步 (§7.9 pattern Phase 封顶 regen reconcile 已内化机制, 不再单独登记)。 |
+| HEAD == origin/main | ✅ `ad7a5152` | Phase D-3b Task 19 closure α′ atomic absorb — payments.ts D56 in payment scope 首落 + Stripe 真钱 idempotent + Task 18 deferred Snapshot 增量 catch-up. Snapshot §8 HEAD SHA 每对话收尾增量 Edit 同步 (§7.9 pattern Phase 封顶 regen reconcile 已内化机制, 不再单独登记)。 |
 
 ### Shell / OS 环境状态 (post-Time Machine restore)
 
@@ -514,7 +514,7 @@
 
 ### 9.2 启动 ritual (per L2 简化)
 
-1. 读 4 件 handoff (Snapshot HEAD `CLOSURE_SHA_PENDING` / Digest D55-D88 / Archive 27 land + 候选 / phase-d-repositories.md Task 20-22 段)
+1. 读 4 件 handoff (Snapshot HEAD `ad7a5152` / Digest D55-D88 / Archive 27 land + 候选 / phase-d-repositories.md Task 20-22 段)
 2. CoT Task 20 scope + Task 16-19 carry-forward ack
 3. **Stage 0 partial verify** — Plan Opus 必先 **CC dump 实证** repo file content + path + state (per 8th queue entry NEW Cat 5 第 4+5 数据点 教训, /mnt/project 是 input reference 不是 working tree state 权威)
 4. 决定 Task 20 review level (L2 default vs L1 升级)
@@ -565,7 +565,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 ### 9.8 Phase D-3b 对话 closure 记录
 
-Phase D-3b Task 19 payments.ts (D56 in payment scope 首落 + Stripe 真钱 L1) 4 commits (`80660214` work-log + `a7752a30` impl + `CLOSURE_SHA_PENDING` closure α′ atomic absorb T18 deferred + T19 + `<round 2 SHA>` round 2 fix-forward) + 1 规则 8 暂停 G-T19.6 spec literal α 决议 turn resolved + 1 informational G-T19.10 XOR predict 假 alarm + Cat 5 子项 5 数据点 trend rising (DP3+DP4+DP5 NEW) + 0 critical fabrication 逃逸:
+Phase D-3b Task 19 payments.ts (D56 in payment scope 首落 + Stripe 真钱 L1) 4 commits (`80660214` work-log + `a7752a30` impl + `ad7a5152` closure α′ atomic absorb T18 deferred + T19 + `<round 2 SHA>` round 2 fix-forward) + 1 规则 8 暂停 G-T19.6 spec literal α 决议 turn resolved + 1 informational G-T19.10 XOR predict 假 alarm + Cat 5 子项 5 数据点 trend rising (DP3+DP4+DP5 NEW) + 0 critical fabrication 逃逸:
 
 - **Default Push Forward Rule 1+2+4 全触发 live precedent 首次** (per Helper R3 minor flag 3 governance evolution evidence)
 - **#30 防御层 second live demo land** + α 决议 mid-stage resolution = 防御层 robust against env semantics drift
