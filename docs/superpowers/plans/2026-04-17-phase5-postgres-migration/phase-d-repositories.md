@@ -1340,7 +1340,13 @@ export const menuRepo = {
     db.category.upsert({
       where: { id: data.id ?? '' },
       create: data,
-      update: { name: data.name, sortOrder: data.sortOrder, isActive: data.isActive },
+      update: {
+        name: data.name,
+        nameEn: data.nameEn,
+        sortOrder: data.sortOrder,
+        isActive: data.isActive,
+        quickTags: data.quickTags,
+      },
     }),
 
   upsertItem: (data: Prisma.MenuItemUncheckedCreateInput, db: Db): Promise<MenuItem> =>
@@ -1350,9 +1356,12 @@ export const menuRepo = {
       update: {
         categoryId: data.categoryId,
         name: data.name,
+        nameEn: data.nameEn,
         description: data.description,
+        descriptionEn: data.descriptionEn,
         imageUrl: data.imageUrl,
         price: data.price,
+        originalPrice: data.originalPrice,
         isAvailable: data.isAvailable,
         isStaffOnly: data.isStaffOnly,
         sortOrder: data.sortOrder,
@@ -1371,6 +1380,7 @@ export const menuRepo = {
     options: {
       groupName: string
       name: string
+      nameEn?: string
       priceAdjust: number
       isDefault?: boolean
       sortOrder?: number
@@ -1392,6 +1402,7 @@ export const menuRepo = {
           menuItemId: itemId,
           groupName: opt.groupName,
           name: opt.name,
+          nameEn: opt.nameEn,
           priceAdjust: opt.priceAdjust,
           isDefault: opt.isDefault ?? false,
           sortOrder: opt.sortOrder ?? 0,
