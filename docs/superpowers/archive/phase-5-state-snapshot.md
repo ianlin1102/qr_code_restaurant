@@ -44,11 +44,11 @@
 
 ## 3. 最近 commit 链(按时间倒序)
 
-### Phase D-4 batch 对话 (2026-05-11, Task 20 split-bills.ts + Task 21 menu.ts + plan patch v9 docs, 3 commits + closure docs commit `CLOSURE_SHA_PENDING` + 0 规则 8 暂停 + 0 真 fail-loud + 0 forward-fix — **L2 multi-task batch 三步走模型首次 live demo** + **#30 防御层 fourth live demo work-as-designed continuity** + **D89 候选 second batch-level 应用 demo**)
+### Phase D-4 batch 对话 (2026-05-11, Task 20 split-bills.ts + Task 21 menu.ts + plan patch v9 docs, 3 commits + closure docs commit `ffc7719f` + 0 规则 8 暂停 + 0 真 fail-loud + 0 forward-fix — **L2 multi-task batch 三步走模型首次 live demo** + **#30 防御层 fourth live demo work-as-designed continuity** + **D89 候选 second batch-level 应用 demo**)
 
 | SHA | 性质 | 内容 |
 |---|---|---|
-| `CLOSURE_SHA_PENDING` | docs | Phase D-4 batch closure 增量 — Snapshot §1 整节 (Phase D 6/11 + HEAD aaf9fa79 + Cat 5 8 数据点 DP6+DP7 + D89 升格判 + Stripe DNS P0 informational + D-5 batch ritual carry-forward) / §3 D-4 batch段 prepend (本段) + `c1b123fb` placeholder forward-fix → `c1b123fb` replace_all (3 occurrences §3 + §4'' + §9.8 D77 carry-forward) / §4'' heading 2/11 → 6/11 + Task 20+21 rows + Acceptance bullets 5 新条目 (Phase D 6/11 + #30 防御层 fourth + D89 ripening + L2 batch first live precedent + plan patch v9 update-block 防御) / §7.22 NEW Phase D-4 batch entry CC Stage 0 dump batch-level pre-empt + plan patch v9 D89 second live demo + DP6+DP7 self-application 数据点 / §9 整节重写 Phase D-5 batch L1 启动 ritual + plan patch v10 scope / §10 修订轨迹 D-4 closure NEW entry. **CLOSURE_SHA_PENDING D77 forward-fix pattern reuse** (Task 17 `3bb5cd1c` + Task 19 `c1b123fb` precedent) — Round 4 post-land mini-commit replace |
+| `ffc7719f` | docs | Phase D-4 batch closure 增量 — Snapshot §1 整节 (Phase D 6/11 + HEAD aaf9fa79 + Cat 5 8 数据点 DP6+DP7 + D89 升格判 + Stripe DNS P0 informational + D-5 batch ritual carry-forward) / §3 D-4 batch段 prepend (本段) + `c1b123fb` placeholder forward-fix → `c1b123fb` replace_all (3 occurrences §3 + §4'' + §9.8 D77 carry-forward) / §4'' heading 2/11 → 6/11 + Task 20+21 rows + Acceptance bullets 5 新条目 (Phase D 6/11 + #30 防御层 fourth + D89 ripening + L2 batch first live precedent + plan patch v9 update-block 防御) / §7.22 NEW Phase D-4 batch entry CC Stage 0 dump batch-level pre-empt + plan patch v9 D89 second live demo + DP6+DP7 self-application 数据点 / §9 整节重写 Phase D-5 batch L1 启动 ritual + plan patch v10 scope / §10 修订轨迹 D-4 closure NEW entry. **ffc7719f D77 forward-fix pattern reuse** (Task 17 `3bb5cd1c` + Task 19 `c1b123fb` precedent) — Round 4 post-land mini-commit replace |
 | `aaf9fa79` | feat | Phase D Task 21 — menu repository (Category + MenuItem + MenuItemOption 3-entity single-file bundle, 8 methods 4 reads + 4 writes 含 1 多步 tx replaceItemOptions wipe+reinsert 同 replaceDraftItems 模式) — POST plan-patch-v9 update-block field preservation incorporated (Patch A upsertCategory 3→5 fields + nameEn + quickTags / Patch B upsertItem 8→11 fields + nameEn + descriptionEn + originalPrice / Patch C.1 options shape 5→6 fields + nameEn? / Patch C.2 data block 7→8 fields + nameEn opt) / 5 维度 verdict 全 Pass L2 简化 / Stage 0 G-T21.1-3 全 pass + Stage 1 post-write v9 6 字段 grep 实证 / Stage 2 tsc filtered=0 + N1=103 baseline maintained (D83 diff=0 Pass) / Stage 3 D75 + D76 + D86 staged 全 pass / 136 lines (130-140 forward-looking band) / **#30 防御层 fourth live demo work-as-designed** (Task 18/19/20/21 4 consecutive carry-forward) |
 | `cf46f1c5` | feat | Phase D Task 20 — split-bills repository (D56 FK model 复用 Task 19 PaymentItem 同模式, 6 methods 3 reads + 3 writes 含 1 多步 tx create + 1 聚合 sumAssignedQuantityByOrderItem 与 payments.derivePaidQuantityByOrderItem 配对 for Phase G settlement gateway 冲突检测) / 5 维度 verdict 全 Pass L2 简化 / Stage 0 G-T20.1-3 全 pass / Stage 2 tsc filtered=0 + N1=103 baseline / Stage 3 D75 + D76 + D86 staged 全 pass / 119 lines (~110 estimate +8% 内 D83 ±10% buffer) / **G-T20.10 XOR predict autonomous** (CC 加, Task 17→18→19 carry-forward 模式扎根, Unchecked branch direct 0 TS2322) / ℹ️ SplitBillStatus enum no @default — 'active' literal accept (Prisma 6 string-literal narrowing live precedent) / **#30 防御层 third live demo work-as-designed** |
 | `06a746d7` | docs | Phase D plan patch v9 — Task 21 menu.ts upsert update-block field preservation (semantic data-loss bug 修复 — schema nameEn / quickTags / descriptionEn / originalPrice / nameEn[MenuItemOption] 漏 update-block + replaceItemOptions input shape + data block, caller intent 静默忽略 if existing rows upsert update branch) — 4 hunks 12+/1- (Patch A upsertCategory single-line 3 → multi-line 5 fields / Patch B upsertItem 8→11 fields / Patch C.1 options shape 5→6 fields + nameEn? / Patch C.2 data block 7→8 fields + nameEn opt) / Stage 0 G-PV9.1-6 + Stage 2 V1-V5 全 pass / **D89 候选 second batch-level 应用 demo first** — CC Stage 0 dump batch-level pre-empt 6+ 字段 drift in Round 2 spec 写作前 (vs Task 17 第 6+7 数据点重发模式), Phase D-4 batch L2 multi-task 三步走模型支撑 + 节省 ≥ 2-3 turn round-trip cost |
@@ -215,7 +215,7 @@
 - ✅ **Default Push Forward Rule 1+2+4 全 live precedent 首次** (Phase D-3b Task 19, per Helper R3 minor flag 3): Rule 1 (CC 0 暂停 → Plan Opus 直进 closure) + Rule 2 (Helper review skip per 0 自 flag 风险面 + Plan Opus 新 instance re-grep 等价 cross-instance verify) + Rule 4 (G-T19.6 α 决议 idempotent 安全 + root cause file-agnostic env semantics nail down + Helper skip)
 - 🟡 17 处 Plan Opus 印象产出数据点 累积 (Phase D-1 期 4 + Phase D-2 期 5 + Phase D-3a 期 0 + Phase D-3b 期 8) → #29 (D88 维度 3 anchor literal, 9 sub-instance unchanged) + #30 (D79 Plan-as-code dryrun missing, 3 sub-instance — DP6/DP7/DP10 NEW; Task 18/19 防御层 live demos) + Cat 5 子项 (5 数据点 — DP1 Cowork workspace + DP2 Helper Flag A 误归 + DP3 NEW working tree vs project knowledge file + DP4 NEW path 凭印象 cross-system + DP5 NEW project knowledge content vs repo state; trend rising → **D89 候选 强化** per Helper R3 minor flag 2 carry-forward) → β 双 entry 路径 入下次 governance commit 节奏点 decide
 - 🟡 8 governance queue entries (Pre-Flight Checklist D86 gate semantic / Project description D86 sync / Snapshot §6 D86 sub-class / Phase H §7 heading rename + D86 verify spec template / D88 维度 3 延伸 sub-rule self-state assertion / NEW 6th — Task 20+ Stage 0 G-Tn.6 spec literal filtered semantics standardize / NEW 7th — Pre-Flight Checklist v2 candidate XOR predict trigger refinement explicit anchor "data block mixed @relation connect + raw FK" 替 "schema @relation 双形" per Helper R3 minor flag 1 / NEW 8th — Plan Opus 跨 system / path / content-state assumption 必先 CC dump 实证, /mnt/project 是 input reference 不是 working tree state 权威 per Cat 5 第 4+5 数据点) → 入下次 governance commit 节奏点 atomic decide
-- ✅ **Phase D 6/11 land milestone (D-4 batch closure)** — Task 20 split-bills + Task 21 menu + plan patch v9 (3 commits + closure docs `CLOSURE_SHA_PENDING`) L2 multi-task batch 三步走模型 (spec → Ian 明批 → CC execute) **首次 live demo**, 0 规则 8 暂停 / 0 真 fail-loud / 0 forward-fix 跨 batch
+- ✅ **Phase D 6/11 land milestone (D-4 batch closure)** — Task 20 split-bills + Task 21 menu + plan patch v9 (3 commits + closure docs `ffc7719f`) L2 multi-task batch 三步走模型 (spec → Ian 明批 → CC execute) **首次 live demo**, 0 规则 8 暂停 / 0 真 fail-loud / 0 forward-fix 跨 batch
 - ✅ **#30 防御层 fourth live demo work-as-designed continuity** — Task 18 first / Task 19 second / Task 20 third / Task 21 fourth, 4 consecutive carry-forward 全 schema-side full field enumeration grep + Prisma XOR predict + Unchecked branch direct pre-empt
 - ✅ **D89 候选升格条件 ripening** — 4 live demos + Cat 5 trend 8 数据点 (含 DP6 NEW D-4 batch entry CC dump batch-level pre-empt + DP7 NEW Snapshot path 假设 self-application 本对话 first internalized) + plan patch v9 batch-level 应用 demo first (vs Task 17 单 task 重发模式)
 - ✅ **L2 → L1 升级 trigger Helper review fired** — Task 22 + printer 附录 拆 D-5 batch, β-modified path 决议 strict adherence ("L2 batch 内任一 task L1 升级 → 拆分独立 batch") first live demo
@@ -483,7 +483,7 @@
   - Task 22 + printer 附录 升 L1 拆 D-5 batch — plan patch v10 future (Task 22 roleId required + TimeEntry 字段 rename + 决策点 G refresh schema-migration-avoiding + Printer model rename + findFirst)
   - **D89 升格判** 入下次 governance commit batch atomic decide (4 live demos Task 18/19/20/21 + Cat 5 trend 8 数据点 含 DP6+DP7 + plan patch v9 batch-level 应用 demo + Type β 子类附加数据点 — 升格条件 ripening)
 
-- **外化锚**: `06a746d7` plan patch v9 commit body 4 hunks detail / `cf46f1c5` Task 20 commit body G-T20.10 XOR predict + #30 防御层 third live demo / `aaf9fa79` Task 21 commit body #30 防御层 fourth live demo + post-v9 patches incorporated detail / `CLOSURE_SHA_PENDING` 本 closure commit body §7.22 元层 ack + 路径修正 DP7 self-application 数据点 / 本 §7.22 entry 元层
+- **外化锚**: `06a746d7` plan patch v9 commit body 4 hunks detail / `cf46f1c5` Task 20 commit body G-T20.10 XOR predict + #30 防御层 third live demo / `aaf9fa79` Task 21 commit body #30 防御层 fourth live demo + post-v9 patches incorporated detail / `ffc7719f` 本 closure commit body §7.22 元层 ack + 路径修正 DP7 self-application 数据点 / 本 §7.22 entry 元层
 
 ---
 
@@ -563,7 +563,7 @@
 ### 9.2 启动 ritual
 
 1. **读** (按顺序):
-   - 本 Snapshot live 增量, HEAD post-D-4 closure (`CLOSURE_SHA_PENDING` → 实际 SHA Round 4 D77 forward-fix 后)
+   - 本 Snapshot live 增量, HEAD post-D-4 closure (`ffc7719f` → 实际 SHA Round 4 D77 forward-fix 后)
    - `phase-5-fabrication-archive.md` (27 条 land + #28/#29/#30/Cat 5 8 数据点候选含 DP6+DP7 + D89 升格判候选 — 全入下次 governance commit batch atomic decide)
    - `phase-5-governance-digest.md` (含 D85 / D86 / D88 + Pre-Flight §7 全条款 + D89 升格判 deferred)
    - `phase-d-repositories.md` (§Task 22 staff.ts + Phase E 回填附录 5 printer.ts 段, post plan-patch-v10 land)
@@ -594,7 +594,7 @@
 
 - D75 数据 guard (`[ -s file ]` 后置) — 6 task land 0 fail
 - D76 push + origin SHA verify — 6 task land 0 fail
-- D77 forward-fix 模板 (不 amend pushed commit) — Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `CLOSURE_SHA_PENDING` Round 4 reuse pattern
+- D77 forward-fix 模板 (不 amend pushed commit) — Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `ffc7719f` Round 4 reuse pattern
 - D88 维度 3 anchor literal grep 实证 — Phase D-2 起 5+ live applications
 - **D88 维度 3 延伸 sub-rule** (schema-side full field enumeration) — Task 18/19/20/21 4 live demos, **D89 候选升格条件 ripening**
 - **D89 候选 batch-level 应用模式** (Plan Opus 跨 system / path / artifact 假设必先 CC dump 实证) — Phase D-4 batch entry batch-level pre-empt + DP7 path 假设 self-application 数据点 (升格判 deferred)
@@ -630,9 +630,9 @@
 
 ### 9.6 D-4 batch closure 记录 (供 Phase D-5 Plan Opus 理解 D-4 协作节奏)
 
-Phase D-4 batch (Task 20 split-bills + Task 21 menu + plan patch v9, `CLOSURE_SHA_PENDING` closure docs commit):
+Phase D-4 batch (Task 20 split-bills + Task 21 menu + plan patch v9, `ffc7719f` closure docs commit):
 
-- 3 commits + closure docs commit (D77 forward-fix CLOSURE_SHA_PENDING → 实际 SHA Round 4) — **L2 multi-task batch 三步走模型首次 live demo**
+- 3 commits + closure docs commit (D77 forward-fix ffc7719f → 实际 SHA Round 4) — **L2 multi-task batch 三步走模型首次 live demo**
 - 0 规则 8 暂停 / 0 真 fail-loud / 0 forward-fix 跨 batch
 - D-4 batch entry CC Stage 0 dump pre-empt 6+ 字段 schema-vs-plan drift in spec 写作前 — **D89 候选 second batch-level 应用 demo first**
 - Plan patch v9 land `06a746d7` 修复 Task 21 update-block 字段保留 (semantic data-loss bug 防御)
@@ -683,7 +683,7 @@ Phase D-4 batch (Task 20 split-bills + Task 21 menu + plan patch v9, `CLOSURE_SH
 
 ---
 
-- **2026-05-11 v5.X 批 (Phase D-4 batch closure — Task 20 split-bills + Task 21 menu + plan patch v9, `CLOSURE_SHA_PENDING` closure docs commit)**:
+- **2026-05-11 v5.X 批 (Phase D-4 batch closure — Task 20 split-bills + Task 21 menu + plan patch v9, `ffc7719f` closure docs commit)**:
   - §1 时点 / HEAD aaf9fa79 / Phase D 6/11 / 累积 governance queue update (D89 升格判 + Cat 5 trend 8 数据点 含 DP6+DP7 + Stripe DNS P0 凭据泄漏 informational)
   - §3 commit 链 Phase D-4 batch段 prepend (3 commits + closure commit, L2 multi-task batch 三步走模型首次 live demo + #30 防御层 fourth live demo + D89 候选 second batch-level 应用 demo) + `c1b123fb` placeholder 3 occurrences forward-fix → `c1b123fb` replace_all (D77 carry-forward from Task 19 round 2)
   - §4'' Phase D 完成总览 heading 2/11 → 6/11 + Task 20 row (`cf46f1c5`) + Task 21 row (`aaf9fa79` + plan patch v9 `06a746d7`) + Acceptance bullets 5 新条目 (Phase D 6/11 land + #30 防御层 fourth live demo + D89 ripening + L2 batch first live precedent + plan patch v9 update-block 防御)
@@ -694,6 +694,6 @@ Phase D-4 batch (Task 20 split-bills + Task 21 menu + plan patch v9, `CLOSURE_SH
   - **同期 Archive 候选累积**: #28/#29/#30/Cat 5 8 数据点含 DP6+DP7 + D89 升格判 — 全入下次 governance commit batch atomic decide
   - **同期 Digest 候选累积**: D88 维度 3 延伸 sub-rule self-state assertion + 5 entries — 全入下次 governance commit batch atomic decide
   - **本对话 Path B 路径**: Snapshot v5.X 本 closure docs commit; Archive 候选 / Digest 候选 / D89 升格判 deferred 入下次 governance commit batch (Phase D-5 batch期 OR Phase D 封顶时点)
-  - **CLOSURE_SHA_PENDING D77 forward-fix 模板 reuse**: 本 closure commit 自身 SHA 至 commit land 后 Round 4 mini-commit replace (Task 17 `3bb5cd1c` + Task 19 `c1b123fb` precedent)
+  - **ffc7719f D77 forward-fix 模板 reuse**: 本 closure commit 自身 SHA 至 commit land 后 Round 4 mini-commit replace (Task 17 `3bb5cd1c` + Task 19 `c1b123fb` precedent)
 
 *Phase 5 State Snapshot · live 增量维护, 每对话收尾更新, Phase 封顶 regen · 与 Governance Digest + Fabrication Archive 配套*
