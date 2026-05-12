@@ -18,7 +18,7 @@
 - **Phase B 状态**: **10/10 完成 ✅**
 - **Phase C 状态**: **5/5 完成 ✅** (Batch 1: Task 11/12/13 / Batch 2: Task 14 / Batch 3: Task 15)
 - **Phase D 状态**: **6/11 完成** (D-1 Task 16 store.ts `019ab826` ✅ + D-2 Task 17 orders.ts `ff5e881b` ✅ + D-3a Task 18 sessions.ts `cb2efd5e` ✅ + D-3b Task 19 payments.ts `a7752a30` ✅ + D-4 Task 20 split-bills.ts `cf46f1c5` ✅ + D-4 Task 21 menu.ts `aaf9fa79` ✅), Task 22-26 ⏸️ 待启动 (Task 22 staff + printer 附录 升 L1, D-5 batch — plan patch v10 first per Helper review trigger fired)
-- **累积 governance commit batch decide queue** (Phase D 期累积, 入下次 governance commit decide): #28 Snapshot v5.0 self-fab + #29 D88 维度 3 anchor literal grep 实证 (5 + 8th workspace path + 9th D86 self-claim 数据点) + #30 D79 Plan-as-code dryrun missing (2 数据点 Task 17 G-T17.6 + Stage 2 Prisma XOR + Stage 2-fix.0 schema discovery) + Cat 5 子项 **8 数据点** (Cowork workspace path 假设 + Helper Round 2 Flag A + 4 Phase D-2 Task 17 期 + **DP6 NEW** D-4 batch entry CC Stage 0 dump 6+ 字段 schema-vs-plan drift catch in spec 写作前 + **DP7 NEW** Snapshot path 假设 `handoff/` vs 实际 `archive/` D-4 closure prep self-application) + **D89 候选升格判** (4 live demos Task 18/19/20/21 + Cat 5 trend 8 数据点 + plan patch v9 batch-level 应用 demo 升格条件 ripening) + 5 entries (Pre-Flight Checklist D86 gate semantic / Project description D86 sync / Snapshot §6 D86 sub-class / Phase H §7 heading rename + D86 verify spec template / D88 维度 3 延伸 sub-rule self-state assertion) + **Stripe CLI dev infra DNS fail informational** (out-of-scope Phase 5; **P0 凭据泄漏** whsec_b678... 本地测试 secret 暴露在 agent task log, Ian discretion `stripe listen --print-secret --skip-update` rotate)
+- **累积 governance commit batch decide queue** (Phase D 期累积, 入下次 governance commit decide): #28 Snapshot v5.0 self-fab + #29 D88 维度 3 anchor literal grep 实证 (5 + 8th workspace path + 9th D86 self-claim 数据点) + #30 D79 Plan-as-code dryrun missing (2 数据点 Task 17 G-T17.6 + Stage 2 Prisma XOR + Stage 2-fix.0 schema discovery) + Cat 5 子项 **9 数据点** (含 DP8 NEW, 详 §7.23) (Cowork workspace path 假设 + Helper Round 2 Flag A + 4 Phase D-2 Task 17 期 + **DP6 NEW** D-4 batch entry CC Stage 0 dump 6+ 字段 schema-vs-plan drift catch in spec 写作前 + **DP7 NEW** Snapshot path 假设 `handoff/` vs 实际 `archive/` D-4 closure prep self-application) + **D89 候选升格判** (4 live demos Task 18/19/20/21 + Cat 5 trend 8 数据点 + plan patch v9 batch-level 应用 demo 升格条件 ripening) + 5 entries (Pre-Flight Checklist D86 gate semantic / Project description D86 sync / Snapshot §6 D86 sub-class / Phase H §7 heading rename + D86 verify spec template / D88 维度 3 延伸 sub-rule self-state assertion) + **Stripe CLI dev infra DNS fail informational** (out-of-scope Phase 5; **P0 凭据泄漏** whsec_b678... 本地测试 secret 暴露在 agent task log, Ian discretion `stripe listen --print-secret --skip-update` rotate)
 - **下一对话目标**: **Phase D-5 batch L1 (Task 22 staff.ts + printer 附录, plan patch v10 first)** —— L2 → L1 升格 trigger Helper review fired (D-4 batch entry CC Stage 0 dump catch Task 22 多 drift: TimeEntry 字段全 mismatch userId→staffId/clockIn→clockInAt/clockOut→clockOutAt/duration NOT in schema + roleId NOT NULL drift + Printer model rename PrinterConfig→Printer + 字段 rename + @@unique NOT 存在 + 决策点 G "duration in repo persistent column" 重定义为 "duration in repo's RETURN shape" compute on-the-fly schema-migration-avoiding). Plan patch v10 spec → Ian 明批 → land → Task 22 L1 work-log → Ian 明批 + Helper async review → CC 执行 → printer 附录 L1 spec → Ian 明批 → CC 执行 → D-5 batch closure
 
 
@@ -484,6 +484,68 @@
   - **D89 升格判** 入下次 governance commit batch atomic decide (4 live demos Task 18/19/20/21 + Cat 5 trend 8 数据点 含 DP6+DP7 + plan patch v9 batch-level 应用 demo + Type β 子类附加数据点 — 升格条件 ripening)
 
 - **外化锚**: `06a746d7` plan patch v9 commit body 4 hunks detail / `cf46f1c5` Task 20 commit body G-T20.10 XOR predict + #30 防御层 third live demo / `aaf9fa79` Task 21 commit body #30 防御层 fourth live demo + post-v9 patches incorporated detail / `ffc7719f` 本 closure commit body §7.22 元层 ack + 路径修正 DP7 self-application 数据点 / 本 §7.22 entry 元层
+
+### 7.23 Phase D-5 batch entry pre-flight CC dump 应用 + DP8 formal entry (D89 候选 third batch-level live demo, 2026-05-11)
+
+- **触发**: Phase D-4 batch closure 后 Ian 主动 raise "content > date" 原则 — April-era plan files (`phase-d-repositories.md` Task 22 段 + Phase E 回填附录 5 printer 段 + `phase-d-repositories-part2.md` Task 23-26) 可能与现行 schema drift (7+ 个月 sync gap + Ian 暂离 Project 期间 schema 增量演化). Plan Opus pro-active D-5 batch entry pre-empt CC dump (**D89 候选 batch-level 应用模式 third live demo** — Phase D-4 entry first / D-5 entry pre-flight second / 本 sweep third + Phase D 期 first proactive Ian-suggested cross-task scope sweep).
+
+- **CC dump scope** (5 段, comprehensive sweep):
+  - §A: `phase-d-repositories.md` Task 22 staff.ts plan段
+  - §B: `phase-d-repositories.md` Phase E 回填附录 5 printer plan段
+  - §C: `schema.prisma` Staff + TimeEntry + Role + Printer 全字段 enum
+  - §D: `phase-d-repositories-part2.md` Task 23-26 plan段 light scan
+  - §E: `schema.prisma` Coupon + Waitlist + PlatformAuditLog + PlatformAdmin 全字段 enum
+
+- **D-5 batch immediate drift catalog** (Task 22 + 附录 5, **10 patches for plan patch v10**, Snapshot §9.1 carry-forward 已部分覆盖, 本 entry 补充 NEW 细节):
+
+  **Task 22 staff.ts (5 patches)**:
+  1. `roleId?: string` create sig + `roleId: data.roleId ?? null` → required `roleId: string` (no `?? null` fallback) — TS2322 risk if not fixed
+  2. `findActiveTimeEntry(userId, ...)` + `where: { userId, clockOut: null }` → rename param + field `userId` → `staffId` (schema `staffId String @map("staff_id")`)
+  3. `clockIn` / `clockOut` 全场 → `clockInAt` / `clockOutAt` (schema `clockInAt DateTime` / `clockOutAt DateTime?`); **word-boundary sed risky** (`clockIn` 子串 `clockInAt`), 用 `\bclockIn\b` ERE regex 或 manual Edit
+  4. `duration: null` writes in `createTimeEntry` + `duration: durationMin` in `closeTimeEntry` → remove writes (schema 无 duration 列)
+  5. 决策点 G: "duration computed in repo (business invariant)" → refresh "duration in RETURN shape" compute on-the-fly via `clockOutAt.getTime() - clockInAt.getTime()` mapper (listTimeEntries 返回 shape derived field, NOT persisted column)
+
+  **附录 5 printer.ts (5 patches, **NEW 细节超 D-4 batch entry catch**)**:
+  6. `model PrinterConfig` references + type imports + `db.printerConfig` accessor → rename throughout to `Printer` / `db.printer` (schema `model Printer / @@map("printers")`)
+  7. Fields rename: `ipAddress` → `host` / `enabled` → `isEnabled` / `paperWidth` 字段全删 / **ADD `type: string` required (NEW NOT 在 D-4 batch entry catalog — schema `type String` required no default, caller 必传, 同 PlatformAdmin.role pattern)**
+  8. `findByStoreId` 用 `findUnique({where: {storeId}})` → 改 `findFirst({where: {storeId}})` (schema 只 `@@index([storeId])` NOT `@@unique`)
+  9. `upsertConfig` 用 `upsert({where: {storeId}, ...})` → 改 manual `findFirst` + `create` OR `update` 分支 (schema-migration-avoiding D89 self-application). **NEW: 改 multi-step → `db: Db` 签名必改 `tx: Prisma.TransactionClient` per D55 多步 tx 编译期强制** (D-4 batch entry 未抓此 implication)
+  10. Defaults: keep `name: 'Default Printer'` default / drop `paperWidth: 80` default
+
+- **Future batches drift findings** (Task 23-26 D-5b/c/d, **4 patches for plan patches v11/v12, NEW 全新 from light scan**):
+
+  **Task 24 coupons.ts (1 patch)**:
+  - `findActiveByCode` query `where: { code, active: true }` → schema field `isActive Boolean` (TS2353 if not fixed). Rename `active` → `isActive`
+
+  **Task 25 waitlist.ts (1 patch)**:
+  - Plan `add()` 签名含 `estimatedWait: number` 参数, schema `WaitlistEntry` 字段 list 无 `estimatedWait`. **决议: β-path drop `estimatedWait` from `add()` 签名** (schema-migration-avoiding per Mode C δ 桶 4 "次要扩展" 🔵 delegated Phase H/I 已 governed-by-existing — NOT 新 Ian 明批, Exception Trigger 1 NOT 触). Plan commentary line ~645 原 "建议仍为 Int?" 是 April-era suggestion, schema 实际未 follow through, Mode C δ 桶 4 deferral 取代
+
+  **Task 26 platform-admin.ts (2 patches)**:
+  - Plan `createAdmin` 签名含 `displayName?: string | null` — schema `PlatformAdmin` 无 `displayName` 字段 (TS2353), drop from signature
+  - Schema `PlatformAdmin.role String` 必填 — plan `createAdmin` 不传 `role` (TS2322), 必加入签名 (推荐 caller 必传, 同 Printer.type + Task 22 roleId pattern一致)
+
+  **Task 23 roles.ts cross-task informational (0 patches, verify only)**:
+  - Plan imports `Permission` from `@qr-order/shared` — verify `shared/index.ts` exports `Permission` type at Phase G/E 启动期, NOT plan patch scope
+
+- **Schema-migration-avoiding path applied (D89 self-application continuity)**:
+  - Task 22 duration: compute on-the-fly in return shape (no schema add) ✅ — 决策点 G refresh
+  - Printer @@unique: findFirst + create/update (no schema add) ✅
+  - Task 25 estimatedWait: drop from signature (Mode C δ 桶 4 governance) ✅
+  - 全 path B 一致, NOT 触 Exception Trigger 1 (schema migration)
+
+- **DP8 formal entry** (D-4 closure Round 3 spec §3 meta-reference `<round 2 SHA>` literal sed double-replace self-referential artifact — Type β 子类 carry-forward, 同质于 §3 line 51 Task 19 round 2 历史 artifact "replace ad7a5152 with actual SHA ad7a5152"):
+  - Pattern: Plan Opus 写 spec 描述某 forward-fix 操作时, 描述文本含该操作的字面目标 token, sed 双 replace, 留 awkward 半 redundant 文本
+  - Round 4 D77 forward-fix (CLOSURE_SHA_PENDING → ffc7719f) 同 pattern 复现 (e.g. "(D77 forward-fix CLOSURE_SHA_PENDING → 实际 SHA Round 4)" → "(D77 forward-fix ffc7719f → 实际 SHA Round 4)"), 接受 as documentation trace 保留 governance trace 完整性
+  - **内化原则**: spec writing 描述 sed/Edit 操作时, 避免在描述文本内 verbatim 引用操作 source/target literal — 或预期 double-replace 接受 artifact
+
+- **D89 候选 third batch-level live demo + DP9 NEW informational subordinate** (Task 23-26 light scan 4 NEW drifts catch — D89 path B forward investment scope 扩展, 相同 root cause family with DP6/7/8 = "Plan April-era assumption vs schema evolution drift"): **NOT 升级 Cat 5 9+1=10 by DP9** (informational subordinate 同 root cause, 不独立 data point). **Cat 5 trend 9 数据点 base 维持** (DP1-DP5 base 5 + DP6+DP7+DP8 = 8... 实际 base count Cowork workspace path + Helper Round 2 + 4 Phase D-2 期 = 6, + DP6+DP7+DP8 = 9), D89 升格条件继续 ripening (3 batch-level live demos accumulated).
+
+- **处理 path**:
+  - **本 closure docs commit** 加 §7.23 NEW (governance trace) + §1 Cat 5 trend 8 → 9 (DP8 formal entry)
+  - **Plan patch v10 spec 写作 deferred 下次 session** (Phase D-5 batch L1 启动期) — Plan Opus 读 §7.23 + 自身 CC dump literal text 补充后写 v10 spec (Task 22 + 附录 5, 10 patches) → Ian 明批 → CC land → Task 22 L1 work-log. "L1 task 跨 ≥ 3 session, 注意力质量 > 时间压缩" 节奏建议 strict adherence
+  - **Plan patches v11/v12 spec 写作 deferred D-5b/c/d batch 启动期** — 各 batch entry pre-empt 应用 (Task 24 / Task 25 / Task 26 patches 各 batch land)
+
+- **外化锚**: `7ec04772` D-4 closure round 2 commit body Cat 5 9 数据点 + DP8 commit body ack / 本 §7.23 entry 元层 ack (DP8 formal entry + Task 22-26 drift catalog) / Snapshot §9.1 plan patch v10 scope carry-forward (本 entry 补充 Printer.type required + upsertConfig db→tx NEW 细节) / 下次 Plan Opus 收 §7.23 + 自身 CC dump literal text 补充后写 plan patch v10/v11/v12 spec
 
 ---
 
