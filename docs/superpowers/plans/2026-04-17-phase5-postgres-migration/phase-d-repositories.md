@@ -1459,10 +1459,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **Phase E 段 3b 回填方法**（原 Task 22 plan 未列，Phase E 实施期发现依赖缺失）：
 
 - `delete(id, db)`：**(段 3b 决策点 F)** 物理删除 Staff——Agent B `removeStaff` 流程依赖（legacy `staff.service.ts:114`）
-- `findActiveTimeEntry(userId, db?)`：**(段 3b Phase D 遗漏)** 查 userId 未 clockOut 的 TimeEntry——verifyPin / clockIn 路径依赖（legacy `clock.service.ts:19`）
+- `findActiveTimeEntry(staffId, db?)`：**(段 3b Phase D 遗漏)** 查 staffId 未 clockOutAt 的 TimeEntry——verifyPin / clockInAt 路径依赖（legacy `clock.service.ts:19`）
 - `createTimeEntry(data, db)`：创建打卡记录（legacy `clock.service.ts:40`）
-- `closeTimeEntry(entryId, clockOut, db)`：关闭打卡记录——**duration 在 repo 内部算**（决策点 G：业务不变量在 repo 保证，caller 只传 timestamp）
-- `listTimeEntries(storeId, filter?, db?)`：列工时（legacy `clock.service.ts:67` + Agent C `analytics.service.getStaffPerformance` 依赖）
+- `closeTimeEntry(entryId, clockOutAt, db)`：关闭打卡记录——repo update `clockOutAt` only（schema 无 duration 列；**决策点 G refresh**：duration 在 `listTimeEntries` RETURN shape compute on-the-fly via mapper, NOT persisted column, schema-migration-avoiding per D89 self-application）
+- `listTimeEntries(storeId, filter?, db?)`：列工时, 返回 `TimeEntryWithDuration[]`（derived `duration` = clockOutAt - clockInAt in minutes; null if not closed）（legacy `clock.service.ts:67` + Agent C `analytics.service.getStaffPerformance` 依赖）
 
 - [ ] **Step 1：写文件**
 
@@ -1483,6 +1483,7 @@ import type { Staff, Role, TimeEntry } from '@prisma/client'
 import { prisma, type Db } from './prisma-client.js'
 
 type StaffWithRole = Staff & { role: Role | null }
+type TimeEntryWithDuration = TimeEntry & { duration: number | null }
 
 export const staffRepo = {
   findById: (id: string, db: Db = prisma): Promise<StaffWithRole | null> =>
@@ -1508,7 +1509,7 @@ export const staffRepo = {
       storeId: string
       username: string
       passwordHash: string
-      roleId?: string
+      roleId: string
       clockPin?: string
       displayName?: string
     },
@@ -1519,7 +1520,7 @@ export const staffRepo = {
         storeId: data.storeId,
         username: data.username,
         passwordHash: data.passwordHash,
-        roleId: data.roleId ?? null,
+        roleId: data.roleId,
         clockPin: data.clockPin ?? null,
         displayName: data.displayName ?? null,
       },
@@ -1539,63 +1540,70 @@ export const staffRepo = {
   delete: (id: string, db: Db): Promise<Staff> =>
     db.staff.delete({ where: { id } }),
 
-  findActiveTimeEntry: (userId: string, db: Db = prisma): Promise<TimeEntry | null> =>
+  findActiveTimeEntry: (staffId: string, db: Db = prisma): Promise<TimeEntry | null> =>
     db.timeEntry.findFirst({
-      where: { userId, clockOut: null },
-      orderBy: { clockIn: 'desc' },
+      where: { staffId, clockOutAt: null },
+      orderBy: { clockInAt: 'desc' },
     }),
 
   createTimeEntry: (
-    data: { userId: string; storeId: string; clockIn: Date },
+    data: { staffId: string; storeId: string; clockInAt: Date },
     db: Db
   ): Promise<TimeEntry> =>
     db.timeEntry.create({
       data: {
-        userId: data.userId,
+        staffId: data.staffId,
         storeId: data.storeId,
-        clockIn: data.clockIn,
-        clockOut: null,
-        duration: null,
+        clockInAt: data.clockInAt,
+        clockOutAt: null,
       },
     }),
 
   /**
-   * Close an active TimeEntry. duration computed in repo (business invariant
-   * per decision point G): caller passes only clockOut timestamp.
-   * Throws if entry already closed (double-clockOut guard).
+   * Close an active TimeEntry. Decision point G (refresh): schema has no
+   * duration column — duration is derived in the RETURN shape of
+   * listTimeEntries (compute on-the-fly: clockOutAt - clockInAt in minutes).
+   * Repo updates clockOutAt only. Caller passes only clockOutAt timestamp.
+   * Throws if entry already closed (double-close guard).
+   * Schema-migration-avoiding per D89 self-application — business invariant
+   * still enforced in repo (mapper layer), NOT in persisted column.
    */
   closeTimeEntry: async (
     entryId: string,
-    clockOut: Date,
+    clockOutAt: Date,
     db: Db
   ): Promise<TimeEntry> => {
     const entry = await db.timeEntry.findUnique({ where: { id: entryId } })
     if (!entry) throw new Error(`TimeEntry ${entryId} not found`)
-    if (entry.clockOut) throw new Error(`TimeEntry ${entryId} already closed`)
-    const durationMin = Math.floor((clockOut.getTime() - entry.clockIn.getTime()) / 60000)
+    if (entry.clockOutAt) throw new Error(`TimeEntry ${entryId} already closed`)
     return db.timeEntry.update({
       where: { id: entryId },
-      data: { clockOut, duration: durationMin },
+      data: { clockOutAt },
     })
   },
 
   listTimeEntries: (
     storeId: string,
-    filter: { userId?: string; from?: Date; to?: Date } = {},
+    filter: { staffId?: string; from?: Date; to?: Date } = {},
     db: Db = prisma
-  ): Promise<TimeEntry[]> =>
+  ): Promise<TimeEntryWithDuration[]> =>
     db.timeEntry.findMany({
       where: {
         storeId,
-        ...(filter.userId && { userId: filter.userId }),
-        ...(filter.from && { clockIn: { gte: filter.from } }),
-        ...(filter.to && { clockIn: { lte: filter.to } }),
+        ...(filter.staffId && { staffId: filter.staffId }),
+        ...(filter.from && { clockInAt: { gte: filter.from } }),
+        ...(filter.to && { clockInAt: { lte: filter.to } }),
       },
-      orderBy: { clockIn: 'desc' },
-    }),
+      orderBy: { clockInAt: 'desc' },
+    }).then((rows) => rows.map((e) => ({
+      ...e,
+      duration: e.clockOutAt
+        ? Math.floor((e.clockOutAt.getTime() - e.clockInAt.getTime()) / 60000)
+        : null,
+    }))),
 }
 
-export type { StaffWithRole }
+export type { StaffWithRole, TimeEntryWithDuration }
 EOF
 ```
 
@@ -1653,77 +1661,88 @@ Task 23 原位 inline 回填（保持 plan 对实施 agent 的机械可读性）
 **Files:**
 - Create: `server/src/repositories/printer.ts`
 
-**设计职责**：PrinterConfig entity 的最小 repo。Store 和 PrinterConfig 是 1:1 关系（每店最多一个 printer 配置），方法集紧凑。Phase D 原始 11 repo 清单无 printer——Phase E Agent C 段 3c 发现缺失。
+**设计职责**：Printer entity 的最小 repo。Store 和 Printer 是 1:1 关系（app convention，每店最多一个 printer 配置）。Phase D 原始 11 repo 清单无 printer——Phase E Agent C 段 3c 发现缺失。Schema state: `model Printer / @@map("printers") / @@index([storeId])` (NOT `@@unique`) — schema-migration-avoiding per D89 self-application, findFirst + create/update flow at app layer.
 
 **方法清单**：
-- `findByStoreId(storeId, db?)`：读当前 store 的 printer config（0/1 行）
-- `upsertConfig(storeId, config, db)`：单步 upsert——无 config 时创建，有时更新。折叠 legacy 3 步 get/check/create（`printer.service.ts:14-34`）
+- `findByStoreId(storeId, db?)`：读当前 store 的 printer config（0/1 行；findFirst — schema 只 `@@index([storeId])` NOT `@@unique`）
+- `upsertConfig(storeId, config, tx)`：多步 atomic upsert——findFirst + (existing ? update : create), schema-migration-avoiding per D89 self-application. **D55 多步 tx 强制**: signature `tx: Prisma.TransactionClient` (caller 必 wrap `prisma.$transaction(async tx => ...)`). 折叠 legacy 3 步 get/check/create（`printer.service.ts:14-34`）
 
 **实施模板**：
 
 ```bash
 cat > server/src/repositories/printer.ts <<'EOF'
 /**
- * PrinterConfig entity repository.
+ * Printer entity repository.
  *
- * Store ↔ PrinterConfig is 1:1 by convention (app layer enforces single
- * config per store; DB schema has @@unique(storeId) for hard guarantee).
+ * Store ↔ Printer is 1:1 by app convention. Schema only has @@index(storeId)
+ * (NOT @@unique) — app layer enforces single config per store via findFirst
+ * + create/update flow. Future migration may add @@unique for hard guarantee
+ * (optional, schema-migration-avoiding per D89 self-application).
  *
  * Scope: CRUD on config row. Actual print dispatch (printOrder / reprintOrder)
  * stays in service layer — it's hardware protocol, not data access.
  */
 
-import type { PrinterConfig } from '@prisma/client'
+import type { Printer, Prisma } from '@prisma/client'
 import { prisma, type Db } from './prisma-client.js'
 
 export const printerRepo = {
-  findByStoreId: (storeId: string, db: Db = prisma): Promise<PrinterConfig | null> =>
-    db.printerConfig.findUnique({ where: { storeId } }),
+  findByStoreId: (storeId: string, db: Db = prisma): Promise<Printer | null> =>
+    db.printer.findFirst({ where: { storeId } }),
 
   /**
-   * Upsert by storeId — single-step collapses legacy 3-step get/check/create
-   * (see printer.service.ts:14-34 for legacy shape).
-   * Rule 3: write op — db mandatory.
+   * Upsert by storeId — multi-step atomic (findFirst + update OR create).
+   * Schema only @@index(storeId) NOT @@unique, so Prisma upsert by storeId
+   * is unavailable. D89 self-application schema-migration-avoiding path.
+   * D55: multi-step tx requires `tx: Prisma.TransactionClient` signature
+   * (caller must wrap `prisma.$transaction(async tx => ...)`).
+   * Collapses legacy 3-step get/check/create (see printer.service.ts:14-34).
    */
-  upsertConfig: (
+  upsertConfig: async (
     storeId: string,
     config: {
       name?: string
-      ipAddress?: string | null
+      type: string
+      host?: string | null
       port?: number | null
-      paperWidth?: number | null
-      enabled?: boolean
+      isEnabled?: boolean
     },
-    db: Db
-  ): Promise<PrinterConfig> =>
-    db.printerConfig.upsert({
-      where: { storeId },
-      create: {
+    tx: Prisma.TransactionClient
+  ): Promise<Printer> => {
+    const existing = await tx.printer.findFirst({ where: { storeId } })
+    if (existing) {
+      return tx.printer.update({
+        where: { id: existing.id },
+        data: {
+          type: config.type,
+          ...(config.name !== undefined && { name: config.name }),
+          ...(config.host !== undefined && { host: config.host }),
+          ...(config.port !== undefined && { port: config.port }),
+          ...(config.isEnabled !== undefined && { isEnabled: config.isEnabled }),
+        },
+      })
+    }
+    return tx.printer.create({
+      data: {
         storeId,
+        type: config.type,
         name: config.name ?? 'Default Printer',
-        ipAddress: config.ipAddress ?? null,
+        host: config.host ?? null,
         port: config.port ?? null,
-        paperWidth: config.paperWidth ?? 80,
-        enabled: config.enabled ?? true,
+        isEnabled: config.isEnabled ?? true,
       },
-      update: {
-        ...(config.name !== undefined && { name: config.name }),
-        ...(config.ipAddress !== undefined && { ipAddress: config.ipAddress }),
-        ...(config.port !== undefined && { port: config.port }),
-        ...(config.paperWidth !== undefined && { paperWidth: config.paperWidth }),
-        ...(config.enabled !== undefined && { enabled: config.enabled }),
-      },
-    }),
+    })
+  },
 }
 EOF
 ```
 
-**Prisma schema 依赖**（Phase B Task 2 必须含，否则同批新增 migration）：
-- `model PrinterConfig` 实体：id / storeId / name / ipAddress / port / paperWidth / enabled / createdAt
-- `@@unique([storeId])` 约束（1:1 enforcement，让 `findUnique where: { storeId }` 可用）
+**Prisma schema 依赖**（Phase B Task 2 已含 `model Printer / @@map("printers")`, schema state confirmed by Phase D-5 batch entry CC dump 2026-05-11）：
+- `model Printer` 实体：id / storeId / type (String required no default) / name / host (String?) / port (Int?) / isEnabled (Boolean) / createdAt
+- `@@index([storeId])` 索引（NOT `@@unique` — 1:1 由 app layer enforce via findFirst + create/update; schema-migration-avoiding per D89 self-application. Future migration 可加 `@@unique([storeId])` 升级为 hard guarantee, optional）
 - RLS policy（同其他 tenant-scoped 表，`USING (store_id = current_setting('app.current_store_id'))`）
 
-若 Phase B Task 2 schema 写作时漏了 PrinterConfig → 按规则 1：**新增** `prisma/migrations/20260418000001_add_printer_config/migration.sql`，不改已发布 `20260417000001_init`。
+Phase B Task 2 schema 已含 `model Printer`，无需新增 migration。
 
 **Phase D 验收命令更新**：原 11 repo for 循环改为 12：
 
