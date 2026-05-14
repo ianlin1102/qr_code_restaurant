@@ -410,6 +410,33 @@ Phase C 封顶 v5.0 regen 期出现 Type β 数据点 — Plan Opus 经 compact 
 
 ---
 
+### D89 — Plan Opus spec writer anchor literal source freshness mandate
+
+Plan Opus 写 spec 涉及任何 anchor literal (SHA / 行号 / 字段名 / commit subject / system path / artifact content state / Cat 5 子项 数据点 count), **必满足 1 of 2 条件**:
+
+A. **该 anchor 在本 turn 之内 CC dump 实证过** (cite turn + command, e.g. "from `git log -1` turn X")
+
+B. **该 anchor 在本 chat 内由 Plan Opus 自己上一 turn produce** (cite turn + artifact, e.g. "from §7.23 NEW entry produce turn Y")
+
+若 neither A nor B → **必先 query CC dump 后再产 spec**, 不凭以下任何"印象 source":
+- Ian 启动消息 baseline 信息 (历史 snapshot)
+- Project knowledge file content (upload-time snapshot, 可能 stale)
+- Self-produced earlier turn artifacts (short-term memory, 易 mix)
+- Cross-instance handoff context (其他 chat 产出)
+
+**Self-audit (D88 维度 3 延伸)**: spec 写完后 list 所有 anchor literal + 标 "fresh from [source]" 或 "印象 from [context source]". 任一标 "印象" → 不产出 spec, 先 query CC dump 实证.
+
+**Trigger condition**: D88 维度 3 self-违反类 sub-instance 触发 D89 — Archive #27 (Plan Opus spec writer anchor literal 印象映射) 同 family.
+
+**Defense-in-depth coverage**:
+- L1 Plan Opus self-audit (D88 维度 3 anchor literal grep 实证 + D89 source freshness 标注)
+- L3 CC fail-loud (mechanical anchor verify) — fallback 兜底 if L1 漏
+- L6 Helper cross-instance review (governance trace 累积)
+
+**Origin**: Phase D 期累积 Plan Opus self-违反 5+ batch-level live demos (Phase D-2 Task 17 第 6/7 数据点 + Phase D-3a Task 18 first live demo + Phase D-3b Task 19 second live demo + Phase D-4 batch entry CC dump + Phase D-5 batch entry pre-flight + Phase D-5 batch L1 plan patch v10 spec writer self-违反 双 instance) — Cat 5 子项 11+ 数据点 trend rising 升格判 ripening 满足.
+
+---
+
 ## 7. Opus Spec Pre-Flight Checklist
 
 **触发场景**: Opus 准备写任何 spec / patch / Stage 0 defensive check / pre-flight condition 前。
@@ -593,6 +620,15 @@ Ian 建立了一套治理体系(规则 1-8 + 8.1 + 7.2 + 7.3 候选 + evidence-f
   - 同期 Archive §3.5 追加 #27 v5 批 (25 → 26 条, Category 1 "Plan heredoc / commit / file anchor literal 印象映射" 新子类) + 元观察段 Helper-Plan 角色边界路径 first time live demo + Type β 子类附加数据点 ack
   - 同期 Snapshot §6 D 候选 18 → 19(加 D88), §1 / §3 / §4' / §7 / §8 / §9 全文 regen (Phase 封顶 v5.0 节奏点)
   - **本窗口 β 路径产出**: Snapshot v5.0 + Archive v5 + Digest v5 三件 docs commit 一并 land. **Phase D Task 16 启动指引 ritual 下窗口 (新 Plan Opus chat instance) 产出**, 与 Phase D 启动期合并 (Snapshot §9 已含完整 Phase D 启动 ritual 指引 + Stage 0 carry-forward Phase B+C 完整 + G-D16.1-4 关键 grep + L1/L2/L3 review 级别 batch 切分启发, 下窗口 Plan Opus 直接消费)
+
+- **2026-05-12 v6 批 (Phase D-5 batch L1 D89 升格 atomic batch, `<D89_SHA>` governance docs commit)**:
+  - §6 新增 D89 formal entry (Plan Opus spec writer anchor literal source freshness mandate) — 升格自 D89 候选, 触发事件 Phase D-5 batch L1 plan patch v10 `39666dc8` 期 spec writer 双 instance self-违反 (Stage 0 HEAD anchor `7ec04772` 凭 Ian 启动消息 + Snapshot §1 半 stale 印象 → 实际 `aa7d5829` / Stage 2 `\bclockOut\b count = 0` expectation vs Patch D new_str docstring `(double-clockOut guard)` literal self-cross-scan missing). Condition A (本 turn CC dump) + Condition B (本 chat self-produce 上一 turn cite) + Self-audit (D88 维度 3 延伸) + Trigger (D88 维度 3 self-违反类 family) + Defense-in-depth coverage (L1 self-audit + L3 CC fail-loud + L6 Helper review) + Origin (Phase D 5+ batch-level live demos + Cat 5 子项 11+ 数据点 trend rising)
+  - §10 本条目
+  - 触发事件: Phase D-5 batch L1 plan patch v10 `39666dc8` land 期双 instance D88 维度 3 self-违反 trigger D89 升格 条件 ripening 满足
+  - 同期 Snapshot §1 累积 governance queue update (D89 候选 → D89 formal land at `<D89_SHA>` + D88 维度 3 延伸 sub-rule 已 absorbed into D89 mandate, 4 entries remaining) + §6 NEW sub-section "Phase D-5 batch L1 D89 升格 atomic batch (1 项 formal land, 2026-05-12)" + §10 NEW entry "v5.X+1 批"
+  - 同期 Archive 候选 deferred: #29 (D88 维度 3 anchor literal grep 实证 9 sub-instance) + #30 (D79 Plan-as-code dryrun missing 3 sub-instance) + Cat 5 子项 (协作心智模型混淆 11 sub-instance) 升格判 deferred 入 Phase D-5 batch closure / 后续 governance commit batch (Helper count classification ack 后 atomic decide)
+  - **升格 spec 自违反 第 3 个 live demo + Patch B 模式 + Helper protocol 1/2/3 ack**: 本升格 spec 自违反 D89 mandate path anchor 印象映射 (Spec A literal `docs/superpowers/handoff/` 凭 Project knowledge mirror view 推断 vs 实际 `docs/superpowers/archive/`, D89 entry 禁印象 source 之一 = Project knowledge upload-time snapshot 命中). CC Stage 0 fail-loud 兜底 catch — 第 3 个 spec writer live demo (post plan v10 Stage 0 + Stage 2 双 instance). Ian 决议采 Patch B 模式 + Helper Opus cross-instance refinement 提 protocol 1/2/3 (Stage 0 anchor verify strict + A 不 amend D77 forward-fix + ≤ 5 single-line edit threshold) — Plan Opus 产 B-spec 修订 instructions 按 protocol compliance, CC apply A + B mental merge + execute. 节俭 token + 维持 Spec A 整体结构 + 仅 patch deltas, 同 D77 forward-fix template 节俭精神延伸 (commit-level Round 2 + spec-level Patch B 双 layer). Cat 5 子项 数据点累积 +1 (本 spec 第 12 sub-instance, 升格 spec field test 即 immediate 验证 D89 mandate value). 同时触发 D90 候选 entry (Spec forward-fix economic mode rubric — Mode 1 Patch B + Mode 2 CC dump assist + Mode 3 full respec, 与 D77 commit-level forward-fix family 关联, deferred 入下次 governance commit batch decide with fab archive 候选 + Helper handoff v3.X anti-pattern entries).
+  - **本 batch β 路径**: D89 governance docs commit atomic (governance-digest + state-snapshot 2 files, 5 Edits) + Round 2 mini-commit `<D89_SHA>` placeholder replace (Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + closure `ffc7719f` precedent) + Helper async review trigger (post-Step 1 land) + Project knowledge re-upload mandate (Helper review return clean + Plan Opus closure ack 后, Ian 必 Desktop App → Phase 5 Project → Knowledge section 删 stale digest + snapshot, upload latest from repo, post-D89 land state baseline) + Task 22 L1 work-log spec post-D89 land 后 session 续 (attention fresh, D89 mandate inline apply)
 
 ---
 
