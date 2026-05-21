@@ -13,8 +13,8 @@
 
 ## 1. 当前时点
 
-- **最后更新**: 2026-05-14 (Phase D-5a Task 22 staff.ts Step 1 work-log docs commit `2590ab04` land + closure handoff docs commit `[HANDOFF_SHA]` atomic batch — Ian observations post-Step-1 land trigger D91 候选 propose (Plan Opus spec writer expected-output minimization, D89 sub-rule extension) + 4 决议 (γ path forward-only for `2590ab04` D91 sub-violation + D91 候选 register path C defer formal entry + Helper async review skip per Default Push Forward Rule 2 + Step 3 impl spec writing GO with D91+D89 strict) + Plan Opus attention budget self-assessment recommend defer Step 3 impl spec to next session per Project Instructions 节奏建议 "L1 task 跨 ≥ 3 session, 注意力质量 > 时间压缩". 0 暂停 / 0 真 fail-loud / 0 forward-fix Step 1 期; 1 D91 sub-violation §2 G-T22.2 pre-written "Expected fields" (γ path 决议 forward-only NOT retro-amend `2590ab04` per D77 spirit). CC clarification request post handoff commit body draft catch spec gap (explicit Snapshot patches missing) → Plan Opus produce 7 explicit str_replace patches per α path (D89 mandate strict adherence + L3 Defense-in-depth tier work-as-designed first live demo for Plan Opus spec gap subtype).)
-- **最后 commit on main**: `[HANDOFF_SHA]` docs(phase-5): Phase D-5a Task 22 Step 1 closure handoff — D91 候选 queue register + γ path + Helper skip + Step 3 defer
+- **最后更新**: 2026-05-14 (Phase D-5a Task 22 staff.ts Step 1 work-log docs commit `2590ab04` land + closure handoff docs commit `73d5c225` atomic batch — Ian observations post-Step-1 land trigger D91 候选 propose (Plan Opus spec writer expected-output minimization, D89 sub-rule extension) + 4 决议 (γ path forward-only for `2590ab04` D91 sub-violation + D91 候选 register path C defer formal entry + Helper async review skip per Default Push Forward Rule 2 + Step 3 impl spec writing GO with D91+D89 strict) + Plan Opus attention budget self-assessment recommend defer Step 3 impl spec to next session per Project Instructions 节奏建议 "L1 task 跨 ≥ 3 session, 注意力质量 > 时间压缩". 0 暂停 / 0 真 fail-loud / 0 forward-fix Step 1 期; 1 D91 sub-violation §2 G-T22.2 pre-written "Expected fields" (γ path 决议 forward-only NOT retro-amend `2590ab04` per D77 spirit). CC clarification request post handoff commit body draft catch spec gap (explicit Snapshot patches missing) → Plan Opus produce 7 explicit str_replace patches per α path (D89 mandate strict adherence + L3 Defense-in-depth tier work-as-designed first live demo for Plan Opus spec gap subtype).)
+- **最后 commit on main**: `73d5c225` docs(phase-5): Phase D-5a Task 22 Step 1 closure handoff — D91 候选 queue register + γ path + Helper skip + Step 3 defer
 - **Phase B 状态**: **10/10 完成 ✅**
 - **Phase C 状态**: **5/5 完成 ✅** (Batch 1: Task 11/12/13 / Batch 2: Task 14 / Batch 3: Task 15)
 - **Phase D 状态**: **6/11 完成 + Task 22 Step 1 docs land** (D-1 Task 16 store.ts `019ab826` ✅ + D-2 Task 17 orders.ts `ff5e881b` ✅ + D-3a Task 18 sessions.ts `cb2efd5e` ✅ + D-3b Task 19 payments.ts `a7752a30` ✅ + D-4 Task 20 split-bills.ts `cf46f1c5` ✅ + D-4 Task 21 menu.ts `aaf9fa79` ✅ + D-5a Task 22 staff.ts Step 1 work-log docs `2590ab04` ✅ Step 3 feat impl ⏸️ 待启动 next session per Plan Opus attention budget self-assessment), Task 23-26 + printer 附录 ⏸️ 待启动 (D-5a' printer L1 spec after Task 22 closure → D-5b/c/d batch sequence)
@@ -48,7 +48,7 @@
 
 | SHA | 性质 | 内容 |
 |---|---|---|
-| `[HANDOFF_SHA]` | docs | Phase D-5a Task 22 Step 1 closure handoff — D91 候选 queue register + γ path + Helper skip + Step 3 defer atomic batch / Ian observations post-Step-1 land: Observation 1 (D91 候选 propose, Plan Opus spec writer expected-output minimization, D89 sub-rule extension) + Observation 2 (D90 候选 ack carry-forward, spec forward-fix economic mode rubric already codified) / Ian 4 决议: γ path forward-only for `2590ab04` D91 sub-violation (`2590ab04` 作 D89 mandate gray-area + D91 升格 ripening evidence base 1st data point 保留) + D91 候选 register path C (defer formal entry to Phase D 整体 closure governance commit batch atomic decide) + Helper async review skip for `2590ab04` per Default Push Forward Rule 2 (0 自 flag 风险面 除 D91 sub-violation ack, §7 Self-audit healthy) + Step 3 impl spec writing GO with D91+D89 strict — Plan Opus override per attention budget self-assessment / Plan Opus attention budget self-assessment (Ian raise trigger): 4 累积 self-violation 数据点 across 3-session window (Plan v10 Stage 0 HEAD anchor 印象 + Plan v10 Stage 2 self-cross-scan missing + D89 升格 spec path drift + Step 1 D91 sub-violation §2 G-T22.2), recommend defer Step 3 impl spec to next session per Project Instructions 节奏建议 ("L1 task 跨 ≥ 3 session, 注意力质量 > 时间压缩") / **CC clarification request post handoff commit body draft** catch spec gap (Snapshot 增量 outline 描述 6 sections 但 explicit old_str/new_str patches missing) → Plan Opus produce 7 explicit str_replace patches per α path (D89 mandate strict adherence vs β unilateral CC authoring risk; 同 D89 升格 atomic batch precedent Patch A/B/C/D/E 模式延伸) / Snapshot 增量: §1 governance queue 5 → 6 entries (D91 候选 add) + §1 时点 / 最后 commit on main / Phase D 状态 / 下一对话目标 update + §3 commit chain Phase D-5a 段 prepend (本段) + §9 整节重写 Phase D-5a Step 3 impl spec 启动 ritual + §10 v5.X+2 批 entry / **`[HANDOFF_SHA]` D77 forward-fix pattern Round 2 placeholder replace** (Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `ffc7719f` + D89 升格 `1d93e4af` precedent reuse) |
+| `73d5c225` | docs | Phase D-5a Task 22 Step 1 closure handoff — D91 候选 queue register + γ path + Helper skip + Step 3 defer atomic batch / Ian observations post-Step-1 land: Observation 1 (D91 候选 propose, Plan Opus spec writer expected-output minimization, D89 sub-rule extension) + Observation 2 (D90 候选 ack carry-forward, spec forward-fix economic mode rubric already codified) / Ian 4 决议: γ path forward-only for `2590ab04` D91 sub-violation (`2590ab04` 作 D89 mandate gray-area + D91 升格 ripening evidence base 1st data point 保留) + D91 候选 register path C (defer formal entry to Phase D 整体 closure governance commit batch atomic decide) + Helper async review skip for `2590ab04` per Default Push Forward Rule 2 (0 自 flag 风险面 除 D91 sub-violation ack, §7 Self-audit healthy) + Step 3 impl spec writing GO with D91+D89 strict — Plan Opus override per attention budget self-assessment / Plan Opus attention budget self-assessment (Ian raise trigger): 4 累积 self-violation 数据点 across 3-session window (Plan v10 Stage 0 HEAD anchor 印象 + Plan v10 Stage 2 self-cross-scan missing + D89 升格 spec path drift + Step 1 D91 sub-violation §2 G-T22.2), recommend defer Step 3 impl spec to next session per Project Instructions 节奏建议 ("L1 task 跨 ≥ 3 session, 注意力质量 > 时间压缩") / **CC clarification request post handoff commit body draft** catch spec gap (Snapshot 增量 outline 描述 6 sections 但 explicit old_str/new_str patches missing) → Plan Opus produce 7 explicit str_replace patches per α path (D89 mandate strict adherence vs β unilateral CC authoring risk; 同 D89 升格 atomic batch precedent Patch A/B/C/D/E 模式延伸) / Snapshot 增量: §1 governance queue 5 → 6 entries (D91 候选 add) + §1 时点 / 最后 commit on main / Phase D 状态 / 下一对话目标 update + §3 commit chain Phase D-5a 段 prepend (本段) + §9 整节重写 Phase D-5a Step 3 impl spec 启动 ritual + §10 v5.X+2 批 entry / **`73d5c225` D77 forward-fix pattern Round 2 placeholder replace** (Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `ffc7719f` + D89 升格 `1d93e4af` precedent reuse) |
 | `2590ab04` | docs | Phase D Task 22 L1 verify work-log — staff.ts (447 lines, 5 维度 pre-verdict 全 Pass L1 完整 + 风险 A/B/C/D 全 identified + Stage 0 G-T22.1-10 完整 grep spec 含 schema-side full field enumeration + Prisma XOR predict 防御层 + §6 D88 维度 3 anchor literal grep 实证 self-audit 13 anchor + §7 D89 mandate anchor literal source freshness self-audit post-formal-land first spec live field test — 1 ⚠️ gray-area flag at Row #3 schema field literals 凭 Snapshot §7.23 captured prior session CC dump, L3 tier-3 verify gate deferred to Stage 0 G-T22.2 @ Step 3 execution; Ian post-Step-1-land Observation 1 → D91 候选 propose, §2 G-T22.2 pre-write as D91 sub-violation 1st data point — γ path forward-only 决议 NOT retro-amend `2590ab04`) |
 
 ### Phase D-4 batch 对话 (2026-05-11, Task 20 split-bills.ts + Task 21 menu.ts + plan patch v9 docs, 3 commits + closure docs commit `ffc7719f` + 0 规则 8 暂停 + 0 真 fail-loud + 0 forward-fix — **L2 multi-task batch 三步走模型首次 live demo** + **#30 防御层 fourth live demo work-as-designed continuity** + **D89 候选 second batch-level 应用 demo**)
@@ -616,20 +616,20 @@
 
 ### 9.1 Phase D-5a Step 3 impl spec 启动 scope
 
-**Phase D-5a 进度**: Task 22 staff.ts Step 1 work-log docs commit `2590ab04` ✅ + closure handoff `[HANDOFF_SHA]` ✅. Step 3 feat impl 待启动 next session.
+**Phase D-5a 进度**: Task 22 staff.ts Step 1 work-log docs commit `2590ab04` ✅ + closure handoff `73d5c225` ✅. Step 3 feat impl 待启动 next session.
 
 **Phase D = 11 个语义化 Repository 重构** (`phase-d-repositories.md` Task 16-22 + `phase-d-repositories-part2.md` Task 23-26 + Phase E 回填附录 5 printer.ts). 进行中 6/11 land + Task 22 Step 1 docs land: Task 16-21 ✅ + Task 22 staff.ts Step 1 work-log docs `2590ab04` ✅ (Step 3 feat impl pending).
 
-**Phase D-5a Step 3 启动 trigger** (post Phase D-5a Step 1 closure handoff `[HANDOFF_SHA]`):
+**Phase D-5a Step 3 启动 trigger** (post Phase D-5a Step 1 closure handoff `73d5c225`):
 
 - Step 1 work-log `2590ab04` 含 12 methods Staff + TimeEntry coverage (4 reads + 8 writes 含 Phase E 段 3b 回填 5 methods) + 5 维度 pre-verdict 全 Pass + 风险 A/B/C/D + Stage 0 G-T22.1-10 grep set + §6 D88 维度 3 self-audit 13 anchor + §7 D89 mandate self-audit (1 ⚠️ gray-area flag at schema field literals — L3 tier-3 verify gate deferred to Stage 0 G-T22.2 @ Step 3 execution)
 - D91 候选 propose (Ian Observation 1 post-Step-1-land trigger) — Plan Opus spec writer expected-output minimization principle, D89 sub-rule extension. `2590ab04` §2 G-T22.2 pre-write 作 1st live precedent data point (γ path 决议 forward-only, NOT retro-amend per D77 spirit)
 - Ian 4 决议 ack (γ path + D91 候选 register C + Helper skip + Step 3 GO)
-- Plan Opus attention budget self-assessment recommend defer Step 3 impl spec to next session per Project Instructions "L1 task 跨 ≥ 3 session, 注意力质量 > 时间压缩" → closure handoff `[HANDOFF_SHA]` land 后 Step 3 next session (attention fresh baseline)
+- Plan Opus attention budget self-assessment recommend defer Step 3 impl spec to next session per Project Instructions "L1 task 跨 ≥ 3 session, 注意力质量 > 时间压缩" → closure handoff `73d5c225` land 后 Step 3 next session (attention fresh baseline)
 
 **Step 3 impl spec scope** (next session Plan Opus produce):
 
-- Stage 0 CC pre-flight verify (D89 + D91 strict apply): HEAD verify post-`[HANDOFF_SHA]` + schema Staff/Role/TimeEntry 全字段 CC dump (G-T22.2 carry-forward, L3 tier-3 verify gate fulfillment) + plan v10 file anchor (Task 22 段 line 1442-1622) + tsc baseline N1=103 + Prisma client types
+- Stage 0 CC pre-flight verify (D89 + D91 strict apply): HEAD verify post-`73d5c225` + schema Staff/Role/TimeEntry 全字段 CC dump (G-T22.2 carry-forward, L3 tier-3 verify gate fulfillment) + plan v10 file anchor (Task 22 段 line 1442-1622) + tsc baseline N1=103 + Prisma client types
 - Stage 1 heredoc write `server/src/repositories/staff.ts` (~135 lines per plan v10 heredoc post-land)
 - Stage 2 tsc filtered=0 + N1=103 baseline maintain (D83 diff=0)
 - Stage 3 D75 + D76 + D86 staged
@@ -639,11 +639,11 @@
 ### 9.2 启动 ritual (Phase D-5a Step 3)
 
 1. **读** (按顺序):
-   - 本 Snapshot live 增量, HEAD post-`[HANDOFF_SHA]` (Phase D-5a Step 1 closure handoff)
+   - 本 Snapshot live 增量, HEAD post-`73d5c225` (Phase D-5a Step 1 closure handoff)
    - `phase-5-fabrication-archive.md` (27 条 land + #28/#29/#30/Cat 5 9 数据点 + D89 formal land baseline + D91 候选 1 数据点 — 全入下次 governance commit batch atomic decide)
    - `phase-5-governance-digest.md` (含 D89 formal entry §6 + Pre-Flight Checklist §7; D91 候选 not yet formal, queue in Snapshot §1)
    - `phase-d-repositories.md` (Task 22 staff.ts 段 line 1442-1622 + Phase E 回填附录 5 printer.ts 段 post plan-patch-v10 land)
-   - Phase D-5a Step 1 work-log `docs/superpowers/work-logs/2026-05-14-phase-d-task-22-staff-l1-verify.md` (447 lines) + closure handoff commit body `[HANDOFF_SHA]`
+   - Phase D-5a Step 1 work-log `docs/superpowers/work-logs/2026-05-14-phase-d-task-22-staff-l1-verify.md` (447 lines) + closure handoff commit body `73d5c225`
 
 2. **CoT 输出** Phase D-5a Step 3 scope 理解 + Phase B+C+D 1-6 + Task 22 Step 1 carry-forward ack + **D89 mandate inline strict apply** 内化 (post-formal-land second spec apply) + **D91 candidate inline strict apply** 内化 (NO pre-written "Expected fields" / "Expected output" for CC-dump-derived content; defer expected output decision to consume-dump step)
 
@@ -659,7 +659,7 @@
 
 - D75 数据 guard (`[ -s file ]` 后置) — 6 task + Step 1 docs land 0 fail
 - D76 push + origin SHA verify — 6 task + Step 1 docs land 0 fail
-- D77 forward-fix 模板 (不 amend pushed commit) — Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `ffc7719f` + D89 升格 `1d93e4af` + closure handoff `[HANDOFF_SHA]` Round 2 placeholder replace reuse
+- D77 forward-fix 模板 (不 amend pushed commit) — Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `ffc7719f` + D89 升格 `1d93e4af` + closure handoff `73d5c225` Round 2 placeholder replace reuse
 - D88 维度 3 anchor literal grep 实证 — Phase D-2 起 5+ live applications + Step 1 work-log §6 13 anchor self-audit
 - **D89 mandate inline strict apply** (post-formal-land first spec live field test 1 data point Step 1 work-log; Step 3 = 2nd) — Condition A 本 turn CC dump OR Condition B 本 chat self-produce; neither → 必先 query CC dump 后再产 spec
 - **D91 candidate inline strict apply NEW** — NO pre-written "Expected" for CC-dump-derived content; defer expected output decision to consume-dump step (Step 1 §2 G-T22.2 sub-violation lessons-learned baseline)
@@ -677,7 +677,7 @@ Step 1 work-log §2 G-T22.1-10 grep set carry-forward (CC pre-flight 执行期�
 
 **G-T22.2**: schema Staff + Role + TimeEntry 全字段 enumeration (D89 mandate L3 tier-3 verify gate 履行, fresh from CC dump NOT §7.23 captured — D91 strict: NO pre-write expected, CC dump report → Plan Opus consume)
 
-**G-T22.3**: HEAD verify post-`[HANDOFF_SHA]` + commit chain Phase D-5a 段 verify
+**G-T22.3**: HEAD verify post-`73d5c225` + commit chain Phase D-5a 段 verify
 
 **G-T22.5**: tsc baseline N1=103 maintained (D83 diff=0)
 
@@ -693,9 +693,9 @@ Step 1 work-log §2 G-T22.1-10 grep set carry-forward (CC pre-flight 执行期�
 
 ### 9.6 Phase D-5a Step 1 closure handoff 记录 (供 Phase D-5a Step 3 Plan Opus 理解协作节奏)
 
-Phase D-5a Step 1 (Task 22 staff.ts L1 verify work-log docs commit + Ian 4 决议 + closure handoff `[HANDOFF_SHA]`):
+Phase D-5a Step 1 (Task 22 staff.ts L1 verify work-log docs commit + Ian 4 决议 + closure handoff `73d5c225`):
 
-- 2 commits: Step 1 work-log docs `2590ab04` + closure handoff `[HANDOFF_SHA]` (+ D77 forward-fix Round 2 placeholder replace mini-commit)
+- 2 commits: Step 1 work-log docs `2590ab04` + closure handoff `73d5c225` (+ D77 forward-fix Round 2 placeholder replace mini-commit)
 - 0 规则 8 暂停 / 0 真 fail-loud / 1 D91 sub-violation Step 1 work-log §2 G-T22.2 ack via Ian Observation 1
 - Ian observations + 4 决议: D91 候选 propose + γ path forward-only for `2590ab04` + D91 候选 register C path + Helper skip per Default Push Forward Rule 2 + Step 3 defer per Plan Opus attention budget self-assessment
 - 2 CC clarification request (L3 Defense-in-depth tier work-as-designed): #1 handoff commit body spec gap (explicit Snapshot patches missing) → Plan Opus α path explicit patches; #2 Patch C1 heading-only vs commit body "§9 整节重写" inconsistency → Plan Opus produce complete §9 content, single atomic Round 1, §9 整节 str_replace CC-sourced old_str
@@ -758,16 +758,16 @@ Phase D-5a Step 1 (Task 22 staff.ts L1 verify work-log docs commit + Ian 4 决�
 
 ---
 
-- **2026-05-14 v5.X+2 批 (Phase D-5a Task 22 Step 1 closure handoff — Ian observations + 4 决议 + Plan Opus attention budget self-assessment + CC clarification request α path explicit patches, `[HANDOFF_SHA]` governance docs commit)**:
+- **2026-05-14 v5.X+2 批 (Phase D-5a Task 22 Step 1 closure handoff — Ian observations + 4 决议 + Plan Opus attention budget self-assessment + CC clarification request α path explicit patches, `73d5c225` governance docs commit)**:
   - §1 累积 governance queue update (5 → 6 entries, D91 候选 add per Ian decision #2 verbatim — Plan Opus spec writer expected-output minimization principle, D89 sub-rule extension; origin Phase D-5 batch L1 Task 22 work-log §2 G-T22.2 pre-write `2590ab04` 2026-05-14 Ian observation 1; live precedent 1 data point; defer formal entry to Phase D 整体 closure governance commit batch atomic decide + Helper protocol 1/2/3 refinement + 累积 ≥ 3 live precedent threshold)
-  - §1 时点 / 最后 commit on main `aaf9fa79` → `[HANDOFF_SHA]` / Phase D 状态 6/11 + Task 22 Step 1 docs land `2590ab04` impl Step 3 pending / 下一对话目标 update to Phase D-5a Step 3 impl spec produce
-  - §3 commit chain Phase D-5a 段 prepend (2 commits: Step 1 docs `2590ab04` + closure handoff `[HANDOFF_SHA]`)
+  - §1 时点 / 最后 commit on main `aaf9fa79` → `73d5c225` / Phase D 状态 6/11 + Task 22 Step 1 docs land `2590ab04` impl Step 3 pending / 下一对话目标 update to Phase D-5a Step 3 impl spec produce
+  - §3 commit chain Phase D-5a 段 prepend (2 commits: Step 1 docs `2590ab04` + closure handoff `73d5c225`)
   - §9 整节重写 Phase D-5a Step 3 impl spec 启动 ritual (含 D89 + D91 inline strict apply, Stage 0 CC pre-flight verify, plan v10 heredoc reference 是 ground truth)
   - §10 本条目
   - **触发事件**: Phase D-5a Task 22 Step 1 work-log docs commit `2590ab04` land + Ian 2 observations + Ian 4 决议 + Plan Opus attention budget self-assessment + CC clarification request α path explicit patches
   - **同期 Archive 候选 deferred**: D91 候选 (1 live precedent 1st data point, defer 升格 ripening) — 入 Phase D 整体 closure governance commit batch atomic decide
-  - **本 batch β 路径**: Mid-session governance handoff docs commit `[HANDOFF_SHA]` (Snapshot only, 1 file 7 patches per Patch A1/A2/A3/A4/B/C/D 模式) — Step 3 feat impl deferred next session per Plan Opus attention budget self-assessment; not bundling Step 3 atomic absorb (节奏切分 organic per docs/feat commit class boundary + Phase D-4 closure `ffc7719f` precedent)
-  - **`[HANDOFF_SHA]` D77 forward-fix template Round 2 placeholder replace** (本 commit body + Snapshot §1 时点 + §1 最后 commit + §3 commit chain + §10 本条目 多 placeholder occurrence Round 2 replace per Task 17 `3bb5cd1c` / Task 19 `c1b123fb` / D-4 closure `ffc7719f` / D89 升格 `1d93e4af` precedent reuse, NOT amend pushed commit)
+  - **本 batch β 路径**: Mid-session governance handoff docs commit `73d5c225` (Snapshot only, 1 file 7 patches per Patch A1/A2/A3/A4/B/C/D 模式) — Step 3 feat impl deferred next session per Plan Opus attention budget self-assessment; not bundling Step 3 atomic absorb (节奏切分 organic per docs/feat commit class boundary + Phase D-4 closure `ffc7719f` precedent)
+  - **`73d5c225` D77 forward-fix template Round 2 placeholder replace** (本 commit body + Snapshot §1 时点 + §1 最后 commit + §3 commit chain + §10 本条目 多 placeholder occurrence Round 2 replace per Task 17 `3bb5cd1c` / Task 19 `c1b123fb` / D-4 closure `ffc7719f` / D89 升格 `1d93e4af` precedent reuse, NOT amend pushed commit)
   - **D89 + D91 candidate inline self-application + γ path 决议 trace**: γ path for `2590ab04` D91 sub-violation §2 G-T22.2 pre-write (forward-only, NOT retro-amend per D77 spirit) — `2590ab04` 保留作 D89 mandate gray-area + D91 升格 ripening evidence base 1st data point. Helper async review skip per Default Push Forward Rule 2 — Helper attention focus 集中 to Step 3 high-value 12 methods review. Plan Opus attention budget self-assessment 4 累积 self-violation 数据点 across 3-session window — defer Step 3 to next session per Project Instructions 节奏建议 strict adherence.
   - **CC clarification request 2 consecutive L3 Defense-in-depth tier work-as-designed live demos for Plan Opus spec gap subtype**: CC role "执行 spec / 绝不 unilateral" hold the line — #1 post-handoff-commit-body-draft catch spec gap (Snapshot 增量 outline 描述 6 sections 但 explicit old_str/new_str patches missing) → Plan Opus produce 7 explicit str_replace patches per α path; #2 post-§9-fresh-view catch commit body "§9 整节重写" literal claim vs Patch C1 heading-only swap inconsistency (D86 spirit commit body factual integrity) → Plan Opus produce complete new §9 content (single atomic Round 1, §9 整节 str_replace CC-sourced old_str — eliminate 120-line Plan-Opus-reproduction fragility, §9 2-round split eliminated). Both per D89 升格 atomic batch precedent extended.
 
