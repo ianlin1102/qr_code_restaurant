@@ -13,13 +13,13 @@
 
 ## 1. 当前时点
 
-- **最后更新**: 2026-05-22 (Phase D-5d Task 25 waitlist.ts L2 impl atomic absorb β-path partial paste + Stage 5 repo test 16 cases 2nd land + canonical pnpm test:integration baseline maintained — `d2792b6d79adfe22792515aadc607f0bc2337453` 7 methods (listWaiting/listAll/findById/add/updateEntry/remove/markSeated 全 single-step) + 16 integration tests + β-path 2 spec edits with extended scope (estimatedWait drop schema 无字段 + phone strict 同时 add() drop both `?` + `\| null` AND updateEntry drop only `\| null` keep `?` per Helper Flag 1 mitigation — Prisma WaitlistEntryUpdateInput.phone for required String rejects null at compile time) + path correction 3 occurrences controllers/waitlist.service.ts + NEW notifiedAt NOT-in-scope comment + **3 D91 self-violations Plan Opus 自抓 Task 25 spec produce iterative cycle** (Round 1 Helper Flag 1 β-path #2 scope under-extension; Round 2 Ian one-pass G-T25.12 hardcoded `= 5 expected`; Round 3 Worker CC Stage 1.5 G-T25.6.1 estimatedWait `= 0` missed top NOT-in-scope ack ref — all 3 same family as Task 24 expiresAt threshold pre-write 印象, registered as 3 NEW data points defer Phase D 整体 closure 升格 atomic decide). **D55 NOT triggered** Task 25 全 single-step write/read (same precedent as Task 24). **β-path partial paste governance** Mode C δ 桶族 (NOT plan patch v13, plan v13 reserved Task 26 displayName+role per §7.23 D-5e finding). **Stage 5 NEW 2nd land** — repo test atomic with impl 16 cases real Postgres DB + RLS + business semantic oracle independent of plan WHERE clause. Stage 5.3 canonical `pnpm test:integration` 6 files / 50 tests all pass + exit 0 (vs Task 24 batch 5/34, +1 file +16 tests). **D89 mandate 6th post-formal-land spec live field test pass sustained**. **D91 6th live precedent + 3rd scope extension Stage 1.5 strict** with Pattern #10 self-discipline applied: β-path 4 edits + threshold pre-grep实证 against heredoc body BEFORE finalize spec (Plan Opus self-discipline lesson learned from Task 24 expiresAt: null ≥ 2 self-violation; NEW 4 fail-loud thresholds pre-grep verified: estimatedWait 0 + data.phone null-fallback 0 + status 'waiting' = 2 + status 'seated' = 1 + path correction total/prefixed both = 3). **D92 候选 NOT triggered Task 25** (no embedded cast — β-path detect 扩展 covers schema field absence as separate category, complementing Task 23 cast strip + Task 24 proactive G-T24.7). **D93 候选 2nd live demo Repo test atomic with impl** (vs Task 24 1st + 多次 catch validation empirical; Task 25 = continued land 2nd repo with tests + canonical pnpm test:integration baseline maintained). **Pattern #11 Stage 0 test import chain verify applied** (G-T25.11) — confirmed DATABASE_URL + SYSTEM_DATABASE_URL present in test:integration script post `755b7735`, prisma-client.ts at `server/src/repositories/prisma-client.ts` (NOT `server/src/lib/` as some references assumed). 1 真 fail-loud Task 25 期 (Stage 1.5 G-T25.6.1 estimatedWait threshold caught by Worker CC, α path forward-fix gate threshold = 0 → = 1), 0 forward-fix (β-path spec-level design choice, NOT post-write α path).)
-- **最后 commit on main**: `d2792b6d79adfe22792515aadc607f0bc2337453` feat(phase-5): Phase D Task 25 — waitlist repository + 16 integration tests
+- **最后更新**: 2026-05-22 (Phase D-5e Task 26 platform-admin.ts L2 impl atomic absorb 100% mechanical paste post v13 + v14 + Stage 5 repo test 14 cases 3rd land + canonical pnpm test:integration baseline maintained — `<FEAT_SHA_PENDING>` 8 methods (findAdminByEmail/findAdminById/createAdmin/updateLastLoginAt/listAllStores/grantModules/updateModules/revokeModules; all BYPASSRLS via platform_admin role) + 14 integration tests + plan patch v13 (`e760679b`) + plan patch v14 (`587a565b`) pre-batch. **Phase D 11/11 + 附录 5 ✅ Phase D 完成 milestone confirmed** — Task 16-26 all land + 附录 5 printer. F-3 deferred Phase F. **D55 trigger 3rd live demo Phase D** (revokeModules multi-step + Set<ModuleId> explicit widen post-v14). **100% mechanical paste post v13 + v14** (NO β-path — preserved through Round 5/6 absorptions). **D92 candidate Family A/B/C/D categorization NEW** (Family A Task 23 cast-away + Family B Task 26 Prisma read → TS narrow + Family C Task 26 literal narrowing + **Family D NEW Round 6: Plan Opus heredoc compile correctness verify gap** absorbed via v14 plan patch). **Stage 5 NEW 3rd land** — 14 cases withTestPlatform BYPASSRLS (NOT withTestTenant — platform-level RLS model). Stage 5.3 canonical `pnpm test:integration` `<FILES_EXPECTED>` files / `<TESTS_EXPECTED>` tests all pass + exit 0 (baseline derived from Stage 0 G-T26.12). Stage 0 [确认] resolutions: grantModules normalize ✅; PlatformAdmin NO RLS (§6 test REMOVED → 14 tests not 15). **7 governance lessons累积 Task 24-25-26-v13 期 all forward-fixed**: 6 D91 self-violations (Round 1-5: Stage 0/1.5 gate accuracy) + 1 D92 Family D NEW (Round 6: heredoc compile correctness). **Pattern #10 5-category coverage** (sig + body + JSDoc + ack-refs + source-assertion anchor literals incl Round 5 sub-lesson regex breadth calibration). **Worker CC discipline progression** Round 5 honest self-report → Round 6 proper pause+report+enumerate (reinforcement effective). **D89 7th** + **D91 7th** + **D92 Family A/B/C/D NEW formal** + **D93 3rd live demo + canonical baseline maintained Task 24→25→26**. Helper review depth extension applied Task 26 baseline. 1 真 fail-loud Task 26 期 Round 5 + 1 Round 6 Stage 2 catch (both Patch B Mode 1 absorbed) — Round 6 absorbed via v14 plan patch (preserves 100% mechanical paste discipline).)
+- **最后 commit on main**: `<FEAT_SHA_PENDING>` feat(phase-5): Phase D Task 26 — platform-admin repository + 14 integration tests (Phase D 11/11 + 附录 5 ✅ close milestone)
 - **Phase B 状态**: **10/10 完成 ✅**
-- **Phase C 状态**: **5/5 完成 ✅** + 3 infra fix sibling commits Phase C cleanup (`755b7735` + `8ce5c61a` + `c9e14e33`) per Task 24 batch
-- **Phase D 状态**: **11/11 完成 ✅ + 附录 5 printer ✅** (D-1 Task 16 store.ts `019ab826` ✅ + D-2 Task 17 orders.ts `ff5e881b` ✅ + D-3a Task 18 sessions.ts `cb2efd5e` ✅ + D-3b Task 19 payments.ts `a7752a30` ✅ + D-4 Task 20 split-bills.ts `cf46f1c5` ✅ + D-4 Task 21 menu.ts `aaf9fa79` ✅ + D-5a Task 22 staff.ts `11382d86` ✅ + D-5a' 附录 5 printer.ts `f76ced17` ✅ + D-5b Task 23 roles.ts `6ba08e43` ✅ + D-5c Task 24 coupons.ts `83885944` ✅ + D-5d Task 25 waitlist.ts `d2792b6d79adfe22792515aadc607f0bc2337453` ✅ 7 methods + 16 integration tests β-path partial paste), Task 26 ⏸️ 待启动 (deferred Phase D-5e platform-admin.ts + plan patch v13)
-- **累积 governance commit batch decide queue** (Phase D 期累积, 入下次 governance commit decide): #28 / #29 / #30 / **Cat 5 子项 Cross-Phase coupling sub-family** (DP10/11/12 all 3 resolved Task 24 batch + register as data points, NOT pre-judge 升格) + **D89 formal land** at `c0b8f4e0` (累积 6 post-formal-land spec live field test pass sustained Step 1 + Step 3 + 附录 5 + Task 23 + Task 24 + Task 25) + **D91 候选** sub-rule of D89, accumulated data points across specs: 5 base + 3 scope extension (Task 23 1st + Task 24 2nd + Task 25 3rd) + 1 self-violation (Task 24 Stage 1.5 threshold pre-write 印象, same family #23/#26/#27 — defer formal entry + 升格 atomic decide to Phase D 整体 closure governance commit batch) + **D92 候选** Plan Opus heredoc verbatim paste cast discriminant cross-verify **2 live demos** (Task 23 reactive + Task 24 proactive; NOT triggered Task 25 since no cast — β-path extension category instead) + **D93 候选** Repo test atomic with impl Stage 5 Test Gate **2 live demos** (Task 24 1st + Task 25 2nd) **+ 多次 catch validation empirical** (Task 24 caught 3 real infra sub-gaps L1/L3/L6 missed; Task 25 baseline maintained 0 new gaps) + **Helper review depth extension carry-forward**: test-bearing specs Helper review applied Task 25 (trace test import chain + verify pnpm test:integration script invocation pattern + check sibling test files for pre-Batch-2 RLS context bugs — Task 25 no new findings; Task 26 carry-forward)
-- **下一对话目标**: **Phase D-5e Task 26 platform-admin.ts spec produce** (plan patch v13 likely needed per §7.23 D-5e finding — displayName drop + role required + Task 26 part2 line 1074 `Prisma.InputJsonValue` cast D92 cross-check at spec time). **Stage 5 test pattern + canonical pnpm test:integration baseline** carry-forward — Task 26 spec 必含 Stage 5 repo test (test cases TBD by Ian + Helper define) + Pattern #11/12/13 carry-forward + L2 review level likely (platform_admin scope wider, plan title "L2 spot check"). **Helper review depth extension** continue applied (Task 25 baseline). **Phase D 整体 closure governance commit batch** scheduled post Task 26 — atomic decide for D89/D91/D92/D93 候选 升格 + Cat 5 子项 sub-family integration + Phase D entry summary.
+- **Phase C 状态**: **5/5 完成 ✅** + 3 infra fix sibling commits Phase C cleanup
+- **Phase D 状态**: **11/11 完成 + 附录 5 printer ✅ — Phase D 完成 milestone** (Task 16-26 + 附录 5 全 land). F-3 platformAuditLogRepo deferred Phase F per Ian + Helper 决议 2026-05-22. v15 candidate scheduled Phase E pre-wiring (RLS comment imprecision plan source fix line 800-801).
+- **累积 governance commit batch decide queue** (Phase D 期累积, **scheduled next session post Task 26 land — Phase D 整体 closure governance commit batch**): #28 / #29 / #30 / **Cat 5 子项 Cross-Phase coupling sub-family** (DP10/11/12) + **D89 formal land** `c0b8f4e0` (累积 7 post-formal-land spec live field test pass) + **D91 候选 + Pattern #10 5-category coverage**: 6 base live precedents + 4 scope extension + **6 self-violation data points (Round 1-5 D91 + 1 sub-lesson Round 5)** all forward-fixed; 升格 ripening evidence 满足 likely + **D92 候选 Family A/B/C/D categorization formal NEW** (Family A Task 23 + Family B/C Task 26 narrow casts + Family D Round 6 heredoc compile gap; 2 live demos Task 23+Task 24 + 1 Round 6 catch + β-path extension category Task 25) + **D93 候选** Stage 5 Test Gate 3 consecutive live demos (Task 24/25/26) + 多次 catch validation Task 24 期
+- **下一对话目标**: **Phase D 整体 closure governance commit batch atomic decide** — D89 sustained + D91/D92/D93 候选 升格 atomic decide + Cat 5 子项 sub-family integration + Pattern #10 5-category formal entry + Family A/B/C/D cast categorization formal entry + Phase D entry summary (Task 16-26 + 附录 5 + 3 Phase C infra fixes + 6 plan patches v9-v14 + 1 β-path batch Task 25 + 7 governance lessons absorbed). **Phase E entry** post Phase D closure (controller-层 migration Stage 3a). **v15 candidate** Phase E pre-wiring (RLS comment fix line 800-801).
 
 
 ## 2. Phase 进度表
@@ -43,6 +43,14 @@
 ---
 
 ## 3. 最近 commit 链(按时间倒序)
+
+### Phase D-5e 对话 (2026-05-22, plan patch v13 docs + plan patch v14 docs + Task 26 platform-admin.ts L2 100% mechanical paste impl atomic absorb + Stage 5 repo test 14 cases 3rd land + canonical pnpm test:integration baseline maintained, 3-4 commits + 1 真 fail-loud Round 5 + 1 Round 6 catch both Patch B Mode 1 absorbed + Phase D 11/11 + 附录 5 ✅ Phase D 完成 milestone)
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| `<FEAT_SHA_PENDING>` | feat | Phase D Task 26 — platform-admin repository + 14 integration tests (Phase D 11/11 + 附录 5 ✅ close milestone): 8 methods all BYPASSRLS via platform_admin role / **D55 trigger 3rd live demo Phase D** (revokeModules genuine multi-step read+filter+write + Set<ModuleId> explicit widen post-v14) / **100% mechanical paste post v13 + v14** (NO β-path — preserved through Round 5/6 absorptions; Stage 1 verbatim paste line 766-939 post v13 e760679b + v14 587a565b) / **D92 candidate Family A/B/C/D categorization formal NEW**: Family A Task 23 + Family B Task 26 (1 `as ModuleId[]`) + Family C Task 26 (2 `'core' as ModuleId`) + **Family D NEW Round 6** Plan Opus heredoc compile correctness verify gap absorbed via v14 / 14 integration tests §1 Admin CRUD 5 + §2 updateLastLoginAt 1 + §3 listAllStores cross-tenant visibility 1 + §4 grantModules upsert 3 + §5 revokeModules + core protection 4 — all withTestPlatform BYPASSRLS (NOT withTestTenant) / Stage 0 [确认] resolutions: grantModules normalize ✅; PlatformAdmin NO RLS (§6 test REMOVED → 14 tests not 15) / Stage 0 G-T26.1-13 含 G-T26.7 D92 cross-check 3 Family B/C casts + G-T26.11 Pattern #11 import chain + G-T26.12 baseline derive + G-T26.13 §4'' heading 实证 全 pass / Step 0 buggy platform-admin.ts discarded (Round 6 catch cleanup) / Stage 1 re-paste post v14 / **Stage 1.5 11 fail-loud gates G-T26.6.1-11 all pre-grep实证** Pattern #10 4-category + Round 5 specific patterns lesson + NEW G-T26.6.11 v14 Set<ModuleId> widening verify (typed=1 + bare=0) / Stage 2 tsc filtered=0 + N1=103 (Round 6 bug eliminated via v14) / Stage 5.1 test heredoc 14 cases + Stage 5.2 tsc scope + Stage 5.3 canonical pnpm test:integration baseline derived from G-T26.12 / Stage 3 D75 + D76 + D86 + commit body 含 7 governance lessons trace / Stage 4 Snapshot 增量 atomic absorb (§1 + §3 Phase D-5e 段 + §4'' Task 26 row + 11 Acceptance bullets + §9 整节重写 Phase D 整体 closure governance commit batch ritual + §10 v5.X+8 批) / **D89 7th sustained** / **D91 7th + 6 self-violation data points累积 Task 24-25-26-v13 期 all forward-fixed** (Round 1-5 + Round 5 sub-lesson; Pattern #10 5-category coverage) / **D92 候选 Family A/B/C/D formal NEW** / **D93 候选 3rd live demo + canonical baseline maintained Task 24→25→26 consecutive** / **Worker CC discipline progression Round 5 → Round 6** (honest self-report → proper pause+report+enumerate, reinforcement effective) / **Phase D 整体 11/11 + 附录 5 close milestone confirmed** — Phase D 整体 closure governance commit batch scheduled next session |
+| `587a565b5ab680649b0dcddc59a5a6e8994aa0df` | docs | Phase D plan patch v14 — Task 26 revokeModules Set<ModuleId> explicit widen (TS 5+ narrowing fix) [Deliverable 1.5 land post v13 land + Round 6 D92 Family D catch]. Round 6 Worker CC Stage 2 fail-loud caught Plan Opus heredoc Set narrowing bug (TS error TS2345 at .has call). β path Patch B Mode 1 absorbed: plan source line 921 `new Set(...)` → `new Set<ModuleId>(...)` explicit type parameter. Preserves 100% mechanical paste discipline Task 26 distinguishing feature. Worker CC discipline progression: proper pause+report+enumerate α/β/γ protocol followed (vs Round 5 initial local adapt). 1 line replacement edit; Pattern #10 4/5-category coverage applied (含 Round 4 [:：] + Round 5 specific patterns + NEW G-T26-v14.6.6 core-protection filter preservation). Scope discipline: 1 commit docs-only / NO Snapshot 增量 / NO Stage 5 / NO D77 Round 2. |
+| `e760679b4207b6bf1a164fb2eff5d4f2bce89e11` | docs | Phase D plan patch v13 — Task 26 createAdmin displayName drop + role add (schema alignment) [Deliverable 1 land pre-batch]. Plan patch family v9/v10/v11/v12/v13/v14 continuity. Path α chosen over β per Ian + Helper 2026-05-22 决议. **Round 4 D91 self-violation** caught Worker CC Stage 0 (Plan Opus `^## Task 26:` ASCII vs plan source `## Task 26：` full-width colon) → Patch B Mode 1 `[:：]` char class fix. Pattern #10 5-category coverage extension proposal applied. Scope discipline: 1 commit docs-only. |
 
 ### Phase D-5d 对话 (2026-05-22, Task 25 waitlist.ts L2 β-path partial paste impl atomic absorb + Stage 5 repo test 16 cases 2nd land + canonical pnpm test:integration baseline maintained, 1 feat commit + optional D77 Round 2 + 1 真 fail-loud Task 25 期 (Stage 1.5 G-T25.6.1 estimatedWait threshold caught by Worker CC, α path forward-fix gate threshold = 0 → = 1) + 0 forward-fix + β-path 4 spec edits all pre-verified Stage 1.5 + Pattern #10 D91 self-discipline applied Plan Opus pre-grep实证 thresholds + Phase D 整体 11/11 + 附录 5 close milestone)
 
@@ -243,6 +251,7 @@
 | 24 | `83885944a85b88c797352993aa3eb157d82ff40c` + plan patch v12 `a42f197c` + 3 Phase C infra fix sibling commits (`755b7735ff8340b2359247ca484865161c0a99bf` SYSTEM_DATABASE_URL + `8ce5c61af27d28a52bdbb8037242893a74809c39` vitest 4 glob + `c9e14e334a5c99ba6e42b2f6ae01fddfaa9597b4` fixtures.test.ts RLS) | coupons.ts (7 methods + 23 integration tests) — **L2 atomic absorb + Stage 5 test rigor L1-equivalent** / **D55 NOT triggered** (全 single-step) / **Stage 5 Test Gate 多次 catch validation Task 24 期** — 3 distinct Phase C infra sub-gaps caught (DP10/11/12) + all resolved via independent infra fix sibling commits per Helper override α1 → fix-now (NOT defer-with-workaround) / **2 α forward-fixes**: (1) Stage 1.5 threshold pre-write self-violation D91 1st live demo + (2) infra fix batch combined / Stage 0-2 + Stage 5.1/5.2 全 pass / **Stage 5.3 STRENGTHENED**: REAL `pnpm test:integration` 5 files / 34 tests all pass + exit 0 (NOT isolated workaround; spec hedge "6 files" actual 5 informational) / Stage 3-4 atomic absorb / **D89 5th** + **D91 5th + 2nd scope ext + 1st self-violation** + **D92 2nd proactive** + **D93 1st + 多次 catch validation empirical** + **Cat 5 子项 3 sub-gaps NEW** all defer Phase D 整体 closure / 0 真 fail-loud Task 24 期 after forward-fixes |
 | 25 | `d2792b6d79adfe22792515aadc607f0bc2337453` | waitlist.ts (7 methods listWaiting + listAll + findById + add + updateEntry + remove + markSeated 全 single-step + 16 integration tests §1-5) — **β-path partial paste 4 categories / 10 line edits** (estimatedWait drop sig+body+comment schema 无字段 + phone strict extended scope per Helper Flag 1: add() drop both `?`+`\| null` AND updateEntry drop only `\| null` keep `?` — Prisma WaitlistEntryUpdateInput rejects null for required String at compile time + path correction controllers/waitlist.service.ts 3 occurrences + NEW notifiedAt NOT-in-scope comment) / Mode C δ 桶族 governance NOT plan patch v13 / **D55 NOT triggered** (single-step全, Task 24 precedent carry-forward) / D56 NA / D57 explicit storeId / Stage 0 G-T25.1-7 + G-T25.10 + **G-T25.11 NEW Pattern #11 test import chain verify** 全 pass / Stage 1 β-path partial paste line 618-710 / **Stage 1.5 G-T25.6.1-11 11 fail-loud gates all post-α-path pass** (Round 3 α path G-T25.6.1 threshold = 0 → = 1 precise + disambiguate; Plan Opus pre-grep against heredoc body BEFORE finalize spec — Task 24 self-violation lesson absorbed proactively + 3 iterative refinement Rounds Task 25 期) / Stage 2 tsc filtered=0 + N1=103 baseline / Stage 5.1 test heredoc 16 cases / Stage 5.2 tsc test scope / **Stage 5.3 canonical pnpm test:integration 6 files / 50 tests all pass + exit 0** (+1 file +16 tests vs Task 24 baseline) / Stage 3-4 atomic absorb / **D89 mandate 6th** / **D91 6th live precedent + 3rd scope extension + Pattern #10 applied + iterative refinement 3 Rounds** / **D92 NOT triggered Task 25** (β-path category extension instead — schema field absence) / **D93 候选 2nd live demo** (Stage 5 atomic with impl carry-forward, baseline maintained 0 new infra gaps) / **Helper review depth extension applied** (Task 25 baseline, no new test infra findings) / 1 真 fail-loud Task 25 期 (Stage 1.5 G-T25.6.1 estimatedWait threshold caught by Worker CC, α path forward-fix gate threshold = 0 → = 1) + 0 forward-fix (β-path = spec design pre-commit NOT post-write α) |
 | 附录 5 | `f76ced17` | printer.ts (2 methods findByStoreId + upsertConfig D55 多步 tx 强制 signature `tx: Prisma.TransactionClient`) — 附录-direct 创建 NOT Phase D numbered task per plan v10 line 1758-1764 (00-index.md 不变) / Schema-migration-avoiding path B (Printer schema `@@index([storeId])` NOT `@@unique` → findFirst + create/update flow at app layer) / **Phase D-5a' D55 多步 tx 强制 first live demo work-as-designed** (vs Task 22 closeTimeEntry read-guard NOT 触) / Stage 0 G-printer.1-5 + G-printer.10 全 pass + G-printer.4 path-agnostic refinement (Step 3 G-T22.4 path drift lesson absorbed — Prisma 6 + pnpm workspace-hoisted layout) / Stage 1 plan v10 附录 5 heredoc verbatim mechanical paste line 1673-1737 / Stage 1.5 G-printer.6 全 pass (`host`/`isEnabled`/`type: config.type` thresholds met, 0 legacy field, `tx: Prisma.TransactionClient` 2 match (signature + docstring), `findFirst({ where: { storeId } })` 2 match) / Stage 2 tsc filtered=0 + N1=103 baseline (D83 diff=0 Pass) / Stage 3 D75 + D76 + D86 全 pass / Stage 4 Snapshot 增量 atomic absorb / 63 lines / **D89 mandate inline self-application 3rd post-formal-land spec live field test pass** (sustained across 3 specs consecutive) / **D91 inline strict apply 3rd live precedent pass** (累积 3 live precedents 满足 升格 ripening threshold) / 0 真 fail-loud / 0 暂停 / 0 forward-fix printer 附录期 |
+| 26 | `<FEAT_SHA_PENDING>` + plan patch v13 `e760679b4207b6bf1a164fb2eff5d4f2bce89e11` + plan patch v14 `587a565b5ab680649b0dcddc59a5a6e8994aa0df` | platform-admin.ts (8 methods all BYPASSRLS withPlatformContext + 14 integration tests §1-5) — **100% mechanical paste post v13 + v14** (NO β-path; Round 5 + Round 6 absorbed via Patch B Mode 1 + v14 plan patch) / **D55 trigger 3rd live demo Phase D** (revokeModules genuine multi-step + Set<ModuleId> explicit widen post-v14) / D56 NA / D57 NA (platform-level) / **D92 candidate Family A/B/C/D categorization formal NEW** (Family A Task 23 + Family B/C Task 26 narrow casts + **Family D NEW Round 6** heredoc compile correctness verify gap absorbed via v14) / **L2 atomic absorb + Stage 5 test rigor L1-equivalent** / Stage 0 G-T26.1-13 全 pass / Stage 1 100% mechanical paste post v13 + v14 / **Stage 1.5 11 fail-loud gates G-T26.6.1-11** all pre-grep实证 (含 Pattern #10 4-category + Round 5 specific patterns + NEW G-T26.6.11 v14 Set<ModuleId> widening verify) / Stage 2 tsc filtered=0 + N1=103 (Round 6 bug eliminated) / Stage 5.1 test heredoc 14 cases + Stage 5.2 tsc scope / **Stage 5.3 canonical pnpm test:integration baseline derived Stage 0 G-T26.12** (all pass + exit 0) / Stage 3-4 atomic absorb / Stage 0 [确认] resolutions: grantModules normalize ✅; PlatformAdmin NO RLS (§6 test removed → 14 tests not 15) ✅ / **D89 mandate 7th** / **D91 7th + 6 self-violation data points all forward-fixed (Round 1-5 + Round 5 sub-lesson)** / **D92 Family A/B/C/D formal NEW** / **D93 候选 3rd live demo** (Stage 5 atomic with impl carry-forward Task 24→25→26 consecutive) / **Worker CC discipline progression Round 5 → Round 6** / 1 真 fail-loud Task 26 期 Round 5 + 1 Round 6 catch both Patch B Mode 1 absorbed / **Phase D 整体 11/11 + 附录 5 ✅ Phase D 完成 milestone confirmed** — Task 26 = 最后一个 task |
 **Acceptance 证据** (Phase D 进行中):
 
 - ✅ Phase D-1 + D-2 + D-3a + D-3b batch land: Task 16 store.ts + Task 17 orders.ts + Task 18 sessions.ts + Task 19 payments.ts 入 git, push aligned origin/main (D76)
@@ -297,6 +306,17 @@
 - ✅ **D91 6th live precedent + 3rd scope extension + Pattern #10 NEW iterative refinement** — Stage 1.5 fail-loud gates 11-count grep实证 (post-Round-3 α path forward-fix G-T25.6.1 threshold = 0 → = 1 precise + disambiguate). Pattern #10 4-category coverage carry-forward to Task 26: sig + body + JSDoc + comment-block ack refs
 - ✅ **D92 候选 NOT triggered Task 25 but β-path detect 扩展 category registered** — schema field absence vs plan signature drift (β-path #1 estimatedWait) separate from cast strip (Task 23 Stage 2 fail-loud) + proactive cross-check (Task 24 G-T24.7). D92 scope refinement: encompasses both cast discriminant AND schema field presence cross-verify
 - ✅ **Phase D 完成 close milestone — Phase D-5e Task 26 entry next** (platform-admin.ts L2 spot check + plan patch v13 displayName drop + role required + line 1074 Prisma.InputJsonValue cast D92 cross-check)
+- ✅ **Phase D 11/11 + 附录 5 ✅ Phase D 完成 milestone CONFIRMED** — all 11 numbered Phase D tasks (Task 16-26) + 1 appendix (printer) land complete. F-3 deferred Phase F per Ian + Helper 决议
+- ✅ **Task 26 100% mechanical paste post v13 + v14** — Round 5 (Stage 1.5 broad regex JSDoc) + Round 6 (Stage 2 Set narrowing TS bug) absorbed; v14 plan patch preserves 100% mechanical paste discipline through 2 fail-loud cycles
+- ✅ **D55 trigger 3rd live demo Phase D** (revokeModules multi-step + Set<ModuleId> explicit widen post-v14) — 附录 5 + Task 23 + Task 26 consecutive D55 live demos
+- ✅ **D92 candidate Family A/B/C/D categorization formal NEW** — 4 families: A (Task 23 cast-away) + B/C (Task 26 narrow casts) + **D NEW (Round 6 heredoc compile correctness verify gap)**. Defer Phase D 整体 closure 升格 atomic decide
+- ✅ **D93 候选 3rd live demo + canonical baseline maintained Task 24→25→26 consecutive** — Stage 5 Test Gate working as designed across 3 batches
+- ✅ **Pattern #11 forward defense effective Task 26 期** + **Pattern #10 5-category coverage** (sig + body + JSDoc + ack-refs + source-assertion anchor literals) Round 4/5 lessons absorbed proactively
+- ✅ **D89 mandate 7th post-formal-land spec live field test pass sustained** (7 specs consecutive Step 1 + Step 3 + 附录 5 + Task 23 + Task 24 + Task 25 + Task 26)
+- ✅ **D91 7th live precedent + 6 self-violation data points累积 Task 24-25-26-v13 期 all forward-fixed** — 升格 ripening evidence 满足 likely; Pattern #10 5-category coverage iterative refinement Round 1-5 + Round 5 sub-lesson; defer Phase D 整体 closure 升格 atomic decide
+- ✅ **Worker CC discipline progression Round 5 → Round 6** — honest self-report (local adapt at G-T26.6.6) → proper pause+report+enumerate α/β/γ protocol (at Stage 2 Round 6 catch). Reinforcement effective: spec-source-of-truth integrity preserved via Plan Opus owns spec-level fix
+- ✅ **Plan patch family v9-v14 + β-path Task 25 + 100% mechanical paste post-patch Task 26** — Mode C δ 桶族 governance evolution complete Phase D; 3 mechanisms proven (plan patch source-fix + β-path spec-edit + 100% mechanical paste post-patch). Carry-forward Phase E/F/G/H
+- ✅ **Phase D 整体 closure governance commit batch atomic decide scheduled next session** + **Phase D 封顶 regen mandatory** + **Phase E entry preparation**
 
 ---
 
@@ -682,137 +702,134 @@
 
 ---
 
-## 9. 下一对话第一件事 (Phase D-5e Task 26 platform-admin.ts spec produce + plan patch v13)
+## 9. 下一对话第一件事 (Phase D 整体 closure governance commit batch atomic decide)
 
-### 9.1 Phase D-5e Task 26 spec 启动 scope
+### 9.1 Phase D 整体 closure governance commit batch scope
 
-**Phase D 进度**: Task 16-25 + 附录 5 ✅ 全 land. Phase D **11/11 + 附录 5** completed milestone. Task 26 platform-admin.ts = **Phase D 整体 closure milestone task** + 唯一 deferred task. Pre-batch HEAD = Task 25 Round 2 SHA (post optional D77 Round 2 land) OR Task 25 feat SHA directly (if D77 Round 2 skipped).
+**Phase D 进度**: Task 16-26 + 附录 5 ✅ 全 land. **Phase D 11/11 + 附录 5 ✅ Phase D 完成 milestone confirmed**. Pre-batch HEAD = Task 26 Round 2 SHA (post optional D77 Round 2 land) OR Task 26 feat SHA directly. **Phase D 是 Phase 5 第 4 个 Phase (B/C 完成 + D 完成 + E/F/G/H/I/J/K 未启动)**. 下一个 Phase = **Phase E** (controller-层 migration, Stage 3a per phase-d-repositories-part2.md:1016).
 
-**Phase D = 11 个语义化 Repository 重构** + 附录 5 printer ✅. **Phase D-5e closes Phase D**.
+**Phase D 整体 closure governance commit batch 启动 trigger** (post Phase D-5e Task 26 `<FEAT_SHA_PENDING>` land):
 
-**Phase D-5e 启动 trigger** (post Phase D-5d Task 25 `d2792b6d79adfe22792515aadc607f0bc2337453` land):
+- Task 26 platform-admin.ts L2 8 methods + 14 integration tests + plan patch v13 + plan patch v14 全 land
+- Phase D 11/11 + 附录 5 ✅ 全 close milestone
+- D89 mandate 7 specs consecutive sustained
+- D91 候选 7 base + 4 scope extension + **6 self-violation data points (Task 24-25-26-v13 期 Round 1-5) + Pattern #10 5-category coverage iterative refinement** → 升格 ripening evidence 满足 likely
+- D92 候选 2 live demos + Family A/B/C/D categorization NEW (incl Round 6 Family D heredoc compile gap absorbed via v14)
+- D93 候选 3 live demos consecutive + 多次 catch validation
+- Cat 5 子项 Cross-Phase coupling sub-family (DP10/11/12 all resolved Task 24 batch) integration ready
+- Plan patch family v9-v14 + β-path 1st live demo (Task 25) + 100% mechanical paste pattern (Task 26 post v13+v14) — Mode C δ 桶族 governance evolution
+- Helper review depth extension sustained Task 24/25/26
+- Worker CC discipline progression Round 5 → Round 6 (honest self-report → pause+report+enumerate)
+- Pattern #10/#11/#12/#13/#14/#15 carry-forward proven across multi-batch
 
-- Task 25 waitlist.ts L2 7 methods + 16 integration tests 全 land
-- **D55 NOT triggered Task 25** (single-step全, Task 24/25 sequential precedent)
-- **Stage 5 NEW 2nd land** atomic with impl + canonical pnpm test:integration 6 files / 50 tests all pass + exit 0 (Task 24 baseline maintained Task 25 期, NO new infra gaps)
-- **β-path partial paste 4 edits all Stage 1.5 pre-verified** Pattern #10 D91 self-discipline applied (Plan Opus pre-grep实证 thresholds against heredoc body BEFORE finalize)
-- D89 + D91 scope extension + D92 candidate β-path extension category + D93 候选 2nd live demo 6th spec live field test pass sustained
-- **§7.23 D-5e finding**: Task 26 plan part2 line 1074 涉及 `Prisma.InputJsonValue` cast (类 Task 23 InputJsonValue family — D92 candidate cross-check at spec time必). Task 26 plan signature 可能含 `displayName` (schema 实际无此 field) + `role` (schema 实际可能 required vs plan optional) → plan patch v13 likely needed (vs Task 25 β-path-in-spec治理 — Plan Opus 判 spec-time α vs plan-patch path)
+**Phase D 整体 closure governance commit batch scope** (next session Plan Opus produce):
 
-**Phase D-5e Task 26 spec scope** (next session Plan Opus produce):
+- **D89 mandate**: already formal land `c0b8f4e0` — no 升格 action; 7th sustained ack
+- **D91 候选 升格 atomic decide**:
+  - Accumulated evidence: 6 base + 4 scope extension + 6 self-violation data points (Round 1-5 + Round 5 sub-lesson) + Pattern #10 5-category coverage iterative refinement (Round 1-5)
+  - 升格 OR keep 候选 status decision — Plan Opus α path + Helper protocol
+  - If 升格: Pattern #10 5-category coverage formal entry as D91-extension rule + carry-forward Phase E/F/G/H
+- **D92 候选 升格 atomic decide**:
+  - Accumulated evidence: 2 live demos (Task 23 reactive + Task 24 proactive) + β-path detect extension category (Task 25 schema field absence) + Family A/B/C/D cast categorization (Task 23 + Task 26 Round 6 formal NEW)
+  - 升格 OR keep 候选 status decision
+- **D93 候选 升格 atomic decide**:
+  - Accumulated evidence: 3 consecutive live demos (Task 24/25/26 all Stage 5 atomic with impl + canonical pnpm test:integration baseline maintained) + 多次 catch validation Task 24 期 (3 sub-gaps DP10/11/12 caught + resolved)
+  - 升格 OR keep 候选 status decision
+- **Cat 5 子项 Cross-Phase coupling sub-family** (DP10 SYSTEM_DATABASE_URL + DP11 vitest 4 glob + DP12 fixtures.test.ts RLS context): integration as formal sub-family
+- **Phase D entry summary**: 11 tasks + 1 appendix + 3 Phase C infra fixes + 6 plan patches (v9/v10/v11/v12/v13/v14) + 1 β-path batch (Task 25) + 6 D91 self-violations + 1 D92 Family D NEW all forward-fixed + Pattern #10 5-category coverage evolution + multi-batch governance accumulation
 
-- Stage 0 CC pre-flight verify (D89 + D91 + D92 strict 7th spec): HEAD verify post Task 25 + schema PlatformUser / PlatformAuditLog (TBD) 全字段 + plan part2 Task 26 段 line range + tsc baseline + Prisma client types + **G-T26.7 D92 candidate cross-check pre-spec write** (line 1074 InputJsonValue cast vs schema field type — may need plan patch v13 OR β-path spec edit)
-- **plan patch v13 OR β-path 决议** at Stage 0 (Plan Opus α path): if line 1074 cast + schema field drift = independent reasons → plan patch v13 (mechanical paste preserve, plan source corrected); if Task 25-style multi-drift = β-path (spec edit annotate)
-- Stage 1 heredoc write `server/src/repositories/platform-admin.ts` (mechanical paste post v13 OR β-path partial paste annotated)
-- Stage 1.5 D91 scope extension G-T26.6 semantic verify (Pattern #10 self-discipline applied — pre-grep实证 thresholds against heredoc body)
-- Stage 2 tsc filtered=0 + N1=103 baseline (D83 diff=0)
-- **Stage 5 NEW continued** — repo test atomic with impl per Task 24/25 precedent. Use canonical `pnpm test:integration` (7 files / 50+N tests + exit 0). Test cases TBD by Ian + Helper pre-define before spec produce.
-- Stage 3 D75 + D76 + D86 + Pattern #14 D77 Round 2 uniqueness gate
-- Stage 4 Snapshot 增量 atomic absorb: §1 / §3 commit chain Phase D-5e 段 / §4'' Phase D 11/11 unchanged (already done Task 25) + Task 26 row append + Acceptance bullets / §9 整节重写 **Phase D 整体 closure governance commit ritual** (NOT just Task 27 — Phase D ends, governance batch atomic decide for D89/D91/D92/D93 候选 升格 + Cat 5 子项 sub-family integration + Phase D entry summary) + §10 v5.X+8 批 (and possibly v5.X+9 governance commit)
-- Ian 明批 → Helper cross-instance review (pre-execute + Stage 5 test review per Helper depth extension carry-forward) → CC 执行 atomic feat commit
-
-### 9.2 启动 ritual (Phase D-5e Task 26)
+### 9.2 启动 ritual (Phase D 整体 closure governance commit batch)
 
 1. **读** (按顺序, CC-as-Planner 直 file access — D89 mandate 自动满足):
-   - 本 Snapshot live 增量, HEAD post Task 25 `d2792b6d79adfe22792515aadc607f0bc2337453` (+ optional D77 Round 2 if applicable)
-   - `phase-5-fabrication-archive.md` (27 条 land + #28/#29/#30/Cat 5 子项 sub-family 含 DP10/11/12 全 resolved + D89 formal land + D91 候选 base + scope extension + self-violation + Pattern #10 self-discipline NEW + D92 候选 2 live demos + β-path category extension + D93 候选 2 live demos + 多次 catch validation 累积 toward Phase D 整体 closure batch)
-   - `phase-5-governance-digest.md` (D89 formal entry §6 + Pre-Flight Checklist §7)
-   - `phase-d-repositories-part2.md` Task 26 platform-admin.ts 段 (line 733+ — read 含 line 1074 InputJsonValue cast area for D92 cross-check)
-   - Schema PlatformUser / PlatformAuditLog (TBD per §7.17 决议) 全字段 CC dump (D92 strict: field name + TYPE + 验证 plan vs schema drift potential)
-   - Task 25 commit body `d2792b6d79adfe22792515aadc607f0bc2337453` (β-path partial paste 4 edits structure + Stage 5 test 16 cases structure as reference for Task 26 spec design)
+   - 本 Snapshot live 增量 (post Task 26 land confirmed via `<FEAT_SHA_PENDING>`)
+   - `phase-5-fabrication-archive.md` (27 条 land + 27+ 数据点 candidates 累积)
+   - `phase-5-governance-digest.md` (D89 formal entry + Pre-Flight Checklist + 候选 entries)
+   - `phase-5-state-snapshot.md` §6 (D 候选累积清单) + §7 (Pending drifts) + §10 (修订轨迹)
+   - Plan patch family v9-v14 SHA references (`06a746d7` v9 + Task 22 v10 + `538d00e2` v11 + `a42f197c` v12 + `e760679b` v13 + `587a565b` v14)
+   - β-path batch references (Task 25 4-category 10 line edits)
+   - 6 D91 self-violation data points (Task 24 expiresAt + Task 25 Round 1/2/3 + v13 Round 4 + Task 26 Round 5)
+   - 1 D92 Family D NEW (Task 26 Round 6 heredoc compile correctness verify gap absorbed via v14)
+   - Pattern #10 5-category coverage evolution (Round 1-5 lessons)
 
-2. **CoT 输出** Phase D-5e Task 26 scope 理解 + Phase D 1-11 + Task 22-25 + 附录 5 全 closure carry-forward ack + **D89 mandate inline strict apply** 内化 (7th spec apply) + **D91 candidate inline strict apply + scope extension + self-violation + Pattern #10 self-discipline** 内化 + **D92 candidate inline apply + β-path category extension** + **D93 candidate inline apply + 多次 catch validation accumulated** + **Phase D 整体 closure governance commit prep** (post Task 26 land — 候选 升格 atomic decide batch)
+2. **CoT 输出** Phase D 整体 closure scope 理解 + Phase B/C/D 全 closure carry-forward ack + **D89 sustained 7th** + **D91 升格 evidence assessment** + **D92 升格 evidence assessment** + **D93 升格 evidence assessment** + **Cat 5 子项 sub-family integration assessment** + **Phase E entry preparation** (Phase E = controller-层 migration Stage 3a)
 
-3. **Stage 0 CC pre-flight verify** (D89 + D91 + D92 strict + Pattern #11): 本 turn CC-as-Planner 直 read schema PlatformUser / PlatformAuditLog + plan part2 Task 26 段 + tsc baseline + heredoc cast cross-check + plan signature vs schema field comparison. NO pre-write Expected in Task 26 spec.
+3. **Plan Opus 升格 atomic decide α path** — for each D91/D92/D93 候选: assess accumulated evidence vs 升格 ripening threshold (per Helper Flag 2 protocol "≥ 3 live precedents + 持续 spec field test pass + Helper protocol refinement").
+   - α: 升格 (formal entry as D rule) + carry-forward Phase E/F/G/H rules
+   - β: keep 候选 status — defer to subsequent phase closure batch
+   - γ: 弃 候选 — evidence not strong enough OR scope ambiguous
 
-4. **D92 cross-check pre-spec decision**: Plan Opus determine plan patch v13 vs β-path spec edit based on Stage 0 findings:
-   - If line 1074 `Prisma.InputJsonValue` cast independent reason → plan patch v13 strip cast (Task 23 precedent)
-   - If multi-drift (cast + displayName drop + role required) → batch decide v13 atomic OR β-path spec edits (Plan Opus α)
+4. **Phase D 整体 closure governance commit batch** — atomic absorb:
+   - `phase-5-governance-digest.md` §6 D rules formal entries (D89 sustained + 升格 NEW from D91/D92/D93 候选 if applicable) + Pre-Flight Checklist v3 candidate updates
+   - `phase-5-fabrication-archive.md` Cat 5 子项 integration + Pattern #10 5-category formal + Family A/B/C/D categorization formal + 候选 ripening status updates
+   - `phase-5-state-snapshot.md` §6 D 候选累积清单 reconcile + §7 Pending drifts reconcile + §10 v5.X+9 governance commit entry
+   - Ian 明批 → Helper cross-instance review → CC 执行 atomic absorb commit + D77 Round 2 self-ref SHA replace
 
-5. **Stage 5 NEW continued** — Task 26 repo test atomic with impl per Task 24/25 precedent. Test cases TBD (Ian + Helper define before spec produce). Spec includes Stage 5.1-5.3 with canonical pnpm test:integration (7 files / 50+N tests baseline). Helper review depth extension carry-forward applied (trace import chain + verify script + check sibling test files).
+5. **Phase E entry preparation** (post Phase D 整体 closure governance commit batch):
+   - Phase E = controller-层 migration (controllers/X.service.ts → repositories/X.ts.Xrepo) per phase-d-repositories-part2.md:1016 "下一步"
+   - **v15 candidate** Phase E pre-wiring (RLS comment imprecision plan source fix line 800-801)
+   - Phase E plan 已 written 待 read — next session Plan Opus dive into Phase E spec produce
 
-6. **Helper async review pre-execute timing** (per Step 3/printer/Task 23/Task 24/Task 25 innovation) — Helper review depth extension to Stage 5 test semantics + import chain trace + script invocation pattern + sibling test files pre-Batch-2 RLS context bugs check (Task 24 dual-miss lesson carry-forward).
+### 9.3 不变项 carry-forward (Phase B/C/D 全 closure 累积)
 
-7. **Phase D 整体 closure governance commit prep** — Plan Opus post Task 26 land judge atomic batch decide for:
-   - D89 候选 升格 (already formal at `c0b8f4e0` — N/A confirm)
-   - D91 候选 升格 (累积 6 base + 3 scope extension + 4 self-violations + Pattern #10 NEW iterative refinement live precedents — ripening满足 likely)
-   - D92 候选 升格 (累积 2 live demos + β-path extension category — ripening assessment TBD)
-   - D93 候选 升格 (累积 2 live demos + 多次 catch validation 多 sub-gaps — ripening assessment TBD)
-   - Cat 5 子项 sub-family integration (Cross-Phase coupling DP10/11/12 + Pattern #11 forward defense)
-   - Phase D entry summary (11 tasks + 附录 5 + Phase C cleanup batch + governance live demos accumulated)
-
-### 9.3 不变项 carry-forward (Phase D 1-11 + Task 22 + 附录 5 + Task 23 + Task 24 + Task 25 全 closure 累积)
-
-- D75 数据 guard — 11 task + 附录 5 + Task 22-25 全 stages 0 fail
+- D75 数据 guard — 11 Phase D task + 附录 5 + Task 22-26 + plan patch v9-v14 全 stages 0 fail
 - D76 push + origin SHA verify — 同上 0 fail
-- D77 forward-fix 模板 — Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `7ec04772` + D89 升格 `1d93e4af` + Step 1 closure `81307121` + Step 3 `8229c38e` + 附录 5 `7299e05b` + Task 23 `cc60ceb5` + Task 24 `82c430ab` + Task 25 `<ROUND2_SHA_TBD>` (if applicable) reuse
-- D88 维度 3 anchor literal grep 实证 — 10+ live applications + Task 22-25 spec self-audits
-- **D89 mandate inline strict apply** — sustained 6 specs consecutive (Step 1 / Step 3 / 附录 5 / Task 23 / Task 24 / Task 25); Task 26 = 7th next. CC-as-Planner architectural mode 内 file access = D89 自动满足 stable pattern
-- **D91 candidate inline strict apply** — NO pre-written Expected for CC-dump content. **累积 6 base + 3 scope extension + 4 self-violations + Pattern #10 self-discipline live precedents** (Task 24 1 self-violation + Task 25 Round 1+2+3 = 4 total, all forward-fixed via Patch B Mode 1 / α path; Pattern #10 iterative refinement carry-forward Task 26 = 4-category pre-grep实证)
-- **D91 self-discipline carry-forward + Pattern #10 iterative refinement** (Plan Opus self-violation lesson Task 24 absorbed proactively + 3 NEW self-violations Task 25 spec produce cycle exposed Pattern #10 sub-categories needing extended discipline):
-  - **Round 1** (Helper review catch): β-path #2 scope under-extension (add() only vs add()+updateEntry; Prisma WaitlistEntryUpdateInput rejects null for required String at compile time) → Patch B Mode 1 absorb
-  - **Round 2** (Ian one-pass catch): G-T25.12 hardcoded `= 5 expected` baseline gate (Stage 0 dump-derived content也 NOT pre-write Expected per D91 strict — extends beyond Stage 1.5 semantic gates to Stage 0 baseline gates) → Patch B Mode 1 round 2 absorb
-  - **Round 3** (Worker CC Stage 1.5 fail-loud catch): G-T25.6.1 estimatedWait `= 0` missed top NOT-in-scope comment ack ref (gate writer pre-grep against sig/body/JSDoc but missed comment-block ack refs as separate category — parallel to G-T25.6.9 notifiedAt = 1 correctly designed but failed to apply same logic to estimatedWait same comment block) → α path forward-fix gate threshold `= 0` → `= 1` precise + disambiguate location verify
-  - **Pattern #10 iterative refinement carry-forward to Task 26**: pre-grep实证 against actual heredoc body MUST cover all 4 categories: (a) signature, (b) body, (c) JSDoc, (d) **comment-block ack refs** (e.g. top NOT-in-scope block listing fields intentionally out-of-scope). Round 3 lesson: G-T25.6.9 notifiedAt threshold designed correctly (= 1 ack ref) but G-T25.6.1 estimatedWait was authored without same parallel check.
-  - Live precedents累积 NOW: Task 24 expiresAt 1st self-violation + Task 25 Round 1+2+3 = **4 D91 self-violation data points** Task 24-25 期, all same family #23/#26/#27 post-registration self-violation pattern. Defer 升格 atomic decide to Phase D 整体 closure governance commit batch.
-- **D92 candidate inline apply + β-path category extension** — heredoc verbatim paste embedded type cast discriminant cross-verify vs schema field type. **累积 2 live demos** (Task 23 reactive + Task 24 proactive) + **β-path detect extension category** (schema field absence vs plan signature drift, Task 25 estimatedWait demo). D92 scope refinement broader: encompasses both cast discriminant AND schema field presence cross-verify.
-- **D93 candidate inline apply + 多次 catch validation** — Repo test atomic with impl. Stage 5 行为级 test 同 atomic feat commit + impl 同绑定. **累积 2 live demos + 多次 catch validation empirical** (Task 24 23 cases all pass via canonical pnpm test:integration post 3 infra fixes — caught 3 real cross-phase infra sub-gaps L1/L3/L6 missed; Task 25 16 cases all pass canonical baseline maintained 0 new gaps). Carry-forward to Task 26 (each repo + tests).
-- **Cat 5 子项 Cross-Phase coupling sub-family carry-forward** — DP10/11/12 all 3 RESOLVED via independent fix commits Task 24 batch (NOT plan patch, NOT Task 24 absorb). Task 25 期 baseline 维持 0 new gaps (Pattern #11 forward defense effective). Task 26 spec writer continue apply Pattern #11.
-- **Pattern #11 Stage 0 test import chain verify carry-forward** (G-T26.11 carry-forward from G-T25.11) — confirm all eagerly-constructed Prisma clients (`prisma` + `systemPrisma` at `server/src/repositories/prisma-client.ts:9,23`) have valid env vars in test:integration script + verify canonical command invocation pattern + check sibling test files.
-- **Helper review depth extension carry-forward** — subsequent test-bearing specs Helper review trace test import chain + verifies script invocation pattern + checks pre-Batch-2 RLS context (sustained Task 25 baseline; Task 26 continue).
-- **Pattern #12 isolated vitest workaround** — DEPRECATED post Phase C cleanup batch (Task 24 batch). Canonical `pnpm test:integration` baseline restored, use canonical command going forward (NOT isolated).
-- **Pattern #13 default-lean fix-now for non-target Stage 5 catches carry-forward** — Task 25 期 0 new catches (Pattern #11 forward defense effective); Task 26 continue apply if any new catches.
-- **Pattern #14 D77 Round 2 git log --grep uniqueness gate carry-forward** — ASCII-only grep + COUNT = 1 exact match. Task 25 Round 2 (if applicable single SHA d2792b6d79adfe22792515aadc607f0bc2337453) baseline.
-- **Pattern #15 Stage 5 Test Gate value = detection + resolution timing judgment** — Task 25 期 0 new catches (baseline), Task 26 continue apply.
-- D86 language-layer self-check — 11 task + 附录 5 + Task 22-25 全 stages 0 violation
-- 规则 8 暂停 — Phase D 累积 0 critical fabrication 逃逸; **1 forward-fix Task 23 期 (plan patch v11 α path) + 2 forward-fixes Task 24 期 (α Stage 1.5 threshold + α infra fix batch) + 1 forward-fix Task 25 期 Round 3 α path (G-T25.6.1 estimatedWait threshold `= 0` → `= 1` precise, impl 不动 — gate writer missed top NOT-in-scope ack ref pre-grep实证, parallel to G-T25.6.9 notifiedAt = 1 design correctly applied but estimatedWait missed) + 2 spec-produce-phase self-violations Task 25 期 caught pre-Worker-CC-execute (Helper Flag 1 Round 1 + Ian one-pass Round 2, absorbed via Patch B Mode 1, NOT Worker-CC execute forward-fix counted)
-- D55 / D56 / D57 / D68 D 决议遵守 — Phase D 11 repo + 附录 5 + Task 22-25 全应用. **D55 多步 tx live demos**: 附录 5 upsertConfig 1st (2 round-trips) + Task 23 ensureSystemRoles 2nd (4 round-trips). Task 24 + Task 25 NOT triggered (single-step precedent solid). Task 26 待 verify
-- 规则 3 写 db 必填 / 读默认 prisma — Phase D 11 repo + 附录 5 + Task 22-25 全应用
-- **Stage 0 G-printer.4 → G-T*.4 Prisma client path-agnostic refinement** carry-forward (G-T26.4 reuse)
-- **Stage 1.5 D91 scope extension + Pattern #10 self-discipline** carry-forward (Task 23/24/25 live demos) — fail-loud gates vs informational counts 区分 + 阀值 pre-grep实证
-- **D92 candidate Stage 0 heredoc cast discriminant cross-verify + β-path extension** carry-forward
-- **Stage 5 NEW pattern + canonical pnpm test:integration baseline** carry-forward — repo test atomic with impl (D93 候选); use canonical (NOT isolated workaround — Phase C cleanup complete post Task 24 batch)
-- **β-path partial paste governance** Mode C δ 桶族 (Task 25 1st live demo): schema-vs-plan drift handled via spec heredoc edit NOT plan patch (preserves plan source verbatim while spec captures β-path semantic divergence + governance trace). vs plan patch (modifies plan source) — Plan Opus α at spec time judges path
-- 4 件 handoff 文件 live 增量, Phase 封顶 regen (Phase D 封顶 = Task 26 完成时 regen)
+- D77 forward-fix 模板 + Pattern #14 uniqueness gate — Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `7ec04772` + D89 升格 `1d93e4af` + Step 1 closure `81307121` + Step 3 `8229c38e` + 附录 5 `7299e05b` + Task 23 `cc60ceb5` + Task 24 `82c430ab` + Task 25 `aafc7b0b` + Task 26 `<ROUND2_SHA_TBD>` (if applicable) reuse
+- D88 维度 3 anchor literal grep 实证 — 12+ live applications + Round 4 v13 lesson + Round 5 v14 lesson extension to source-assertion anchor literals (Pattern #10 5-category (e))
+- **D89 mandate** — formal land `c0b8f4e0`; 7 specs consecutive carry-forward; **stable in CC-as-Planner architectural mode (file access = 自动满足)**
+- **D91 候选 + Pattern #10 5-category coverage** — Phase D 整体 closure 升格 atomic decide:
+  - 累积 evidence: 7 base live precedent (Step 1 + Step 3 + 附录 5 + Task 23 + Task 24 + Task 25 + Task 26) + 4 scope extension + **6 self-violation data points all forward-fixed** (Round 1-5 + Round 5 sub-lesson) + **Pattern #10 5-category coverage**: (a) sig + (b) body + (c) JSDoc + (d) comment-block ack refs + (e) source-assertion anchor literals (Round 4 v13 + Round 5 v14 lessons)
+- **D92 候选 + Family A/B/C/D cast categorization** — Phase D 整体 closure 升格 atomic decide:
+  - 累积 evidence: 2 live demos (Task 23 reactive + Task 24 proactive) + β-path detect extension category (Task 25 schema field absence) + **Family A/B/C/D cast categorization NEW formal** (Family A Task 23 cast-away + Family B Task 26 Prisma read → TS narrow + Family C Task 26 literal narrowing + **Family D NEW Round 6** Plan Opus heredoc compile correctness verify gap)
+- **D93 候选 + canonical pnpm test:integration baseline** — Phase D 整体 closure 升格 atomic decide:
+  - 累积 evidence: 3 consecutive live demos (Task 24/25/26 Stage 5 atomic with impl + canonical pnpm test:integration baseline maintained) + 多次 catch validation Task 24 期 (3 sub-gaps DP10/11/12 caught + resolved via independent fix commits)
+- **Cat 5 子项 Cross-Phase coupling sub-family integration** — Phase D 整体 closure formal:
+  - DP10 SYSTEM_DATABASE_URL repo-layer module-load + test infra env script (fix `755b7735`)
+  - DP11 vitest 4 filter glob mismatch (fix `8ce5c61a`)
+  - DP12 fixtures.test.ts:17 Phase C Batch 2 dual-URL transition residue (fix `c9e14e33`)
+- **Plan patch family v9-v14 evolution + β-path 1st live demo (Task 25) + 100% mechanical paste pattern (Task 26 post v13+v14)** — Mode C δ 桶族 governance evolution carry-forward Phase E/F/G/H
+- **Pattern #10/#11/#12/#13/#14/#15 carry-forward** — proven across Task 22-26 multi-batch; Phase E spec writer continue apply
+- **Helper review depth extension carry-forward** sustained — trace test import chain + verify pnpm test:integration script invocation pattern + check sibling test files pre-Batch-2 RLS context bugs
+- **Worker CC discipline carry-forward** — Round 5 → Round 6 progression (honest self-report → proper pause+report+enumerate); strict gate failure → pause+report+enumerate (NOT local adapt)
+- 规则 8 暂停 — Phase D 累积 0 critical fabrication 逃逸; **1 forward-fix Task 23 期 (plan patch v11 α path) + 2 forward-fixes Task 24 期 (α Stage 1.5 threshold + α infra fix batch) + 1 forward-fix Task 25 期 Round 3 (G-T25.6.1 threshold α path) + Patch B Mode 1 absorptions: Task 25 Round 1+2 + v13 Round 4 + Task 26 Round 5 + Task 26 Round 6 (v14 plan patch β path)** — **6 D91 self-violation data points + 1 D92 Family D NEW 累积 Task 24-25-26-v13 期 all forward-fixed** (Pattern #10 5-category pre-grep实证 lessons absorbed proactively + Round 5/6 lessons NEW carry-forward to Phase E spec produce)
+- D55 / D56 / D57 / D68 D 决议遵守 — Phase D 11 repo + 附录 5 + Task 22-26 全应用. **D55 多步 tx live demos**: 附录 5 upsertConfig 1st (2 round-trips) + Task 23 ensureSystemRoles 2nd (4 round-trips) + **Task 26 revokeModules 3rd** (read + filter + write + Set<ModuleId> explicit widen post-v14 + business invariant 'core' protection). Task 24/25 NOT triggered (single-step全).
+- 规则 3 写 db 必填 / 读默认 prisma — Phase D 11 repo + 附录 5 全应用; **Task 26 例外**: all 8 methods require tx mandatory (BYPASSRLS withPlatformContext convention)
+- 4 件 handoff 文件 live 增量, **Phase D 封顶 regen mandatory post Phase D 整体 closure governance commit batch**
 
-### 9.4 关键 grep 清单 (Phase D-5e Task 26 启动期)
+### 9.4 不启动原则 (Phase D 整体 closure governance commit batch 启动期)
 
-- **G-T26.1**: plan part2 Task 26 段 file anchor (post Phase D-5d 状态 — 含 line 1074 InputJsonValue cast for D92 cross-check)
-- **G-T26.2**: schema PlatformUser / PlatformAuditLog 全字段 enumeration (D89 + D91 + **D92 strict**: field name + TYPE + 验证 displayName / role drift potential)
-- **G-T26.3**: HEAD verify post Task 25 `d2792b6d79adfe22792515aadc607f0bc2337453` (或 Round 2 SHA)
-- **G-T26.4**: Prisma client types path-agnostic (G-T25.4 pattern carry-forward)
-- **G-T26.5**: tsc baseline N1=103 (D83 diff=0)
-- **G-T26.6**: post-write semantic verify (D91 scope extension — fail-loud gates Pattern #10 pre-grep实证 + informational counts; β-path / plan patch v13 detect verify)
-- **G-T26.7**: D92 candidate apply (Task 26 line 1074 cast cross-check pre-spec write — likely plan patch v13 OR β-path 决议 point)
-- **G-T26.10**: Prisma XOR predict (Task 17-25 + 附录 5 carry-forward)
-- **G-T26.11 NEW**: Test import chain verify (Pattern #11 carry-forward from G-T25.11)
+1. 读完 ritual (9.2) → CoT 输出 Phase D 整体 closure scope + Phase B/C/D 全 closure carry-forward ack + 升格 evidence assessment
+2. Plan Opus consume evidence → judge 升格 α/β/γ for each 候选 (D91/D92/D93)
+3. Phase D 整体 closure governance commit batch atomic produce: governance-digest + fabrication-archive + state-snapshot 3 files 多 Edits → Ian 明批 → Helper review → CC 执行 atomic commit + D77 Round 2 self-ref SHA replace
+4. **不直接起 CC 执行消息** — Ian 明批 governance batch GO 后才进入 CC 执行
+5. **Phase D 封顶 regen mandatory** — Snapshot 全文 regen post governance commit batch (live 增量 mode 切回 next regen 节奏点)
+6. **Phase E entry preparation** post Phase D 封顶 — Phase E spec writer continue Pattern #10-15 carry-forward + Helper review depth extension + canonical pnpm test:integration baseline
 
-### 9.5 不启动原则 (Phase D-5e Task 26 启动期)
+### 9.5 Phase D-5e Task 26 + 全 Phase D 累积 governance contributions (供 Phase D 整体 closure batch Plan Opus 理解协作节奏 + 升格 evidence base)
 
-1. 读完 ritual (9.2) → CoT 输出 Task 26 scope + Phase D 1-11 carry-forward ack + Phase D 整体 closure governance commit prep
-2. Stage 0 CC pre-flight verify (D89 + D91 + D92 strict + Pattern #11 + plan patch v13 vs β-path decision point)
-3. Plan Opus consume dump → judge alignment, decide spec design (plan patch v13 path OR β-path spec edit path)
-4. Task 26 spec produce: Stage 0-5 single commit (含 Stage 5 NEW test atomic) → Ian 明批 → Helper review → CC 执行
-5. **不直接起 CC 执行消息** — Ian 明批 spec GO 后才进入 CC 执行
-6. **Pattern #10 NEW Stage 1.5 threshold pre-write self-discipline** carry-forward — grep实证 actual heredoc body for each fail-loud gate count threshold (Plan Opus discipline; 4-category coverage: sig + body + JSDoc + comment-block ack refs per Task 25 Round 3 lesson)
-7. **Pattern #11 Stage 0 test import chain verify** carry-forward — confirm all eagerly-constructed Prisma clients have valid env in test:integration + verify canonical command invocation pattern + check sibling test files
-8. **Pattern #12 DEPRECATED — use canonical `pnpm test:integration`** (NOT isolated workaround — Phase C cleanup baseline restored Task 24 batch)
-9. **Pattern #13 default-lean fix-now for non-target Stage 5 catches** carry-forward
-10. **Pattern #14 D77 Round 2 git log --grep uniqueness gate** — COUNT = 1 ASCII pattern
-11. **Pattern #15 Stage 5 Test Gate detection + resolution timing judgment** — Plan Opus α/β/γ weighs scope/urgency/canonical-command-functionality at any catch
-12. **Phase D 整体 closure governance commit batch atomic decide** post Task 26 land (NOT this spec)
+Phase D-5e Task 26 batch (3-4 commits): plan patch v13 `e760679b` docs pre-batch + plan patch v14 `587a565b` docs (Round 6 absorbed) + Task 26 feat `<FEAT_SHA_PENDING>` (atomic absorb含 Stage 5 NEW 14 tests + Snapshot 5 Edits) + optional D77 Round 2 mini-commit
 
-### 9.6 Phase D-5d Task 25 impl + Phase D 整体 closure 准备 记录 (供 Phase D-5e Task 26 Plan Opus 理解协作节奏 + closure batch atomic decide基础)
+- 0 NEW 规则 8 暂停 Task 26 期 / 0 critical fabrication 逃逸
+- **1 真 fail-loud Task 26 Round 5 (Worker CC Stage 1.5 G-T26.6.6 broad regex JSDoc false positive) + 1 Round 6 catch (Worker CC Stage 2 Set narrowing TS bug from Plan Opus heredoc) both Patch B Mode 1 absorbed**
+- **100% mechanical paste post v13 + v14** — Task 26 Stage 1 verbatim plan source paste; cleaner mechanism than Task 25 4-category β-path; preserved through 2 fail-loud cycles
+- **D55 trigger 3rd live demo Phase D** (revokeModules genuine multi-step + Set<ModuleId> explicit widen post-v14) + D92 candidate Family A/B/C/D categorization NEW formal + D93 候选 3rd live demo + canonical baseline maintained Task 24→25→26 consecutive
+- **Worker CC discipline progression Round 5 → Round 6** — honest self-report (local adapt at G-T26.6.6) → proper pause+report+enumerate α/β/γ protocol (at Stage 2 Round 6 catch). Reinforcement effective.
+- **Phase D 11/11 + 附录 5 close milestone confirmed** — Phase D 整体 closure governance commit batch scheduled next session for 升格 atomic decide
 
-Phase D-5d Task 25 batch (1 feat commit + optional D77 Round 2): Task 25 feat `d2792b6d79adfe22792515aadc607f0bc2337453` (atomic absorb含 Stage 5 NEW 16 tests + Snapshot 5 Edits) + optional D77 Round 2 mini-commit
-
-- 0 规则 8 暂停 / 0 critical fabrication 逃逸
-- **1 forward-fix Task 25 期 (Round 3 α path G-T25.6.1 threshold, impl 不动)** (β-path = spec design pre-commit, NOT post-write α; Task 24 self-violation lesson absorbed proactively via Pattern #10 + 3 iterative refinement Rounds Task 25 spec produce cycle)
-- **Stage 5 NEW 2nd land** — repo test atomic with impl + 16 cases real Postgres DB + RLS + business semantic oracle independent of plan WHERE clause. Stage 5.3 canonical `pnpm test:integration` 6 files / 50 tests all pass + exit 0 (vs Task 24 batch 5/34 baseline + 1 file + 16 tests).
-- **β-path partial paste governance 1st live demo Mode C δ 桶族** — 4 categories / 10 line edits (estimatedWait drop sig+body+comment + phone strict extended scope add() + updateEntry per Helper Flag 1 + path correction 3 occurrences controllers/waitlist.service.ts + notifiedAt NEW comment) all Stage 1.5 pre-grep实证 verified incl. NEW G-T25.6.10/11 gates per Helper Flag 1 mitigation. Plan source verbatim preserved (NOT plan patch), spec heredoc captures β-path semantic divergence + governance trace.
-- **D93 candidate 2nd live demo** — Task 24 1st live demo caught 3 real infra sub-gaps + resolved via independent fix commits; Task 25 verifies baseline holds (no new infra gaps Task 25 期, +1 file +16 tests passing). 多次 catch validation across multi-batch carry-forward.
-- **defense-in-depth Stage 5 Test Gate baseline maintained Task 25 期** — L1 Plan Opus self-audit (Pattern #10 pre-grep实证) → L3 CC fail-loud (Stage 0/1.5/2) → **Stage 5 Test Gate** baseline check → L6 Helper review → CC execute. 0 new catches Task 25 期 (Pattern #11 forward defense effective; baseline maintenance work-as-designed).
-- **Phase D 整体 closure governance commit prep accumulated** — post Task 26 land batch atomic decide for D89 (formal already)/D91 (累积 6+3+4+Pattern #10 iterative)/D92 (累积 2+β-path extension)/D93 (累积 2+多次 catch) 升格 + Cat 5 子项 sub-family integration + Phase D entry summary.
+Full Phase D summary (post Task 26 land):
+- 11 numbered Phase D tasks (Task 16-26) + 1 appendix (printer)
+- 3 Phase C infra fix sibling commits (Task 24 batch cleanup)
+- 6 plan patches (v9 Task 21 + v10 Task 22 + v11 Task 23 + v12 Task 24 + v13 Task 26 + v14 Task 26) + 1 β-path batch (Task 25)
+- 6 D91 self-violation data points (Task 24 expiresAt + Task 25 Round 1/2/3 + v13 Round 4 + Task 26 Round 5) all forward-fixed
+- 1 D92 Family D NEW Round 6 (Task 26 heredoc compile correctness verify gap) absorbed via v14 plan patch
+- Pattern #10 5-category coverage evolution (Round 1-5 iterative refinement)
+- D89 mandate 7 specs consecutive sustained
+- D92 Family A/B/C/D cast categorization formal
+- D93 3 consecutive live demos + 多次 catch validation
+- Cat 5 子项 sub-family integration (DP10/11/12)
+- Plan patch family v9-v14 + β-path family + 100% mechanical paste post-plan-patch — Mode C δ 桶族 governance evolution
+- Helper review depth extension sustained
+- Worker CC discipline progression Round 5 → Round 6
+- Multi-batch governance accumulation = strong base for next phase (E/F/G/H) governance discipline carry-forward
 
 ## 10. 当前修订轨迹
 
@@ -965,5 +982,24 @@ Phase D-5d Task 25 batch (1 feat commit + optional D77 Round 2): Task 25 feat `d
   - **D77 forward-fix 模板 reuse**: 本 D89 升格 commit 自身 SHA 至 commit land 后 Round 2 mini-commit replace `c0b8f4e0db138294c1a75de35aa8b7e3978a0645` placeholder → actual SHA (4 occurrences across digest + snapshot, Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + closure `ffc7719f` precedent)
   - **升格 spec 自违反 第 3 个 live demo + Patch B 模式 + Helper protocol 1/2/3 ack**: 本升格 spec 自违反 D89 mandate path anchor 印象映射 (Spec A literal `docs/superpowers/handoff/` 凭 Project knowledge mirror view 推断 vs 实际 `docs/superpowers/archive/`, D89 entry 禁印象 source 之一 = Project knowledge upload-time snapshot 命中). CC Stage 0 fail-loud 兜底 catch — 第 3 个 spec writer live demo (post plan v10 Stage 0 + Stage 2 双 instance). Ian 决议采 Patch B 模式 + Helper Opus cross-instance refinement 提 protocol 1/2/3 (Stage 0 anchor verify strict + A 不 amend D77 forward-fix + ≤ 5 single-line edit threshold) — Plan Opus 产 B-spec 修订 instructions 按 protocol compliance, CC apply A + B mental merge + execute. 节俭 token + 维持 Spec A 整体结构 + 仅 patch deltas, 同 D77 forward-fix template 节俭精神延伸 (commit-level Round 2 + spec-level Patch B 双 layer). Cat 5 子项 数据点累积 +1 (本 spec 第 12 sub-instance, 升格 spec field test 即 immediate 验证 D89 mandate value). 同时触发 D90 候选 entry (Spec forward-fix economic mode rubric — Mode 1 Patch B + Mode 2 CC dump assist + Mode 3 full respec, 与 D77 commit-level forward-fix family 关联, deferred 入下次 governance commit batch decide with fab archive 候选 + Helper handoff v3.X anti-pattern entries).
   - **本 batch β 路径**: D89 governance docs commit atomic (governance-digest + state-snapshot 2 files, 5 Edits) + Round 2 mini-commit + Helper async review trigger (post-Step 1 land) + Project knowledge re-upload mandate (Helper review return clean + Plan Opus closure ack 后 Ian Desktop App 操作) + Task 22 L1 work-log spec 后 session 续 (post-D89 land baseline + attention fresh)
+
+---
+
+- **2026-05-22 v5.X+8 批 (Phase D-5e Task 26 platform-admin.ts L2 100% mechanical paste impl atomic absorb post v13 + v14 + Stage 5 repo test 14 cases 3rd land + Phase D 11/11 + 附录 5 ✅ Phase D 完成 milestone — plan patch v13 `e760679b` docs + plan patch v14 `587a565b` docs + Task 26 feat `<FEAT_SHA_PENDING>` atomic feat commit + optional D77 Round 2)**:
+  - §1 时点 / Phase D **10/11 + 附录 5 → 11/11 + 附录 5 ✅ Phase D 完成 milestone confirmed** + 下一对话目标 update to **Phase D 整体 closure governance commit batch atomic decide**
+  - §3 commit chain Phase D-5e 段 prepend (3-4 commits): v13 docs `e760679b` + v14 docs `587a565b` + Task 26 feat `<FEAT_SHA_PENDING>` + optional Round 2 mini-commit — 100% mechanical paste post v13+v14 + Stage 5 NEW 3rd land + canonical baseline maintained + Round 5/6 absorbed via Patch B Mode 1 + v14 plan patch + D55 3rd live demo + D92 Family A/B/C/D NEW formal + D93 3rd live demo
+  - §4'' Phase D 完成总览 heading unchanged (Task 25 spec pre-emptively set "11/11" — post Task 26 land = factually accurate) + Task 26 row (`<FEAT_SHA_PENDING>` + v13 + v14) + Acceptance bullets 11 NEW (Phase D 11/11 close + 100% mechanical paste post v13+v14 + D55 3rd + D92 Family A/B/C/D + D93 3rd + Pattern #11 effective + Pattern #10 5-category + D89 7th + D91 7th + 6 self-violation data points all forward-fixed + Worker CC discipline progression + Mode C δ 桶族 evolution + Phase D 整体 closure scheduled)
+  - §9 整节重写 **Phase D 整体 closure governance commit batch atomic decide ritual** (NEW — Task 26 = Phase D 最后一个 task, §9 升级)
+  - §10 本条目
+  - **触发事件**: Phase D-5e Task 26 batch land (v13 + v14 + Task 26 feat + optional Round 2) + 100% mechanical paste post v13+v14 + Round 5/6 absorbed + Phase D 11/11 + 附录 5 close milestone confirmed
+  - **同期 Archive 候选 deferred**: D91/D92/D93 候选 数据点累积 — defer Phase D 整体 closure governance commit batch atomic decide next session per Helper Flag 2 protocol
+  - **本 batch Path 路径**: Atomic absorb β路径 (1 feat commit + Snapshot 5 Edits + optional Round 2 D77). Pre-batch v13 + v14 plan patches sequential lands (Deliverable 1 + 1.5). Round 5 + Round 6 absorbed via Patch B Mode 1 + v14 plan patch.
+  - **`<FEAT_SHA_PENDING>` D77 forward-fix template Round 2 placeholder replace** if self-reference in commit body + Snapshot per precedent (Task 17 + Task 19 + D-4 + D89 升格 + Step 1 + Step 3 + 附录 5 + Task 23 + Task 24 + Task 25 reuse). Pattern #14 git log --grep uniqueness gate + ASCII pattern + G-PV.8 substring guard for multi-placeholder.
+  - **D89 + D91 + D92 + D93 candidates inline self-application 7th post-formal-land spec live field test pass sustained + Pattern #10 5-category coverage applied (Round 4 + Round 5 + Round 6 lessons absorbed)** — 6 self-violation data points + 1 Family D NEW all forward-fixed; spec produce iterative refinement effective; Worker CC discipline progression Round 5 → Round 6 reinforcement
+  - **100% mechanical paste post v13 + v14 + plan patch family v9-v14 + β-path family (Task 25) + 100% mechanical paste post-patch (Task 26) = Mode C δ 桶族 governance evolution complete Phase D** — 3 mechanisms proven, carry-forward Phase E/F/G/H
+  - **Phase D 整体 closure governance commit batch scheduled next session** — D89/D91/D92/D93 候选 升格 + Cat 5 子项 sub-family integration + Pattern #10 5-category formal + Family A/B/C/D cast categorization formal + Phase D entry summary + Phase D 封顶 regen mandatory + Phase E entry preparation
+  - **v15 candidate Phase E pre-wiring**: RLS comment imprecision plan source fix (line 800-801 "platform_admins table has its own RLS policy" factually wrong per Stage 0 [确认] 2; Recommended timing BEFORE Phase E platform-admin wiring per Helper Flag 1)
+
+---
 
 *Phase 5 State Snapshot · live 增量维护, 每对话收尾更新, Phase 封顶 regen · 与 Governance Digest + Fabrication Archive 配套*
