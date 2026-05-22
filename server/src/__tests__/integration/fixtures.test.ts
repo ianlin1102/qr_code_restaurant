@@ -14,7 +14,9 @@ describe('fixtures', () => {
     expect(result.id).toBeTruthy()
     expect(result.name).toBe('Fixture Test')
 
-    const license = await testDb.moduleLicense.findUnique({ where: { storeId: result.id } })
+    const license = await withTestTenant(result.id, async (tx) =>
+      tx.moduleLicense.findUnique({ where: { storeId: result.id } })
+    )
     expect(license?.modules).toEqual(['core'])
   })
 
