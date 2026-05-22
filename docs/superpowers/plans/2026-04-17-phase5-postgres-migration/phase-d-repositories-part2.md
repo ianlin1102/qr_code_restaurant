@@ -201,7 +201,7 @@ export const roleRepo = {
         storeId: data.storeId,
         name: data.name,
         nameEn: data.nameEn ?? null,
-        permissions: data.permissions as unknown as Prisma.InputJsonValue,
+        permissions: data.permissions,
         isSystem: false,
       },
     }),
@@ -225,7 +225,7 @@ export const roleRepo = {
         ...(patch.name !== undefined && { name: patch.name }),
         ...(patch.nameEn !== undefined && { nameEn: patch.nameEn }),
         ...(patch.permissions !== undefined && {
-          permissions: patch.permissions as unknown as Prisma.InputJsonValue,
+          permissions: patch.permissions,
         }),
       },
     }),
@@ -260,7 +260,7 @@ export const roleRepo = {
           storeId,
           name: 'owner',
           nameEn: 'Owner',
-          permissions: ALL_PERMISSIONS as unknown as Prisma.InputJsonValue,
+          permissions: ALL_PERMISSIONS,
           isSystem: true,
         },
       })
@@ -271,7 +271,7 @@ export const roleRepo = {
           storeId,
           name: 'manager',
           nameEn: 'Manager',
-          permissions: MANAGER_PERMISSIONS as unknown as Prisma.InputJsonValue,
+          permissions: MANAGER_PERMISSIONS,
           isSystem: true,
         },
       })
@@ -282,7 +282,7 @@ export const roleRepo = {
           storeId,
           name: 'waiter',
           nameEn: 'Waiter',
-          permissions: WAITER_PERMISSIONS as unknown as Prisma.InputJsonValue,
+          permissions: WAITER_PERMISSIONS,
           isSystem: true,
         },
       })
@@ -296,7 +296,7 @@ export const roleRepo = {
         await tx.role.update({
           where: { id: owner.id },
           data: {
-            permissions: ALL_PERMISSIONS as unknown as Prisma.InputJsonValue,
+            permissions: ALL_PERMISSIONS,
           },
         })
       }
