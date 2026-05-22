@@ -918,7 +918,7 @@ export const platformAdminRepo = {
     }
 
     const currentIds = current.modules as ModuleId[]
-    const toRemove = new Set(removeList.filter(m => m !== 'core'))
+    const toRemove = new Set<ModuleId>(removeList.filter(m => m !== 'core'))
     const remaining = currentIds.filter(id => !toRemove.has(id))
 
     // Ensure core persists even if it wasn't originally listed (defensive).
