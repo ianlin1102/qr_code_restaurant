@@ -500,7 +500,7 @@ export const couponRepo = {
       where: {
         storeId,
         code,
-        active: true,
+        isActive: true,
         OR: [
           { expiresAt: null },
           { expiresAt: { gt: new Date() } },
@@ -516,7 +516,7 @@ export const couponRepo = {
       discountValue: number
       minOrderAmount?: number | null
       maxUses?: number | null
-      active?: boolean
+      isActive?: boolean
       expiresAt?: Date | null
     },
     db: Db
@@ -530,7 +530,7 @@ export const couponRepo = {
         minOrderAmount: data.minOrderAmount ?? null,
         maxUses: data.maxUses ?? null,
         currentUses: 0,
-        active: data.active ?? true,
+        isActive: data.isActive ?? true,
         expiresAt: data.expiresAt ?? null,
       },
     }),
@@ -543,7 +543,7 @@ export const couponRepo = {
       discountValue?: number
       minOrderAmount?: number | null
       maxUses?: number | null
-      active?: boolean
+      isActive?: boolean
       expiresAt?: Date | null
     },
     db: Db
