@@ -818,7 +818,7 @@ export const platformAdminRepo = {
     data: {
       email: string
       passwordHash: string
-      displayName?: string | null
+      role: string
     },
     tx: Prisma.TransactionClient
   ): Promise<PlatformAdmin> =>
@@ -826,7 +826,7 @@ export const platformAdminRepo = {
       data: {
         email: data.email,
         passwordHash: data.passwordHash,
-        displayName: data.displayName ?? null,
+        role: data.role,
       },
     }),
 
