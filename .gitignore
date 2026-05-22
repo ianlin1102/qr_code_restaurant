@@ -45,3 +45,6 @@ server/.codebuddy/
 server/skills/
 server/skills-lock.json
 server/prisma/schema.prisma.pre-phase5
+
+# SPV v1.3 — heredoc placement + sentinel scratch (see docs/superpowers/archive/spv-design.md §1 SPV-3)
+server/src/__spv__/
