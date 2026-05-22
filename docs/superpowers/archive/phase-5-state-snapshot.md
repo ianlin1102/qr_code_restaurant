@@ -13,13 +13,13 @@
 
 ## 1. 当前时点
 
-- **最后更新**: 2026-05-20 (Phase D-5a' printer 附录 L1 impl atomic absorb — `f76ced17` 2 methods findByStoreId + upsertConfig (D55 多步 tx 强制 signature `tx: Prisma.TransactionClient`, vs Task 22 closeTimeEntry read-guard NOT 触 D55). Stage 0-4 single feat commit per Task 17/19/22 α′ atomic absorb precedent. Schema-migration-avoiding path B live (findFirst + create/update flow, Printer schema `@@index([storeId])` NOT `@@unique` per plan v10 附录 5 + Snapshot §7.23). 附录-direct 创建 NOT Phase D numbered task (00-index.md Phase D task count 不变 per plan v10 line 1758-1764 设计决策). D89 mandate inline self-application 3rd post-formal-land spec live field test pass (本 spec 写作期 anchor literal 全 fresh from 直读/git/grep, 0 印象 source — sustained across 3 specs consecutive). D91 inline strict apply 3rd live precedent pass (Stage 0 schema dump section NOT pre-write 'Expected fields' — 累积 3 live precedents 满足 升格 ripening threshold, pending Helper protocol 1/2/3 refinement + Phase D 整体 closure governance commit batch atomic decide). Stage 0 G-printer.4 Prisma client path-agnostic verify (refined from Step 3 G-T22.4 path-drift lesson — Prisma 6.19.2 + pnpm 生成 client 在 `node_modules/.pnpm/@prisma+client@*/node_modules/.prisma/client/index.d.ts` workspace-hoisted, NOT `server/node_modules/.prisma/client/`. Step 3 G-T22.4 path 检查 over-paranoid always trigger, idempotent harmless; printer spec G-printer.4 path-agnostic find + grep 修正). 0 legacy field match (ipAddress/enabled/paperWidth = 0). 0 真 fail-loud / 0 暂停 / 0 forward-fix printer 附录期 (D77 Round 2 SHA placeholder replace 不计 forward-fix scope per Task 17/19/D-4/D89/Step 1/Step 3 precedent reuse).)
-- **最后 commit on main**: `f76ced17` feat(phase-5): Phase D 附录 5 — printer repository
+- **最后更新**: 2026-05-21 (Phase D-5b Task 23 roles.ts L1 impl atomic absorb post Stage 2 fail-loud + plan patch v11 forward-fix — `<FEAT_SHA_PENDING>` 8 methods + L1 核心 helper `resolveLicensedPermissions` + 3 system role permission constants. **Stage 2 fail-loud catch (work-as-designed L3 defense): 6 new TS2322 errors from heredoc verbatim `as unknown as Prisma.InputJsonValue` cast — wrong type discriminant for schema `Role.permissions String[]` (Postgres native array). α path forward-fix: plan patch v11 (`538d00e2`) strip 6 cast occurrences from part2 Task 23 heredoc (Permission[] IS string[] compatible — union of string literals widening assignable to Prisma generated `string[] | RoleCreatepermissionsInput` input type). Same family as plan patch v9 (Task 21 update-block field preservation)**. **`ensureSystemRoles` 触 D55 多步 tx 强制** (signature `tx: Prisma.TransactionClient` 编译期强制, up to 4 round-trips) — Phase D-5b D55 trigger 2nd live demo (vs 附录 5 upsertConfig 1st). **L1 细 verify per plan title** validated. D89 mandate inline self-application 4th post-formal-land spec live field test pass. **D91 scope extension applied to Stage 1.5 semantic verify** (Helper post-printer governance observation absorbed pre-formal-land — fail-loud gates vs informational counts 区分, 1st live demo). G-T23.4 Prisma client path-agnostic G-printer.4 pattern carry-forward. **D92 候选 NEW governance observation** (Phase D 整体 closure batch candidate): "Spec writer heredoc verbatim mechanical paste must cross-verify embedded type cast discriminant vs schema field type" — sub-rule extending #30 防御层. Same family as D89 升格 batch `\bclockOut\b` count drift + 附录 5 `tx: Prisma.TransactionClient` 2-count drift, MORE severe (semantic TS2322 real error vs prior cosmetic count drift). **L3 CC fail-loud defense work-as-designed** — Stage 2 tsc catch ✅, governance trace 完整 (Worker fail-loud report → Plan Opus α/β/γ → Ian 明批 → plan patch v11 + redo). 1 forward-fix Task 23 期 (plan patch v11 forward-fix scope per Task 17/19 round 2 + D-4 closure + plan patch v9 family precedent).)
+- **最后 commit on main**: `<FEAT_SHA_PENDING>` feat(phase-5): Phase D Task 23 — roles repository + licensed-permissions helper
 - **Phase B 状态**: **10/10 完成 ✅**
 - **Phase C 状态**: **5/5 完成 ✅** (Batch 1: Task 11/12/13 / Batch 2: Task 14 / Batch 3: Task 15)
-- **Phase D 状态**: **8/11 完成 + 附录 5 printer ✅** (D-1 Task 16 store.ts `019ab826` ✅ + D-2 Task 17 orders.ts `ff5e881b` ✅ + D-3a Task 18 sessions.ts `cb2efd5e` ✅ + D-3b Task 19 payments.ts `a7752a30` ✅ + D-4 Task 20 split-bills.ts `cf46f1c5` ✅ + D-4 Task 21 menu.ts `aaf9fa79` ✅ + D-5a Task 22 staff.ts `11382d86` ✅ + D-5a' 附录 5 printer.ts `f76ced17` ✅ 2 methods), Task 23-26 ⏸️ 待启动 (D-5b Task 23 roles.ts next session per §9 ritual → D-5c Task 24 coupons.ts → D-5d Task 25 waitlist.ts → D-5e Task 26 platform-admin.ts sequence per plan patches v11/v12 future)
+- **Phase D 状态**: **9/11 完成 + 附录 5 printer ✅** (D-1 Task 16 store.ts `019ab826` ✅ + D-2 Task 17 orders.ts `ff5e881b` ✅ + D-3a Task 18 sessions.ts `cb2efd5e` ✅ + D-3b Task 19 payments.ts `a7752a30` ✅ + D-4 Task 20 split-bills.ts `cf46f1c5` ✅ + D-4 Task 21 menu.ts `aaf9fa79` ✅ + D-5a Task 22 staff.ts `11382d86` ✅ + D-5a' 附录 5 printer.ts `f76ced17` ✅ + D-5b Task 23 roles.ts `<FEAT_SHA_PENDING>` ✅ 8 methods + L1 核心 helper, post Stage 2 fail-loud + plan patch v11 forward-fix), Task 24-26 ⏸️ 待启动 (**D-5c Task 24 coupons.ts plan patch v12 needed FIRST** per §7.23 `active` → `isActive` schema rename, **v12 renumbered from previously-planned v11** since v11 consumed by Task 23 Stage 2 fail-loud forward-fix → D-5d Task 25 → D-5e Task 26 sequence)
 - **累积 governance commit batch decide queue** (Phase D 期累积, 入下次 governance commit decide): #28 Snapshot v5.0 self-fab + #29 D88 维度 3 anchor literal grep 实证 (5 + 8th workspace path + 9th D86 self-claim 数据点) + #30 D79 Plan-as-code dryrun missing (2 数据点 Task 17 G-T17.6 + Stage 2 Prisma XOR + Stage 2-fix.0 schema discovery) + Cat 5 子项 **9 数据点** (含 DP8, 详 §7.23) (Cowork workspace path 假设 + Helper Round 2 Flag A + 4 Phase D-2 Task 17 期 + DP6 D-4 batch entry CC Stage 0 dump 6+ 字段 schema-vs-plan drift catch in spec 写作前 + DP7 Snapshot path 假设 `handoff/` vs 实际 `archive/` D-4 closure prep self-application) + **D89 formal land** at `c0b8f4e0db138294c1a75de35aa8b7e3978a0645` (Phase D-5 batch L1 plan patch v10 `39666dc8` 期双 instance D88 维度 3 self-违反 trigger — Stage 0 HEAD anchor `7ec04772` 印象 vs 实际 `aa7d5829` + Stage 2 `\bclockOut\b count = 0` vs Patch D new_str `(double-clockOut guard)` self-cross-scan missing; Cat 5 子项 11+ 数据点 trend rising 升格判 ripening 满足; Helper async review for `2590ab04` Step 1 work-log skip per Default Push Forward Rule 2; Step 3 spec Helper cross-instance review verdict ✅ verbatim approve + 2 minor flags absorbed; Step 3 impl Helper async review pending Step 3 impl land per L1 default) + **D91 候选 NEW** — Plan Opus spec writer expected-output minimization (CC dump = ground truth principle), D89 sub-rule extension. Origin: Phase D-5 batch L1 Task 22 work-log §2 G-T22.2 pre-write (`2590ab04`, 2026-05-14, Ian observation 1). Live precedent: **3 data points 满足 升格 ripening threshold** (Step 1 sub-violation γ baseline + Step 3 spec strict pass preventive design + printer 附录 spec strict pass preventive design sustained — accumulated cross 3 specs consecutive). Defer formal entry to: Helper protocol 1/2/3 refinement + Phase D 整体 closure governance commit batch atomic decide + 4 entries deferred (Pre-Flight Checklist D86 gate semantic / Project description D86 sync / Snapshot §6 D86 sub-class / Phase H §7 heading rename + D86 verify spec template — D88 维度 3 延伸 sub-rule 已 absorbed into D89 source freshness mandate) + **Stripe CLI dev infra DNS fail informational** (out-of-scope Phase 5; **P0 凭据泄漏** whsec_b678... 本地测试 secret 暴露在 agent task log, Ian discretion `stripe listen --print-secret --skip-update` rotate) + **D89 mandate 2nd post-formal-land spec live field test pass** (Task 22 Step 3 spec 写作期 15 anchor literal 全 fresh from 直读/git/grep, 0 印象 source — vs `2590ab04` Step 1 spec 1 ⚠️ gray-area §7.23 prior captured 子类; CC-as-Planner architectural switch first spec quality validated by Helper review, file access = D89 mandate 自动满足) + **closeTimeEntry TOCTOU race window informational** (Helper Flag 1 — read clockOutAt null check + update concurrent close race window 存在, Risk A pre-verdict α path accept stands per "Race tolerance: business-level last update wins NOT data loss", deferred to Phase G Agent C runtime / Phase H integration test cover, NOT block Step 3) + **D89 mandate 3rd post-formal-land spec live field test pass** (printer 附录 spec 写作期 anchor literal 全 fresh from 直读/git/grep, 0 印象 source — sustained across 3 specs consecutive; CC-as-Planner architectural mode = D89 自动满足 stable pattern) + **G-printer.4 Prisma client path-agnostic refinement informational** (Step 3 G-T22.4 path drift lesson absorbed — Prisma 6.19.2 + pnpm 生成 client 在 workspace-hoisted `.pnpm/@prisma+client@*/.../.prisma/client/` NOT server-local `server/node_modules/.prisma/client/`, path-agnostic find + grep approach 修正; D82 auto-recover gate 仍 carry-forward)
-- **下一对话目标**: **Phase D-5b Task 23 roles.ts spec produce** (`phase-d-repositories-part2.md` Task 23 plan段, roleRepo methods 含 Phase E 段 3b 决策点 E `findByName` 回填). Pre-flight per §7.23 D-5b/c/d findings: Task 23 informational only 0 patches needed (Permission import verify only at Phase G/E 启动期, NOT plan patch scope). L1 vs L2 决议: Plan Opus 启动 ritual 期 derive (default L2 per scope simplicity; L1 upgrade trigger 如 Helper raises). Plan Opus 启动 ritual per §9.2 重写为 Task 23 baseline.
+- **下一对话目标**: **Phase D-5c Task 24 coupons.ts plan patch v12 spec produce FIRST** (renamed from previously-planned v11 since v11 consumed by Task 23 Stage 2 fail-loud forward-fix — `active` → `isActive` rename per §7.23 D-5c finding). Plan patch v12 是 D-5c batch entry first deliverable. Plan patch v12 land 后 → Task 24 spec produce uses updated heredoc as ground truth. Plan Opus 启动 ritual per §9.2 重写为 Task 24 plan patch v12 + impl.
 
 
 ## 2. Phase 进度表
@@ -43,6 +43,13 @@
 ---
 
 ## 3. 最近 commit 链(按时间倒序)
+
+### Phase D-5b 对话 (2026-05-21, plan patch v11 + Task 23 roles.ts L1 impl atomic absorb post Stage 2 fail-loud + α path forward-fix, 2-3 commits + 1 Stage 2 fail-loud catch (work-as-designed L3 defense) + α path forward-fix via plan patch v11 + 0 暂停 / 0 critical fabrication 逃逸 + Phase D-5b D55 多步 tx 强制 2nd live demo (ensureSystemRoles) + L1 细 verify per plan title + D89 mandate 4th post-formal-land spec live field test pass sustained + D91 scope extension 1st live demo applied to Stage 1.5 semantic verify + **D92 候选 1st live demo** Plan Opus spec writer heredoc verbatim paste embedded type cast discriminant vs schema field type cross-verify gap)
+
+| SHA | 性质 | 内容 |
+|---|---|---|
+| `<FEAT_SHA_PENDING>` | feat | Phase D Task 23 — roles repository + licensed-permissions helper (post Stage 2 fail-loud + plan patch v11 forward-fix) — 8 methods + L1 核心 helper `resolveLicensedPermissions` + 3 system role permission constants 镜像 `role.service.ts:7-31` + Phase E 段 3b 回填 `findByName` (决策点 E) — `ensureSystemRoles` 触 D55 多步 tx 强制 signature `tx: Prisma.TransactionClient` (up to 4 round-trips) — **Phase D-5b D55 多步 tx 强制 2nd live demo work-as-designed** (vs 附录 5 upsertConfig 1st) + L1 细 verify per plan title / **Stage 2 fail-loud catch + α path forward-fix via plan patch v11 (`538d00e2`)** — heredoc verbatim mechanical paste embedded `as unknown as Prisma.InputJsonValue` cast (6 occurrences) vs schema `Role.permissions String[]` → 6 TS2322 in Stage 2. plan patch v11 strip 6 cast occurrences in part2. **D92 候选 1st live demo** governance observation: spec writer heredoc verbatim paste must cross-verify embedded type cast discriminant vs schema field type. **L3 CC fail-loud defense work-as-designed** Stage 2 tsc catch ✅ / Stage 0 G-T23.1-5 + G-T23.10 全 pass (re-run post v11) + G-T23.4 path-agnostic G-printer.4 pattern carry-forward / Stage 1 plan part2 heredoc verbatim mechanical paste (post v11 strip) line 106-379 / Stage 1.5 G-T23.6 **D91 scope extension applied** (fail-loud gates: tx ≥ 1 + rolePerms.filter = 1 + findByName = 1 + legacy isActive/enabled = 0 + post-v11 InputJsonValue = 0 + Permission[] read-side = 3 KEEP) / Stage 2 tsc filtered=0 + N1=103 baseline (D83 diff=0 Pass post v11) / Stage 3 D75 + D76 + D86 全 pass / Stage 4 Snapshot 增量 atomic absorb / **D89 mandate 4th post-formal-land spec live field test pass** / **D91 inline strict apply 4th live precedent + 1st scope extension sub-rule** / **D92 候选 NEW 1st live demo** |
+| `538d00e2` | docs | Phase D plan patch v11 — Task 23 roles.ts permissions cast schema alignment (strip 6 `as unknown as Prisma.InputJsonValue` write-side cast occurrences from part2 Task 23 heredoc lines 204/228/263/274/285/299; read-side `as unknown as Permission[]` 3 occurrences at lines 294/337/350 KEEP — narrowing cast string[] → Permission[]) — schema `Role.permissions String[]` Postgres native array, Prisma input type `string[] \| RoleCreatepermissionsInput` NOT InputJsonValue. Permission union of string literals widening assignable to string[] without cast. Same family as plan patch v9 (Task 21 update-block field preservation). Trigger: Task 23 Stage 2 fail-loud 6 TS2322 errors. **D92 候选 governance observation registered** (Phase D 整体 closure batch candidate). Renumbering: v11 = Task 23 fix (this session), v12 = Task 24 active → isActive next D-5c session. |
 
 ### Phase D-5a' 对话 (2026-05-20, 附录 5 printer.ts L1 impl atomic absorb, 1-2 commits + 0 暂停 + 0 真 fail-loud + Phase D-5a' D55 多步 tx 强制 first live demo + D89 mandate 3rd post-formal-land spec live field test pass + D91 inline strict apply 3rd live precedent 满足 升格 ripening threshold)
 
@@ -204,7 +211,7 @@
 
 ---
 
-## 4''. Phase D 完成总览(进行中 8/11 + 附录 5 printer ✅)
+## 4''. Phase D 完成总览(进行中 9/11 + 附录 5 printer ✅)
 
 | Task | SHA 链 | 核心产出 |
 |---|---|---|
@@ -216,6 +223,7 @@
 | 20 | `cf46f1c5` | split-bills.ts D56 FK model 复用 Task 19 同模式 (6 methods 3 reads + 3 writes 含 1 多步 tx create + 1 聚合 sumAssignedQuantityByOrderItem / D56 FK + quantity 复用 PaymentItem 同模式 / 5 维度 verdict 全 Pass L2 简化 / Stage 0 G-T20.1-3 + Stage 2 tsc filtered=0 + N1=103 baseline / 119 lines / **G-T20.10 XOR predict autonomous** (CC 加, Task 17→18→19 carry-forward 模式扎根) / SplitBillStatus enum 'active' literal accept (Prisma 6 string-literal narrowing live precedent) / **#30 防御层 third live demo work-as-designed** / 0 真 fail-loud) |
 | 21 | `aaf9fa79` + plan patch v9 `06a746d7` | menu.ts Category + MenuItem + MenuItemOption 3-entity bundle (8 methods 4 reads + 4 writes 含 1 多步 tx replaceItemOptions wipe+reinsert 同 replaceDraftItems 模式 / POST plan-patch-v9 update-block field preservation incorporated 4 hunks (Patch A 5 fields + Patch B 11 fields + Patch C.1 6 fields options shape + Patch C.2 8 fields data block) / 5 维度 verdict 全 Pass L2 简化 / Stage 0 G-T21.1-3 + Stage 1 post-write v9 6 字段 grep 实证 + Stage 2 tsc filtered=0 + N1=103 baseline / 136 lines / **#30 防御层 fourth live demo work-as-designed** (Task 18/19/20/21 4 consecutive carry-forward) + **D89 候选升格条件 ripening** — 4 live demos + Cat 5 trend 8 数据点 + plan patch v9 batch-level 应用 demo / 0 真 fail-loud) |
 | 22 | `11382d86` + work-log `2590ab04` + closure handoff `73d5c225` + D77 Round 2 `81307121` | staff.ts (12 methods 4 reads + 8 writes 含 Phase E 段 3b 回填 5 methods: delete + findActiveTimeEntry + createTimeEntry + closeTimeEntry read-guard pattern + listTimeEntries mapper) — Phase D 第 7 个 repo / closeTimeEntry NOT D55 trigger 一致 §7.23 reasoning ("read 是 guard NOT write 依赖 read 决分支") / D56 NA / D57 listAll RLS-relied / listTimeEntries belt-and-suspenders / D89 self-application Decision G refresh "duration in RETURN shape" mapper Math.floor((clockOutAt - clockInAt) / 60000) line 1598-1603 plan v10 / 5 维度 verdict 全 Pass / Stage 0 G-T22.1-5 + G-T22.10 全 pass + G-T22.4 Prisma client `pnpm prisma generate` auto-recover (D82 implicit, Time Machine env gap §7.15 DP3 第 2 数据点 family) / Stage 1 plan v10 heredoc verbatim mechanical paste line 1470-1607 / Stage 1.5 G-T22.6 全 pass / Stage 2 tsc filtered=0 + N1=103 baseline (D83 diff=0 Pass) / Stage 3 D75 + D76 + D86 全 pass / Stage 4 Snapshot 增量 atomic absorb (§1 + §3 + §4'' + §9 整节重写 D-5a' printer 附录 ritual + §10 v5.X+3 批) / 136 lines / **#30 防御层 5th live demo work-as-designed** (Task 18/19/20/21/22 5 consecutive carry-forward) / **D89 mandate inline self-application 2nd post-formal-land spec live field test pass** / **D91 inline strict apply 2nd live precedent pass** / 0 真 fail-loud / 0 暂停 / 0 forward-fix Step 3 期 |
+| 23 | `<FEAT_SHA_PENDING>` + plan patch v11 `538d00e2` | roles.ts (8 methods + L1 核心 helper resolveLicensedPermissions + 3 system role permission constants ALL/MANAGER/WAITER_PERMISSIONS 镜像 `role.service.ts:7-31` + Phase E 段 3b 回填 findByName 决策点 E) — **L1 细 verify** per plan title / **Stage 2 fail-loud catch + α path forward-fix via plan patch v11** (heredoc verbatim mechanical paste embedded `as unknown as Prisma.InputJsonValue` cast 6 occurrences vs schema `permissions String[]` → 6 TS2322 in Stage 2; plan patch v11 strip 6 cast occurrences in part2, Permission[] IS string[] compatible without cast) — same family as plan patch v9 (Task 21 update-block field preservation) / `ensureSystemRoles` 触 D55 多步 tx 强制 (up to 4 round-trips) — **Phase D-5b D55 多步 tx 强制 2nd live demo** (vs 附录 5 upsertConfig 1st, 4 round-trips vs 2) / `resolveLicensedPermissions` Phase 1+2+3 semantic parity vs legacy `role.service.ts:130-159` / Stage 0 G-T23.1-5 + G-T23.10 全 pass (re-run post v11) + G-T23.4 path-agnostic G-printer.4 pattern carry-forward / Stage 1 plan part2 heredoc verbatim mechanical paste (post v11 strip) line 106-379 / Stage 1.5 G-T23.6 **D91 scope extension 1st live demo** + post-v11 sanity gate (InputJsonValue = 0 + Permission[] read-side = 3 KEEP) / Stage 2 tsc filtered=0 + N1=103 baseline (D83 diff=0 Pass post v11) / Stage 3 D75 + D76 + D86 全 pass / Stage 4 Snapshot 增量 atomic absorb / 273 lines / **D89 mandate 4th post-formal-land spec live field test pass** / **D91 4th live precedent + 1st scope extension** / **D92 候选 1st live demo NEW** Plan Opus heredoc verbatim paste cast discriminant cross-verify gap / **L3 CC fail-loud defense work-as-designed** Stage 2 tsc catch ✅ / 1 forward-fix Task 23 期 (plan patch v11 α path) |
 | 附录 5 | `f76ced17` | printer.ts (2 methods findByStoreId + upsertConfig D55 多步 tx 强制 signature `tx: Prisma.TransactionClient`) — 附录-direct 创建 NOT Phase D numbered task per plan v10 line 1758-1764 (00-index.md 不变) / Schema-migration-avoiding path B (Printer schema `@@index([storeId])` NOT `@@unique` → findFirst + create/update flow at app layer) / **Phase D-5a' D55 多步 tx 强制 first live demo work-as-designed** (vs Task 22 closeTimeEntry read-guard NOT 触) / Stage 0 G-printer.1-5 + G-printer.10 全 pass + G-printer.4 path-agnostic refinement (Step 3 G-T22.4 path drift lesson absorbed — Prisma 6 + pnpm workspace-hoisted layout) / Stage 1 plan v10 附录 5 heredoc verbatim mechanical paste line 1673-1737 / Stage 1.5 G-printer.6 全 pass (`host`/`isEnabled`/`type: config.type` thresholds met, 0 legacy field, `tx: Prisma.TransactionClient` 2 match (signature + docstring), `findFirst({ where: { storeId } })` 2 match) / Stage 2 tsc filtered=0 + N1=103 baseline (D83 diff=0 Pass) / Stage 3 D75 + D76 + D86 全 pass / Stage 4 Snapshot 增量 atomic absorb / 63 lines / **D89 mandate inline self-application 3rd post-formal-land spec live field test pass** (sustained across 3 specs consecutive) / **D91 inline strict apply 3rd live precedent pass** (累积 3 live precedents 满足 升格 ripening threshold) / 0 真 fail-loud / 0 暂停 / 0 forward-fix printer 附录期 |
 **Acceptance 证据** (Phase D 进行中):
 
@@ -248,6 +256,12 @@
 - ✅ **D89 mandate inline self-application 3rd post-formal-land spec live field test pass** (sustained across 3 specs consecutive, CC-as-Planner mode stable pattern)
 - ✅ **D91 inline strict apply 3rd live precedent pass — 累积 3 live precedents 满足 升格 ripening threshold** (pending Helper protocol refinement + Phase D 整体 closure)
 - ✅ **G-printer.4 Prisma client path-agnostic refinement** (Step 3 G-T22.4 path drift lesson absorbed — Prisma 6 + pnpm workspace-hoisted layout)
+- ✅ Phase D 9/11 land + Task 23 roles.ts L1 细 verify per plan title (post Stage 2 fail-loud + plan patch v11 forward-fix)
+- ✅ **Phase D-5b D55 多步 tx 强制 2nd live demo work-as-designed** — ensureSystemRoles signature `tx: Prisma.TransactionClient` (up to 4 round-trips, vs 附录 5 upsertConfig 1st 2 round-trips)
+- ✅ L1 核心 helper `resolveLicensedPermissions` 语义 parity vs legacy `role.service.ts:130-159` validated
+- ✅ **D91 scope extension 1st live demo applied** to Stage 1.5 semantic verify (fail-loud gates vs informational counts 区分)
+- ✅ **D92 候选 1st live demo NEW** — Plan Opus heredoc verbatim paste embedded type cast discriminant vs schema field type cross-verify gap; 1 forward-fix via plan patch v11
+- ✅ **L3 CC fail-loud defense work-as-designed Stage 2 tsc catch** ✅ — α path forward-fix model continued
 
 ---
 
@@ -633,108 +647,127 @@
 
 ---
 
-## 9. 下一对话第一件事 (Phase D-5b Task 23 roles.ts spec produce)
+## 9. 下一对话第一件事 (Phase D-5c Task 24 coupons.ts — plan patch v12 spec FIRST + impl)
 
-### 9.1 Phase D-5b Task 23 spec 启动 scope
+### 9.1 Phase D-5c Task 24 spec 启动 scope
 
-**Phase D-5a 进度**: Task 22 staff.ts `11382d86` + 附录 5 printer.ts `f76ced17` 全 land ✅. D-5b Task 23 roles.ts 待启动 next session.
+**Phase D 进度**: Task 22 staff.ts + 附录 5 printer.ts + Task 23 roles.ts (post Stage 2 fail-loud + plan patch v11 forward-fix) 全 land ✅. D-5c Task 24 coupons.ts 待启动 next session.
 
-**Phase D = 11 个语义化 Repository 重构** (`phase-d-repositories.md` Task 16-22 + `phase-d-repositories-part2.md` Task 23-26 + 附录 5 printer.ts). 进行中 **8/11 land + 附录 5 printer ✅**: Task 16-22 + 附录 5 ✅, Task 23-26 ⏸️.
+**Phase D = 11 个语义化 Repository 重构** (`phase-d-repositories.md` Task 16-22 + `phase-d-repositories-part2.md` Task 23-26 + 附录 5 printer.ts). 进行中 **9/11 land + 附录 5 printer ✅**: Task 16-23 + 附录 5 ✅, Task 24-26 ⏸️.
 
-**Phase D-5b 启动 trigger** (post Phase D-5a' printer 附录 `f76ced17` land):
+**Phase D-5c 启动 trigger** (post Phase D-5b Task 23 `<FEAT_SHA_PENDING>` land + plan patch v11 `538d00e2` land):
 
-- 附录 5 printer.ts 2 methods (findByStoreId + upsertConfig D55 多步 tx 强制) 全 land
-- Stage 0-4 atomic absorb single commit per Task 17/19/22 α′ precedent extended
-- D89 + D91 inline strict apply 3rd live field test 全 pass — D89 mandate value sustained across 3 specs consecutive + D91 累积 3 live precedents 满足 升格 ripening threshold
-- §7.23 D-5b/c/d findings: Task 23 informational only 0 patches needed (Permission import verify only at Phase G/E 启动期, NOT plan patch scope)
+- Task 23 roles.ts L1 8 methods + L1 核心 helper + 3 system role constants 全 land (post Stage 2 fail-loud + plan patch v11 forward-fix)
+- Phase D-5b D55 多步 tx 强制 2nd live demo work-as-designed (ensureSystemRoles up to 4 round-trips)
+- Stage 0-4 atomic absorb single commit per Task 17/19/22/printer/Task 23 α′ precedent extended
+- D89 + D91 inline strict apply 4th spec live field test pass + D91 scope extension 1st live demo + **D92 候选 1st live demo NEW** (Plan Opus heredoc verbatim paste cast discriminant cross-verify gap)
+- §7.23 D-5c finding: **plan patch v12 needed FIRST** (renamed from v11 since v11 consumed by Task 23 fix) — Task 24 `findActiveByCode` query `where: { code, active: true }` → schema field `isActive Boolean`, rename `active` → `isActive`
 
-**Phase D-5b Task 23 spec scope** (next session Plan Opus produce):
+**Phase D-5c Task 24 spec scope** (next session Plan Opus produce, 2 deliverables):
 
-- Read `phase-d-repositories-part2.md` Task 23 roles.ts 段 (含 Phase E 段 3b 决策点 E `findByName` 回填)
-- L1 vs L2 决议: Plan Opus 启动 ritual 期 derive (default L2 per simple scope CRUD + 1 回填 method; L1 upgrade trigger 如 Helper raises OR §7.23 Task 23 entry post-light-scan flag)
-- Stage 0 CC pre-flight verify (D89 + D91 strict apply 4th spec): HEAD verify post-`f76ced17` (或 D77 Round 2 SHA replace mini-commit if applicable) + schema Role 全字段 CC dump (G-T23.1-N) + plan v10 Task 23 段 line range + tsc baseline + Prisma client types (G-printer.4 path-agnostic pattern carry-forward)
-- Stage 1 heredoc write `server/src/repositories/roles.ts` (~N lines per plan v10 Task 23 heredoc)
-- Stage 1.5 post-write semantic verify G-T23.6
+⚠️ **Deliverable 1: Plan patch v12** (FIRST — similar to plan patch v9/v11 pattern):
+- Patch target: `phase-d-repositories-part2.md` Task 24 plan段 `findActiveByCode` query line range
+- Patch: rename `active` → `isActive` in `where: { code, active: true }` per schema Coupon field name
+- Stage 0 CC pre-flight: schema Coupon 全字段 dump + **D92 candidate inline apply** (cast discriminant cross-verify)
+- Stage 1 Edit + Stage 2 verify (`active: true` = 0 + `isActive: true` ≥ 1)
+- Stage 3 docs commit + push
+
+⚠️ **Deliverable 2: Task 24 impl spec** (post plan patch v12 land):
+- Stage 0 CC pre-flight verify (D89 + D91 + **D92 strict** 5th spec)
+- Stage 1 heredoc write `server/src/repositories/coupons.ts`
+- Stage 1.5 G-T24.6 semantic verify (D91 scope extension applied)
 - Stage 2 tsc filtered=0 + N1=103 baseline maintain (D83 diff=0)
 - Stage 3 D75 + D76 + D86 staged
-- Stage 4 Snapshot 增量 atomic absorb (Task 22 Step 3 + printer 附录 α′ precedent extended): §1 / §3 commit chain Phase D-5b 段 / §4'' Phase D 8/11 → 9/11 + Task 23 row + Acceptance bullets / §9 整节重写 Phase D-5c Task 24 coupons.ts 启动 ritual / §10 v5.X+5 批
-- Ian 明批 → CC 执行 → Task 23 closure → D-5c Task 24 next session
+- Stage 4 Snapshot 增量 atomic absorb: §1 / §3 commit chain Phase D-5c 段 / §4'' Phase D 9/11 → 10/11 + Task 24 row + Acceptance bullets / §9 整节重写 Phase D-5d Task 25 waitlist.ts 启动 ritual / §10 v5.X+6 批
+- Ian 明批 → Helper review (pre-execute) → CC 执行 → Task 24 closure → D-5d Task 25 next
 
-### 9.2 启动 ritual (Phase D-5b Task 23)
+### 9.2 启动 ritual (Phase D-5c Task 24)
 
 1. **读** (按顺序, CC-as-Planner 直 file access — D89 mandate 自动满足):
-   - 本 Snapshot live 增量, HEAD post-`f76ced17` (Phase D-5a' printer 附录 atomic absorb; D77 Round 2 mini-commit possibly post-`f76ced17` if commit body 含 placeholder)
-   - `phase-5-fabrication-archive.md` (27 条 land + #28/#29/#30/Cat 5 9 数据点 + D89 formal land baseline + D91 候选 3 数据点 满足 升格 ripening threshold pending Helper protocol + Phase D 整体 closure)
-   - `phase-5-governance-digest.md` (含 D89 formal entry §6 + Pre-Flight Checklist §7; D91 候选 3 live precedents queue in Snapshot §1)
-   - `phase-d-repositories-part2.md` Task 23 roles.ts 段 (含 Phase E 段 3b 决策点 E `findByName` 回填)
-   - printer 附录 commit body `f76ced17` (Stage 4 Snapshot 增量 全 patches + D55 多步 tx 强制 first live demo proof + G-printer.4 path-agnostic refinement) + Task 22 Step 3 closure ref `11382d86` (carry-forward 累积)
+   - 本 Snapshot live 增量, HEAD post Task 23 `<FEAT_SHA_PENDING>` (+ D77 Round 2 if applicable) + plan patch v11 `538d00e2`
+   - `phase-5-fabrication-archive.md` (27 条 land + #28/#29/#30/Cat 5 9 数据点 + D89 formal land baseline + D91 候选 4 + 1 scope extension + **D92 候选 1 live demo NEW**)
+   - `phase-5-governance-digest.md` (含 D89 formal entry §6 + Pre-Flight Checklist §7; D91 + D92 候选 queue)
+   - `phase-d-repositories-part2.md` Task 24 coupons.ts 段 (pre-v12 state — `active: true` semantic-drift area)
+   - Schema Coupon 全字段 CC dump (verify `isActive Boolean`, plan patch v12 ground truth basis)
+   - Task 23 commit body `<FEAT_SHA_PENDING>` + plan patch v11 commit body `538d00e2`
 
-2. **CoT 输出** Phase D-5b Task 23 scope 理解 + Phase B+C+D 1-8 + Task 22 + 附录 5 printer 全 closure carry-forward ack + **D89 mandate inline strict apply** 内化 (post-formal-land 4th spec apply, CC-as-Planner architectural mode sustained pattern) + **D91 candidate inline strict apply** 内化 (NO pre-written "Expected fields" / "Expected output" for CC-dump-derived content; 累积 3 live precedents satisfies 升格 ripening threshold, formal land pending Helper protocol 1/2/3 refinement + Phase D 整体 closure governance commit batch atomic decide)
+2. **CoT 输出** Phase D-5c Task 24 scope 理解 + Phase B+C+D 1-9 + Task 22 + 附录 5 + Task 23 全 closure carry-forward ack + **D89 mandate** 内化 (5th spec apply) + **D91 + scope extension** 内化 + **D92 candidate inline apply (NEW)** 内化
 
-3. **Stage 0 CC pre-flight verify** (D89 + D91 strict): 本 turn CC-as-Planner 直 read + grep schema + plan + tsc baseline (Condition A satisfaction via file access). NO pre-write "Expected" in Task 23 spec; spec instructs CC dump + report.
+3. **Stage 0 CC pre-flight verify** (D89 + D91 + **D92 strict**): 本 turn CC-as-Planner 直 read schema Coupon + plan part2 Task 24 段 + tsc baseline + cast discriminant cross-verify. NO pre-write "Expected".
 
-4. **Task 23 spec produce → Ian 明批 → Helper cross-instance review (pre-execute timing per Step 3 innovation) → CC 执行**: Stage 0 CC pre-flight + Stage 1 heredoc + Stage 1.5 G-T23.x + Stage 2 tsc + Stage 3 D75/D76/D86 + Stage 4 Snapshot 增量 atomic absorb single commit. 不直接起 CC 执行消息 在 Task 23 启动期; Ian 明批 spec GO 后才进入 CC 执行消息.
+4. **Plan patch v12 spec produce → Ian 明批 → Helper review → CC 执行 plan patch v12 land**: FIRST deliverable per §7.23 active → isActive rename.
 
-5. **Helper async review trigger** (pre-execute per Step 3 innovation, OR post-impl-land per L1 default if L2 chosen): Helper protocol 1/2/3 + Patch B 模式 Mode 1 path (a) preventive 补 if flags trigger spec amendment (precedent: Step 3 spec Flag 2 Edit 1 完整 new_str preventive 补).
+5. **Task 24 impl spec produce → Ian 明批 → Helper review (pre-execute) → CC 执行 Task 24 impl atomic absorb**: SECOND deliverable post plan patch v12 land.
 
-6. **D-5c batch entry (Task 24 coupons.ts)** (post-Task-23 closure): D-5c batch entry pre-empt CC dump (D89 candidate batch-level 应用模式 continuation). §7.23 Task 24 finding: `findActiveByCode` query `where: { code, active: true }` → schema field `isActive Boolean` (TS2353 if not fixed). Rename `active` → `isActive` — **plan patch v11 needed** (D-5c batch entry first deliverable).
+6. **Helper async review trigger** (pre-execute timing per Step 3/printer/Task 23 innovation continuity): Helper protocol 1/2/3 + Patch B 模式 Mode 1 path (a) preventive 补 if flags trigger.
 
-### 9.3 不变项 carry-forward (Phase D 1-8 + Task 22 + 附录 5 printer 全 closure 累积)
+### 9.3 不变项 carry-forward (Phase D 1-9 + Task 22 + 附录 5 + Task 23 全 closure 累积)
 
-- D75 数据 guard (`[ -s file ]` 后置) — 8 task + Task 22 全 stages + 附录 5 printer 全 land 0 fail
-- D76 push + origin SHA verify — 8 task + Task 22 全 stages + 附录 5 printer 全 land 0 fail
-- D77 forward-fix 模板 (不 amend pushed commit) — Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `7ec04772` + D89 升格 `1d93e4af` + Step 1 closure `81307121` + Step 3 `8229c38e` + printer 附录 (if applicable) Round 2 reuse
-- D88 维度 3 anchor literal grep 实证 — Phase D-2 起 7+ live applications + Task 22 Step 1/3 spec self-audits + 附录 5 printer spec self-audit
-- **D89 mandate inline strict apply** (post-formal-land 3 spec live field test pass — Step 1 work-log + Step 3 impl spec + 附录 5 printer spec; Task 23 = 4th spec next) — CC-as-Planner architectural mode 内 file access = D89 mandate 自动满足 sustained pattern
-- **D91 candidate inline strict apply** — NO pre-written "Expected" for CC-dump-derived content; defer expected output decision to consume-dump step. **累积 3 live precedents 满足 升格 ripening threshold** (Step 1 sub-violation γ baseline + Step 3 strict pass preventive + 附录 5 strict pass preventive). Defer formal entry to Helper protocol 1/2/3 refinement + Phase D 整体 closure governance commit batch atomic decide
-- D86 language-layer self-check — 8 task + Task 22 全 stages + 附录 5 printer 全 land 0 violation
-- 规则 8 暂停 — Phase D 累积 0 critical fabrication 逃逸
-- D55 / D56 / D57 / D68 D 决议遵守 — Phase D 8 repo + Task 22 全 stages + 附录 5 printer 全应用. **附录 5 upsertConfig D55 多步 tx 强制 first live demo work-as-designed** (signature `tx: Prisma.TransactionClient` 编译期强制) — Task 23 roles.ts methods 多为 single-step, D55 trigger applicability per method check
-- 规则 3 写 db 必填 / 读默认 prisma — Phase D 8 repo + 附录 5 全应用
-- **Stage 0 G-printer.4 Prisma client path-agnostic refinement** carry-forward — Prisma 6.19.2 + pnpm workspace-hoisted layout `node_modules/.pnpm/@prisma+client@*/.../.prisma/client/index.d.ts`, find + grep approach (G-T23.4 重用)
+- D75 数据 guard — 9 task + 附录 5 + Task 23 全 stages land 0 fail
+- D76 push + origin SHA verify — 9 task + 附录 5 + Task 23 全 stages land 0 fail
+- D77 forward-fix 模板 (不 amend pushed commit) — Task 17 `3bb5cd1c` + Task 19 `c1b123fb` + D-4 closure `7ec04772` + D89 升格 `1d93e4af` + Step 1 closure `81307121` + Step 3 `8229c38e` + 附录 5 `7299e05b` + Task 23 (if applicable) Round 2 reuse
+- D88 维度 3 anchor literal grep 实证 — Phase D-2 起 8+ live applications + Task 22 Step 1/3 + printer + Task 23 spec self-audits
+- **D89 mandate inline strict apply** (post-formal-land 4 spec live field test pass sustained — Step 1 + Step 3 + printer + Task 23; Task 24 = 5th next) — CC-as-Planner architectural mode 内 file access = D89 mandate 自动满足
+- **D91 candidate inline strict apply** — **累积 4 base + 1 scope extension precedents** (Step 1 γ + Step 3 + 附录 5 + Task 23 + Task 23 scope extension applied to Stage 1.5)
+- **D92 candidate inline apply (NEW)** — Plan Opus heredoc verbatim paste must cross-verify embedded type cast discriminant vs schema field type. Stage 0 schema dump 需 enumerate field TYPE + heredoc cast type cross-check. **1 live demo registered** (Task 23 Stage 2 fail-loud + plan patch v11 forward-fix). Sub-rule extension of #30 防御层
+- D86 language-layer self-check — 9 task + 附录 5 + Task 23 全 land 0 violation
+- 规则 8 暂停 — Phase D 累积 0 critical fabrication 逃逸; 1 forward-fix Task 23 期 (plan patch v11, α path)
+- D55 / D56 / D57 / D68 — Phase D 9 repo + 附录 5 + Task 23 全应用. **D55 多步 tx 强制 live demos**: 附录 5 upsertConfig 1st (2 round-trips) + Task 23 ensureSystemRoles 2nd (4 round-trips)
+- 规则 3 写 db 必填 / 读默认 prisma — Phase D 9 repo + 附录 5 + Task 23 全应用
+- **Stage 0 G-printer.4 → G-T*.4 Prisma client path-agnostic refinement** carry-forward — find + grep approach (G-T24.4 重用)
+- **Stage 1.5 D91 scope extension** carry-forward (Task 23 1st live demo) — fail-loud gates vs informational counts 区分
 - 4 件 handoff 文件 live 增量, Phase 封顶 regen (Phase D 封顶 = Task 26 完成时 regen)
 
-### 9.4 关键 grep 清单 (Phase D-5b Task 23 启动期)
+### 9.4 关键 grep 清单 (Phase D-5c Task 24 启动期)
 
-- **G-T23.1**: plan v10 file anchor verify `phase-d-repositories-part2.md` Task 23 段 line range + Phase E 段 3b 决策点 E `findByName` 回填段
-- **G-T23.2**: schema Role 全字段 enumeration (D89 mandate L3 tier-3 verify gate, fresh from CC dump — D91 strict: NO pre-write expected)
-- **G-T23.3**: HEAD verify post-`f76ced17` (或 D77 Round 2 SHA) + commit chain Phase D-5a' 段 verify
-- **G-T23.4**: Prisma client types verify (path-agnostic find + grep, G-printer.4 pattern carry-forward + auto-recover D82 gate)
-- **G-T23.5**: tsc baseline N1=103 maintained (D83 diff=0)
-- **G-T23.6**: post-write semantic verify roles.ts (TBD per Task 23 method 清单 + Phase E 段 3b 决策点 E)
-- **G-T23.10**: Prisma XOR predict (Stage 2 tsc filtered=0, carry-forward Task 17-22 + 附录 5)
+**Plan patch v12 deliverable (FIRST)**:
+- **G-PV12.1**: schema Coupon 全字段 dump — verify `isActive Boolean` + **D92 candidate cast discriminant cross-verify**
+- **G-PV12.2**: plan part2 Task 24 段 line anchor + `active: true` occurrences count (pre-patch)
+- **G-PV12.3**: Edit verify post-patch — `active: true` = 0 + `isActive: true` ≥ 1
 
-### 9.5 不启动原则 (Phase D-5b Task 23 启动期)
+**Task 24 impl deliverable (SECOND, post plan patch v12 land)**:
+- **G-T24.1**: plan part2 Task 24 file anchor (post plan patch v12)
+- **G-T24.2**: schema Coupon 全字段 enumeration (D89 + D91 + **D92 strict** — cast discriminant cross-verify)
+- **G-T24.3**: HEAD verify post plan patch v12 SHA + commit chain
+- **G-T24.4**: Prisma client types verify (path-agnostic G-printer.4 pattern + D82 auto-recover)
+- **G-T24.5**: tsc baseline N1=103 maintained (D83 diff=0)
+- **G-T24.6**: post-write semantic verify coupons.ts (D91 scope extension per Task 23 precedent)
+- **G-T24.10**: Prisma XOR predict (Stage 2 tsc filtered=0)
 
-1. 读完 ritual (9.2) → CoT 输出 Phase D-5b Task 23 scope 理解 + Phase D 1-8 + Task 22 + 附录 5 printer 全 closure carry-forward ack
-2. Stage 0 CC pre-flight verify (D89 + D91 strict): CC-as-Planner 直 file access (Condition A satisfaction)
-3. Plan Opus consume dump → judge alignment, decide patch necessity (plan part2 Task 23 heredoc 是 ground truth source, Plan Opus reference NOT invent)
-4. Task 23 spec produce: Stage 0-4 single commit → Ian 明批 → Helper review (pre-execute timing) → CC 执行
-5. **不直接起 CC 执行消息** 在 Phase D-5b Task 23 启动期; Ian 明批 Task 23 spec GO 后才进入 CC 执行消息
+### 9.5 不启动原则 (Phase D-5c Task 24 启动期)
 
-### 9.6 Phase D-5a' printer 附录 impl 记录 (供 Phase D-5b Task 23 Plan Opus 理解协作节奏)
+1. 读完 ritual (9.2) → CoT 输出 Phase D-5c Task 24 scope 理解 + Phase D 1-9 + Task 22 + 附录 5 + Task 23 全 closure carry-forward ack
+2. Stage 0 CC pre-flight verify (D89 + D91 + **D92 strict**): CC-as-Planner 直 file access + schema 字段 TYPE enumeration + heredoc cast cross-verify
+3. Plan Opus consume dump → judge alignment. **2 deliverables sequence**: plan patch v12 FIRST → Task 24 impl spec SECOND
+4. Plan patch v12 spec → Ian 明批 → Helper review → CC plan patch v12 land
+5. Task 24 impl spec → Ian 明批 → Helper review (pre-execute + D92 cast cross-verify) → CC 执行 atomic absorb
+6. **不直接起 CC 执行消息** — Ian 明批 each deliverable GO 后才进入 CC 执行消息
 
-Phase D-5a' printer 附录 impl atomic absorb (`f76ced17` single feat commit):
+### 9.6 Phase D-5b Task 23 impl + plan patch v11 forward-fix 记录 (供 Phase D-5c Task 24 Plan Opus 理解协作节奏)
 
-- 1 atomic feat commit (Stage 0 pre-flight + Stage 1 heredoc + Stage 1.5 semantic verify + Stage 2 tsc + Stage 3 D75/D76/D86 + Stage 4 Snapshot 增量 全 absorb in single commit per Task 17/19/22 α′ precedent extended) + optional D77 Round 2 mini-commit (self-referencing SHA placeholder replace if commit body 含 placeholder)
-- 0 规则 8 暂停 / 0 真 fail-loud / 0 forward-fix printer 附录期 (D77 Round 2 SHA placeholder replace 不计 forward-fix scope per Task 17/19/D-4/D89/Step 1/Step 3 precedent reuse)
-- Stage 0 G-printer.4 Prisma client path-agnostic refinement (Step 3 G-T22.4 path drift lesson absorbed — Prisma 6.19.2 + pnpm workspace-hoisted `node_modules/.pnpm/@prisma+client@*/.../.prisma/client/index.d.ts`, find + grep approach; D82 auto-recover gate retain)
+Phase D-5b Task 23 impl atomic absorb (`<FEAT_SHA_PENDING>` single feat commit + plan patch v11 `538d00e2` docs commit + optional D77 Round 2):
 
-**Fabrication 拦截统计 (Phase D-5a' printer 附录 累积)**:
+- 2-3 commits Task 23 batch: plan patch v11 docs `538d00e2` + Task 23 feat `<FEAT_SHA_PENDING>` + optional D77 Round 2 mini-commit
+- 1 Stage 2 fail-loud catch (**L3 CC defense work-as-designed**) + α path forward-fix via plan patch v11 (precedent: Task 17/19 round 2 + D-4 closure family + plan patch v9 — schema-vs-plan drift fix continuity)
+- 0 规则 8 暂停 / 0 critical fabrication 逃逸
+- Stage 0 G-T23.4 Prisma client path-agnostic G-printer.4 pattern carry-forward (Task 23 re-run post v11 land)
+- L1 细 verify per plan title atomic absorb innovation continued
 
-- Ian 一手 (raise): 0 次 (spec 产出期 0 Ian 一手 catch, mandate compliance baseline sustained)
-- CC grep / tsc / runtime fail-loud: 0 次 (printer 附录期 0 真 fail-loud)
-- CC clarification request: 0 次 (spec 含 CC-sourced old_str instructions + heredoc verbatim mechanical paste + Stage 4 explicit Edit 1-5 instructions — preventive design sustained across 3 specs consecutive)
-- Plan Opus 自审: D89 mandate auto-satisfied via CC-as-Planner file access (3rd spec consecutive — direct Read/git/grep this turn, 0 印象 source)
-- Helper Opus 跨 chat raise: TBD (pre-execute timing per Step 3 innovation — post spec produce / pre CC execute Helper review trigger fire)
+**Fabrication 拦截统计 (Phase D-5b Task 23 累积)**:
+
+- Ian 一手 (raise): 0 次 (Stage 2 fail-loud caught at L3 CC defense pre-Ian-raise; Ian 明批 α path post-Worker-report)
+- CC grep / tsc / runtime fail-loud: **1 次** (Stage 2 tsc 6 TS2322 catch — work-as-designed L3 defense)
+- CC clarification request: 0 次 (spec preventive design sustained)
+- Plan Opus 自审: D89 mandate auto-satisfied via file access (4th spec consecutive); **D92 候选 self-audit gap identified retrospectively** — heredoc verbatim paste 隐含 trust source as ground truth without cast discriminant cross-check
+- Helper Opus 跨 chat raise: 0 次 pre-execute (Helper looked at spec structure not heredoc cast type semantics — D92 candidate Helper review depth extension scope)
 
 **协作节奏观察**:
 
-- **D89 mandate inline self-application 3rd post-formal-land spec live field test pass sustained** — Step 1 (work-log) + Step 3 (impl spec) + 附录 5 printer (impl spec) — CC-as-Planner architectural mode 内 file access = D89 mandate 自动满足 stable pattern. 0 印象 source across 3 specs consecutive.
-- **D91 inline strict apply 累积 3 live precedents 满足 升格 ripening threshold** — Step 1 §2 G-T22.2 pre-write Expected fields γ path forward-only (1st precedent) + Step 3 Stage 0 schema dump NOT pre-write Expected (2nd precedent preventive design) + 附录 5 printer Stage 0 schema dump NOT pre-write Expected (3rd precedent preventive design sustained). Pending formal land per Helper protocol 1/2/3 refinement + Phase D 整体 closure governance commit batch atomic decide.
-- **Stage 0 G-printer.4 Prisma client path-agnostic refinement value** — Step 3 G-T22.4 path drift lesson absorbed (`server/node_modules/.prisma/client/` not used in Prisma 6 + pnpm setup; actual location `node_modules/.pnpm/@prisma+client@*/.../.prisma/client/index.d.ts` workspace-hoisted). G-printer.4 find + grep approach 修正 — Plan Opus 直读实证 (D89 auto-satisfied) → 转化为 spec-level refinement, eliminates path-assumption fragility for future Task 23-26 G-T*.4 carry-forward.
-- **Heredoc verbatim mechanical paste from plan v10 附录 5** — Stage 1 NO Plan Opus authoring discretion (heredoc 直 paste from plan file line 1673-1737, source attribution explicit). Eliminate Stage 1 authoring drift risk via mechanical pipeline. Pattern consistent across 3 specs (Task 22 Step 3 + printer 附录).
-- **附录-direct 创建 NOT Phase D numbered task** — 00-index.md Phase D task count 不变 per plan v10 line 1758-1764 设计决策. Snapshot §4'' 表格用 "附录 5" 行 而非 "Task 23 / Task 22.5 / ...".
+- **L3 CC fail-loud defense work-as-designed Stage 2 tsc catch** — 6 TS2322 caught at runtime tsc gate, governance trace 完整 (Worker fail-loud report → Plan Opus verify-and-confirm + α path Option 2 recommendation → Ian 明批 → plan patch v11 + redo). Defense-in-depth model validated.
+- **D92 candidate 1st live demo registration** — Plan Opus heredoc verbatim paste 隐含 trust plan source as ground truth, but plan source itself can have embedded type cast bugs. Sub-rule extension of #30 防御层 schema-side full enumeration: Stage 0 must enumerate field TYPE + cross-check heredoc embedded casts vs schema field types. MORE severe than D89 cousin family (semantic TS2322 real error vs cosmetic count drift).
+- **α path forward-fix via plan patch precedent extended** — plan patch v9 (Task 21 update-block preservation) + v10 (Task 22 + 附录 5 schema alignment) + v11 (Task 23 InputJsonValue cast) — schema-vs-plan drift fix family.
+- **L1 细 verify atomic absorb innovation post-Stage-2-fail-loud sustained** — Task 23 L1 atomic absorb 不 因 Stage 2 fail-loud 退化 to 2-step. Stage 2 fail-loud is L3 CC defense gate work-as-designed; α path forward-fix is plan patch v9/v10/v11 family precedent.
+- **Renumbering plan patch v11 = Task 23 / v12 = Task 24** — linear numbering preserved by consuming v11 for Task 23 (this session), Task 24 patch becomes v12 (next D-5c session).
 
 
 ## 10. 当前修订轨迹
@@ -824,6 +857,22 @@ Phase D-5a' printer 附录 impl atomic absorb (`f76ced17` single feat commit):
   - **D89 + D91 candidate inline strict apply 3rd live field test sustained across 3 specs consecutive trace**: Step 1 `2590ab04` 1 ⚠️ gray-area schema field literals (§7.23 prior captured) + 1 D91 sub-violation §2 G-T22.2 pre-write Expected fields (γ path forward-only); Step 3 `11382d86` spec strict pass 15 anchor literal 全 fresh + Stage 0 schema dump NOT pre-write Expected (preventive design 1st validation); 附录 5 printer.ts `f76ced17` spec strict pass anchor literal 全 fresh + Stage 0 schema dump NOT pre-write Expected (preventive design sustained). Mandate value validated at field level cross 3 specs consecutive. D91 升格 ripening 3/3 data points threshold met — formal entry deferred per Helper protocol 1/2/3 refinement + Phase D 整体 closure governance commit batch atomic decide.
   - **CC clarification request 0 (preventive design sustained)**: printer 附录 spec 含 CC-sourced old_str instructions for Snapshot 增量 patches (eliminate Plan-Opus-reproduction fragility per Step 1 §9 + Step 3 Edit 1 atomic str_replace precedent) + heredoc verbatim mechanical paste from plan v10 附录 5 (NO Stage 1 authoring discretion) + Stage 4 explicit Edit 1-5 instructions (NO outline-only spec gap) — preventive design absorbs Step 1/Step 3 L3 Defense-in-depth tier work-as-designed lessons proactively cross 3 specs consecutive.
   - **G-printer.4 path-agnostic refinement governance**: Step 3 G-T22.4 path check (`ls server/node_modules/.prisma/client/index.d.ts`) over-paranoid (Prisma 6 + pnpm 实际 client 在 `node_modules/.pnpm/@prisma+client@*/.../.prisma/client/index.d.ts` workspace-hoisted) — always trigger auto-recover (idempotent harmless 但 wasted ~10-20s). printer spec G-printer.4 改 path-agnostic find + grep (检查 type exports 直接) — Plan Opus 直读实证转化为 spec-level refinement, eliminate path-assumption fragility for Task 23-26 G-T*.4 carry-forward.
+
+---
+
+- **2026-05-21 v5.X+5 批 (Phase D-5b Task 23 roles.ts L1 impl post Stage 2 fail-loud + plan patch v11 forward-fix — `<FEAT_SHA_PENDING>` atomic feat commit + plan patch v11 `538d00e2` docs commit + optional D77 Round 2)**:
+  - §1 时点 / 最后 commit on main `f76ced17` → `<FEAT_SHA_PENDING>` / Phase D 8/11+附录5 → **9/11+附录5** / 下一对话目标 update to Phase D-5c Task 24 plan patch v12 + impl
+  - §1 累积 governance queue update: D89 mandate 4th post-formal-land spec live field test pass entry + D91 候选 4 live precedents + 1st scope extension sub-rule application + **D92 候选 NEW 1st live demo** (Plan Opus heredoc verbatim paste cast discriminant cross-verify gap)
+  - §3 commit chain NEW "Phase D-5b 对话" section prepend (在 Phase D-5a' 段之前) + 2 commits (Task 23 feat `<FEAT_SHA_PENDING>` + plan patch v11 docs `538d00e2`)
+  - §4'' Phase D 完成总览 heading 8/11+附录5 → 9/11+附录5 + Task 23 row + Acceptance bullets 7 新条目
+  - §9 整节重写 Phase D-5c Task 24 plan patch v12 + impl 启动 ritual
+  - §10 本条目
+  - **触发事件**: Phase D-5b Task 23 roles.ts L1 impl atomic absorb single feat commit `<FEAT_SHA_PENDING>` (Stage 0-4 全 absorb post v11 forward-fix) + plan patch v11 docs commit `538d00e2` (strip 6 InputJsonValue cast occurrences from part2 Task 23 heredoc) + 0 暂停 / 0 critical fabrication 逃逸 / 1 forward-fix Task 23 期 + **Phase D-5b D55 多步 tx 强制 2nd live demo** + D89 + D91 inline strict apply 4th live field test pass + **D91 scope extension 1st live demo** + **D92 候选 1st live demo NEW**
+  - **同期 Archive 候选 deferred**: D89 mandate 4th + D91 候选 4 + 1 scope extension + **D92 候选 1 live demo NEW** — 入 Phase D 整体 closure governance commit batch atomic decide
+  - **本 batch α 路径**: 2 atomic commits (plan patch v11 docs FIRST + Task 23 redo feat SECOND), 同 plan patch v9/v10 family precedent + optional D77 Round 2 mini-commit for Task 23 feat commit
+  - **L3 CC fail-loud defense work-as-designed Stage 2 tsc catch validated** — 6 TS2322 caught at runtime tsc gate, governance trace 完整 (Worker fail-loud report → Plan Opus verify-and-confirm → Ian 明批 → plan patch v11 docs + Task 23 redo atomic feat).
+  - **L1 atomic absorb innovation post-Stage-2-fail-loud sustained** — L1 review rigor 维持 via Helper pre-execute review + Plan Opus self-audit + preventive design.
+  - **Renumbering trace**: plan patch v11 originally reserved for Task 24 active → isActive. Consumed by Task 23 Stage 2 fail-loud forward-fix. Task 24 patch renumbered to v12 (next D-5c session).
 
 ---
 
