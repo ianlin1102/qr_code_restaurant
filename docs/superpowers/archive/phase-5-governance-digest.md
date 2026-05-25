@@ -437,6 +437,89 @@ B. **该 anchor 在本 chat 内由 Plan Opus 自己上一 turn produce** (cite t
 
 ---
 
+### D91 — Plan Opus spec writer 可测量值 / grep pattern / spec-依赖 state evidence-first 强制 (formal, Phase D 整体 closure 升格)
+
+Plan Opus 写 spec 涉及任何可测量值 (count / threshold / SHA / 行号 / 字段名 / 文件路径) / grep pattern (用于匹配源码 / 文档) / spec-依赖 state 陈述 (spec 行动依据 / 作用对象的 file / path / content state), **必跑 SPV (Spec Pre-Commit Verification) v1.3** (`docs/superpowers/archive/spv-design.md`):
+
+- **SPV-1** (零硬编码可测量值): 每个 literal 必 atomic citation, 单源单输出, 禁合成 (`+` / `-` / 公式) — see `spv-design.md` §1 SPV-1
+- **SPV-2** (grep pattern 写后必跑): pattern verbatim verify against actual target, `expected_match_lines` 字段填实际行 (Helper 眼读 SV-7 类 false positive 兜底) — see `spv-design.md` §1 SPV-2
+- **SPV-4** (spec-依赖 state 必标来源): in-scope state 陈述 inline 标 `[实证: turn N, baseline_sha X, command Y → 输出 Z]` 或 `[假设, 未验证 — Stage 0 G-X.Y 验证]` — see `spv-design.md` §1 SPV-4
+
+**升格 evidence base** (Phase D 整体 closure 节奏点, `c0b8f4e0db138294c1a75de35aa8b7e3978a0645` D89 land 之后累积):
+
+- 7 base live precedent: Task 22 Step 1 `2590ab04` + Step 3 `11382d86` + 附录 5 `f76ced17` + Task 23 `6ba08e43` + Task 24 `83885944` + Task 25 `d2792b6d` + Task 26 `d97ae039`
+- 4 scope extension (Task 23/24/25/26 — Stage 1.5 semantic verify fail-loud gates vs informational counts 区分)
+- **D91 SV (self-violation) total = 7** (论据骨头 = post-D91-proposal violation = 6, 排除 SV-1 propose origin 自身; SV-1..SV-7 atomic single-source enumeration 见 `phase-5-fabrication-archive.md` §3.6 附 D91 SV enumeration table)
+- **Pattern #10 5-category coverage** ((a) sig + (b) body + (c) JSDoc + (d) comment-block ack refs + (e) source-assertion anchor literals) — **fold 进 SPV-1/SPV-2 适用范围**, NOT 单独 formal entry. Fold ack 决定 = Phase D 整体 closure batch atomic decide (Helper M2..M9 cross-instance review 锁定)
+
+**Defense-in-depth coverage**:
+
+- L1 Plan Opus self-audit (SPV-1/2/4 spec 顶部 yaml-spv1/2/4 fenced YAML records + Self-run report)
+- L3 CC fail-loud (Stage 0d 机械复验 SPV records, mismatch → 规则 8 暂停)
+- L6 Helper cross-instance review (spec SPV 段 audit 第一件事 + verbatim `expected_match_lines` 眼读 SV-7 类 false positive 兜底)
+
+**升格时机**: 已升格 formal at Phase D 整体 closure 段 A (`<CLOSURE_SHA_PENDING>`, 2026-05-23).
+
+---
+
+### D92 — Plan Opus heredoc TS 必 project-aware tsc 验证 (formal, Phase D 整体 closure 升格)
+
+Plan Opus 写 spec 内任何 heredoc TypeScript code 段 (repository .ts / integration test .ts / shared module .ts / plan patch new_str 含完整 TS code), **必跑 SPV-3** (heredoc TS placement-based project tsc, sentinel 自检 gate + delta vs N1 baseline + env noise 封闭清单) — see `docs/superpowers/archive/spv-design.md` §1 SPV-3.
+
+**Family A/B/C/D cast categorization** (Phase D-5b/5e 累积, 全 fold 进 SPV-3 适用范围, NOT 单独 enumerate):
+
+- **Family A** (Task 23 `6ba08e43` + plan patch v11 `538d00e2`): cast-away — heredoc embedded `as unknown as Prisma.InputJsonValue` cast × 6 vs schema `Role.permissions String[]` → 6 TS2322
+- **Family B** (Task 26 `d97ae039`): Prisma read → TS narrow — 1 `as ModuleId[]`
+- **Family C** (Task 26 `d97ae039`): literal narrowing — 2 `'core' as ModuleId`
+- **Family D NEW** (Task 26 Round 6, absorbed via plan patch v14 `587a565b`): heredoc `new Set(...)` 缺 explicit type parameter → TS2345 at `.has` call (TS 5+ strict narrowing)
+
+**升格 evidence base**:
+
+- 2 live demo: Task 23 reactive (Stage 2 fail-loud catch + plan patch v11 forward-fix strip 6 cast) + Task 24 `83885944` proactive (G-T24.7 D92 candidate inline apply before fail-loud)
+- 1 Family D NEW catch via Worker CC Stage 2 fail-loud (Task 26 Round 6, β-path absorbed v14)
+- β-path detect extension category (Task 25 `d2792b6d` schema field absence vs plan signature drift, scope extension NOT cast)
+
+**Defense-in-depth coverage**:
+
+- L1 Plan Opus self-audit (SPV-3 spec 顶部 yaml-spv3 records + sentinel gate 自检 verifies `server/src/__spv__/` 在 tsc compilation scope)
+- L3 CC fail-loud (Stage 0 SPV-3 sentinel + project tsc placement re-verify + delta whitelist check)
+- L6 Helper cross-instance review
+
+**升格时机**: 已升格 formal at Phase D 整体 closure 段 A (`<CLOSURE_SHA_PENDING>`, 2026-05-23).
+
+---
+
+### D93 — Stage 5 Test Gate (formal, Phase D 整体 closure 升格)
+
+Repository / agent / module 实施 spec **必含 Stage 5 Test Gate**, 含**机械 gate** + **陈述性纪律** 两层 (Phase D 整体 closure Ian framing D 终审锁定, 2026-05-23):
+
+**机械 gate** (Worker CC 执行期可机械 verify, fail-loud on violation):
+
+- test 与 impl 同 atomic commit (test land 必与 impl 在同一 feat commit, NOT 分离 docs commit)
+- canonical `pnpm test:integration` baseline maintained (NOT isolated workaround, post-batch baseline 累积)
+- real DB NOT mock (integration test 跑 real PostgreSQL via `pnpm test:db:up` infra, withTestTenant / withTestPlatform 包装实证 RLS)
+
+**陈述性纪律** (Helper review / Ian 决议层 enforce):
+
+- oracle 独立于 plan (test expectations 自 schema / business intent / D 决议 derive, NOT 自 plan 设计文字 derive)
+- test case 由 Ian + Helper define (NOT Plan Opus / Worker CC unilateral add/remove core scenarios)
+
+**升格 evidence base**:
+
+- 3 consecutive live demo: Task 24 `83885944` (Stage 5 NEW first land 23 integration tests, defense-in-depth Stage 5 Test Gate insert) + Task 25 `d2792b6d` (16 cases 2nd land + canonical baseline maintained) + Task 26 `d97ae039` (14 cases 3rd land + canonical baseline maintained Task 24→25→26 consecutive)
+- 多次 catch validation Task 24 期 empirical: 3 sub-gaps caught (Cat5-DP10 SYSTEM_DATABASE_URL fix `755b7735` + Cat5-DP11 vitest 4 glob fix `8ce5c61a` + Cat5-DP12 fixtures.test.ts RLS context fix `c9e14e33`) — L1 / L3 / L6 全 missed, only Stage 5 catch
+- 措辞保守 ack: D93 仅 3 数据点踩 ripening threshold; 升格自候选 → formal 含警示 — Phase E controller 层实施期持续 live precedent 累积时, 视情形增 sub-rule (e.g. test infra coupling) 或保持现状
+
+**Defense-in-depth coverage**:
+
+- L3 Stage 5 Test Gate (NEW defense layer post Phase D Task 24 batch insert) — runtime semantic correctness (business intent + RLS + atomic increment + concurrent vs lost-update + cross-store isolation) 补 L3 static type correctness (tsc) 盲点
+- L6 Helper review test 设计 (oracle 独立验证)
+- Ian 决议 test case scope (NOT Plan Opus / Worker CC core change)
+
+**升格时机**: 已升格 formal at Phase D 整体 closure 段 A (`<CLOSURE_SHA_PENDING>`, 2026-05-23).
+
+---
+
 ## 7. Opus Spec Pre-Flight Checklist
 
 **触发场景**: Opus 准备写任何 spec / patch / Stage 0 defensive check / pre-flight condition 前。
